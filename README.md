@@ -237,3 +237,18 @@ export function main() {
   - Cf Scope: Control flow scope.
   - Variable Scope: Variable scope.
   - Try Scope: Try statement or function.
+
+## Soundiness Statement
+
+This project has been done in the spirit of soundiness. When building practical program analyses, it is often necessary to cut corners. In order to be open about language features that we do not support or support only partially, we are attaching this soundiness statement.
+
+Our analysis does not have a fully sound handling of the following features:
+
+- eval
+- implicit conversions (==, valueOf, toString)
+- exceptions and flow related to that
+- prototype semantics
+
+We have determined that the unsoundness in our handling of these features has minimal effect on analysis output and the validity of our experimental evaluation. To the best of our knowledge, our analysis has a sound handling of all language features other than those listed above.
+
+This statement has been produced with the Soundiness Statement Generator from http://soundiness.org.
