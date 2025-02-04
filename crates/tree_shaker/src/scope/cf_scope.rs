@@ -24,7 +24,6 @@ pub enum CfScopeKind<'a> {
   Function,
   Loop,
   Switch,
-  If,
 
   Dependent,
   Indeterminate,
