@@ -56,7 +56,7 @@ jobs:
         pnpm test
       working-directory: ./tasks/test262
     - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3.2.1-node20
+      uses: actions/upload-artifact@v4
       with:
         name: Test262 result
         path: |
