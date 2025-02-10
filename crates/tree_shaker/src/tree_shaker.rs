@@ -78,7 +78,7 @@ impl<'a> TreeShaker<'a> {
     // Step 4: Generate output
     let codegen = CodeGenerator::new()
       .with_options(codegen_options.clone())
-      .with_mangler(minifier_return.and_then(|r| r.mangler));
+      .with_symbol_table(minifier_return.and_then(|r| r.symbol_table));
     let codegen_return = codegen.build(ast);
 
     TreeShakeReturn { codegen_return, diagnostics: self.0.diagnostics.take() }

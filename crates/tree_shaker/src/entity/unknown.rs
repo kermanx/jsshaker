@@ -131,7 +131,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 }
 
-impl<'a> UnknownEntity<'a> {
+impl UnknownEntity<'_> {
   pub fn new() -> Self {
     Self::default()
   }

@@ -30,7 +30,7 @@ pub struct Prototype<'a> {
   symbol_keyed: FxHashMap<SymbolId, Entity<'a>>,
 }
 
-impl<'a> fmt::Debug for Prototype<'a> {
+impl fmt::Debug for Prototype<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.write_str(format!("Prototype({})", self.name).as_str())
   }

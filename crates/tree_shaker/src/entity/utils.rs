@@ -27,9 +27,12 @@ impl<'a, T: 'a + Copy> UnionLike<'a, T> for Vec<T> {
   fn len(&self) -> usize {
     self.len()
   }
-  type Iter<'b> = Copied<slice::Iter<'b, T>>
+  type Iter<'b>
+    = Copied<slice::Iter<'b, T>>
   where
-    Self: 'b, 'a: 'b, T: 'b;
+    Self: 'b,
+    'a: 'b,
+    T: 'b;
   fn iter<'b>(&'b self) -> Self::Iter<'b>
   where
     'a: 'b,
@@ -45,9 +48,12 @@ impl<'a, T: 'a + Copy> UnionLike<'a, T> for (T, T) {
   fn len(&self) -> usize {
     2
   }
-  type Iter<'b> = array::IntoIter<T, 2>
+  type Iter<'b>
+    = array::IntoIter<T, 2>
   where
-    Self: 'b, 'a: 'b, T: 'b;
+    Self: 'b,
+    'a: 'b,
+    T: 'b;
   fn iter<'b>(&'b self) -> Self::Iter<'b>
   where
     'a: 'b,

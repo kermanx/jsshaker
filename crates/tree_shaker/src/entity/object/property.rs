@@ -21,7 +21,7 @@ pub struct ObjectProperty<'a> {
   pub mangling: Option<(Entity<'a>, MangleAtom)>,
 }
 
-impl<'a> Default for ObjectProperty<'a> {
+impl Default for ObjectProperty<'_> {
   fn default() -> Self {
     Self {
       definite: true,

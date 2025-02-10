@@ -13,12 +13,12 @@ pub struct ExhaustiveCallback<'a> {
   pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   pub once: bool,
 }
-impl<'a> PartialEq for ExhaustiveCallback<'a> {
+impl PartialEq for ExhaustiveCallback<'_> {
   fn eq(&self, other: &Self) -> bool {
     self.once == other.once && Rc::ptr_eq(&self.handler, &other.handler)
   }
 }
-impl<'a> Eq for ExhaustiveCallback<'a> {}
+impl Eq for ExhaustiveCallback<'_> {}
 impl Hash for ExhaustiveCallback<'_> {
   fn hash<H: Hasher>(&self, state: &mut H) {
     Rc::as_ptr(&self.handler).hash(state);

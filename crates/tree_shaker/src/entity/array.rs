@@ -22,7 +22,7 @@ pub struct ArrayEntity<'a> {
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
 
-impl<'a> fmt::Debug for ArrayEntity<'a> {
+impl fmt::Debug for ArrayEntity<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("ArrayEntity")
       .field("consumed", &self.consumed.get())

@@ -7,6 +7,7 @@ use crate::{analyzer::Analyzer, entity::EntityFactory};
 pub use collector::*;
 pub use lazy::*;
 use once::OnceConsumable;
+use oxc::allocator;
 use std::fmt::Debug;
 
 pub trait ConsumableTrait<'a>: Debug {
@@ -16,7 +17,7 @@ pub trait ConsumableTrait<'a>: Debug {
 #[derive(Debug, Clone, Copy)]
 pub struct Consumable<'a>(pub &'a (dyn ConsumableTrait<'a> + 'a));
 
-pub type ConsumableVec<'a> = Vec<Consumable<'a>>;
+pub type ConsumableVec<'a> = allocator::Vec<'a, Consumable<'a>>;
 
 impl<'a> EntityFactory<'a> {
   pub fn consumable_no_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {

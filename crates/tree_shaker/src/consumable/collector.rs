@@ -1,10 +1,11 @@
 use super::{Consumable, ConsumableTrait};
 use crate::{analyzer::Analyzer, entity::EntityFactory};
+use oxc::allocator;
 use std::mem;
 
 #[derive(Debug)]
 pub struct ConsumableCollector<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>> {
-  pub current: Vec<T>,
+  pub current: allocator::Vec<'a, T>,
   pub node: Option<Consumable<'a>>,
 }
 
@@ -15,7 +16,7 @@ impl<'a, T: ConsumableTrait<'a> + 'a> Default for ConsumableCollector<'a, T> {
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
-  pub fn new(current: Vec<T>) -> Self {
+  pub fn new(current: allocator::Vec<T>) -> Self {
     Self { current, node: None }
   }
 

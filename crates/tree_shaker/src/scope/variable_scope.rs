@@ -35,7 +35,7 @@ impl fmt::Debug for VariableScope<'_> {
   }
 }
 
-impl<'a> VariableScope<'a> {
+impl VariableScope<'_> {
   pub fn new() -> Self {
     Self::default()
   }
