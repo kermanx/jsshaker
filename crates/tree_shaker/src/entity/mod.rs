@@ -6,7 +6,6 @@ mod collected;
 mod collector;
 mod computed;
 mod consumed_object;
-mod entity;
 mod factory;
 mod function;
 mod literal;
