@@ -1,15 +1,17 @@
 use crate::{
+  builtins::Prototype,
   consumable::{Consumable, LazyConsumable},
   TreeShakeConfig,
 };
 
 use super::{
-  arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
-  UnknownEntity,
+  arguments::ArgumentsEntity, Entity, LiteralEntity, ObjectEntity, PrimitiveEntity,
+  PureBuiltinFnEntity, UnknownEntity,
 };
 use oxc::allocator::Allocator;
-use std::cell::{Cell, RefCell};
+use oxc::semantic::{ScopeId, SymbolId};
 
+use std::cell::{Cell, RefCell};
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,
   instance_id_counter: Cell<usize>,
@@ -122,5 +124,24 @@ impl<'a> EntityFactory<'a> {
     let id = self.instance_id_counter.get();
     self.instance_id_counter.set(id + 1);
     id
+  }
+
+  pub fn builtin_object(
+    &self,
+    object_id: SymbolId,
+    prototype: &'a Prototype<'a>,
+    consumable: bool,
+  ) -> &'a mut ObjectEntity<'a> {
+    self.alloc(ObjectEntity {
+      consumable,
+      consumed: Cell::new(false),
+      cf_scope: ScopeId::new(0),
+      object_id,
+      string_keyed: Default::default(),
+      unknown_keyed: Default::default(),
+      rest: Default::default(),
+      prototype,
+      mangling_group: None,
+    })
   }
 }
