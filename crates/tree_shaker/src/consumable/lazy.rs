@@ -1,5 +1,5 @@
 use super::{Consumable, ConsumableTrait, ConsumableVec};
-use crate::{analyzer::Analyzer, entity::EntityFactory};
+use crate::analyzer::Analyzer;
 use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy)]

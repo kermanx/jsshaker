@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  ObjectEntity, TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectEntity,
+  TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use oxc::{ast::ast::Class, semantic::ScopeId};
