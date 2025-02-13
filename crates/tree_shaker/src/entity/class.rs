@@ -8,10 +8,10 @@ use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug)]
 pub struct ClassEntity<'a> {
-  consumed: Cell<bool>,
+  pub consumed: Cell<bool>,
   pub node: &'a Class<'a>,
   pub keys: Vec<Option<Entity<'a>>>,
-  statics: &'a ObjectEntity<'a>,
+  pub statics: &'a ObjectEntity<'a>,
   pub super_class: Option<Entity<'a>>,
   pub variable_scope_stack: Rc<Vec<ScopeId>>,
 }
@@ -153,25 +153,5 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn class(
-    &self,
-    node: &'a Class<'a>,
-    keys: Vec<Option<Entity<'a>>>,
-    variable_scope_stack: Vec<ScopeId>,
-    super_class: Option<Entity<'a>>,
-    statics: &'a ObjectEntity<'a>,
-  ) -> Entity<'a> {
-    self.alloc(ClassEntity {
-      consumed: Cell::new(false),
-      node,
-      keys,
-      statics,
-      variable_scope_stack: Rc::new(variable_scope_stack),
-      super_class,
-    })
   }
 }

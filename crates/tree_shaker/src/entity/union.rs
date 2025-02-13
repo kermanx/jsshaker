@@ -1,13 +1,8 @@
 use super::{
-  consumed_object, utils::UnionLike, Entity, EntityFactory, EntityTrait, EnumeratedProperties,
-  IteratedElements, LiteralEntity, TypeofResult,
+  consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
+  LiteralEntity, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-  scope::CfScopeKind,
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, consumable::Consumable, scope::CfScopeKind, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{cell::Cell, fmt::Debug};
 
@@ -15,8 +10,8 @@ use std::{cell::Cell, fmt::Debug};
 pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
   /// Possible values
   pub values: V,
-  consumed: Cell<bool>,
-  phantom: std::marker::PhantomData<&'a ()>,
+  pub consumed: Cell<bool>,
+  pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
 impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
@@ -221,42 +216,5 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
       }
     }
     Some(result)
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn try_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(
-    &self,
-    values: V,
-  ) -> Option<Entity<'a>> {
-    match values.len() {
-      0 => None,
-      1 => Some(values.iter().next().unwrap()),
-      _ => Some(self.alloc(UnionEntity {
-        values,
-        consumed: Cell::new(false),
-        phantom: std::marker::PhantomData,
-      })),
-    }
-  }
-
-  pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
-    self.try_union(values).unwrap()
-  }
-
-  pub fn optional_union(&self, a: Entity<'a>, b: Option<Entity<'a>>) -> Entity<'a> {
-    if let Some(b) = b {
-      self.union((a, b))
-    } else {
-      a
-    }
-  }
-
-  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
-    &self,
-    values: Vec<Entity<'a>>,
-    dep: T,
-  ) -> Entity<'a> {
-    self.computed(self.union(values), dep)
   }
 }

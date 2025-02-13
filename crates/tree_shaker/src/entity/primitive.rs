@@ -187,25 +187,3 @@ impl<'a> PrimitiveEntity {
     }
   }
 }
-
-macro_rules! unknown_entity_ctors {
-  ($($name:ident -> $var:ident,)*) => {
-    $(
-      #[allow(unused)]
-      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
-        self.computed(self.$var, dep)
-      }
-    )*
-  };
-}
-
-impl<'a> EntityFactory<'a> {
-  unknown_entity_ctors! {
-    computed_unknown_primitive -> unknown_primitive,
-    computed_unknown_boolean -> unknown_boolean,
-    computed_unknown_number -> unknown_number,
-    computed_unknown_string -> unknown_string,
-    computed_unknown_bigint -> unknown_bigint,
-    computed_unknown_symbol -> unknown_symbol,
-  }
-}

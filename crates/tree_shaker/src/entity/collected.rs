@@ -1,6 +1,5 @@
 use super::{
-  Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
@@ -8,9 +7,9 @@ use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct CollectedEntity<'a> {
-  val: Entity<'a>,
-  deps: &'a RefCell<Vec<Entity<'a>>>,
-  consumed: Cell<bool>,
+  pub val: Entity<'a>,
+  pub deps: &'a RefCell<Vec<Entity<'a>>>,
+  pub consumed: Cell<bool>,
 }
 
 impl<'a> EntityTrait<'a> for CollectedEntity<'a> {
@@ -163,11 +162,5 @@ impl<'a> CollectedEntity<'a> {
     for entity in self.deps.take() {
       entity.consume_mangable(analyzer);
     }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn collected(&self, val: Entity<'a>, collected: &'a RefCell<Vec<Entity<'a>>>) -> Entity<'a> {
-    self.alloc(CollectedEntity { val, deps: collected, consumed: Cell::new(false) })
   }
 }

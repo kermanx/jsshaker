@@ -22,9 +22,3 @@ impl<'a> LazyConsumable<'a> {
     }
   }
 }
-
-impl<'a> EntityFactory<'a> {
-  pub fn new_lazy_consumable(&self, consumable: Consumable<'a>) -> LazyConsumable<'a> {
-    LazyConsumable(self.alloc(RefCell::new(Some(vec![consumable]))))
-  }
-}

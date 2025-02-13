@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -496,47 +495,5 @@ impl<'a> LiteralEntity<'a> {
       }
       _ => val,
     }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, None))
-  }
-
-  pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, Some(atom)))
-  }
-
-  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
-    self.alloc(LiteralEntity::Number(value.into(), str_rep))
-  }
-
-  pub fn big_int(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::BigInt(value))
-  }
-
-  pub fn boolean(&self, value: bool) -> Entity<'a> {
-    if value {
-      self.r#true
-    } else {
-      self.r#false
-    }
-  }
-
-  pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
-    if let Some(value) = value {
-      self.boolean(value)
-    } else {
-      self.unknown_boolean
-    }
-  }
-
-  pub fn infinity(&self, positive: bool) -> Entity<'a> {
-    self.alloc(LiteralEntity::Infinity(positive))
-  }
-
-  pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::Symbol(id, str_rep))
   }
 }

@@ -171,9 +171,9 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Ent
 #[derive(Clone, Copy)]
 pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
   #[cfg(feature = "flame")]
-  name: &'static str,
-  implementation: F,
-  object: Option<&'a ObjectEntity<'a>>,
+  pub name: &'static str,
+  pub implementation: F,
+  pub object: Option<&'a ObjectEntity<'a>>,
 }
 
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEntity<'a, F> {
@@ -200,21 +200,6 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
     args: Entity<'a>,
   ) -> Entity<'a> {
     (self.implementation)(analyzer, dep, this, args)
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
-    &self,
-    name: &'static str,
-    implementation: F,
-  ) -> Entity<'a> {
-    self.alloc(ImplementedBuiltinFnEntity {
-      #[cfg(feature = "flame")]
-      name,
-      implementation,
-      object: None,
-    })
   }
 }
 
