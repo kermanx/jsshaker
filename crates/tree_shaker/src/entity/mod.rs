@@ -21,6 +21,10 @@ mod union;
 mod unknown;
 mod utils;
 
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+};
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use class::ClassEntity;
 pub use collector::LiteralCollector;
@@ -29,15 +33,11 @@ pub use literal::LiteralEntity;
 pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 pub use operations::EntityOpHost;
 pub use primitive::PrimitiveEntity;
-pub use typeof_result::TypeofResult;
-pub use unknown::UnknownEntity;
-
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
 use rustc_hash::FxHashSet;
 use std::{cmp::Ordering, fmt::Debug};
+pub use typeof_result::TypeofResult;
+pub use unknown::UnknownEntity;
+pub use utils::*;
 
 /// (vec![(definite, key, value)], dep)
 pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consumable<'a>);

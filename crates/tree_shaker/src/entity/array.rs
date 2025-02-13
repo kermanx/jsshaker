@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  LiteralEntity, TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
+  TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -14,10 +14,10 @@ use std::{
 };
 
 pub struct ArrayEntity<'a> {
-  consumed: Cell<bool>,
+  pub consumed: Cell<bool>,
   pub deps: RefCell<ConsumableCollector<'a>>,
-  cf_scope: ScopeId,
-  object_id: SymbolId,
+  pub cf_scope: ScopeId,
+  pub object_id: SymbolId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
@@ -377,19 +377,6 @@ impl<'a> ArrayEntity<'a> {
     } else {
       None
     }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
-    self.alloc(ArrayEntity {
-      consumed: Cell::new(false),
-      deps: Default::default(),
-      cf_scope,
-      object_id,
-      elements: RefCell::new(Vec::new()),
-      rest: RefCell::new(Vec::new()),
-    })
   }
 }
 

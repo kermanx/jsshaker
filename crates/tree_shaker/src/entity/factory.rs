@@ -1,15 +1,33 @@
 use crate::{
-  consumable::{Consumable, LazyConsumable},
+  builtins::Prototype,
+  consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
+  mangling::{MangleAtom, MangleConstraint, ManglingDep},
+  utils::F64WithEq,
   TreeShakeConfig,
 };
 
 use super::{
-  arguments::ArgumentsEntity, Entity, LiteralEntity, PrimitiveEntity, PureBuiltinFnEntity,
+  arguments::ArgumentsEntity,
+  array::ArrayEntity,
+  builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity},
+  collected::CollectedEntity,
+  computed::ComputedEntity,
+  logical_result::LogicalResultEntity,
+  react_element::ReactElementEntity,
+  union::UnionEntity,
+  utils::UnionLike,
+  ClassEntity, Entity, LiteralEntity, ObjectEntity, PrimitiveEntity, PureBuiltinFnEntity,
   UnknownEntity,
 };
-use oxc::allocator::Allocator;
-use std::cell::{Cell, RefCell};
+use oxc::semantic::{ScopeId, SymbolId};
+use oxc::{allocator::Allocator, ast::ast::Class};
+use oxc_syntax::operator::LogicalOperator;
 
+use std::{
+  cell::{Cell, RefCell},
+  fmt::Debug,
+  rc::Rc,
+};
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,
   instance_id_counter: Cell<usize>,
@@ -122,5 +140,265 @@ impl<'a> EntityFactory<'a> {
     let id = self.instance_id_counter.get();
     self.instance_id_counter.set(id + 1);
     id
+  }
+
+  pub fn builtin_object(
+    &self,
+    object_id: SymbolId,
+    prototype: &'a Prototype<'a>,
+    consumable: bool,
+  ) -> &'a mut ObjectEntity<'a> {
+    self.alloc(ObjectEntity {
+      consumable,
+      consumed: Cell::new(false),
+      cf_scope: ScopeId::new(0),
+      object_id,
+      string_keyed: Default::default(),
+      unknown_keyed: Default::default(),
+      rest: Default::default(),
+      prototype,
+      mangling_group: None,
+    })
+  }
+
+  pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
+    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
+  }
+
+  pub fn array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+    self.alloc(ArrayEntity {
+      consumed: Cell::new(false),
+      deps: Default::default(),
+      cf_scope,
+      object_id,
+      elements: RefCell::new(Vec::new()),
+      rest: RefCell::new(Vec::new()),
+    })
+  }
+
+  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    name: &'static str,
+    implementation: F,
+  ) -> Entity<'a> {
+    self.alloc(ImplementedBuiltinFnEntity {
+      #[cfg(feature = "flame")]
+      name,
+      implementation,
+      object: None,
+    })
+  }
+
+  pub fn class(
+    &self,
+    node: &'a Class<'a>,
+    keys: Vec<Option<Entity<'a>>>,
+    variable_scope_stack: Vec<ScopeId>,
+    super_class: Option<Entity<'a>>,
+    statics: &'a ObjectEntity<'a>,
+  ) -> Entity<'a> {
+    self.alloc(ClassEntity {
+      consumed: Cell::new(false),
+      node,
+      keys,
+      statics,
+      variable_scope_stack: Rc::new(variable_scope_stack),
+      super_class,
+    })
+  }
+
+  pub fn collected(&self, val: Entity<'a>, collected: &'a RefCell<Vec<Entity<'a>>>) -> Entity<'a> {
+    self.alloc(CollectedEntity { val, deps: collected, consumed: Cell::new(false) })
+  }
+
+  pub fn computed<T: ConsumableTrait<'a> + Copy + 'a>(
+    &self,
+    val: Entity<'a>,
+    dep: T,
+  ) -> Entity<'a> {
+    self.alloc(ComputedEntity { val, dep, consumed: Cell::new(false) })
+  }
+
+  pub fn consumable_no_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
+    Consumable(self.alloc(dep))
+  }
+
+  pub fn consumable_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
+    self.consumable_no_once(OnceConsumable::new(dep))
+  }
+
+  pub fn consumable(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
+    self.consumable_once(dep)
+  }
+
+  pub fn optional_computed(
+    &self,
+    val: Entity<'a>,
+    dep: Option<impl ConsumableTrait<'a> + Copy + 'a>,
+  ) -> Entity<'a> {
+    match dep {
+      Some(dep) => self.computed(val, dep),
+      None => val,
+    }
+  }
+
+  pub fn string(&self, value: &'a str) -> Entity<'a> {
+    self.alloc(LiteralEntity::String(value, None))
+  }
+
+  pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
+    self.alloc(LiteralEntity::String(value, Some(atom)))
+  }
+
+  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
+    self.alloc(LiteralEntity::Number(value.into(), str_rep))
+  }
+  pub fn big_int(&self, value: &'a str) -> Entity<'a> {
+    self.alloc(LiteralEntity::BigInt(value))
+  }
+
+  pub fn boolean(&self, value: bool) -> Entity<'a> {
+    if value {
+      self.r#true
+    } else {
+      self.r#false
+    }
+  }
+  pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
+    if let Some(value) = value {
+      self.boolean(value)
+    } else {
+      self.unknown_boolean
+    }
+  }
+
+  pub fn infinity(&self, positivie: bool) -> Entity<'a> {
+    self.alloc(LiteralEntity::Infinity(positivie))
+  }
+
+  pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
+    self.alloc(LiteralEntity::Symbol(id, str_rep))
+  }
+
+  /// Only used when (maybe_left, maybe_right) == (true, true)
+  pub fn logical_result(
+    &self,
+    left: Entity<'a>,
+    right: Entity<'a>,
+    operator: LogicalOperator,
+  ) -> &'a mut LogicalResultEntity<'a> {
+    self.alloc(LogicalResultEntity {
+      value: self.union((left, right)),
+      is_coalesce: operator == LogicalOperator::Coalesce,
+      result: match operator {
+        LogicalOperator::Or => match right.test_truthy() {
+          Some(true) => Some(true),
+          _ => None,
+        },
+        LogicalOperator::And => match right.test_truthy() {
+          Some(false) => Some(false),
+          _ => None,
+        },
+        LogicalOperator::Coalesce => match right.test_nullish() {
+          Some(true) => Some(true),
+          _ => None,
+        },
+      },
+    })
+  }
+
+  pub fn try_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(
+    &self,
+    values: V,
+  ) -> Option<Entity<'a>> {
+    match values.len() {
+      0 => None,
+      1 => Some(values.iter().next().unwrap()),
+      _ => Some(self.alloc(UnionEntity {
+        values,
+        consumed: Cell::new(false),
+        phantom: std::marker::PhantomData,
+      })),
+    }
+  }
+
+  pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
+    self.try_union(values).unwrap()
+  }
+
+  pub fn optional_union(
+    &self,
+    entity: Entity<'a>,
+    entity_option: Option<Entity<'a>>,
+  ) -> Entity<'a> {
+    if let Some(entity_option) = entity_option {
+      self.union((entity, entity_option))
+    } else {
+      entity
+    }
+  }
+
+  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
+    &self,
+    values: Vec<Entity<'a>>,
+    dep: T,
+  ) -> Entity<'a> {
+    self.computed(self.union(values), dep)
+  }
+
+  pub fn unknown(&self) -> Entity<'a> {
+    self.immutable_unknown
+  }
+
+  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + Copy + 'a) -> Entity<'a> {
+    self.computed(self.immutable_unknown, dep)
+  }
+
+  pub fn new_lazy_consumable(&self, consumable: Consumable<'a>) -> LazyConsumable<'a> {
+    LazyConsumable(self.alloc(RefCell::new(Some(vec![consumable]))))
+  }
+
+  pub fn react_element(
+    &self,
+    tag: Entity<'a>,
+    props: Entity<'a>,
+  ) -> &'a mut ReactElementEntity<'a> {
+    self.alloc(ReactElementEntity {
+      consumed: Cell::new(false),
+      tag,
+      props,
+      deps: RefCell::new(vec![]),
+    })
+  }
+
+  pub fn mangable(
+    &self,
+    val: Entity<'a>,
+    deps: (Entity<'a>, Entity<'a>),
+    constraint: &'a MangleConstraint,
+  ) -> Entity<'a> {
+    self.computed(val, ManglingDep { deps, constraint })
+  }
+}
+
+macro_rules! unknown_entity_ctors {
+  ($($name:ident -> $var:ident,)*) => {
+    $(
+      #[allow(unused)]
+      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
+        self.computed(self.$var, dep)
+      }
+    )*
+  };
+}
+
+impl<'a> EntityFactory<'a> {
+  unknown_entity_ctors! {
+    computed_unknown_primitive -> unknown_primitive,
+    computed_unknown_boolean -> unknown_boolean,
+    computed_unknown_number -> unknown_number,
+    computed_unknown_string -> unknown_string,
+    computed_unknown_bigint -> unknown_bigint,
+    computed_unknown_symbol -> unknown_symbol,
   }
 }

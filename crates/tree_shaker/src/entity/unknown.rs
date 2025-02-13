@@ -1,11 +1,7 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
@@ -134,15 +130,5 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
 impl<'a> UnknownEntity<'a> {
   pub fn new() -> Self {
     Self::default()
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn unknown(&self) -> Entity<'a> {
-    self.immutable_unknown
-  }
-
-  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + Copy + 'a) -> Entity<'a> {
-    self.computed(self.immutable_unknown, dep)
   }
 }

@@ -1,13 +1,12 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;
 
 #[derive(Debug, Default)]
 pub struct ArgumentsEntity<'a> {
-  consumed: Cell<bool>,
+  pub consumed: Cell<bool>,
   pub arguments: Vec<(bool, Entity<'a>)>,
 }
 
@@ -152,11 +151,5 @@ impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     unreachable!()
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
   }
 }

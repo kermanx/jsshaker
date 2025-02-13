@@ -1,8 +1,4 @@
-use oxc::ast::ast::LogicalOperator;
-
-use super::{
-  Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
-};
+use super::{Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug, Clone)]
@@ -136,34 +132,5 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     } else {
       self.value.test_nullish()
     }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  /// Only used when (maybe_left, maybe_right) == (true, true)
-  pub fn logical_result(
-    &self,
-    left: Entity<'a>,
-    right: Entity<'a>,
-    operator: LogicalOperator,
-  ) -> &'a mut LogicalResultEntity<'a> {
-    self.alloc(LogicalResultEntity {
-      value: self.union((left, right)),
-      is_coalesce: operator == LogicalOperator::Coalesce,
-      result: match operator {
-        LogicalOperator::Or => match right.test_truthy() {
-          Some(true) => Some(true),
-          _ => None,
-        },
-        LogicalOperator::And => match right.test_truthy() {
-          Some(false) => Some(false),
-          _ => None,
-        },
-        LogicalOperator::Coalesce => match right.test_nullish() {
-          Some(false) => Some(false),
-          _ => None,
-        },
-      },
-    })
   }
 }

@@ -1,5 +1,5 @@
 use super::{Consumable, ConsumableTrait, ConsumableVec};
-use crate::{analyzer::Analyzer, entity::EntityFactory};
+use crate::analyzer::Analyzer;
 use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy)]
@@ -20,11 +20,5 @@ impl<'a> LazyConsumable<'a> {
       drop(consumables_ref);
       analyzer.consume(consumable);
     }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn new_lazy_consumable(&self, consumable: Consumable<'a>) -> LazyConsumable<'a> {
-    LazyConsumable(self.alloc(RefCell::new(Some(vec![consumable]))))
   }
 }

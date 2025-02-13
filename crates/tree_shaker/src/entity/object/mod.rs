@@ -6,8 +6,8 @@ mod property;
 mod set;
 
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  LiteralEntity, TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
+  TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -28,10 +28,10 @@ type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 pub struct ObjectEntity<'a> {
   /// A built-in object is usually non-consumable
   pub consumable: bool,
-  consumed: Cell<bool>,
+  pub consumed: Cell<bool>,
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
-  cf_scope: ScopeId,
+  pub cf_scope: ScopeId,
   pub object_id: SymbolId,
   pub prototype: &'a Prototype<'a>,
   /// `None` if not mangable
@@ -272,27 +272,5 @@ impl<'a> Analyzer<'a> {
       .load_data::<Option<ObjectManglingGroupId>>(dep_id)
       .get_or_insert_with(|| self.new_object_mangling_group());
     self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group))
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn builtin_object(
-    &self,
-    object_id: SymbolId,
-    prototype: &'a Prototype<'a>,
-    consumable: bool,
-  ) -> &'a mut ObjectEntity<'a> {
-    self.alloc(ObjectEntity {
-      consumable,
-      consumed: Cell::new(false),
-      // deps: Default::default(),
-      cf_scope: ScopeId::new(0),
-      object_id,
-      string_keyed: Default::default(),
-      unknown_keyed: Default::default(),
-      rest: Default::default(),
-      prototype,
-      mangling_group: None,
-    })
   }
 }

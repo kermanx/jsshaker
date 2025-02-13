@@ -1,16 +1,15 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct ReactElementEntity<'a> {
-  consumed: Cell<bool>,
-  tag: Entity<'a>,
-  props: Entity<'a>,
-  deps: RefCell<Vec<Consumable<'a>>>,
+  pub consumed: Cell<bool>,
+  pub tag: Entity<'a>,
+  pub props: Entity<'a>,
+  pub deps: RefCell<Vec<Consumable<'a>>>,
 }
 
 impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
@@ -152,20 +151,5 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     None
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn react_element(
-    &self,
-    tag: Entity<'a>,
-    props: Entity<'a>,
-  ) -> &'a mut ReactElementEntity<'a> {
-    self.alloc(ReactElementEntity {
-      consumed: Cell::new(false),
-      tag,
-      props,
-      deps: RefCell::new(vec![]),
-    })
   }
 }

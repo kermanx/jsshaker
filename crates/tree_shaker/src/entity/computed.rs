@@ -1,6 +1,5 @@
 use super::{
-  Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -12,9 +11,9 @@ use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct ComputedEntity<'a, T: ConsumableTrait<'a> + Copy + 'a> {
-  val: Entity<'a>,
-  dep: T,
-  consumed: Cell<bool>,
+  pub val: Entity<'a>,
+  pub dep: T,
+  pub consumed: Cell<bool>,
 }
 
 impl<'a, T: ConsumableTrait<'a> + Copy + 'a> EntityTrait<'a> for ComputedEntity<'a, T> {
@@ -161,27 +160,6 @@ impl<'a, T: ConsumableTrait<'a> + Copy + 'a> ComputedEntity<'a, T> {
       val
     } else {
       analyzer.factory.computed(val, self.dep)
-    }
-  }
-}
-
-impl<'a> EntityFactory<'a> {
-  pub fn computed<T: ConsumableTrait<'a> + Copy + 'a>(
-    &self,
-    val: Entity<'a>,
-    dep: T,
-  ) -> Entity<'a> {
-    self.alloc(ComputedEntity { val, dep, consumed: Cell::new(false) })
-  }
-
-  pub fn optional_computed(
-    &self,
-    val: Entity<'a>,
-    dep: Option<impl ConsumableTrait<'a> + Copy + 'a>,
-  ) -> Entity<'a> {
-    match dep {
-      Some(dep) => self.computed(val, dep),
-      None => val,
     }
   }
 }

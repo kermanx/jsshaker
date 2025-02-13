@@ -1,6 +1,5 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -185,27 +184,5 @@ impl<'a> PrimitiveEntity {
       PrimitiveEntity::Symbol => &analyzer.builtins.prototypes.symbol,
       PrimitiveEntity::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
-  }
-}
-
-macro_rules! unknown_entity_ctors {
-  ($($name:ident -> $var:ident,)*) => {
-    $(
-      #[allow(unused)]
-      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
-        self.computed(self.$var, dep)
-      }
-    )*
-  };
-}
-
-impl<'a> EntityFactory<'a> {
-  unknown_entity_ctors! {
-    computed_unknown_primitive -> unknown_primitive,
-    computed_unknown_boolean -> unknown_boolean,
-    computed_unknown_number -> unknown_number,
-    computed_unknown_string -> unknown_string,
-    computed_unknown_bigint -> unknown_bigint,
-    computed_unknown_symbol -> unknown_symbol,
   }
 }
