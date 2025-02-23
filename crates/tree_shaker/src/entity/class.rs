@@ -38,9 +38,7 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     if self.consumed.get() {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
-    if analyzer.entity_op.strict_eq(analyzer, key, analyzer.factory.string("prototype")).0
-      != Some(false)
-    {
+    if analyzer.op_strict_eq(key, analyzer.factory.string("prototype")).0 != Some(false) {
       self.consume(analyzer);
       return consumed_object::get_property(self, analyzer, dep, key);
     }

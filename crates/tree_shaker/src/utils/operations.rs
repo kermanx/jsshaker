@@ -1,27 +1,18 @@
-use super::{Entity, LiteralEntity, TypeofResult};
-use crate::{analyzer::Analyzer, mangling::MangleConstraint};
-use oxc::{
-  allocator::Allocator,
-  ast::ast::{BinaryOperator, UpdateOperator},
+use crate::{
+  analyzer::Analyzer,
+  entity::{Entity, LiteralEntity, TypeofResult},
+  mangling::MangleConstraint,
 };
+use oxc::ast::ast::{BinaryOperator, UpdateOperator};
 use oxc_ecmascript::ToInt32;
 
-pub struct EntityOpHost<'a> {
-  allocator: &'a Allocator,
-}
-
-impl<'a> EntityOpHost<'a> {
-  pub fn new(allocator: &'a Allocator) -> Self {
-    Self { allocator }
-  }
-
-  pub fn eq(
+impl<'a> Analyzer<'a> {
+  pub fn op_eq(
     &self,
-    analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
-    if let (Some(true), m) = self.strict_eq(analyzer, lhs, rhs) {
+    if let (Some(true), m) = self.op_strict_eq(lhs, rhs) {
       return (Some(true), m);
     }
 
@@ -32,19 +23,17 @@ impl<'a> EntityOpHost<'a> {
     (None, None)
   }
 
-  pub fn neq(
+  pub fn op_neq(
     &self,
-    analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
-    let (eq, m) = self.eq(analyzer, lhs, rhs);
+    let (eq, m) = self.op_eq(lhs, rhs);
     (eq.map(|v| !v), m.map(MangleConstraint::negate_equality))
   }
 
-  pub fn strict_eq(
+  pub fn op_strict_eq(
     &self,
-    analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
@@ -59,8 +48,8 @@ impl<'a> EntityOpHost<'a> {
       return (Some(false), None);
     }
 
-    let lhs_lit = lhs.get_to_literals(analyzer);
-    let rhs_lit = rhs.get_to_literals(analyzer);
+    let lhs_lit = lhs.get_to_literals(self);
+    let rhs_lit = rhs.get_to_literals(self);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = *lhs_lit.iter().next().unwrap();
@@ -95,23 +84,16 @@ impl<'a> EntityOpHost<'a> {
     (None, None)
   }
 
-  pub fn strict_neq(
+  pub fn op_strict_neq(
     &self,
-    analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
-    let (eq, m) = self.strict_eq(analyzer, lhs, rhs);
+    let (eq, m) = self.op_strict_eq(lhs, rhs);
     (eq.map(|v| !v), m.map(MangleConstraint::negate_equality))
   }
 
-  pub fn lt(
-    &self,
-    analyzer: &Analyzer<'a>,
-    lhs: Entity<'a>,
-    rhs: Entity<'a>,
-    eq: bool,
-  ) -> Option<bool> {
+  pub fn op_lt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
     fn literal_lt(lhs: &LiteralEntity, rhs: &LiteralEntity, eq: bool) -> Option<bool> {
       match (lhs, rhs) {
         (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => {
@@ -135,7 +117,7 @@ impl<'a> EntityOpHost<'a> {
       }
     }
 
-    if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(analyzer), rhs.get_to_literals(analyzer)) {
+    if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(self), rhs.get_to_literals(self)) {
       let mut result = None;
       for lhs in lhs.iter() {
         for rhs in rhs.iter() {
@@ -159,17 +141,11 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
-  pub fn gt(
-    &self,
-    analyzer: &Analyzer<'a>,
-    lhs: Entity<'a>,
-    rhs: Entity<'a>,
-    eq: bool,
-  ) -> Option<bool> {
-    self.lt(analyzer, rhs, lhs, eq)
+  pub fn op_gt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
+    self.op_lt(rhs, lhs, eq)
   }
 
-  pub fn instanceof(&self, lhs: Entity<'a>, _rhs: Entity<'a>) -> Option<bool> {
+  pub fn op_instanceof(&self, lhs: Entity<'a>, _rhs: Entity<'a>) -> Option<bool> {
     if (TypeofResult::String
       | TypeofResult::Number
       | TypeofResult::BigInt
@@ -185,11 +161,11 @@ impl<'a> EntityOpHost<'a> {
     }
   }
 
-  pub fn add(&self, analyzer: &Analyzer<'a>, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
+  pub fn op_add(&self, lhs: Entity<'a>, rhs: Entity<'a>) -> Entity<'a> {
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
-    let lhs_lit = lhs.get_literal(analyzer);
-    let rhs_lit = rhs.get_literal(analyzer);
+    let lhs_lit = lhs.get_literal(self);
+    let rhs_lit = rhs.get_literal(self);
 
     let mut values = vec![];
 
@@ -207,90 +183,84 @@ impl<'a> EntityOpHost<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(analyzer.factory.number(val, None));
+            values.push(self.factory.number(val, None));
           }
           _ => {
-            values.push(analyzer.factory.nan);
+            values.push(self.factory.nan);
           }
         },
         _ => {
-          values.push(analyzer.factory.unknown_number);
+          values.push(self.factory.unknown_number);
         }
       }
     }
     if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
       // Possibly bigint
-      values.push(analyzer.factory.unknown_bigint);
+      values.push(self.factory.unknown_bigint);
     }
     if !lhs_t.difference(must_not_convert_to_str).is_empty()
       || !rhs_t.difference(must_not_convert_to_str).is_empty()
     {
-      let lhs_str = lhs.get_to_string(analyzer);
-      let rhs_str = rhs.get_to_string(analyzer);
+      let lhs_str = lhs.get_to_string(self);
+      let rhs_str = rhs.get_to_string(self);
 
-      let lhs_str_lit = lhs_str.get_literal(analyzer);
-      let rhs_str_lit = rhs_str.get_literal(analyzer);
+      let lhs_str_lit = lhs_str.get_literal(self);
+      let rhs_str_lit = rhs_str.get_literal(self);
 
       match (lhs_str_lit, rhs_str_lit) {
         (Some(LiteralEntity::String(l, _)), Some(LiteralEntity::String(r, _))) => {
           let val = l.to_string() + r;
-          values.push(analyzer.factory.string(self.allocator.alloc(val)));
+          values.push(self.factory.string(self.allocator.alloc(val)));
         }
         _ => {
-          values.push(analyzer.factory.unknown_string);
+          values.push(self.factory.unknown_string);
         }
       }
     }
 
-    let dep = analyzer.consumable((lhs, rhs));
+    let dep = self.consumable((lhs, rhs));
     if values.is_empty() {
       // TODO: throw warning
-      analyzer.factory.computed_unknown(dep)
+      self.factory.computed_unknown(dep)
     } else {
-      analyzer.factory.computed_union(values, dep)
+      self.factory.computed_union(values, dep)
     }
   }
 
-  fn numeric_op(
+  fn op_numeric(
     &self,
-    analyzer: &Analyzer<'a>,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
     calc: impl FnOnce(f64, f64) -> Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.factory.computed(
-      if let (Some(l), Some(r)) = (lhs.get_literal(analyzer), rhs.get_literal(analyzer)) {
+    self.factory.computed(
+      if let (Some(l), Some(r)) = (lhs.get_literal(self), rhs.get_literal(self)) {
         match (l, r) {
           (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => calc(l.0, r.0),
-          (LiteralEntity::NaN, _) | (_, LiteralEntity::NaN) => analyzer.factory.nan,
-          _ => analyzer.factory.unknown_primitive,
+          (LiteralEntity::NaN, _) | (_, LiteralEntity::NaN) => self.factory.nan,
+          _ => self.factory.unknown_primitive,
         }
       } else {
-        analyzer.factory.unknown_primitive
+        self.factory.unknown_primitive
       },
       (lhs, rhs),
     )
   }
 
-  pub fn update(
-    &self,
-    analyzer: &Analyzer<'a>,
-    input: Entity<'a>,
-    operator: UpdateOperator,
-  ) -> Entity<'a> {
+  pub fn op_update(&self, input: Entity<'a>, operator: UpdateOperator) -> Entity<'a> {
     let apply_update = |v: f64| {
       let val = match operator {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
       };
-      analyzer.factory.number(val, None)
+      self.factory.number(val, None)
     };
 
-    if let Some(num) = input.get_literal(analyzer).and_then(|lit| lit.to_number()) {
-      return analyzer.factory.computed(
+    if let Some(num) = input.get_literal(self).and_then(|lit| lit.to_number()) {
+      return self.factory.computed(
         match num {
           Some(num) => apply_update(num.0),
-          None => analyzer.factory.nan,
+          None => self.factory.nan,
         },
         input,
       );
@@ -300,27 +270,26 @@ impl<'a> EntityOpHost<'a> {
 
     let mut values = vec![];
     if input_t.contains(TypeofResult::BigInt) {
-      values.push(analyzer.factory.unknown_bigint);
+      values.push(self.factory.unknown_bigint);
     }
     if input_t.contains(TypeofResult::Number) {
-      values.push(analyzer.factory.unknown_number);
+      values.push(self.factory.unknown_number);
     }
 
     if values.is_empty() {
-      analyzer.factory.computed_unknown(input)
+      self.factory.computed_unknown(input)
     } else {
-      analyzer.factory.computed_union(values, input)
+      self.factory.computed_union(values, input)
     }
   }
 
-  pub fn binary_op(
+  pub fn op_binary(
     &self,
-    analyzer: &Analyzer<'a>,
     operator: BinaryOperator,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> Entity<'a> {
-    let factory = analyzer.factory;
+    let factory = self.factory;
 
     let to_result =
       |result: Option<bool>| factory.computed(factory.boolean_maybe_unknown(result), (lhs, rhs));
@@ -338,21 +307,21 @@ impl<'a> EntityOpHost<'a> {
     };
 
     match operator {
-      BinaryOperator::Equality => to_eq_result(self.eq(analyzer, lhs, rhs)),
-      BinaryOperator::Inequality => to_eq_result(self.neq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictEquality => to_eq_result(self.strict_eq(analyzer, lhs, rhs)),
-      BinaryOperator::StrictInequality => to_eq_result(self.strict_neq(analyzer, lhs, rhs)),
-      BinaryOperator::LessThan => to_result(self.lt(analyzer, lhs, rhs, false)),
-      BinaryOperator::LessEqualThan => to_result(self.lt(analyzer, lhs, rhs, true)),
-      BinaryOperator::GreaterThan => to_result(self.gt(analyzer, lhs, rhs, false)),
-      BinaryOperator::GreaterEqualThan => to_result(self.gt(analyzer, lhs, rhs, true)),
-      BinaryOperator::Addition => self.add(analyzer, lhs, rhs),
+      BinaryOperator::Equality => to_eq_result(self.op_eq(lhs, rhs)),
+      BinaryOperator::Inequality => to_eq_result(self.op_neq(lhs, rhs)),
+      BinaryOperator::StrictEquality => to_eq_result(self.op_strict_eq(lhs, rhs)),
+      BinaryOperator::StrictInequality => to_eq_result(self.op_strict_neq(lhs, rhs)),
+      BinaryOperator::LessThan => to_result(self.op_lt(lhs, rhs, false)),
+      BinaryOperator::LessEqualThan => to_result(self.op_lt(lhs, rhs, true)),
+      BinaryOperator::GreaterThan => to_result(self.op_gt(lhs, rhs, false)),
+      BinaryOperator::GreaterEqualThan => to_result(self.op_gt(lhs, rhs, true)),
+      BinaryOperator::Addition => self.op_add(lhs, rhs),
 
       BinaryOperator::Subtraction
       | BinaryOperator::Multiplication
       | BinaryOperator::Division
       | BinaryOperator::Remainder
-      | BinaryOperator::Exponential => self.numeric_op(analyzer, lhs, rhs, |l, r| {
+      | BinaryOperator::Exponential => self.op_numeric(lhs, rhs, |l, r| {
         let value = match operator {
           BinaryOperator::Subtraction => l - r,
           BinaryOperator::Multiplication => l * r,
@@ -377,7 +346,7 @@ impl<'a> EntityOpHost<'a> {
       BinaryOperator::ShiftLeft
       | BinaryOperator::ShiftRight
       | BinaryOperator::ShiftRightZeroFill => {
-        self.numeric_op(analyzer, lhs, rhs, |l, r| {
+        self.op_numeric(lhs, rhs, |l, r| {
           // https://github.com/oxc-project/oxc/blob/main/crates/oxc_ecmascript/src/constant_evaluation/mod.rs
           if l.fract() != 0.0 || r.fract() != 0.0 || !(0.0..32.0).contains(&r) {
             return factory.unknown_number;
@@ -401,7 +370,7 @@ impl<'a> EntityOpHost<'a> {
       }
 
       BinaryOperator::BitwiseOR | BinaryOperator::BitwiseXOR | BinaryOperator::BitwiseAnd => self
-        .numeric_op(analyzer, lhs, rhs, |l, r| {
+        .op_numeric(lhs, rhs, |l, r| {
           let l = l.to_int_32();
           let r = r.to_int_32();
           let value = match operator {
@@ -414,7 +383,7 @@ impl<'a> EntityOpHost<'a> {
         }),
 
       BinaryOperator::In => factory.computed_unknown_boolean((lhs, rhs)),
-      BinaryOperator::Instanceof => to_result(self.instanceof(lhs, rhs)),
+      BinaryOperator::Instanceof => to_result(self.op_instanceof(lhs, rhs)),
     }
   }
 }

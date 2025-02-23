@@ -6,7 +6,7 @@ impl<'a> Analyzer<'a> {
     let lhs = self.exec_expression(&node.left);
     let rhs = self.exec_expression(&node.right);
 
-    self.entity_op.binary_op(self, node.operator, lhs, rhs)
+    self.op_binary(node.operator, lhs, rhs)
   }
 }
 

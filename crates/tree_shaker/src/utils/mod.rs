@@ -8,6 +8,7 @@ mod escape_template_element_value;
 mod f64_with_eq;
 mod function_name;
 mod get_two_mut;
+mod operations;
 mod private_identifier_name;
 mod symbol_id;
 

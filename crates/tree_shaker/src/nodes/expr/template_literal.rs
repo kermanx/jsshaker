@@ -12,8 +12,8 @@ impl<'a> Analyzer<'a> {
       let expression = self.exec_expression(expression);
       let quasi =
         self.factory.string(node.quasis.get(index + 1).unwrap().value.cooked.as_ref().unwrap());
-      result = self.entity_op.add(self, result, expression);
-      result = self.entity_op.add(self, result, quasi);
+      result = self.op_add(result, expression);
+      result = self.op_add(result, quasi);
     }
     result
   }

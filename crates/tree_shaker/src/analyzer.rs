@@ -2,7 +2,7 @@ use crate::{
   ast::AstKind2,
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
-  entity::{Entity, EntityFactory, EntityOpHost},
+  entity::{Entity, EntityFactory},
   mangling::Mangler,
   scope::{
     conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
@@ -27,6 +27,7 @@ pub struct Analyzer<'a> {
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub factory: &'a EntityFactory<'a>,
+
   pub line_index: LineIndex,
   pub semantic: Semantic<'a>,
   pub span_stack: Vec<Span>,
@@ -40,7 +41,6 @@ pub struct Analyzer<'a> {
   pub scope_context: ScopeContext<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub builtins: Builtins<'a>,
-  pub entity_op: EntityOpHost<'a>,
 
   pub debug: usize,
 }
@@ -69,7 +69,6 @@ impl<'a> Analyzer<'a> {
       scope_context: ScopeContext::new(factory),
       pending_deps: Default::default(),
       builtins: Builtins::new(config, factory),
-      entity_op: EntityOpHost::new(allocator),
       debug: 0,
     }
   }

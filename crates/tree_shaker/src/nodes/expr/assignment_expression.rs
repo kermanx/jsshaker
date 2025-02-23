@@ -77,7 +77,7 @@ impl<'a> Analyzer<'a> {
     } else {
       let (lhs, cache) = self.exec_assignment_target_read(&node.left);
       let rhs = self.exec_expression(&node.right);
-      let value = self.entity_op.binary_op(self, to_binary_operator(node.operator), lhs, rhs);
+      let value = self.op_binary(to_binary_operator(node.operator), lhs, rhs);
       self.exec_assignment_target_write(&node.left, value, cache);
       value
     }

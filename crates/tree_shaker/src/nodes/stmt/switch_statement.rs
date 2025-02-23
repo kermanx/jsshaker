@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
         let test_val = self.exec_expression(test);
 
         // TODO: Support mangling
-        let (test_result, m) = self.entity_op.strict_eq(self, discriminant, test_val);
+        let (test_result, m) = self.op_strict_eq(discriminant, test_val);
         test_results.push(test_result);
 
         if test_result != Some(false) {
