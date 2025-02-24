@@ -44,6 +44,12 @@ impl<'a> VariableScope<'a> {
   pub fn new() -> Self {
     Self::default()
   }
+
+  pub fn new_with_this(this: Entity<'a>) -> Self {
+    let mut scope = Self::new();
+    scope.this = Some(this);
+    scope
+  }
 }
 
 impl<'a> Analyzer<'a> {

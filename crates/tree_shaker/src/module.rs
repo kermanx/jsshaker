@@ -14,7 +14,9 @@ use rustc_hash::FxHashMap;
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, ObjectEntity},
-  scope::{call_scope::CallScope, cf_scope::CfScope, CfScopeId, CfScopeKind},
+  scope::{
+    call_scope::CallScope, cf_scope::CfScope, variable_scope::VariableScope, CfScopeId, CfScopeKind,
+  },
   utils::{dep_id::DepId, CalleeInfo, CalleeNode},
 };
 
@@ -103,7 +105,8 @@ impl<'a> Analyzer<'a> {
 
     self.module_stack.push(module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
-    let root_variable_scope = self.push_variable_scope();
+    let root_variable_scope =
+      self.scope_context.variable.push(VariableScope::new_with_this(self.factory.unknown()));
     self.scope_context.call.push(CallScope::new(
       call_id,
       CalleeInfo {

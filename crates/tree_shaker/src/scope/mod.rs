@@ -39,6 +39,7 @@ pub struct ScopeContext<'a> {
 impl<'a> ScopeContext<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut variable = ScopeTree::new();
+    variable.push(VariableScope::new_with_this(factory.unknown()));
     let object_scope_id = variable.add_special(VariableScope::new());
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Root, vec![], Some(false)));
