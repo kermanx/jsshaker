@@ -79,6 +79,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn finalize(&mut self) {
+    self.module_stack.push(ModuleId::new(0));
+
     self.consume_exports(ModuleId::new(0));
 
     let mut round = 0usize;
@@ -97,6 +99,8 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
+
+    self.module_stack.pop();
 
     #[cfg(feature = "flame")]
     flamescope::dump(&mut std::fs::File::create("flamescope.json").unwrap()).unwrap();
@@ -135,12 +139,15 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
-    let span = self.current_span();
-    let start = self.line_index().line_col(span.start.into());
-    let end = self.line_index().line_col(span.end.into());
-    let span_text =
-      format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
-    self.diagnostics.insert(message.into() + &span_text);
+    if let Some(span) = self.span_stack.last() {
+      let start = self.line_index().line_col(span.start.into());
+      let end = self.line_index().line_col(span.end.into());
+      let span_text =
+        format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
+      self.diagnostics.insert(message.into() + &span_text);
+    } else {
+      self.diagnostics.insert(message.into());
+    }
   }
 
   pub fn current_module(&self) -> ModuleId {

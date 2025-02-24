@@ -72,8 +72,6 @@ impl<'a> Analyzer<'a> {
       return *module_id;
     }
 
-    println!("enter {path}");
-
     let source_text = self.allocator.alloc(self.vfs.read_file(path.as_str()));
     let line_index = LineIndex::new(source_text);
     let parser = Parser::new(
@@ -133,8 +131,6 @@ impl<'a> Analyzer<'a> {
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
 
-    println!("exit {path}");
-
     module_id
   }
 
@@ -146,16 +142,6 @@ impl<'a> Analyzer<'a> {
   fn finalize_exports(&mut self) {
     let export_object = self.module_info_mut().export_object.unwrap();
     for (name, symbol) in mem::take(&mut self.module_info_mut().pending_named_exports) {
-      println!("export {name} {symbol:?}({})", self.semantic().symbols().get_name(symbol));
-      println!(
-        "scopes {:#?}",
-        self
-          .scope_context
-          .variable
-          .iter_stack()
-          .map(|s| s.variables.keys().collect::<Vec<_>>())
-          .collect::<Vec<_>>()
-      );
       let value = self.read_symbol(symbol).unwrap();
       export_object.init_property(
         self,
