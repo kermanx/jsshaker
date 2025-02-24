@@ -3,15 +3,13 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
   entity::Entity,
+  scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
 };
-use oxc::{
-  ast::{
-    ast::{ArrowFunctionExpression, Expression},
-    NONE,
-  },
-  semantic::ScopeId,
+use oxc::ast::{
+  ast::{ArrowFunctionExpression, Expression},
+  NONE,
 };
 use std::rc::Rc;
 
@@ -28,7 +26,7 @@ impl<'a> Analyzer<'a> {
     callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     node: &'a ArrowFunctionExpression<'a>,
-    variable_scopes: Rc<Vec<ScopeId>>,
+    variable_scopes: Rc<Vec<VariableScopeId>>,
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {

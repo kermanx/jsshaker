@@ -1,16 +1,21 @@
-use super::exhaustive::ExhaustiveCallback;
+use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveCallback};
 use crate::{
   analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
   utils::ast::AstKind2,
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
+use oxc_index::define_index_type;
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::{cell::RefCell, fmt};
+
+define_index_type! {
+  pub struct VariableScopeId = u32;
+}
 
 #[derive(Debug)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
-  pub cf_scope: ScopeId,
+  pub cf_scope: CfScopeId,
   pub exhausted: Option<LazyConsumable<'a>>,
   pub value: Option<Entity<'a>>,
   pub decl_node: AstKind2<'a>,
@@ -44,7 +49,7 @@ impl<'a> VariableScope<'a> {
 impl<'a> Analyzer<'a> {
   fn declare_on_scope(
     &mut self,
-    id: ScopeId,
+    id: VariableScopeId,
     kind: DeclarationKind,
     symbol: SymbolId,
     decl_node: AstKind2<'a>,
@@ -99,7 +104,7 @@ impl<'a> Analyzer<'a> {
 
   fn init_on_scope(
     &mut self,
-    id: ScopeId,
+    id: VariableScopeId,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
@@ -127,7 +132,7 @@ impl<'a> Analyzer<'a> {
   /// None: not in this scope
   /// Some(None): in this scope, but TDZ
   /// Some(Some(val)): in this scope, and val is the value
-  fn read_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
+  fn read_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
     self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
@@ -164,7 +169,7 @@ impl<'a> Analyzer<'a> {
     })
   }
 
-  fn write_on_scope(&mut self, id: ScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
+  fn write_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
       let kind = variable.borrow().kind;
       if kind.is_untracked() {
@@ -221,7 +226,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn consume_on_scope(&mut self, id: ScopeId, symbol: SymbolId) -> bool {
+  pub fn consume_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> bool {
     if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
       let variable_ref = variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
@@ -257,7 +262,7 @@ impl<'a> Analyzer<'a> {
     assert!(old.is_none());
   }
 
-  pub fn consume_arguments_on_scope(&mut self, id: ScopeId) -> bool {
+  pub fn consume_arguments_on_scope(&mut self, id: VariableScopeId) -> bool {
     if let Some((args_entity, args_symbols)) = self.scope_context.variable.get(id).arguments.clone()
     {
       args_entity.consume(self);
@@ -285,7 +290,8 @@ impl<'a> Analyzer<'a> {
     fn_value: Option<Entity<'a>>,
   ) {
     if exporting {
-      self.named_exports.push(symbol);
+      let name = self.semantic().symbols().get_name(symbol).into();
+      self.module_info_mut().pending_named_exports.insert(name, symbol);
     }
     if kind == DeclarationKind::FunctionParameter {
       if let Some(arguments) = &mut self.variable_scope_mut().arguments {
@@ -331,7 +337,7 @@ impl<'a> Analyzer<'a> {
   }
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
-    if self.semantic.symbols().get_flags(symbol).is_function_scoped_declaration() {
+    if self.semantic().symbols().get_flags(symbol).is_function_scoped_declaration() {
       self.mark_untracked_on_scope(symbol);
     } else {
       self.thrown_builtin_error("Unresolved identifier reference");

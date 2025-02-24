@@ -12,6 +12,7 @@ impl<'a> Analyzer<'a> {
         if let Some(specifiers) = &node.specifiers {
           let name = node.source.value.as_str();
           let known = self.builtins.get_known_module(name);
+          let resolved = if known.is_none() { self.resolve_and_import_module(name) } else { None };
 
           for specifier in specifiers {
             let value = if let Some(known) = known {
@@ -21,6 +22,21 @@ impl<'a> Analyzer<'a> {
                 ImportDeclarationSpecifier::ImportSpecifier(node) => {
                   let key = self.factory.string(node.imported.name().as_str());
                   known.namespace.get_property(self, self.factory.empty_consumable, key)
+                }
+              }
+            } else if let Some(resolved) = resolved {
+              let export_object = self.modules.modules[resolved].export_object.unwrap();
+              match specifier {
+                ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => export_object
+                  .get_property(
+                    self,
+                    self.factory.empty_consumable,
+                    self.factory.string("default"),
+                  ),
+                ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => export_object,
+                ImportDeclarationSpecifier::ImportSpecifier(node) => {
+                  let key = self.factory.string(node.imported.name().as_str());
+                  export_object.get_property(self, self.factory.empty_consumable, key)
                 }
               }
             } else {
@@ -45,9 +61,12 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              let reference = self.semantic.symbols().get_reference(node.reference_id());
+              let reference = self.semantic().symbols().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
-                self.named_exports.push(symbol);
+                self
+                  .module_info_mut()
+                  .pending_named_exports
+                  .insert(specifier.exported.name(), symbol);
               }
             }
             _ => unreachable!(),
@@ -107,13 +126,22 @@ impl<'a> Analyzer<'a> {
           }
           node => self.exec_expression(node.to_expression()),
         };
-        if self.default_export.is_some() {
+        if self.module_info_mut().pending_default_export.is_some() {
           self.add_diagnostic("Duplicate default export");
         }
-        self.default_export = Some(value);
+        self.module_info_mut().pending_default_export = Some(value);
       }
-      ModuleDeclaration::ExportAllDeclaration(_node) => {
-        // Nothing to do
+      ModuleDeclaration::ExportAllDeclaration(node) => {
+        let name = node.source.value.as_str();
+        if let Some(known) = self.builtins.get_known_module(name) {
+          self.module_info_mut().pending_reexports.push(known.namespace);
+        } else if let Some(resolved) = self.resolve_and_import_module(name) {
+          let export_object = self.modules.modules[resolved].export_object.unwrap();
+          self.module_info_mut().pending_reexports.push(export_object);
+        } else {
+          let unknown = self.factory.unknown();
+          self.module_info_mut().pending_reexports.push(unknown);
+        }
       }
       _ => unreachable!(),
     }
@@ -190,10 +218,6 @@ impl<'a> Transformer<'a> {
         }
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
-        if node.source.is_some() {
-          // Re-exports. Nothing to do.
-          return Some(ModuleDeclaration::ExportNamedDeclaration(self.clone_node(node)));
-        }
         let ExportNamedDeclaration {
           span,
           declaration,
@@ -202,7 +226,14 @@ impl<'a> Transformer<'a> {
           export_kind,
           with_clause,
         } = node.as_ref();
+        if source.is_some() {
+          // Re-exports. Nothing to do.
+          return Some(ModuleDeclaration::ExportNamedDeclaration(self.clone_node(node)));
+        }
         let declaration = declaration.as_ref().and_then(|d| self.transform_declaration(d));
+        if declaration.is_none() && specifiers.is_empty() {
+          return None;
+        }
         Some(self.ast_builder.module_declaration_export_named_declaration(
           *span,
           declaration,

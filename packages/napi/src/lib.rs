@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
+use tree_shaker::{vfs::SingleFileFs, TreeShakeOptions};
 
 #[macro_use]
 extern crate napi_derive;
@@ -16,8 +17,8 @@ pub struct TreeShakeResultBinding {
 )]
 pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShakeResultBinding {
   let result = tree_shaker::tree_shake(
-    source_text,
-    tree_shaker::TreeShakeOptions {
+    TreeShakeOptions {
+      vfs: SingleFileFs(source_text),
       config: match preset.as_str() {
         "safest" => tree_shaker::TreeShakeConfig::safest(),
         "recommended" => tree_shaker::TreeShakeConfig::recommended(),
@@ -28,9 +29,10 @@ pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShak
       minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions { minify, ..Default::default() },
     },
+    SingleFileFs::ENTRY_PATH.to_string(),
   );
   TreeShakeResultBinding {
-    output: result.codegen_return.code,
+    output: result.codegen_return[SingleFileFs::ENTRY_PATH].code.clone(),
     diagnostics: result.diagnostics.into_iter().collect(),
   }
 }

@@ -5,10 +5,11 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
+  scope::VariableScopeId,
   use_consumed_flag,
   utils::{CalleeInfo, CalleeNode},
 };
-use oxc::{semantic::ScopeId, span::GetSpan};
+use oxc::span::GetSpan;
 use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug)]
@@ -16,7 +17,7 @@ pub struct FunctionEntity<'a> {
   consumed: Rc<Cell<bool>>,
   body_consumed: Rc<Cell<bool>>,
   pub callee: CalleeInfo<'a>,
-  pub variable_scope_stack: Rc<Vec<ScopeId>>,
+  pub variable_scope_stack: Rc<Vec<VariableScopeId>>,
   pub finite_recursion: bool,
   pub object: &'a ObjectEntity<'a>,
 }

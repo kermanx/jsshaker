@@ -15,9 +15,10 @@ use crate::{
   consumable::Consumable,
   dep::DepId,
   mangling::{is_literal_mangable, MangleAtom, UniquenessGroupId},
+  scope::CfScopeId,
   use_consumed_flag,
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
 pub use property::{ObjectProperty, ObjectPropertyValue};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::{Cell, RefCell};
@@ -31,7 +32,7 @@ pub struct ObjectEntity<'a> {
   pub consumed: Cell<bool>,
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
-  pub cf_scope: ScopeId,
+  pub cf_scope: CfScopeId,
   pub object_id: SymbolId,
   pub prototype: &'a Prototype<'a>,
   /// `None` if not mangable

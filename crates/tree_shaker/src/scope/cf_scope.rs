@@ -3,22 +3,26 @@ use crate::{
   consumable::{Consumable, ConsumableCollector, ConsumableVec},
   utils::ast::AstKind2,
 };
-use oxc::{
-  ast::ast::LabeledStatement,
-  semantic::{ScopeId, SymbolId},
-  span::Atom,
-};
+use oxc::{ast::ast::LabeledStatement, semantic::SymbolId, span::Atom};
+use oxc_index::define_index_type;
 use rustc_hash::FxHashSet;
 use std::mem;
+
+use super::variable_scope::VariableScopeId;
+
+define_index_type! {
+  pub struct CfScopeId = u32;
+}
 
 #[derive(Debug, Default)]
 pub struct ExhaustiveData {
   pub clean: bool,
-  pub deps: FxHashSet<(ScopeId, SymbolId)>,
+  pub deps: FxHashSet<(VariableScopeId, SymbolId)>,
 }
 
 #[derive(Debug)]
 pub enum CfScopeKind<'a> {
+  Root,
   Module,
   Labeled(&'a LabeledStatement<'a>),
   Function,
@@ -112,7 +116,7 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId)) {
+  pub fn mark_exhaustive_read(&mut self, variable: (VariableScopeId, SymbolId)) {
     if let Some(data) = self.exhaustive_data_mut() {
       if data.clean {
         data.deps.insert(variable);
@@ -120,7 +124,7 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_write(&mut self, variable: (ScopeId, SymbolId)) -> bool {
+  pub fn mark_exhaustive_write(&mut self, variable: (VariableScopeId, SymbolId)) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
       if data.clean && data.deps.contains(&variable) {
         data.clean = false;

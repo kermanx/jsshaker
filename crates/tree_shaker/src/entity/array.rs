@@ -5,9 +5,10 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector},
+  scope::CfScopeId,
   use_consumed_flag,
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -16,7 +17,7 @@ use std::{
 pub struct ArrayEntity<'a> {
   pub consumed: Cell<bool>,
   pub deps: RefCell<ConsumableCollector<'a>>,
-  pub cf_scope: ScopeId,
+  pub cf_scope: CfScopeId,
   pub object_id: SymbolId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,

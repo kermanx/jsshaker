@@ -1,18 +1,19 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::{fs::read_to_string, path::Path};
-use tree_shaker::{tree_shake, TreeShakeConfig, TreeShakeOptions};
+use tree_shaker::{tree_shake, vfs::SingleFileFs, TreeShakeConfig, TreeShakeOptions};
 
 fn run_tree_shaker(source_text: String) -> String {
   let result = tree_shake(
-    source_text,
     TreeShakeOptions {
+      vfs: SingleFileFs(source_text),
       config: TreeShakeConfig::recommended(),
       minify_options: None,
       codegen_options: Default::default(),
     },
+    SingleFileFs::ENTRY_PATH.to_string(),
   );
 
-  result.codegen_return.code
+  result.codegen_return[SingleFileFs::ENTRY_PATH].code.clone()
 }
 
 const FIXTURES: &[&str] = &["vue", "vuetify", "react"];

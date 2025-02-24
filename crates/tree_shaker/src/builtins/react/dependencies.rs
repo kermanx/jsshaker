@@ -2,6 +2,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector},
   entity::Entity,
+  module::ModuleId,
   scope::CfScopeKind,
 };
 use oxc::span::Span;
@@ -19,7 +20,8 @@ pub struct ReactDependenciesData<'a> {
   pub previous: Option<Vec<Option<Entity<'a>>>>,
 }
 
-pub type ReactDependencies<'a> = FxHashMap<Span, Rc<RefCell<ReactDependenciesData<'a>>>>;
+pub type ReactDependencies<'a> =
+  FxHashMap<(ModuleId, Span), Rc<RefCell<ReactDependenciesData<'a>>>>;
 
 /// Returns (is_changed, consumable)
 pub fn check_dependencies<'a>(
@@ -30,7 +32,7 @@ pub fn check_dependencies<'a>(
   let factory = analyzer.factory;
   let (elements, rest, iterate_dep) = current.iterate(analyzer, dep);
 
-  let span = analyzer.current_span();
+  let span = (analyzer.current_module(), analyzer.current_span());
   let data = analyzer.builtins.react_data.dependencies.entry(span).or_default().clone();
   let mut data = data.borrow_mut();
 

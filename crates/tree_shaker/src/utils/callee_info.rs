@@ -1,5 +1,5 @@
 use super::ast::AstKind2;
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, module::ModuleId};
 use oxc::{
   ast::ast::{ArrowFunctionExpression, Class, Function},
   span::{GetSpan, Span},
@@ -12,6 +12,7 @@ pub enum CalleeNode<'a> {
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   ClassStatics(&'a Class<'a>),
   ClassConstructor(&'a Class<'a>),
+  Root,
   Module,
 }
 
@@ -22,7 +23,7 @@ impl GetSpan for CalleeNode<'_> {
       CalleeNode::ArrowFunctionExpression(node) => node.span(),
       CalleeNode::ClassStatics(node) => node.span(),
       CalleeNode::ClassConstructor(node) => node.span(),
-      CalleeNode::Module => Span::default(),
+      CalleeNode::Root | CalleeNode::Module => Span::default(),
     }
   }
 }
@@ -51,6 +52,7 @@ impl hash::Hash for CalleeNode<'_> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct CalleeInfo<'a> {
+  pub module_id: ModuleId,
   pub node: CalleeNode<'a>,
   pub instance_id: usize,
   #[cfg(feature = "flame")]
@@ -64,7 +66,7 @@ impl<'a> CalleeInfo<'a> {
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
       CalleeNode::ClassStatics(node) => AstKind2::Class(node),
       CalleeNode::ClassConstructor(node) => AstKind2::Class(node),
-      CalleeNode::Module => AstKind2::Environment,
+      CalleeNode::Root | CalleeNode::Module => AstKind2::Environment,
     }
   }
 
@@ -78,7 +80,7 @@ impl<'a> CalleeInfo<'a> {
       CalleeNode::ArrowFunctionExpression(_) => "<anonymous>",
       CalleeNode::ClassStatics(_) => "<ClassStatics>",
       CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
-      CalleeNode::Module => "<Module>",
+      CalleeNode::Root | CalleeNode::Module => "<Module>",
     }
   }
 }
@@ -86,11 +88,12 @@ impl<'a> CalleeInfo<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_callee_info(&self, node: CalleeNode<'a>) -> CalleeInfo<'a> {
     CalleeInfo {
+      module_id: self.current_module(),
       node,
       instance_id: self.factory.alloc_instance_id(),
       #[cfg(feature = "flame")]
       debug_name: {
-        let line_col = self.line_index.line_col(node.span().start.into());
+        let line_col = self.line_index().line_col(node.span().start.into());
         let resolved_name = match node {
           CalleeNode::Function(node) => {
             if let Some(id) = &node.id {
@@ -104,6 +107,7 @@ impl<'a> Analyzer<'a> {
           }
           CalleeNode::ClassStatics(_) => "<ClassStatics>",
           CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+          CalleeNode::Root => "<Root>",
           CalleeNode::Module => "<Module>",
         };
         let debug_name = format!("{}:{}:{}", resolved_name, line_col.line + 1, line_col.col + 1);

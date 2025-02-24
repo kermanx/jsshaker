@@ -3,15 +3,15 @@ use oxc::{ast::CommentKind, span::Span};
 
 impl<'a> Analyzer<'a> {
   fn has_annotation(&self, span: Span, test: fn(&str) -> bool) -> bool {
-    let Some(comment) = self.semantic.comments_range(..span.start).next_back() else {
+    let Some(comment) = self.semantic().comments_range(..span.start).next_back() else {
       return false;
     };
-    let raw = comment.span.source_text(self.semantic.source_text());
+    let raw = comment.span.source_text(self.semantic().source_text());
 
     // If there are non-whitespace characters between the `comment` and the `span`,
     // we treat the `comment` not belongs to the `span`.
     let range_text =
-      Span::new(comment.span.end, span.start).source_text(self.semantic.source_text());
+      Span::new(comment.span.end, span.start).source_text(self.semantic().source_text());
     let only_whitespace = match comment.kind {
       CommentKind::Line => range_text.trim().is_empty(),
       CommentKind::Block => {

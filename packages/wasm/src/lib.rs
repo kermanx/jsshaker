@@ -4,6 +4,7 @@ use oxc::{
   codegen::CodegenOptions,
   minifier::{MangleOptions, MinifierOptions},
 };
+use tree_shaker::vfs::SingleFileFs;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -22,8 +23,8 @@ pub fn tree_shake(
   console_error_panic_hook::set_once();
 
   let result = tree_shaker::tree_shake(
-    source_text,
     tree_shaker::TreeShakeOptions {
+      vfs: SingleFileFs(source_text),
       config: match preset.as_str() {
         "recommended" => tree_shaker::TreeShakeConfig::recommended(),
         "smallest" => tree_shaker::TreeShakeConfig::smallest(),
@@ -45,9 +46,10 @@ pub fn tree_shake(
         ..Default::default()
       },
     },
+    SingleFileFs::ENTRY_PATH.to_string(),
   );
   Result {
-    output: result.codegen_return.code,
+    output: result.codegen_return[SingleFileFs::ENTRY_PATH].code.clone(),
     diagnostics: result.diagnostics.into_iter().collect(),
   }
 }

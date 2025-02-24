@@ -2,86 +2,84 @@ use crate::{
   ast::AstKind2,
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
-  entity::{Entity, EntityFactory},
+  entity::EntityFactory,
   mangling::Mangler,
+  module::{ModuleId, Modules},
   scope::{
     conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
     ScopeContext,
   },
-  tree_shaker::TreeShaker,
   utils::{ExtraData, StatementVecData},
+  vfs::Vfs,
   TreeShakeConfig,
 };
-use line_index::LineIndex;
 use oxc::{
   allocator::Allocator,
   ast::ast::Program,
-  semantic::{Semantic, SymbolId},
   span::{GetSpan, Span},
 };
 use rustc_hash::FxHashSet;
-use std::mem;
+use std::{collections::BTreeSet, mem};
 
 pub struct Analyzer<'a> {
-  pub tree_shaker: TreeShaker<'a>,
+  pub vfs: &'a dyn Vfs,
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
   pub factory: &'a EntityFactory<'a>,
 
-  pub line_index: LineIndex,
-  pub semantic: Semantic<'a>,
+  pub modules: Modules<'a>,
+  pub builtins: Builtins<'a>,
+
+  pub module_stack: Vec<ModuleId>,
   pub span_stack: Vec<Span>,
+  pub scope_context: ScopeContext<'a>,
+
   pub data: ExtraData<'a>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
   pub mangler: Mangler<'a>,
-  pub named_exports: Vec<SymbolId>,
-  pub default_export: Option<Entity<'a>>,
-  pub scope_context: ScopeContext<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
-  pub builtins: Builtins<'a>,
-
-  pub debug: usize,
+  pub diagnostics: BTreeSet<String>,
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new(tree_shaker: TreeShaker<'a>, semantic: Semantic<'a>) -> Self {
-    let config = tree_shaker.0.config;
-    let allocator = tree_shaker.0.allocator;
-    let factory = tree_shaker.0.factory;
-
-    Analyzer {
-      tree_shaker,
+  pub fn new_in(
+    vfs: &'a dyn Vfs,
+    config: &'a TreeShakeConfig,
+    allocator: &'a Allocator,
+  ) -> &'a mut Self {
+    let factory = &*allocator.alloc(EntityFactory::new(allocator, config));
+    allocator.alloc(Analyzer {
+      vfs,
       config,
       allocator,
       factory,
-      line_index: LineIndex::new(semantic.source_text()),
-      semantic,
+
+      modules: Modules::default(),
+      builtins: Builtins::new(config, factory),
+
+      module_stack: vec![],
       span_stack: vec![],
+      scope_context: ScopeContext::new(factory),
+
       data: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),
       mangler: Mangler::new(config.mangling, allocator),
-      named_exports: Vec::new(),
-      default_export: None,
-      scope_context: ScopeContext::new(factory),
       pending_deps: Default::default(),
-      builtins: Builtins::new(config, factory),
-      debug: 0,
-    }
+      diagnostics: Default::default(),
+    })
   }
 
   pub fn exec_program(&mut self, node: &'a Program<'a>) {
-    // Top level is always preserved
-    let top_level_call_id = self.call_scope().call_id;
-    self.refer_dep(top_level_call_id);
-
     let data = self.load_data::<StatementVecData>(AstKind2::Program(node));
     self.exec_statement_vec(data, &node.body);
+  }
 
-    self.consume_exports();
+  pub fn finalize(&mut self) {
+    self.consume_exports(ModuleId::new(0));
 
     let mut round = 0usize;
     loop {
@@ -100,33 +98,20 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.scope_context.assert_final_state();
-
-    // println!("debug: {:?}", self.debug);
-
     #[cfg(feature = "flame")]
     flamescope::dump(&mut std::fs::File::create("flamescope.json").unwrap()).unwrap();
   }
 
-  pub fn consume_exports(&mut self) {
-    if let Some(entity) = self.default_export.take() {
-      entity.consume(self)
-    }
-    for symbol in self.named_exports.clone() {
-      let entity = self.read_symbol(symbol).unwrap();
-      entity.consume(self);
-    }
-  }
-
-  pub fn consume_top_level_uncaught(&mut self) -> bool {
-    let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
-    if thrown_values.is_empty() {
-      false
-    } else {
-      let values = mem::take(thrown_values);
-      self.consume(values);
-      true
-    }
+  fn consume_top_level_uncaught(&mut self) -> bool {
+    // let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
+    // if thrown_values.is_empty() {
+    //   false
+    // } else {
+    //   let values = mem::take(thrown_values);
+    //   self.consume(values);
+    //   true
+    // }
+    false
   }
 }
 
@@ -149,17 +134,21 @@ impl<'a> Analyzer<'a> {
     self.get_data_or_insert_with(key, Default::default)
   }
 
-  pub fn current_span(&self) -> Span {
-    *self.span_stack.last().unwrap()
-  }
-
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
     let span = self.current_span();
-    let start = self.line_index.line_col(span.start.into());
-    let end = self.line_index.line_col(span.end.into());
+    let start = self.line_index().line_col(span.start.into());
+    let end = self.line_index().line_col(span.end.into());
     let span_text =
       format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
-    self.tree_shaker.0.diagnostics.borrow_mut().insert(message.into() + &span_text);
+    self.diagnostics.insert(message.into() + &span_text);
+  }
+
+  pub fn current_module(&self) -> ModuleId {
+    *self.module_stack.last().unwrap()
+  }
+
+  pub fn current_span(&self) -> Span {
+    *self.span_stack.last().unwrap()
   }
 
   pub fn push_span(&mut self, node: &'a impl GetSpan) {

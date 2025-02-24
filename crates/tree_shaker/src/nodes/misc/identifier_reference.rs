@@ -6,7 +6,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    let reference = self.semantic.symbols().get_reference(node.reference_id());
+    let reference = self.semantic().symbols().get_reference(node.reference_id());
     let symbol = reference.symbol_id();
 
     let dep = AstKind2::IdentifierReference(node);
@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
     let dep = AstKind2::IdentifierReference(node);
     let value = self.factory.computed(value, dep);
 
-    let reference = self.semantic.symbols().get_reference(node.reference_id());
+    let reference = self.semantic().symbols().get_reference(node.reference_id());
     assert!(reference.is_write());
     let symbol = reference.symbol_id();
 

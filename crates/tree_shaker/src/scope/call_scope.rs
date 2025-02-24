@@ -1,16 +1,15 @@
-use super::try_scope::TryScope;
+use super::{try_scope::TryScope, variable_scope::VariableScopeId};
 use crate::{
   analyzer::Analyzer, consumable::ConsumableTrait, dep::DepId, entity::Entity, utils::CalleeInfo,
 };
-use oxc::semantic::ScopeId;
 use std::mem;
 
 pub struct CallScope<'a> {
   pub call_id: DepId,
   pub callee: CalleeInfo<'a>,
-  pub old_variable_scope_stack: Vec<ScopeId>,
+  pub old_variable_scope_stack: Vec<VariableScopeId>,
   pub cf_scope_depth: usize,
-  pub body_variable_scope: ScopeId,
+  pub body_variable_scope: VariableScopeId,
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
   pub is_generator: bool,
@@ -25,9 +24,9 @@ impl<'a> CallScope<'a> {
   pub fn new(
     call_id: DepId,
     callee: CalleeInfo<'a>,
-    old_variable_scope_stack: Vec<ScopeId>,
+    old_variable_scope_stack: Vec<VariableScopeId>,
     cf_scope_depth: usize,
-    body_variable_scope: ScopeId,
+    body_variable_scope: VariableScopeId,
     is_async: bool,
     is_generator: bool,
   ) -> Self {
@@ -48,7 +47,7 @@ impl<'a> CallScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<ScopeId>, Entity<'a>) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<VariableScopeId>, Entity<'a>) {
     assert_eq!(self.try_scopes.len(), 1);
 
     // Forwards the thrown value to the parent try scope

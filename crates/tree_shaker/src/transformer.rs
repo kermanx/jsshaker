@@ -1,5 +1,4 @@
 use crate::{
-  analyzer::Analyzer,
   ast::AstKind2,
   dep::{DepId, ReferredDeps},
   mangling::Mangler,
@@ -26,19 +25,21 @@ use std::{
   cell::{Cell, RefCell},
   hash::{DefaultHasher, Hasher},
   mem,
+  rc::Rc,
 };
 
 pub struct Transformer<'a> {
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
-  pub semantic: Semantic<'a>,
-  pub ast_builder: AstBuilder<'a>,
-  pub data: ExtraData<'a>,
-  pub referred_deps: ReferredDeps,
-  pub conditional_data: ConditionalDataMap<'a>,
-  pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
-  pub mangler: RefCell<Mangler<'a>>,
+  pub data: &'a ExtraData<'a>,
+  pub referred_deps: &'a ReferredDeps,
+  pub conditional_data: &'a ConditionalDataMap<'a>,
+  pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
+  pub semantic: &'a Semantic<'a>,
 
+  pub ast_builder: AstBuilder<'a>,
+
+  pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   /// The block statement has already exited, so we can and only can transform declarations themselves
   pub declaration_only: Cell<bool>,
   pub need_unused_assignment_target: Cell<bool>,
@@ -47,38 +48,27 @@ pub struct Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn new(analyzer: Analyzer<'a>) -> Self {
-    let Analyzer {
-      config,
-      allocator,
-      semantic,
-      data,
-      referred_deps: referred_nodes,
-      conditional_data,
-      mangler,
-      ..
-    } = analyzer;
-
-    // let mut counts: Vec<_> = referred_nodes.clone().into_iter().collect();
-    // counts.sort_by(|a, b| b.1.cmp(&a.1));
-    // for (key, v) in counts {
-    //   if v > 10 {
-    //     println!("{key:?}: {v}");
-    //   }
-    // }
-    // println!("---");
-
+  pub fn new(
+    config: &'a TreeShakeConfig,
+    allocator: &'a Allocator,
+    data: &'a ExtraData<'a>,
+    referred_deps: &'a ReferredDeps,
+    conditional_data: &'a ConditionalDataMap<'a>,
+    mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
+    semantic: &'a Semantic<'a>,
+  ) -> Self {
     Transformer {
       config,
       allocator,
-      semantic,
-      ast_builder: AstBuilder::new(allocator),
       data,
-      referred_deps: referred_nodes,
+      referred_deps,
       conditional_data,
-      var_decls: Default::default(),
-      mangler: RefCell::new(mangler),
+      mangler,
+      semantic,
 
+      ast_builder: AstBuilder::new(allocator),
+
+      var_decls: Default::default(),
       declaration_only: Cell::new(false),
       need_unused_assignment_target: Cell::new(false),
       need_non_nullish_helper: Cell::new(false),

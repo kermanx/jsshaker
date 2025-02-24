@@ -1,6 +1,6 @@
-use super::cf_scope::ReferredState;
+use super::{cf_scope::ReferredState, VariableScopeId};
 use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 use std::{
   hash::{Hash, Hasher},
@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
     kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
-  ) -> FxHashSet<(ScopeId, SymbolId)> {
+  ) -> FxHashSet<(VariableScopeId, SymbolId)> {
     self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
@@ -101,7 +101,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     once: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<(ScopeId, SymbolId)>,
+    deps: FxHashSet<(VariableScopeId, SymbolId)>,
   ) {
     for (scope, symbol) in deps {
       self
@@ -115,7 +115,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, variable: (ScopeId, SymbolId), target: usize) {
+  pub fn mark_exhaustive_read(&mut self, variable: (VariableScopeId, SymbolId), target: usize) {
     for depth in target..self.scope_context.cf.stack.len() {
       self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
     }
@@ -123,7 +123,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn mark_exhaustive_write(
     &mut self,
-    variable: (ScopeId, SymbolId),
+    variable: (VariableScopeId, SymbolId),
     target: usize,
   ) -> (bool, bool) {
     let mut should_consume = false;
@@ -141,7 +141,7 @@ impl<'a> Analyzer<'a> {
   pub fn add_exhaustive_callbacks(
     &mut self,
     should_consume: bool,
-    (scope, symbol): (ScopeId, SymbolId),
+    (scope, symbol): (VariableScopeId, SymbolId),
   ) -> bool {
     if let Some(runners) =
       self.scope_context.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)

@@ -13,51 +13,49 @@ use crate::{
   consumable::{Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
   entity::{Entity, EntityFactory},
+  module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
-pub use cf_scope::CfScopeKind;
-use oxc::semantic::{ScopeId, SymbolId};
+pub use cf_scope::{CfScopeId, CfScopeKind};
+use oxc::semantic::SymbolId;
 use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
+pub use variable_scope::VariableScopeId;
 
 pub struct ScopeContext<'a> {
   pub call: Vec<CallScope<'a>>,
-  pub variable: ScopeTree<VariableScope<'a>>,
-  pub cf: ScopeTree<CfScope<'a>>,
+  pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
+  pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
   pub pure: usize,
 
-  pub object_scope_id: ScopeId,
+  pub object_scope_id: VariableScopeId,
   pub object_symbol_counter: usize,
 }
 
 impl<'a> ScopeContext<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
-    let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
     let mut variable = ScopeTree::new();
-    let body_variable_scope = variable.push({
-      let mut scope = VariableScope::new();
-      scope.this = Some(factory.unknown());
-      scope
-    });
     let object_scope_id = variable.add_special(VariableScope::new());
+    let mut cf = ScopeTree::new();
+    cf.push(CfScope::new(CfScopeKind::Root, vec![], Some(false)));
     ScopeContext {
       call: vec![CallScope::new(
         DepId::from_counter(),
         CalleeInfo {
-          node: CalleeNode::Module,
+          module_id: ModuleId::from(0),
+          node: CalleeNode::Root,
           instance_id: factory.alloc_instance_id(),
           #[cfg(feature = "flame")]
           debug_name: "<Module>",
         },
         vec![],
         0,
-        body_variable_scope,
-        true,
+        VariableScopeId::from(0),
+        false,
         false,
       )],
       variable,
@@ -72,7 +70,7 @@ impl<'a> ScopeContext<'a> {
   pub fn assert_final_state(&mut self) {
     assert_eq!(self.call.len(), 1);
     assert_eq!(self.variable.current_depth(), 0);
-    assert_eq!(self.cf.current_depth(), 0);
+    assert_eq!(self.cf.current_depth(), 1);
     assert_eq!(self.pure, 0);
 
     for scope in self.cf.iter_all() {
@@ -116,7 +114,7 @@ impl<'a> Analyzer<'a> {
     self.scope_context.cf.get_current_mut()
   }
 
-  pub fn cf_scope_id_of_call_scope(&self) -> ScopeId {
+  pub fn cf_scope_id_of_call_scope(&self) -> CfScopeId {
     let depth = self.call_scope().cf_scope_depth;
     self.scope_context.cf.stack[depth]
   }
@@ -134,7 +132,10 @@ impl<'a> Analyzer<'a> {
     false
   }
 
-  fn replace_variable_scope_stack(&mut self, new_stack: Vec<ScopeId>) -> Vec<ScopeId> {
+  pub fn replace_variable_scope_stack(
+    &mut self,
+    new_stack: Vec<VariableScopeId>,
+  ) -> Vec<VariableScopeId> {
     self.scope_context.variable.replace_stack(new_stack)
   }
 
@@ -142,7 +143,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
-    variable_scope_stack: Vec<ScopeId>,
+    variable_scope_stack: Vec<VariableScopeId>,
     is_async: bool,
     is_generator: bool,
     consume: bool,
@@ -152,6 +153,7 @@ impl<'a> Analyzer<'a> {
       self.refer_dep(dep_id);
     }
 
+    self.module_stack.push(callee.module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
@@ -177,14 +179,15 @@ impl<'a> Analyzer<'a> {
     self.pop_cf_scope();
     self.pop_variable_scope();
     self.replace_variable_scope_stack(old_variable_scope_stack);
+    self.module_stack.pop();
     ret_val
   }
 
-  pub fn push_variable_scope(&mut self) -> ScopeId {
+  pub fn push_variable_scope(&mut self) -> VariableScopeId {
     self.scope_context.variable.push(VariableScope::new())
   }
 
-  pub fn pop_variable_scope(&mut self) -> ScopeId {
+  pub fn pop_variable_scope(&mut self) -> VariableScopeId {
     self.scope_context.variable.pop()
   }
 
@@ -210,7 +213,7 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![self.consumable(dep)], Some(false));
   }
 
-  pub fn pop_cf_scope(&mut self) -> ScopeId {
+  pub fn pop_cf_scope(&mut self) -> CfScopeId {
     self.scope_context.cf.pop()
   }
 

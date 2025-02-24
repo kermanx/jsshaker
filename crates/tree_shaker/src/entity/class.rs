@@ -2,8 +2,10 @@ use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectEntity,
   TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
-use oxc::{ast::ast::Class, semantic::ScopeId};
+use crate::{
+  analyzer::Analyzer, consumable::Consumable, scope::VariableScopeId, use_consumed_flag,
+};
+use oxc::ast::ast::Class;
 use std::{cell::Cell, rc::Rc};
 
 #[derive(Debug)]
@@ -13,7 +15,7 @@ pub struct ClassEntity<'a> {
   pub keys: Vec<Option<Entity<'a>>>,
   pub statics: &'a ObjectEntity<'a>,
   pub super_class: Option<Entity<'a>>,
-  pub variable_scope_stack: Rc<Vec<ScopeId>>,
+  pub variable_scope_stack: Rc<Vec<VariableScopeId>>,
 }
 
 impl<'a> EntityTrait<'a> for ClassEntity<'a> {

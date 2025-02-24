@@ -1,30 +1,29 @@
-use oxc::semantic::ScopeId;
 use oxc_index::{Idx, IndexVec};
 use std::ops::RangeFrom;
 
-struct NodeInfo<T> {
+struct NodeInfo<I, T> {
   data: T,
   depth: usize,
-  parent: Option<ScopeId>,
+  parent: Option<I>,
 }
 
-pub struct ScopeTree<T> {
-  nodes: IndexVec<ScopeId, NodeInfo<T>>,
-  pub stack: Vec<ScopeId>,
+pub struct ScopeTree<I: Idx, T> {
+  nodes: IndexVec<I, NodeInfo<I, T>>,
+  pub stack: Vec<I>,
 }
 
-impl<T> Default for ScopeTree<T> {
+impl<I: Idx, T> Default for ScopeTree<I, T> {
   fn default() -> Self {
     Self::new()
   }
 }
 
-impl<T> ScopeTree<T> {
+impl<I: Idx, T> ScopeTree<I, T> {
   pub fn new() -> Self {
     ScopeTree { nodes: IndexVec::new(), stack: vec![] }
   }
 
-  pub fn current_id(&self) -> ScopeId {
+  pub fn current_id(&self) -> I {
     *self.stack.last().unwrap()
   }
 
@@ -32,11 +31,11 @@ impl<T> ScopeTree<T> {
     self.stack.len() - 1
   }
 
-  pub fn get(&self, id: ScopeId) -> &T {
+  pub fn get(&self, id: I) -> &T {
     &self.nodes.get(id).unwrap().data
   }
 
-  pub fn get_mut(&mut self, id: ScopeId) -> &mut T {
+  pub fn get_mut(&mut self, id: I) -> &mut T {
     &mut self.nodes.get_mut(id).unwrap().data
   }
 
@@ -73,28 +72,28 @@ impl<T> ScopeTree<T> {
     self.nodes.iter().map(|node| &node.data)
   }
 
-  fn get_parent(&self, id: ScopeId) -> Option<ScopeId> {
+  fn get_parent(&self, id: I) -> Option<I> {
     self.nodes.get(id).unwrap().parent
   }
 
-  pub fn add_special(&mut self, data: T) -> ScopeId {
-    let id = ScopeId::from_usize(self.nodes.len());
+  pub fn add_special(&mut self, data: T) -> I {
+    let id = I::from_usize(self.nodes.len());
     self.nodes.push(NodeInfo { data, depth: 0, parent: None });
     id
   }
 
-  pub fn push(&mut self, data: T) -> ScopeId {
-    let id = ScopeId::from_usize(self.nodes.len());
+  pub fn push(&mut self, data: T) -> I {
+    let id = I::from_usize(self.nodes.len());
     self.nodes.push(NodeInfo { data, depth: self.stack.len(), parent: self.stack.last().copied() });
     self.stack.push(id);
     id
   }
 
-  pub fn pop(&mut self) -> ScopeId {
+  pub fn pop(&mut self) -> I {
     self.stack.pop().unwrap()
   }
 
-  pub fn find_lca(&self, another: ScopeId) -> (usize, ScopeId) {
+  pub fn find_lca(&self, another: I) -> (usize, I) {
     let another_info = self.nodes.get(another).unwrap();
     let current_depth = self.stack.len() - 1;
     let another_depth = another_info.depth;
@@ -118,7 +117,7 @@ impl<T> ScopeTree<T> {
     (current_idx, another)
   }
 
-  pub fn replace_stack(&mut self, stack: Vec<ScopeId>) -> Vec<ScopeId> {
+  pub fn replace_stack(&mut self, stack: Vec<I>) -> Vec<I> {
     std::mem::replace(&mut self.stack, stack)
   }
 }

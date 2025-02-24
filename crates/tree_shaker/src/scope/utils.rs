@@ -1,16 +1,18 @@
 use crate::{analyzer::Analyzer, consumable::ConsumableVec};
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
 use std::mem;
 
+use super::cf_scope::CfScopeId;
+
 impl<'a> Analyzer<'a> {
-  pub fn find_first_different_cf_scope(&self, another: ScopeId) -> usize {
+  pub fn find_first_different_cf_scope(&self, another: CfScopeId) -> usize {
     self.scope_context.cf.find_lca(another).0 + 1
   }
 
   /// Returns (has_exhaustive, indeterminate, exec_deps)
   pub fn pre_mutate_object(
     &mut self,
-    cf_scope: ScopeId,
+    cf_scope: CfScopeId,
     object_id: SymbolId,
   ) -> (bool, bool, ConsumableVec<'a>) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
@@ -35,12 +37,12 @@ impl<'a> Analyzer<'a> {
     (has_exhaustive, indeterminate, exec_deps)
   }
 
-  pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
+  pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: CfScopeId, object_id: SymbolId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
     self.mark_exhaustive_read((self.scope_context.object_scope_id, object_id), target_depth);
   }
 
-  pub fn mark_object_consumed(&mut self, cf_scope: ScopeId, object_id: SymbolId) {
+  pub fn mark_object_consumed(&mut self, cf_scope: CfScopeId, object_id: SymbolId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
     let mut marked = false;
     for depth in target_depth..self.scope_context.cf.stack.len() {

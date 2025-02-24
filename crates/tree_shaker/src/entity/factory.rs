@@ -2,6 +2,7 @@ use crate::{
   builtins::Prototype,
   consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
   mangling::{MangleAtom, MangleConstraint, ManglingDep},
+  scope::{CfScopeId, VariableScopeId},
   utils::F64WithEq,
   TreeShakeConfig,
 };
@@ -19,7 +20,7 @@ use super::{
   ClassEntity, Entity, LiteralEntity, ObjectEntity, PrimitiveEntity, PureBuiltinFnEntity,
   UnknownEntity,
 };
-use oxc::semantic::{ScopeId, SymbolId};
+use oxc::semantic::SymbolId;
 use oxc::{allocator::Allocator, ast::ast::Class};
 use oxc_syntax::operator::LogicalOperator;
 
@@ -151,7 +152,7 @@ impl<'a> EntityFactory<'a> {
     self.alloc(ObjectEntity {
       consumable,
       consumed: Cell::new(false),
-      cf_scope: ScopeId::new(0),
+      cf_scope: CfScopeId::new(0),
       object_id,
       string_keyed: Default::default(),
       unknown_keyed: Default::default(),
@@ -165,7 +166,7 @@ impl<'a> EntityFactory<'a> {
     self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
   }
 
-  pub fn array(&self, cf_scope: ScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+  pub fn array(&self, cf_scope: CfScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
     self.alloc(ArrayEntity {
       consumed: Cell::new(false),
       deps: Default::default(),
@@ -193,7 +194,7 @@ impl<'a> EntityFactory<'a> {
     &self,
     node: &'a Class<'a>,
     keys: Vec<Option<Entity<'a>>>,
-    variable_scope_stack: Vec<ScopeId>,
+    variable_scope_stack: Vec<VariableScopeId>,
     super_class: Option<Entity<'a>>,
     statics: &'a ObjectEntity<'a>,
   ) -> Entity<'a> {

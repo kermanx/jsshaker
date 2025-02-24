@@ -1,9 +1,12 @@
 use super::dependencies::check_dependencies;
-use crate::entity::{Entity, EntityFactory};
+use crate::{
+  entity::{Entity, EntityFactory},
+  module::ModuleId,
+};
 use oxc::span::Span;
 use rustc_hash::FxHashMap;
 
-pub type ReactUseMemos<'a> = FxHashMap<Span, Entity<'a>>;
+pub type ReactUseMemos<'a> = FxHashMap<(ModuleId, Span), Entity<'a>>;
 
 pub fn create_react_use_memo_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useMemo", |analyzer, dep, _this, args| {
@@ -13,7 +16,7 @@ pub fn create_react_use_memo_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<
 
     let (changed, dep) = check_dependencies(analyzer, dep, dependencies);
 
-    let span = analyzer.current_span();
+    let span = (analyzer.current_module(), analyzer.current_span());
     if changed {
       let result =
         calculate.call(analyzer, dep, analyzer.factory.unknown(), analyzer.factory.empty_arguments);

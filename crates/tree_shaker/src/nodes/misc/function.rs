@@ -3,6 +3,7 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
   entity::Entity,
+  scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
 };
@@ -11,7 +12,6 @@ use oxc::{
   ast::ast::{
     Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
   },
-  semantic::ScopeId,
 };
 use std::rc::Rc;
 
@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
     callee: CalleeInfo<'a>,
     call_dep: Consumable<'a>,
     node: &'a Function<'a>,
-    variable_scopes: Rc<Vec<ScopeId>>,
+    variable_scopes: Rc<Vec<VariableScopeId>>,
     this: Entity<'a>,
     args: Entity<'a>,
     consume: bool,
