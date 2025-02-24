@@ -3,7 +3,7 @@ use std::mem;
 use line_index::LineIndex;
 use oxc::{
   allocator::FromIn,
-  ast::ast::{Program, PropertyKind},
+  ast::ast::{ImportDeclaration, Program, Statement},
   parser::Parser,
   semantic::{Semantic, SemanticBuilder, SymbolId},
   span::{Atom, SourceType},
@@ -13,24 +13,27 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, ObjectEntity},
+  consumable::ConsumableTrait,
+  entity::Entity,
   scope::{
-    call_scope::CallScope, cf_scope::CfScope, variable_scope::VariableScope, CfScopeId, CfScopeKind,
+    call_scope::CallScope, cf_scope::CfScope, variable_scope::VariableScope, CfScopeId,
+    CfScopeKind, VariableScopeId,
   },
   utils::{dep_id::DepId, CalleeInfo, CalleeNode},
 };
 
+#[derive(Clone)]
 pub struct ModuleInfo<'a> {
   pub path: Atom<'a>,
   pub line_index: LineIndex,
   pub program: &'a Program<'a>,
   pub semantic: &'a Semantic<'a>,
   pub call_id: DepId,
-  pub export_object: Option<&'a ObjectEntity<'a>>,
 
-  pub pending_named_exports: FxHashMap<Atom<'a>, SymbolId>,
-  pub pending_default_export: Option<Entity<'a>>,
-  pub pending_reexports: Vec<Entity<'a>>,
+  pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId)>,
+  pub default_export: Option<Entity<'a>>,
+
+  pub blocked_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
 }
 
 define_index_type! {
@@ -88,21 +91,27 @@ impl<'a> Analyzer<'a> {
     }
     let semantic = SemanticBuilder::new().build(program).semantic;
     let semantic = self.allocator.alloc(semantic);
-    let call_id = DepId::from_counter();
     let module_id = self.modules.modules.push(ModuleInfo {
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
       program,
       semantic,
-      call_id,
-      export_object: None,
+      call_id: DepId::from_counter(),
 
-      pending_named_exports: Default::default(),
-      pending_default_export: Default::default(),
-      pending_reexports: Default::default(),
+      named_exports: Default::default(),
+      default_export: Default::default(),
+
+      blocked_imports: Vec::new(),
     });
     self.modules.paths.insert(path.clone(), module_id);
 
+    self.exec_module(module_id);
+
+    module_id
+  }
+
+  fn exec_module(&mut self, module_id: ModuleId) {
+    let ModuleInfo { call_id, program, .. } = self.modules.modules[module_id].clone();
     self.module_stack.push(module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
     let root_variable_scope =
@@ -125,53 +134,47 @@ impl<'a> Analyzer<'a> {
     let old_cf_scope_stack = self.scope_context.cf.replace_stack(vec![CfScopeId::from(0)]);
     self.scope_context.cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
 
-    self.init_exports();
-    self.exec_program(program);
-    self.finalize_exports();
+    for node in &program.body {
+      self.declare_statement(node);
+    }
+    for node in &program.body {
+      if let Statement::ImportDeclaration(node) = node {
+        self.init_import_declaration(node);
+      }
+    }
+    for node in &program.body {
+      self.init_statement(node);
+    }
 
     self.scope_context.cf.replace_stack(old_cf_scope_stack);
     self.scope_context.call.pop();
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
 
-    module_id
-  }
-
-  fn init_exports(&mut self) {
-    let export_object = self.new_empty_object(&self.builtins.prototypes.null, None);
-    self.module_info_mut().export_object = Some(export_object);
-  }
-
-  fn finalize_exports(&mut self) {
-    let export_object = self.module_info_mut().export_object.unwrap();
-    for (name, symbol) in mem::take(&mut self.module_info_mut().pending_named_exports) {
-      let value = self.read_symbol(symbol).unwrap();
-      export_object.init_property(
-        self,
-        PropertyKind::Init,
-        self.factory.string(name.as_str()),
-        value,
-        true,
-      );
-    }
-    if let Some(default_export) = mem::take(&mut self.module_info_mut().pending_default_export) {
-      export_object.init_property(
-        self,
-        PropertyKind::Init,
-        self.factory.string("default"),
-        default_export,
-        true,
-      );
-    }
-    for reexport in mem::take(&mut self.module_info_mut().pending_reexports) {
-      export_object.init_spread(self, self.factory.empty_consumable, reexport);
+    for (module, scope, node) in mem::take(&mut self.modules.modules[module_id].blocked_imports) {
+      self.module_stack.push(module);
+      self.scope_context.variable.stack.push(scope);
+      self.init_import_declaration(node);
+      self.scope_context.variable.stack.pop();
+      self.module_stack.pop();
     }
   }
 
   pub fn consume_exports(&mut self, module_id: ModuleId) {
-    let ModuleInfo { call_id, export_object, .. } = &self.modules.modules[module_id];
-    let call_id = *call_id;
-    self.consume(export_object.unwrap());
+    let ModuleInfo { call_id, named_exports, default_export, .. } =
+      self.modules.modules[module_id].clone();
     self.refer_dep(call_id);
+    for (scope, symbol) in named_exports.into_values() {
+      self.consume_on_scope(scope, symbol);
+    }
+    if let Some(entity) = default_export {
+      self.consume(entity);
+    }
+  }
+}
+
+impl<'a> ConsumableTrait<'a> for ModuleId {
+  fn consume(&self, analyzer: &mut Analyzer) {
+    analyzer.consume_exports(*self);
   }
 }

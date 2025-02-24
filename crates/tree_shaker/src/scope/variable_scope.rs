@@ -138,7 +138,11 @@ impl<'a> Analyzer<'a> {
   /// None: not in this scope
   /// Some(None): in this scope, but TDZ
   /// Some(Some(val)): in this scope, and val is the value
-  fn read_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> Option<Option<Entity<'a>>> {
+  pub fn read_on_scope(
+    &mut self,
+    id: VariableScopeId,
+    symbol: SymbolId,
+  ) -> Option<Option<Entity<'a>>> {
     self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
@@ -295,18 +299,19 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
   ) {
+    let variable_scope = self.scope_context.variable.current_id();
+    self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
+
     if exporting {
       let name = self.semantic().symbols().get_name(symbol).into();
-      self.module_info_mut().pending_named_exports.insert(name, symbol);
+      self.module_info_mut().named_exports.insert(name, (variable_scope, symbol));
     }
+
     if kind == DeclarationKind::FunctionParameter {
       if let Some(arguments) = &mut self.variable_scope_mut().arguments {
         arguments.1.push(symbol);
       }
     }
-
-    let variable_scope = self.scope_context.variable.current_id();
-    self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
   }
 
   pub fn init_symbol(

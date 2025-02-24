@@ -10,43 +10,8 @@ impl<'a> Analyzer<'a> {
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
-          let name = node.source.value.as_str();
-          let known = self.builtins.get_known_module(name);
-          let resolved = if known.is_none() { self.resolve_and_import_module(name) } else { None };
-
           for specifier in specifiers {
-            let value = if let Some(known) = known {
-              match specifier {
-                ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => known.default,
-                ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
-                ImportDeclarationSpecifier::ImportSpecifier(node) => {
-                  let key = self.factory.string(node.imported.name().as_str());
-                  known.namespace.get_property(self, self.factory.empty_consumable, key)
-                }
-              }
-            } else if let Some(resolved) = resolved {
-              let export_object = self.modules.modules[resolved].export_object.unwrap();
-              match specifier {
-                ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => export_object
-                  .get_property(
-                    self,
-                    self.factory.empty_consumable,
-                    self.factory.string("default"),
-                  ),
-                ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => export_object,
-                ImportDeclarationSpecifier::ImportSpecifier(node) => {
-                  let key = self.factory.string(node.imported.name().as_str());
-                  export_object.get_property(self, self.factory.empty_consumable, key)
-                }
-              }
-            } else {
-              self.builtins.factory.unknown()
-            };
-
-            let local = specifier.local();
-            self.declare_binding_identifier(local, false, DeclarationKind::Import);
-
-            self.init_binding_identifier(local, Some(value));
+            self.declare_binding_identifier(specifier.local(), false, DeclarationKind::Import);
           }
         }
       }
@@ -63,10 +28,11 @@ impl<'a> Analyzer<'a> {
             ModuleExportName::IdentifierReference(node) => {
               let reference = self.semantic().symbols().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
+                let scope = self.scope_context.variable.current_id();
                 self
                   .module_info_mut()
-                  .pending_named_exports
-                  .insert(specifier.exported.name(), symbol);
+                  .named_exports
+                  .insert(specifier.exported.name(), (scope, symbol));
               }
             }
             _ => unreachable!(),
@@ -101,9 +67,62 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn init_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
-    match node {
-      ModuleDeclaration::ImportDeclaration(_node) => {}
+  pub fn init_import_declaration(&mut self, node: &'a ImportDeclaration<'a>) {
+    if let Some(specifiers) = &node.specifiers {
+      let name = node.source.value.as_str();
+      let known = self.builtins.get_known_module(name);
+      let resolved = if known.is_none() { self.resolve_and_import_module(name) } else { None };
+
+      if let Some(resolved) = resolved {
+        if self.module_stack.contains(&resolved) {
+          // Circular dependency
+          let module = self.current_module();
+          let scope = self.scope_context.variable.current_id();
+          self.modules.modules[resolved].blocked_imports.push((module, scope, node));
+          return;
+        }
+      }
+
+      for specifier in specifiers {
+        let value = if let Some(known) = known {
+          match specifier {
+            ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => known.default,
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
+            ImportDeclarationSpecifier::ImportSpecifier(node) => {
+              let key = self.factory.string(node.imported.name().as_str());
+              known.namespace.get_property(self, self.factory.empty_consumable, key)
+            }
+          }
+        } else if let Some(resolved) = resolved {
+          let module_info = &self.modules.modules[resolved];
+          match specifier {
+            ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => {
+              module_info.default_export.unwrap_or(self.factory.unknown())
+            }
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => todo!(),
+            ImportDeclarationSpecifier::ImportSpecifier(node) => {
+              if let Some((scope, symbol)) =
+                module_info.named_exports.get(&node.imported.name()).copied()
+              {
+                self.read_on_scope(scope, symbol).unwrap().unwrap()
+              } else {
+                self.factory.unknown()
+              }
+            }
+          }
+        } else {
+          self.builtins.factory.unknown()
+        };
+        self.init_binding_identifier(specifier.local(), Some(value));
+      }
+    }
+  }
+
+  pub fn init_module_declaration(&mut self, node0: &'a ModuleDeclaration<'a>) {
+    match node0 {
+      ModuleDeclaration::ImportDeclaration(_node) => {
+        // Hoisted
+      }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
         if node.source.is_some() {
           // Re-exports. Nothing to do.
@@ -126,22 +145,23 @@ impl<'a> Analyzer<'a> {
           }
           node => self.exec_expression(node.to_expression()),
         };
-        if self.module_info_mut().pending_default_export.is_some() {
+        if self.module_info_mut().default_export.is_some() {
           self.add_diagnostic("Duplicate default export");
         }
-        self.module_info_mut().pending_default_export = Some(value);
+        self.module_info_mut().default_export = Some(value);
       }
-      ModuleDeclaration::ExportAllDeclaration(node) => {
-        let name = node.source.value.as_str();
-        if let Some(known) = self.builtins.get_known_module(name) {
-          self.module_info_mut().pending_reexports.push(known.namespace);
-        } else if let Some(resolved) = self.resolve_and_import_module(name) {
-          let export_object = self.modules.modules[resolved].export_object.unwrap();
-          self.module_info_mut().pending_reexports.push(export_object);
-        } else {
-          let unknown = self.factory.unknown();
-          self.module_info_mut().pending_reexports.push(unknown);
-        }
+      ModuleDeclaration::ExportAllDeclaration(_node) => {
+        // FIXME:
+        // let name = node.source.value.as_str();
+        // if let Some(known) = self.builtins.get_known_module(name) {
+        //   self.module_info_mut().pending_reexports.push(known.namespace);
+        // } else if let Some(resolved) = self.import_module(name) {
+        //   let named_exports = &self.modules.modules[resolved].pending_named_exports;
+        //   self.module_info_mut().pending_named_exports
+        // } else {
+        //   let unknown = self.factory.unknown();
+        //   self.module_info_mut().pending_reexports.push(unknown);
+        // }
       }
       _ => unreachable!(),
     }

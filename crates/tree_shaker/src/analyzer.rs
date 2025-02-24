@@ -1,5 +1,4 @@
 use crate::{
-  ast::AstKind2,
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::EntityFactory,
@@ -9,13 +8,12 @@ use crate::{
     conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
     ScopeContext,
   },
-  utils::{ExtraData, StatementVecData},
+  utils::ExtraData,
   vfs::Vfs,
   TreeShakeConfig,
 };
 use oxc::{
   allocator::Allocator,
-  ast::ast::Program,
   span::{GetSpan, Span},
 };
 use rustc_hash::FxHashSet;
@@ -73,11 +71,6 @@ impl<'a> Analyzer<'a> {
     })
   }
 
-  pub fn exec_program(&mut self, node: &'a Program<'a>) {
-    let data = self.load_data::<StatementVecData>(AstKind2::Program(node));
-    self.exec_statement_vec(data, &node.body);
-  }
-
   pub fn finalize(&mut self) {
     self.module_stack.push(ModuleId::new(0));
 
@@ -107,15 +100,14 @@ impl<'a> Analyzer<'a> {
   }
 
   fn consume_top_level_uncaught(&mut self) -> bool {
-    // let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
-    // if thrown_values.is_empty() {
-    //   false
-    // } else {
-    //   let values = mem::take(thrown_values);
-    //   self.consume(values);
-    //   true
-    // }
-    false
+    let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
+    if thrown_values.is_empty() {
+      false
+    } else {
+      let values = mem::take(thrown_values);
+      self.consume(values);
+      true
+    }
   }
 }
 

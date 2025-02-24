@@ -11,7 +11,7 @@ mod transformer;
 mod utils;
 pub mod vfs;
 
-use std::{cell::RefCell, mem, rc::Rc};
+use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};
 
 use analyzer::Analyzer;
 use module::ModuleInfo;
@@ -19,6 +19,8 @@ use oxc::{
   allocator::Allocator,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
+  parser::Parser,
+  span::SourceType,
 };
 use rustc_hash::FxHashMap;
 use transformer::Transformer;
@@ -48,41 +50,62 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
   let allocator = Allocator::default();
   let config = allocator.alloc(config);
 
-  // Step 1: Analyze
-  let analyzer = Analyzer::new_in(allocator.alloc(vfs), config, &allocator);
-  analyzer.import_module(entry);
-  analyzer.finalize();
-  let Analyzer { modules, diagnostics, mangler, data, referred_deps, conditional_data, .. } =
-    analyzer;
-  let mangler = Rc::new(RefCell::new(mangler));
-  let mut codegen_return = FxHashMap::default();
-  for module_info in &modules.modules {
-    let ModuleInfo { path, program, semantic, .. } = module_info;
+  if config.enabled {
+    // Step 1: Analyze
+    let analyzer = Analyzer::new_in(allocator.alloc(vfs), config, &allocator);
+    analyzer.import_module(entry);
+    analyzer.finalize();
+    let Analyzer { modules, diagnostics, mangler, data, referred_deps, conditional_data, .. } =
+      analyzer;
+    let mangler = Rc::new(RefCell::new(mangler));
+    let mut codegen_return = FxHashMap::default();
+    for module_info in &modules.modules {
+      let ModuleInfo { path, program, semantic, .. } = module_info;
 
-    // Setp 2: Transform
-    let transformer = Transformer::new(
-      config,
-      &allocator,
-      data,
-      referred_deps,
-      conditional_data,
-      mangler.clone(),
-      semantic,
-    );
-    let program = allocator.alloc(transformer.transform_program(program));
+      // Setp 2: Transform
+      let transformer = Transformer::new(
+        config,
+        &allocator,
+        data,
+        referred_deps,
+        conditional_data,
+        mangler.clone(),
+        semantic,
+      );
+      let program = allocator.alloc(transformer.transform_program(program));
 
-    // Step 3: Minify
+      // Step 3: Minify
+      let minifier_return = minify_options.map(|options| {
+        let minifier = Minifier::new(options);
+        minifier.build(&allocator, program)
+      });
+
+      // Step 4: Generate output
+      let codegen = CodeGenerator::new()
+        .with_options(codegen_options.clone())
+        .with_mangler(minifier_return.and_then(|r| r.mangler));
+      codegen_return.insert(path.to_string(), codegen.build(program));
+    }
+    TreeShakeReturn { codegen_return, diagnostics: mem::take(diagnostics) }
+  } else {
+    let source_text = vfs.read_file(&entry);
+    let parser =
+      Parser::new(&allocator, &source_text, SourceType::mjs().with_jsx(config.jsx.is_enabled()));
+    let parsed = parser.parse();
+    let mut program = parsed.program;
     let minifier_return = minify_options.map(|options| {
       let minifier = Minifier::new(options);
-      minifier.build(&allocator, program)
+      minifier.build(&allocator, &mut program)
     });
-
-    // Step 4: Generate output
     let codegen = CodeGenerator::new()
       .with_options(codegen_options.clone())
       .with_mangler(minifier_return.and_then(|r| r.mangler));
-    codegen_return.insert(path.to_string(), codegen.build(program));
+    let mut codegen_return = FxHashMap::default();
+    codegen_return.insert(entry, codegen.build(&mut program));
+    let mut diagnostics = BTreeSet::<String>::default();
+    for error in parsed.errors {
+      diagnostics.insert(error.to_string());
+    }
+    TreeShakeReturn { codegen_return, diagnostics }
   }
-
-  TreeShakeReturn { codegen_return, diagnostics: mem::take(diagnostics) }
 }

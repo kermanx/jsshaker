@@ -1,9 +1,8 @@
 use crate::{
-  ast::AstKind2,
   dep::{DepId, ReferredDeps},
   mangling::Mangler,
   scope::conditional::ConditionalDataMap,
-  utils::{DataPlaceholder, ExtraData, StatementVecData},
+  utils::{DataPlaceholder, ExtraData},
   TreeShakeConfig,
 };
 use oxc::{
@@ -79,16 +78,21 @@ impl<'a> Transformer<'a> {
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
     let Program { span, source_type, source_text, comments, hashbang, directives, body, .. } = node;
 
-    let data = self.get_data::<StatementVecData>(AstKind2::Program(node));
-    let mut body = self.transform_statement_vec(data, body);
+    let mut transformed_body = self.ast_builder.vec();
 
-    self.patch_var_declarations(node.scope_id.get().unwrap(), &mut body);
+    for statement in body {
+      if let Some(statement) = self.transform_statement(statement) {
+        transformed_body.push(statement);
+      }
+    }
+
+    self.patch_var_declarations(node.scope_id.get().unwrap(), &mut transformed_body);
 
     if self.need_unused_assignment_target.get() {
-      body.push(self.build_unused_assignment_target_definition());
+      transformed_body.push(self.build_unused_assignment_target_definition());
     }
     if self.need_non_nullish_helper.get() {
-      body.push(self.build_non_nullish_helper_definition());
+      transformed_body.push(self.build_non_nullish_helper_definition());
     }
 
     self.ast_builder.program(
@@ -98,7 +102,7 @@ impl<'a> Transformer<'a> {
       self.clone_node(comments),
       self.clone_node(hashbang),
       self.clone_node(directives),
-      body,
+      transformed_body,
     )
   }
 

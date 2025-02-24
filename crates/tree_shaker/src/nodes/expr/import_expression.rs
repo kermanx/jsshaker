@@ -18,9 +18,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(LiteralEntity::String(specifier, _m)) = specifier.get_literal(self) {
       if let Some(module_id) = self.resolve_and_import_module(specifier) {
-        return self.factory.computed_unknown(
-          self.consumable((self.modules.modules[module_id].export_object.unwrap(), dep)),
-        );
+        return self.factory.computed_unknown(self.consumable((module_id, dep)));
       }
     }
 
