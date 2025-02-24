@@ -138,7 +138,7 @@ impl<'a> Analyzer<'a> {
     (should_consume, indeterminate)
   }
 
-  pub fn add_exhaustive_callbacks(
+  pub fn request_exhaustive_callbacks(
     &mut self,
     should_consume: bool,
     (scope, symbol): (VariableScopeId, SymbolId),

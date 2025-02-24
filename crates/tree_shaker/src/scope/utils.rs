@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.add_exhaustive_callbacks(true, (self.scope_context.object_scope_id, object_id));
+    self.request_exhaustive_callbacks(true, (self.scope_context.object_scope_id, object_id));
 
     (has_exhaustive, indeterminate, exec_deps)
   }
@@ -52,6 +52,6 @@ impl<'a> Analyzer<'a> {
       }
       mem::take(&mut scope.deps).consume_all(self);
     }
-    self.add_exhaustive_callbacks(true, (self.scope_context.object_scope_id, object_id));
+    self.request_exhaustive_callbacks(true, (self.scope_context.object_scope_id, object_id));
   }
 }
