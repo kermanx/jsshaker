@@ -1,5 +1,6 @@
 {
   "recommendations": [
-    "kermanx.speedscope-vscode"
+    "kermanx.speedscope-vscode",
+    "kermanx.auto-diff-opener",
   ]
 }

@@ -29,6 +29,7 @@ clap = { workspace = true, features = ["derive"] }
 dashmap = { workspace = true }
 flame = { workspace = true, optional = true }
 flamescope = { workspace = true, optional = true }
+flate2 = { workspace = true }
 oxc = { workspace = true, features = ["codegen", "semantic", "minifier"] }
 oxc_ecmascript = { workspace = true }
 oxc_index = { workspace = true }

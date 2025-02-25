@@ -1,4 +1,5 @@
 use clap::Parser;
+use flate2::{write::GzEncoder, Compression};
 use oxc::{
   codegen::CodegenOptions,
   minifier::{MangleOptions, MinifierOptions},
@@ -194,6 +195,7 @@ fn main() {
     }
 
     let out_dir = PathBuf::from(args.output.unwrap_or(String::from("output")));
+    let _ = std::fs::remove_dir_all(&out_dir);
     if let Err(e) = std::fs::create_dir_all(&out_dir) {
       eprintln!("Couldn't create directory {}: {}", out_dir.display(), e);
       std::process::exit(1);
@@ -201,8 +203,16 @@ fn main() {
 
     let mut input_total = 0;
     let mut output_total = 0;
+    let mut input_g_total = 0;
+    let mut output_g_total = 0;
     for (path, codegen_return) in shaken.codegen_return {
       let out_path = out_dir.join(&path);
+      let orig_ext = if let Some(ext) = out_path.extension() {
+        format!("orig.{}", ext.to_string_lossy())
+      } else {
+        "orig".to_string()
+      };
+      let copy_path = out_path.with_extension(orig_ext);
       println!("{}\t--> {}", path, out_path.display());
 
       let mut output_file = match File::create(&out_path) {
@@ -227,10 +237,19 @@ fn main() {
       );
       let non_shaken_code = non_shaken.codegen_return[SingleFileFs::ENTRY_PATH].code.clone();
 
+      let mut copy_file = match File::create(&copy_path) {
+        Err(why) => {
+          eprintln!("Couldn't create {}: {}", copy_path.display(), why);
+          std::process::exit(1);
+        }
+        Ok(file) => file,
+      };
+      copy_file.write_all(non_shaken_code.as_bytes()).unwrap();
+
       input_total += non_shaken_code.len();
       output_total += codegen_return.code.len();
       println!(
-        "    Original: {}B,\t{}: {}B,\t{}: {}B\tRate: {:.2}%",
+        "    [RAW]  Original: {}B,\t{}: {}B,\t{}: {}B\tRate: {:.2}%",
         source.len(),
         if args.minify { "Shaken&Minified" } else { "Shaken" },
         codegen_return.code.len(),
@@ -238,14 +257,36 @@ fn main() {
         non_shaken_code.len(),
         (codegen_return.code.len() as f64 / non_shaken_code.len() as f64) * 100.0
       );
+
+      let source_g_size = get_gzipped_size(&source);
+      let input_g_size = get_gzipped_size(&non_shaken_code);
+      let output_g_size = get_gzipped_size(&codegen_return.code);
+      input_g_total += input_g_size;
+      output_g_total += output_g_size;
+      println!(
+        "    [GZIP] Original: {}B,\t{}: {}B,\t{}: {}B\tRate: {:.2}%",
+        source_g_size,
+        if args.minify { "Shaken&Minified" } else { "Shaken" },
+        output_g_size,
+        if args.minify { "Minified" } else { "Copied" },
+        input_g_size,
+        (output_g_size as f64 / input_g_size as f64) * 100.0,
+      );
     }
 
     let elapsed = start_time.elapsed();
     println!("-------------------");
     println!(
-      "Completed in {:?}, Rate: {:.2}%",
+      "Completed in {:?}, Rate: {:.2}%, Gzipped Rate: {:.2}%",
       elapsed,
-      (output_total as f64 / input_total as f64) * 100.0
+      (output_total as f64 / input_total as f64) * 100.0,
+      (output_g_total as f64 / input_g_total as f64) * 100.0,
     );
   }
+}
+
+fn get_gzipped_size(content: &str) -> usize {
+  let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
+  encoder.write_all(content.as_bytes()).unwrap();
+  encoder.finish().unwrap().len()
 }

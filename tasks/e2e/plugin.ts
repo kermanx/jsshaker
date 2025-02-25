@@ -24,7 +24,6 @@ export default function (options: {
           //   treeshake: false
           // },
           outDir: './dist',
-          minify: false,
           emptyOutDir: false,
           ...config?.build,
           lib: {
