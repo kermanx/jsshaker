@@ -19,6 +19,7 @@ impl<'a> Builtins<'a> {
       "keys" => self.create_object_keys_impl(),
       "values" => self.create_object_values_impl(),
       "entries" => self.create_object_entries_impl(),
+      "freeze" => self.create_object_freeze_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", object);
@@ -105,6 +106,14 @@ impl<'a> Builtins<'a> {
       }
 
       analyzer.factory.computed(array, deps)
+    })
+  }
+
+  fn create_object_freeze_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.freeze", |analyzer, dep, _, args| {
+      let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      // TODO: Actually freeze the object
+      analyzer.factory.computed(object, dep)
     })
   }
 }
