@@ -66,6 +66,7 @@ fn main() {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),
     ..Default::default()
   };
+  let min_codegen_options = CodegenOptions { minify: true, comments: false, ..Default::default() };
 
   if args.single_file {
     let source = match std::fs::read_to_string(&args.path) {
@@ -93,7 +94,7 @@ fn main() {
         vfs: SingleFileFs(source.clone()),
         config: shake_disabled.clone(),
         minify_options: Some(minify_options),
-        codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
+        codegen_options: min_codegen_options.clone(),
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -113,7 +114,7 @@ fn main() {
         vfs: SingleFileFs(shaken_code.clone()),
         config: shake_disabled.clone(),
         minify_options: Some(minify_options),
-        codegen_options: CodegenOptions { minify: true, comments: false, ..Default::default() },
+        codegen_options: min_codegen_options,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -185,7 +186,11 @@ fn main() {
         vfs: StdFs,
         config: shake_enabled,
         minify_options: args.minify.then_some(minify_options),
-        codegen_options: CodegenOptions::default(),
+        codegen_options: if args.minify {
+          min_codegen_options.clone()
+        } else {
+          CodegenOptions::default()
+        },
       },
       args.path.clone(),
     );
@@ -215,6 +220,10 @@ fn main() {
       let copy_path = out_path.with_extension(orig_ext);
       println!("{}\t--> {}", path, out_path.display());
 
+      if let Err(e) = std::fs::create_dir_all(out_path.parent().unwrap()) {
+        eprintln!("Couldn't create directory {}: {}", out_dir.display(), e);
+        std::process::exit(1);
+      }
       let mut output_file = match File::create(&out_path) {
         Err(why) => {
           eprintln!("Couldn't create {}: {}", out_path.display(), why);
@@ -231,7 +240,11 @@ fn main() {
           vfs: SingleFileFs(source.clone()),
           config: shake_disabled.clone(),
           minify_options: args.minify.then_some(minify_options),
-          codegen_options: CodegenOptions::default(),
+          codegen_options: if args.minify {
+            min_codegen_options.clone()
+          } else {
+            CodegenOptions::default()
+          },
         },
         SingleFileFs::ENTRY_PATH.to_string(),
       );
@@ -249,7 +262,7 @@ fn main() {
       input_total += non_shaken_code.len();
       output_total += codegen_return.code.len();
       println!(
-        "    [RAW]  Original: {}B,\t{}: {}B,\t{}: {}B\tRate: {:.2}%",
+        "    [RAW]  Original: {}B\t{}: {}B\t{}: {}B\tRate: {:.2}%",
         source.len(),
         if args.minify { "Shaken&Minified" } else { "Shaken" },
         codegen_return.code.len(),
@@ -264,7 +277,7 @@ fn main() {
       input_g_total += input_g_size;
       output_g_total += output_g_size;
       println!(
-        "    [GZIP] Original: {}B,\t{}: {}B,\t{}: {}B\tRate: {:.2}%",
+        "    [GZIP] Original: {}B\t{}: {}B\t{}: {}B\tRate: {:.2}%",
         source_g_size,
         if args.minify { "Shaken&Minified" } else { "Shaken" },
         output_g_size,
@@ -277,7 +290,7 @@ fn main() {
     let elapsed = start_time.elapsed();
     println!("-------------------");
     println!(
-      "Completed in {:?}, Rate: {:.2}%, Gzipped Rate: {:.2}%",
+      "Completed in {:?}\tRate: {:.2}%\tGzipped Rate: {:.2}%",
       elapsed,
       (output_total as f64 / input_total as f64) * 100.0,
       (output_g_total as f64 / input_g_total as f64) * 100.0,
