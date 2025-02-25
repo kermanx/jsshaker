@@ -2,6 +2,7 @@ use crate::{
   builtins::Prototype,
   consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
   mangling::{MangleAtom, MangleConstraint, ManglingDep},
+  module::ModuleId,
   scope::{CfScopeId, VariableScopeId},
   utils::F64WithEq,
   TreeShakeConfig,
@@ -192,6 +193,7 @@ impl<'a> EntityFactory<'a> {
 
   pub fn class(
     &self,
+    module: ModuleId,
     node: &'a Class<'a>,
     keys: Vec<Option<Entity<'a>>>,
     variable_scope_stack: Vec<VariableScopeId>,
@@ -200,6 +202,7 @@ impl<'a> EntityFactory<'a> {
   ) -> Entity<'a> {
     self.alloc(ClassEntity {
       consumed: Cell::new(false),
+      module,
       node,
       keys,
       statics,

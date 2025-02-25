@@ -3,7 +3,7 @@ use super::{
   TypeofResult,
 };
 use crate::{
-  analyzer::Analyzer, consumable::Consumable, scope::VariableScopeId, use_consumed_flag,
+  analyzer::Analyzer, consumable::Consumable, module::ModuleId, scope::VariableScopeId, use_consumed_flag
 };
 use oxc::ast::ast::Class;
 use std::{cell::Cell, rc::Rc};
@@ -11,6 +11,7 @@ use std::{cell::Cell, rc::Rc};
 #[derive(Debug)]
 pub struct ClassEntity<'a> {
   pub consumed: Cell<bool>,
+  pub module: ModuleId,
   pub node: &'a Class<'a>,
   pub keys: Vec<Option<Entity<'a>>>,
   pub statics: &'a ObjectEntity<'a>,

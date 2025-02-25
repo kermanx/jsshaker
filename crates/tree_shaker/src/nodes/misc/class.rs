@@ -49,6 +49,7 @@ impl<'a> Analyzer<'a> {
     self.pop_variable_scope();
 
     let class = self.factory.class(
+      self.current_module(),
       node,
       keys.clone(),
       self.scope_context.variable.stack.clone(),
@@ -112,6 +113,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn construct_class(&mut self, class: &ClassEntity<'a>) {
+    self.module_stack.push(class.module);
     let node = class.node;
 
     self.consume(AstKind2::Class(node));
@@ -180,6 +182,7 @@ impl<'a> Analyzer<'a> {
     if node.id.is_some() {
       self.pop_variable_scope();
     }
+    self.module_stack.pop();
   }
 }
 
