@@ -1,15 +1,16 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/class.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/class.js
 ---
 class A extends 2 {
 	constructor(a, b) {
 		super(a);
 		b();
 	}
-	fn() {
-		1();
+	fn(a) {
+		a = console.log;
+		a();
 	}
 	[2] = 2;
 	get [6]() {
