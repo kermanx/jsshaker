@@ -81,8 +81,12 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::call(self, analyzer, dep, this, args)
+    analyzer.throw_builtin_error("Cannot call a React element");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::call(self, analyzer, dep, this, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn construct(
@@ -91,13 +95,21 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::construct(self, analyzer, dep, args)
+    analyzer.throw_builtin_error("Cannot call a React element");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::construct(self, analyzer, dep, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Cannot call a React element");
-    consumed_object::jsx(self, analyzer, props)
+    analyzer.throw_builtin_error("Cannot call a React element");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::jsx(self, analyzer, props)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {

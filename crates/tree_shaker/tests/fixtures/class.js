@@ -5,7 +5,7 @@ class A extends (1+1) {
   }
   fn(a) {
     a;
-    a = 1;
+    a = console.log;
     a();
   }
   [1+1] = 1+1

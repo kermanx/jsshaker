@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
     self.exit_to(try_scope.cf_scope_depth);
   }
 
-  pub fn thrown_builtin_error(&mut self, message: impl Into<String>) {
+  pub fn throw_builtin_error(&mut self, message: impl Into<String>) {
     if self.scope_context.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }

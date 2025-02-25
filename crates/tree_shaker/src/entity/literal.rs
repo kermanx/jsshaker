@@ -1,5 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
+  TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -55,8 +56,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     key: Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.thrown_builtin_error("Cannot get property of null or undefined");
-      consumed_object::get_property(self, analyzer, dep, key)
+      analyzer.throw_builtin_error("Cannot get property of null or undefined");
+      if analyzer.config.preserve_exceptions {
+        consumed_object::get_property(self, analyzer, dep, key)
+      } else {
+        analyzer.factory.never
+      }
     } else {
       let prototype = self.get_prototype(analyzer);
       let dep = analyzer.consumable((self, dep, key));
@@ -86,8 +91,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     value: Entity<'a>,
   ) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.thrown_builtin_error("Cannot set property of null or undefined");
-      consumed_object::set_property(analyzer, dep, key, value)
+      analyzer.throw_builtin_error("Cannot set property of null or undefined");
+      if analyzer.config.preserve_exceptions {
+        consumed_object::set_property(analyzer, dep, key, value)
+      }
     } else {
       // No effect
     }
@@ -125,8 +132,10 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
-      analyzer.thrown_builtin_error("Cannot delete property of null or undefined");
-      analyzer.consume(dep);
+      analyzer.throw_builtin_error("Cannot delete property of null or undefined");
+      if analyzer.config.preserve_exceptions {
+        analyzer.consume(dep);
+      }
     } else {
       // No effect
     }
@@ -139,8 +148,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error(format!("Cannot call a non-function object {:?}", self));
-    consumed_object::call(self, analyzer, dep, this, args)
+    analyzer.throw_builtin_error(format!("Cannot call a non-function object {:?}", self));
+    if analyzer.config.preserve_exceptions {
+      consumed_object::call(self, analyzer, dep, this, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn construct(
@@ -149,8 +162,12 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
-    consumed_object::construct(self, analyzer, dep, args)
+    analyzer.throw_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
+    if analyzer.config.preserve_exceptions {
+      consumed_object::construct(self, analyzer, dep, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, attributes: Entity<'a>) -> Entity<'a> {
@@ -169,9 +186,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
         analyzer.consumable((self, dep, *atom)),
       ),
       _ => {
-        self.consume(analyzer);
-        analyzer.thrown_builtin_error("Cannot iterate over a non-iterable object");
-        consumed_object::iterate(analyzer, dep)
+        analyzer.throw_builtin_error("Cannot iterate over a non-iterable object");
+        if analyzer.config.preserve_exceptions {
+          self.consume(analyzer);
+          consumed_object::iterate(analyzer, dep)
+        } else {
+          NeverEntity.iterate(analyzer, dep)
+        }
       }
     }
   }

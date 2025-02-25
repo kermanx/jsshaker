@@ -11,6 +11,7 @@ mod factory;
 mod function;
 mod literal;
 mod logical_result;
+mod never;
 mod object;
 mod primitive;
 mod react_element;

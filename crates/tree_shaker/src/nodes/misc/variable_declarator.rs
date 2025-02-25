@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
     let init = match init {
       Some(init) => {
         if node.init.is_some() {
-          self.thrown_builtin_error(
+          self.throw_builtin_error(
             "for-in/for-of loop variable declaration may not have an initializer",
           );
         }

@@ -78,8 +78,12 @@ impl<'a> EntityTrait<'a> for ClassEntity<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Class constructor A cannot be invoked without 'new'");
-    consumed_object::call(self, analyzer, dep, this, args)
+    analyzer.throw_builtin_error("Class constructor A cannot be invoked without 'new'");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::call(self, analyzer, dep, this, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn construct(

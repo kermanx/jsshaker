@@ -1,11 +1,8 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
+  TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer,
-  builtins::Prototype,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveEntity {
@@ -81,8 +78,12 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Cannot call non-object");
-    consumed_object::call(self, analyzer, dep, this, args)
+    analyzer.throw_builtin_error("Cannot call non-object");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::call(self, analyzer, dep, this, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn construct(
@@ -91,8 +92,12 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.thrown_builtin_error("Cannot construct non-object");
-    consumed_object::construct(self, analyzer, dep, args)
+    analyzer.throw_builtin_error("Cannot construct non-object");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::construct(self, analyzer, dep, args)
+    } else {
+      analyzer.factory.never
+    }
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -107,9 +112,13 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
     if *self == PrimitiveEntity::String {
       return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((self, dep)));
     }
-    analyzer.thrown_builtin_error("Cannot iterate non-object");
-    self.consume(analyzer);
-    consumed_object::iterate(analyzer, dep)
+    analyzer.throw_builtin_error("Cannot iterate non-object");
+    if analyzer.config.preserve_exceptions {
+      self.consume(analyzer);
+      consumed_object::iterate(analyzer, dep)
+    } else {
+      NeverEntity.iterate(analyzer, dep)
+    }
   }
 
   fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {

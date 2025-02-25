@@ -182,8 +182,8 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
                     }
                   }
                 } else {
-                  analyzer.thrown_builtin_error("Invalid array length");
-                  has_effect = true;
+                  analyzer.throw_builtin_error("Invalid array length");
+                  has_effect = analyzer.config.preserve_exceptions;
                 }
               } else {
                 has_effect = true;

@@ -185,7 +185,7 @@ impl<'a> Analyzer<'a> {
       if kind.is_untracked() {
         self.consume(new_val);
       } else if kind.is_const() {
-        self.thrown_builtin_error("Cannot assign to const variable");
+        self.throw_builtin_error("Cannot assign to const variable");
         self.consume(variable.borrow().decl_node);
         new_val.consume(self);
       } else {
@@ -351,7 +351,7 @@ impl<'a> Analyzer<'a> {
     if self.semantic().symbols().get_flags(symbol).is_function_scoped_declaration() {
       self.mark_untracked_on_scope(symbol);
     } else {
-      self.thrown_builtin_error("Unresolved identifier reference");
+      self.throw_builtin_error("Unresolved identifier reference");
     }
   }
 
@@ -359,7 +359,7 @@ impl<'a> Analyzer<'a> {
     if self.has_exhaustive_scope_since(target_cf_scope) {
       self.may_throw();
     } else {
-      self.thrown_builtin_error("Cannot access variable before initialization");
+      self.throw_builtin_error("Cannot access variable before initialization");
     }
     self.refer_to_global();
   }

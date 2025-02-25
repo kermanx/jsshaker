@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityFactory, EntityTrait, EnumeratedProperties, IteratedElements,
-  ObjectEntity, TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EntityFactory, EntityTrait, EnumeratedProperties,
+  IteratedElements, ObjectEntity, TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
@@ -113,8 +113,12 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
-    analyzer.thrown_builtin_error("Cannot iterate over function");
-    consumed_object::iterate(analyzer, dep)
+    analyzer.throw_builtin_error("Cannot iterate over function");
+    if analyzer.config.preserve_exceptions {
+      consumed_object::iterate(analyzer, dep)
+    } else {
+      NeverEntity.iterate(analyzer, dep)
+    }
   }
 
   fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {

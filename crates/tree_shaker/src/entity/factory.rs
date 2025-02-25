@@ -15,6 +15,7 @@ use super::{
   collected::CollectedEntity,
   computed::ComputedEntity,
   logical_result::LogicalResultEntity,
+  never::NeverEntity,
   react_element::ReactElementEntity,
   union::UnionEntity,
   utils::UnionLike,
@@ -40,6 +41,7 @@ pub struct EntityFactory<'a> {
   pub null: Entity<'a>,
   pub undefined: Entity<'a>,
 
+  pub never: Entity<'a>,
   pub immutable_unknown: Entity<'a>,
 
   pub unknown_primitive: Entity<'a>,
@@ -73,6 +75,7 @@ impl<'a> EntityFactory<'a> {
     let null = allocator.alloc(LiteralEntity::Null);
     let undefined = allocator.alloc(LiteralEntity::Undefined);
 
+    let never = allocator.alloc(NeverEntity);
     let immutable_unknown = allocator.alloc(UnknownEntity::new());
     let unknown_primitive = allocator.alloc(PrimitiveEntity::Mixed);
     let unknown_string = allocator.alloc(PrimitiveEntity::String);
@@ -108,6 +111,7 @@ impl<'a> EntityFactory<'a> {
       null,
       undefined,
 
+      never,
       immutable_unknown,
 
       unknown_primitive,
