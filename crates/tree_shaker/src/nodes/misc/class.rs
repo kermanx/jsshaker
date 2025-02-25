@@ -124,7 +124,7 @@ impl<'a> Analyzer<'a> {
     for (index, element) in node.body.body.iter().enumerate() {
       if !element.r#static() {
         if let Some(key) = class.keys[index] {
-          key.consume(self);
+          self.consume(key);
         }
       }
     }

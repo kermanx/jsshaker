@@ -1,6 +1,10 @@
 use crate::transformer::Transformer;
-use oxc::ast::ast::{
-  BindingPatternKind, ClassElement, Function, MethodDefinition, MethodDefinitionKind,
+use oxc::ast::{
+  ast::{
+    BindingPatternKind, ClassElement, Function, MethodDefinition, MethodDefinitionKind,
+    PropertyDefinitionType,
+  },
+  NONE,
 };
 
 impl<'a> Transformer<'a> {
@@ -22,26 +26,47 @@ impl<'a> Transformer<'a> {
       accessibility,
     } = node;
 
-    let key = self.transform_property_key(key, true).unwrap();
-    let mut transformed_value = self.transform_function(value, true).unwrap();
+    if let Some(mut transformed_value) = self.transform_function(value, false) {
+      let key = self.transform_property_key(key, true).unwrap();
 
-    if *kind == MethodDefinitionKind::Set {
-      self.patch_method_definition_params(value, &mut transformed_value);
+      if *kind == MethodDefinitionKind::Set {
+        self.patch_method_definition_params(value, &mut transformed_value);
+      }
+
+      Some(self.ast_builder.class_element_method_definition(
+        *span,
+        *r#type,
+        self.clone_node(decorators),
+        key,
+        transformed_value,
+        *kind,
+        *computed,
+        *r#static,
+        *r#override,
+        *optional,
+        *accessibility,
+      ))
+    } else {
+      let key = self.transform_property_key(key, false);
+      return key.map(|key| {
+        self.ast_builder.class_element_property_definition(
+          *span,
+          PropertyDefinitionType::PropertyDefinition,
+          self.ast_builder.vec(),
+          key,
+          None,
+          true,
+          *r#static,
+          false,
+          false,
+          false,
+          false,
+          false,
+          NONE,
+          None,
+        )
+      });
     }
-
-    Some(self.ast_builder.class_element_method_definition(
-      *span,
-      *r#type,
-      self.clone_node(decorators),
-      key,
-      transformed_value,
-      *kind,
-      *computed,
-      *r#static,
-      *r#override,
-      *optional,
-      *accessibility,
-    ))
   }
 
   /// It is possible that `set a(param) {}` has been optimized to `set a() {}`.
