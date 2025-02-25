@@ -136,6 +136,14 @@ impl<'a> Analyzer<'a> {
     }
 
     // Non-static methods
+    self.push_call_scope(
+      self.new_callee_info(CalleeNode::ClassConstructor(node)),
+      self.factory.empty_consumable,
+      class.variable_scope_stack.as_ref().clone(),
+      false,
+      false,
+      false,
+    );
     for element in &node.body.body {
       if let ClassElement::MethodDefinition(node) = element {
         if !node.r#static {
@@ -144,6 +152,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+    self.pop_call_scope();
 
     // Non-static properties
     let variable_scope_stack = class.variable_scope_stack.clone();
