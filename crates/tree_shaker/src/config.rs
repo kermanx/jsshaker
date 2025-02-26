@@ -17,7 +17,7 @@ pub struct TreeShakeConfig {
 
   pub max_recursion_depth: usize,
 
-  pub mangling: bool,
+  pub mangling: Option<bool>,
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
   pub preserve_function_length: bool,
@@ -45,7 +45,7 @@ impl TreeShakeConfig {
 
       max_recursion_depth: 2,
 
-      mangling: false,
+      mangling: Some(false),
       unknown_global_side_effects: true,
       preserve_function_name: true,
       preserve_function_length: true,
@@ -62,7 +62,6 @@ impl TreeShakeConfig {
 
   pub fn recommended() -> Self {
     Self {
-      mangling: true,
       preserve_function_name: false,
       preserve_function_length: false,
       preserve_exceptions: false,
@@ -73,13 +72,13 @@ impl TreeShakeConfig {
 
   pub fn smallest() -> Self {
     Self {
-      mangling: true,
       unknown_global_side_effects: false,
       preserve_function_name: false,
       preserve_function_length: false,
       iterate_side_effects: false,
       unknown_property_read_side_effects: false,
       unmatched_prototype_property_as_undefined: true,
+      preserve_exceptions: false,
 
       ..Default::default()
     }
@@ -103,7 +102,7 @@ impl TreeShakeConfig {
     self
   }
 
-  pub fn with_mangling(mut self, yes: bool) -> Self {
+  pub fn with_mangling(mut self, yes: Option<bool>) -> Self {
     self.mangling = yes;
     self
   }

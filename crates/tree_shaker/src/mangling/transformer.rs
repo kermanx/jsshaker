@@ -1,0 +1,18 @@
+use oxc::ast::{ast::IdentifierName, VisitMut};
+
+use crate::{transformer::Transformer, utils::ast::AstKind2};
+
+use super::MangleAtom;
+
+pub struct ManglerTransformer<'a>(pub Transformer<'a>);
+
+impl<'a> VisitMut<'a> for ManglerTransformer<'a> {
+  fn visit_identifier_name(&mut self, node: &mut IdentifierName<'a>) {
+    if let Some(atom) = self.0.get_data::<Option<MangleAtom>>(AstKind2::IdentifierName(node)) {
+      let mut mangler = self.0.mangler.borrow_mut();
+      if let Some(mangled) = mangler.resolve(*atom) {
+        node.name = mangled.into();
+      }
+    }
+  }
+}

@@ -37,8 +37,9 @@ struct Args {
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
 
-  #[arg(long, default_value_t = false)]
-  no_mangle: bool,
+  #[arg(long, default_value_t = String::from("on"))]
+  // on/off/only
+  mangle: String,
 
   #[arg(short, long, default_value_t = 2)]
   recursion_depth: usize,
@@ -59,7 +60,15 @@ fn main() {
   }
   .with_react_jsx(args.jsx)
   .with_always_inline_literal(args.always_inline_literal)
-  .with_mangling(!args.no_mangle)
+  .with_mangling(match args.mangle.as_str() {
+    "on" => Some(false),
+    "off" => None,
+    "only" => Some(true),
+    _ => {
+      eprintln!("Invalid --mangle: {}", args.mangle);
+      std::process::exit(1);
+    }
+  })
   .with_max_recursion_depth(args.recursion_depth);
 
   let minify_options = MinifierOptions {

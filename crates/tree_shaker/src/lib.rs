@@ -14,9 +14,11 @@ pub mod vfs;
 use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};
 
 use analyzer::Analyzer;
+use mangling::ManglerTransformer;
 use module::ModuleInfo;
 use oxc::{
   allocator::Allocator,
+  ast::VisitMut,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
   parser::Parser,
@@ -59,7 +61,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
       analyzer;
     let mangler = Rc::new(RefCell::new(mangler));
     let mut codegen_return = FxHashMap::default();
-    for module_info in &modules.modules {
+    for module_info in mem::take(&mut modules.modules) {
       let ModuleInfo { path, program, semantic, .. } = module_info;
 
       // Setp 2: Transform
@@ -72,7 +74,15 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
         mangler.clone(),
         semantic,
       );
-      let program = allocator.alloc(transformer.transform_program(program));
+      let program = if config.mangling == Some(true) {
+        // Mangling only
+        let program = unsafe { &mut **program.get() };
+        ManglerTransformer(transformer).visit_program(program);
+        program
+      } else {
+        let program = unsafe { &*program.get() };
+        allocator.alloc(transformer.transform_program(program))
+      };
 
       // Step 3: Minify
       let minifier_return = minify_options.map(|options| {
@@ -101,7 +111,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
       .with_options(codegen_options.clone())
       .with_mangler(minifier_return.and_then(|r| r.mangler));
     let mut codegen_return = FxHashMap::default();
-    codegen_return.insert(entry, codegen.build(&mut program));
+    codegen_return.insert(entry, codegen.build(&program));
     let mut diagnostics = BTreeSet::<String>::default();
     for error in parsed.errors {
       diagnostics.insert(error.to_string());

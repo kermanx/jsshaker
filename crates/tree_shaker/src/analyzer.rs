@@ -65,7 +65,7 @@ impl<'a> Analyzer<'a> {
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),
-      mangler: Mangler::new(config.mangling, allocator),
+      mangler: Mangler::new(config.mangling.is_some(), allocator),
       pending_deps: Default::default(),
       diagnostics: Default::default(),
     })
@@ -150,7 +150,7 @@ impl<'a> Analyzer<'a> {
     *self.span_stack.last().unwrap()
   }
 
-  pub fn push_span(&mut self, node: &'a impl GetSpan) {
+  pub fn push_span(&mut self, node: &impl GetSpan) {
     self.span_stack.push(node.span());
   }
 

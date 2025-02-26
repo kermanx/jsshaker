@@ -1,4 +1,4 @@
-use std::mem;
+use std::{cell::UnsafeCell, mem, rc::Rc};
 
 use line_index::LineIndex;
 use oxc::{
@@ -26,7 +26,7 @@ use crate::{
 pub struct ModuleInfo<'a> {
   pub path: Atom<'a>,
   pub line_index: LineIndex,
-  pub program: &'a Program<'a>,
+  pub program: Rc<UnsafeCell<&'a mut Program<'a>>>,
   pub semantic: &'a Semantic<'a>,
   pub call_id: DepId,
 
@@ -94,7 +94,7 @@ impl<'a> Analyzer<'a> {
     let module_id = self.modules.modules.push(ModuleInfo {
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
-      program,
+      program: Rc::new(UnsafeCell::new(program)),
       semantic,
       call_id: DepId::from_counter(),
 
@@ -134,6 +134,7 @@ impl<'a> Analyzer<'a> {
     let old_cf_scope_stack = self.scope_context.cf.replace_stack(vec![CfScopeId::from(0)]);
     self.scope_context.cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
 
+    let program = unsafe { &*program.get() };
     for node in &program.body {
       self.declare_statement(node);
     }
