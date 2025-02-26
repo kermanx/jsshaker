@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, entity::TypeofResult, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForInStatement, Statement},
   span::GetSpan,
@@ -11,35 +8,38 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
     let right = self.exec_expression(&node.right);
 
-    // FIXME: enumerate keys!
-    right.consume(self);
-
-    let types_have_no_keys: TypeofResult = TypeofResult::Undefined
-      | TypeofResult::Boolean
-      | TypeofResult::Number
-      | TypeofResult::String
-      | TypeofResult::Symbol;
-
-    // TODO: empty object, simple function, array
-    if (right.test_typeof() & !types_have_no_keys) == TypeofResult::_None
-      || right.test_nullish() == Some(true)
-    {
-      return;
-    }
-
-    self.declare_for_statement_left(&node.left);
-
     let dep = self.consumable((AstKind2::ForInStatement(node), right));
 
     self.push_cf_scope_with_deps(CfScopeKind::Loop, vec![dep], Some(false));
-    self.exec_loop(move |analyzer| {
-      analyzer.declare_for_statement_left(&node.left);
-      analyzer.init_for_statement_left(&node.left, analyzer.factory.unknown_string);
 
-      analyzer.push_cf_scope(CfScopeKind::Loop, None);
-      analyzer.exec_statement(&node.body);
-      analyzer.pop_cf_scope();
-    });
+    if let Some(keys) = right.get_own_keys(self) {
+      for (definite, key) in keys {
+        self.push_cf_scope(CfScopeKind::Loop, if definite { Some(false) } else { None });
+        self.push_variable_scope();
+
+        self.declare_for_statement_left(&node.left);
+        self.init_for_statement_left(&node.left, self.factory.alloc(key));
+
+        self.exec_statement(&node.body);
+
+        self.pop_variable_scope();
+        self.pop_cf_scope();
+      }
+    } else {
+      self.exec_loop(move |analyzer| {
+        analyzer.push_cf_scope(CfScopeKind::Loop, None);
+        analyzer.push_variable_scope();
+
+        analyzer.declare_for_statement_left(&node.left);
+        analyzer.init_for_statement_left(&node.left, analyzer.factory.unknown_string);
+
+        analyzer.exec_statement(&node.body);
+
+        analyzer.pop_variable_scope();
+        analyzer.pop_cf_scope();
+      });
+    }
+
     self.pop_cf_scope();
   }
 }

@@ -273,6 +273,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     Some(*self)
   }
 
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+    match self {
+      LiteralEntity::String(_, _) => None,
+      _ => Some(vec![]),
+    }
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     match self {
       LiteralEntity::String(_, _) => TypeofResult::String,

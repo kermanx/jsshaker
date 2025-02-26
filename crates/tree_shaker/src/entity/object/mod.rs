@@ -176,6 +176,24 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
     self
   }
 
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+    if self.consumed.get()
+      || self.rest.borrow().is_some()
+      || !self.unknown_keyed.borrow().possible_values.is_empty()
+    {
+      return None;
+    }
+
+    let mut keys = Vec::new();
+    for (key, property) in self.string_keyed.borrow().iter() {
+      keys.push((
+        property.definite,
+        LiteralEntity::String(key, property.mangling.map(|(_, key_atom)| key_atom)),
+      ));
+    }
+    Some(keys)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Object
   }

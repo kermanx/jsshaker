@@ -108,6 +108,10 @@ pub trait EntityTrait<'a>: Debug {
       }
     })
   }
+  /// Returns vec![(definite, key)]
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+    None
+  }
 
   fn test_typeof(&self) -> TypeofResult;
   fn test_truthy(&self) -> Option<bool>;

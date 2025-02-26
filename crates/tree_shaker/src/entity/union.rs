@@ -188,6 +188,15 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     Some(result)
   }
 
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+    let mut result = Vec::new();
+    for entity in self.values.iter() {
+      let keys = entity.get_own_keys(_analyzer)?;
+      result.extend(keys.into_iter().map(|(_, key)| (false, key)));
+    }
+    Some(result)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     let mut result = TypeofResult::_None;
     for entity in self.values.iter() {

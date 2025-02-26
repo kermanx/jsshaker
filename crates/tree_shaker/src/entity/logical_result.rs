@@ -1,4 +1,6 @@
-use super::{Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult};
+use super::{
+  Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
+};
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
 #[derive(Debug, Clone)]
@@ -112,6 +114,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
 
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.value.get_to_jsx_child(analyzer)
+  }
+
+  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+    self.value.get_own_keys(analyzer)
   }
 
   fn test_typeof(&self) -> TypeofResult {

@@ -30,11 +30,9 @@ impl<'a> Analyzer<'a> {
         }
         Some(init)
       }
-      None => node.init.as_ref().map(|init| {
-        let val = self.exec_expression(init);
-        self.factory.computed(val, AstKind2::VariableDeclarator(node))
-      }),
-    };
+      None => node.init.as_ref().map(|init| self.exec_expression(init)),
+    }
+    .map(|init| self.factory.computed(init, AstKind2::VariableDeclarator(node)));
 
     self.init_binding_pattern(&node.id, init);
   }

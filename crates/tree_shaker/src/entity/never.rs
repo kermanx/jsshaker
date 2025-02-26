@@ -101,6 +101,12 @@ impl<'a> EntityTrait<'a> for NeverEntity {
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralEntity<'a>> {
     None
   }
+  fn get_own_keys(
+    &'a self,
+    _analyzer: &Analyzer<'a>,
+  ) -> Option<Vec<(bool, super::LiteralEntity<'a>)>> {
+    Some(vec![])
+  }
 
   fn test_typeof(&self) -> super::TypeofResult {
     super::TypeofResult::_None
