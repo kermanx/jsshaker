@@ -47,6 +47,7 @@ module.exports = function(test) {
       || /\bwith\s*\(/.test(main)
       || /\busing\b/.test(main)
       || main.includes('noStrict')
+      || main.includes('import-defer')
     ) {
       skipped++;
       if (!process.stdout.isTTY) {
