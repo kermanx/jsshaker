@@ -1,4 +1,4 @@
-use crate::transformer::Transformer;
+use crate::{transformer::Transformer, utils::ast::AstKind2};
 use oxc::ast::{
   ast::{ClassElement, PropertyDefinition},
   NONE,
@@ -10,6 +10,10 @@ impl<'a> Transformer<'a> {
     node: &'a PropertyDefinition<'a>,
   ) -> Option<ClassElement<'a>> {
     let PropertyDefinition { r#type, span, decorators, key, value, computed, r#static, .. } = node;
+
+    if *r#static && !self.is_referred(AstKind2::PropertyDefinition(node)) {
+      return None;
+    }
 
     let key = self.transform_property_key(key, true).unwrap();
     let value = value.as_ref().map(|node| self.transform_expression(node, true).unwrap());
