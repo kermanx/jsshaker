@@ -17,7 +17,9 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::LoopBreak, Some(false));
 
     // Execute the first round.
+    self.push_cf_scope(CfScopeKind::LoopContinue, Some(false));
     self.exec_statement(&node.body);
+    self.pop_cf_scope();
 
     if self.cf_scope().must_exited() {
       self.pop_cf_scope();
