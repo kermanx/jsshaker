@@ -101,10 +101,7 @@ impl<'a> EntityTrait<'a> for NeverEntity {
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralEntity<'a>> {
     None
   }
-  fn get_own_keys(
-    &'a self,
-    _analyzer: &Analyzer<'a>,
-  ) -> Option<Vec<(bool, super::LiteralEntity<'a>)>> {
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     Some(vec![])
   }
 

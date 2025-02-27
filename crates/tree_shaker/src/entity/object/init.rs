@@ -40,8 +40,8 @@ impl<'a> ObjectEntity<'a> {
               .flatten();
             let constraint = if mangable {
               if let Some(existing) = &existing {
-                let (_, existing_atom) = existing.mangling.unwrap();
-                Some(MangleConstraint::Eq(existing_atom, key_atom.unwrap()))
+                let prev_atom = existing.mangling.unwrap();
+                Some(MangleConstraint::Eq(prev_atom, key_atom.unwrap()))
               } else {
                 self.add_to_mangling_group(analyzer, key_atom.unwrap());
                 None
@@ -71,7 +71,8 @@ impl<'a> ObjectEntity<'a> {
                 definite,
                 possible_values: vec![property_val],
                 non_existent: ConsumableCollector::default(),
-                mangling: mangable.then(|| (key, key_atom.unwrap())),
+                key: Some(key),
+                mangling: mangable.then(|| key_atom.unwrap()),
               };
               string_keyed.insert(key_str, property);
             } else {
@@ -117,6 +118,7 @@ impl<'a> ObjectEntity<'a> {
         definite: false,
         possible_values: vec![property],
         non_existent: ConsumableCollector::default(),
+        key: None,
         mangling: None,
       });
     }

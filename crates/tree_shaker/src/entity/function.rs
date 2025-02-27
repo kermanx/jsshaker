@@ -166,10 +166,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     }
   }
 
-  fn get_own_keys(
-    &'a self,
-    analyzer: &Analyzer<'a>,
-  ) -> Option<Vec<(bool, super::LiteralEntity<'a>)>> {
+  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     self.object.get_own_keys(analyzer)
   }
 

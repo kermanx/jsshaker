@@ -55,7 +55,7 @@ impl<'a> ObjectEntity<'a> {
 
         let definite = properties.definite;
         let key_entity = if mangable {
-          analyzer.factory.mangable_string(key, properties.mangling.unwrap().1)
+          analyzer.factory.mangable_string(key, properties.mangling.unwrap())
         } else {
           analyzer.factory.string(key)
         };

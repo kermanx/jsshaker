@@ -15,3 +15,14 @@ impl<'a> ConsumableTrait<'a> for ManglingDep<'a> {
     analyzer.consume(self.constraint);
   }
 }
+
+#[derive(Debug, Clone, Copy)]
+pub struct AlwaysMangableDep<'a> {
+  pub dep: Entity<'a>,
+}
+
+impl<'a> ConsumableTrait<'a> for AlwaysMangableDep<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    self.dep.consume_mangable(analyzer);
+  }
+}

@@ -7,7 +7,7 @@ mod utils;
 
 pub use atom::*;
 pub use constraint::*;
-pub use dep::ManglingDep;
+pub use dep::*;
 pub use mangler::*;
 pub use transformer::*;
 pub use utils::is_literal_mangable;

@@ -15,10 +15,16 @@ pub enum ObjectPropertyValue<'a> {
 
 #[derive(Debug)]
 pub struct ObjectProperty<'a> {
-  pub definite: bool,                                // 是否一定存在
-  pub possible_values: Vec<ObjectPropertyValue<'a>>, // 可能的值，可能有多个
-  pub non_existent: ConsumableCollector<'a>,         // 如果不存在，为什么？
-  pub mangling: Option<(Entity<'a>, MangleAtom)>,
+  /// Does this property definitely exist
+  pub definite: bool,
+  /// Possible values of this property
+  pub possible_values: Vec<ObjectPropertyValue<'a>>,
+  /// Why this property is non-existent
+  pub non_existent: ConsumableCollector<'a>,
+  /// The key entity. None if it is just LiteralEntity(key)
+  pub key: Option<Entity<'a>>,
+  /// key_atom if this property's key is mangable
+  pub mangling: Option<MangleAtom>,
 }
 
 impl<'a> Default for ObjectProperty<'a> {
@@ -27,6 +33,7 @@ impl<'a> Default for ObjectProperty<'a> {
       definite: true,
       possible_values: vec![],
       non_existent: ConsumableCollector::default(),
+      key: None,
       mangling: None,
     }
   }
@@ -64,7 +71,8 @@ impl<'a> ObjectProperty<'a> {
     key: Entity<'a>,
     key_atom: MangleAtom,
   ) {
-    let (prev_key, prev_atom) = self.mangling.unwrap();
+    let prev_key = self.key.unwrap();
+    let prev_atom = self.mangling.unwrap();
     let constraint = &*analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom));
     for possible_value in &self.possible_values {
       match possible_value {
@@ -149,7 +157,7 @@ impl<'a> ObjectProperty<'a> {
 
     self.non_existent.consume_all(analyzer);
 
-    if let Some((key, _)) = self.mangling {
+    if let Some(key) = self.key {
       analyzer.consume(key);
     }
   }

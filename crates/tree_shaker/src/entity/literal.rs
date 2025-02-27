@@ -273,7 +273,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
     Some(*self)
   }
 
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     match self {
       LiteralEntity::String(_, _) => None,
       _ => Some(vec![]),

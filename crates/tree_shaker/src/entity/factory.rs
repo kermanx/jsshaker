@@ -1,7 +1,7 @@
 use crate::{
   builtins::Prototype,
   consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
-  mangling::{MangleAtom, MangleConstraint, ManglingDep},
+  mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   module::ModuleId,
   scope::{CfScopeId, VariableScopeId},
   utils::F64WithEq,
@@ -381,6 +381,10 @@ impl<'a> EntityFactory<'a> {
     constraint: &'a MangleConstraint,
   ) -> Entity<'a> {
     self.computed(val, ManglingDep { deps, constraint })
+  }
+
+  pub fn always_mangable_dep(&self, dep: Entity<'a>) -> Consumable<'a> {
+    self.consumable(AlwaysMangableDep { dep })
   }
 }
 

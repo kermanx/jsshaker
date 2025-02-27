@@ -63,7 +63,8 @@ impl<'a> ObjectEntity<'a> {
           LiteralEntity::String(key_str, key_atom) => {
             if let Some(property) = string_keyed.get_mut(key_str) {
               let value = if mangable {
-                let (prev_key, prev_atom) = property.mangling.unwrap();
+                let prev_key = property.key.unwrap();
+                let prev_atom = property.mangling.unwrap();
                 analyzer.factory.mangable(
                   value,
                   (prev_key, key),
@@ -85,7 +86,8 @@ impl<'a> ObjectEntity<'a> {
                   definite: !indeterminate,
                   possible_values: vec![ObjectPropertyValue::Field(value, false)],
                   non_existent: ConsumableCollector::default(),
-                  mangling: mangable.then(|| (key, key_atom.unwrap())),
+                  key: Some(key),
+                  mangling: mangable.then(|| key_atom.unwrap()),
                 },
               );
             }

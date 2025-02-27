@@ -1,6 +1,6 @@
 use super::{
   consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  LiteralEntity, TypeofResult,
+  TypeofResult,
 };
 use crate::{analyzer::Analyzer, builtins::Prototype, consumable::Consumable};
 
@@ -159,7 +159,7 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
       analyzer.factory.string("")
     }
   }
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     match self {
       PrimitiveEntity::String => None,
       _ => Some(vec![]),

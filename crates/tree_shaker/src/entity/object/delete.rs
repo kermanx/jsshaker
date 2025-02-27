@@ -50,7 +50,8 @@ impl<'a> ObjectEntity<'a> {
               property.delete(
                 indeterminate,
                 if mangable {
-                  let (prev_key, prev_atom) = property.mangling.unwrap();
+                  let prev_key = property.key.unwrap();
+                  let prev_atom = property.mangling.unwrap();
                   analyzer.consumable((
                     dep,
                     // This is a hack

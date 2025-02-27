@@ -10,6 +10,7 @@ macro_rules! init_namespace {
           definite: true,
           possible_values: vec![ObjectPropertyValue::Field($v, true)],
           non_existent: Default::default(),
+          key: None,
           mangling: None,
         },
       );)*
@@ -29,6 +30,7 @@ macro_rules! init_object {
           definite: true,
           possible_values: vec![ObjectPropertyValue::Field($v, false)],
           non_existent: Default::default(),
+          key: None,
           mangling: None,
         },
       );)*

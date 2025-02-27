@@ -133,7 +133,7 @@ impl<'a, T: ConsumableTrait<'a> + Copy + 'a> EntityTrait<'a> for ComputedEntity<
     self.val.get_to_literals(analyzer)
   }
 
-  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, LiteralEntity<'a>)>> {
+  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     self.val.get_own_keys(analyzer)
   }
 
