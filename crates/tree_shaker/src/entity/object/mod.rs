@@ -192,6 +192,20 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       } else {
         analyzer.factory.computed(key_entity, property.non_existent.collect(analyzer.factory))
       };
+      let key_entity = analyzer.factory.computed(
+        key_entity,
+        analyzer.factory.consumable(
+          property
+            .possible_values
+            .iter()
+            .map(|value| match value {
+              ObjectPropertyValue::Field(value, _) => *value,
+              ObjectPropertyValue::Property(Some(getter), _) => *getter,
+              ObjectPropertyValue::Property(None, _) => analyzer.factory.undefined,
+            })
+            .collect::<Vec<_>>(),
+        ),
+      );
       keys.push((property.definite, key_entity));
     }
     Some(keys)
