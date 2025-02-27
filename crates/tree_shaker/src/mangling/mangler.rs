@@ -58,10 +58,6 @@ impl<'a> Mangler<'a> {
     }
     match &self.atoms[atom] {
       AtomState::Constrained(identity_group, uniqueness_groups) => {
-        println!("atom: {:?}", atom);
-          println!("  identity_group: {:?}", identity_group);
-          println!("  uniqueness_groups: {:?}", uniqueness_groups);
-        
         let resolved = if let Some(identity_group) = identity_group {
           self.resolve_identity_group(*identity_group)
         } else if uniqueness_groups.is_empty() {

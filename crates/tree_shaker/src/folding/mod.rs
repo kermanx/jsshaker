@@ -66,10 +66,11 @@ impl<'a> Analyzer<'a> {
     if !data.borrow().state.is_foldable() {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
-      let (value, mangle_atom) = literal.with_mangle_atom(self);
-      self
-        .factory
-        .computed(value, self.factory.consumable(FoldableDep { data, literal, value, mangle_atom }))
+      let (literal_value, mangle_atom) = literal.with_mangle_atom(self);
+      self.factory.computed(
+        literal_value,
+        self.factory.consumable(FoldableDep { data, literal, value, mangle_atom }),
+      )
     } else {
       self.factory.computed(value, self.factory.consumable(UnFoldableDep { data }))
     }
@@ -80,7 +81,7 @@ impl<'a> Analyzer<'a> {
     for data in self.folder.nodes.values().copied().collect::<Vec<_>>() {
       let mut data = data.borrow_mut();
       if data.state.is_foldable() {
-        if data.used_mangle_atoms.len() > 2 {
+        if data.used_mangle_atoms.len() > 1 {
           let first_atom = data.used_mangle_atoms[0];
           for atom in data.used_mangle_atoms.drain(1..) {
             MangleConstraint::Eq(first_atom, atom).add_to_mangler(&mut self.mangler);
@@ -99,7 +100,6 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn build_folded_expr(&self, node: AstKind2<'a>) -> Option<Expression<'a>> {
-    println!("!!! {:?}", node.span());
     let data = self.folder.nodes.get(&node.into())?.borrow();
     data.state.get_foldable_literal().map(|literal| {
       let span = node.span();

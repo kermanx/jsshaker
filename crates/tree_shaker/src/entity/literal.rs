@@ -323,7 +323,6 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::String(value, _) => {
         let mut mangler = transformer.mangler.borrow_mut();
         let mangled = atom.and_then(|a| mangler.resolve(a)).unwrap_or(value);
-        println!("B {:?} = {:?} -> {:?}", value, atom, mangled);
         ast_builder.expression_string_literal(span, mangled, None)
       }
       LiteralEntity::Number(value, raw) => {
