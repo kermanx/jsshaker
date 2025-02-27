@@ -12,7 +12,6 @@ use super::{
   arguments::ArgumentsEntity,
   array::ArrayEntity,
   builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity},
-  collected::CollectedEntity,
   computed::ComputedEntity,
   logical_result::LogicalResultEntity,
   never::NeverEntity,
@@ -213,10 +212,6 @@ impl<'a> EntityFactory<'a> {
       variable_scope_stack: Rc::new(variable_scope_stack),
       super_class,
     })
-  }
-
-  pub fn collected(&self, val: Entity<'a>, collected: &'a RefCell<Vec<Entity<'a>>>) -> Entity<'a> {
-    self.alloc(CollectedEntity { val, deps: collected, consumed: Cell::new(false) })
   }
 
   pub fn computed<T: ConsumableTrait<'a> + Copy + 'a>(

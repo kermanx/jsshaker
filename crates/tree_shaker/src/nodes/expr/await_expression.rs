@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer, utils::ast::AstKind2};
 use oxc::ast::ast::{AwaitExpression, Expression};
 
 impl<'a> Analyzer<'a> {
@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     self.refer_to_global();
 
     let value = self.exec_expression(&node.argument);
-    value.r#await(self, self.factory.empty_consumable)
+    value.r#await(self, self.factory.consumable(AstKind2::AwaitExpression(node)))
   }
 }
 
@@ -19,11 +19,17 @@ impl<'a> Transformer<'a> {
   pub fn transform_await_expression(
     &self,
     node: &'a AwaitExpression<'a>,
-    _need_val: bool,
+    need_val: bool,
   ) -> Option<Expression<'a>> {
     let AwaitExpression { span, argument } = node;
 
-    let argument = self.transform_expression(argument, true).unwrap();
-    Some(self.ast_builder.expression_await(*span, argument))
+    let has_effect = self.is_referred(AstKind2::AwaitExpression(node));
+
+    if has_effect {
+      let argument = self.transform_expression(argument, true).unwrap();
+      Some(self.ast_builder.expression_await(*span, argument))
+    } else {
+      self.transform_expression(argument, need_val)
+    }
   }
 }

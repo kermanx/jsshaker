@@ -1,11 +1,10 @@
 ---
-source: src/tests/mod.rs
-assertion_line: 32
-expression: tree_shake(input)
-input_file: src/tests/fixtures/async_await.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/async_await.js
 ---
-export const l1 = (await 1, 1);
-export const l2 = (await 1, "1a");
+export const l1 = 1;
+export const l2 = "1a";
 export const l3 = await unknown;
 export const l4 = await (unknown + "a");
 async function pure() {

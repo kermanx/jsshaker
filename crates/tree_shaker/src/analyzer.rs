@@ -2,6 +2,7 @@ use crate::{
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::EntityFactory,
+  folding::ConstantFolder,
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
@@ -36,6 +37,7 @@ pub struct Analyzer<'a> {
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
+  pub folder: ConstantFolder<'a>,
   pub mangler: Mangler<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub diagnostics: BTreeSet<String>,
@@ -65,6 +67,7 @@ impl<'a> Analyzer<'a> {
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),
+      folder: Default::default(),
       mangler: Mangler::new(config.mangling.is_some(), allocator),
       pending_deps: Default::default(),
       diagnostics: Default::default(),
@@ -88,6 +91,7 @@ impl<'a> Analyzer<'a> {
       dirty |= self.call_exhaustive_callbacks();
       dirty |= self.post_analyze_handle_conditional();
       dirty |= self.post_analyze_handle_loops();
+      dirty |= self.post_analyze_handle_folding();
       if !dirty {
         break;
       }

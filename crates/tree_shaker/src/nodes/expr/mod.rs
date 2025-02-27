@@ -25,11 +25,7 @@ mod update_expression;
 mod yield_expression;
 
 use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, LiteralCollector, LiteralEntity},
-  transformer::Transformer,
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
 };
 use oxc::{
   ast::{ast::Expression, match_member_expression},
@@ -37,15 +33,10 @@ use oxc::{
 };
 use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
 
-#[derive(Debug, Default)]
-struct Data<'a> {
-  collector: LiteralCollector<'a>,
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     self.push_span(node);
-    let entity = match node {
+    let value = match node {
       match_member_expression!(Expression) => {
         self.exec_member_expression_read(node.to_member_expression(), false).0
       }
@@ -92,8 +83,7 @@ impl<'a> Analyzer<'a> {
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
     self.pop_span();
-    let data = self.load_data::<Data>(AstKind2::Expression(node));
-    data.collector.collect(self, entity)
+    self.try_fold_node(AstKind2::Expression(node), value)
   }
 }
 
@@ -103,10 +93,8 @@ impl<'a> Transformer<'a> {
     node: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let data = self.get_data::<Data>(AstKind2::Expression(node));
-
     let span = node.span();
-    let literal = need_val.then(|| data.collector.build_expr(self, span)).flatten();
+    let literal = need_val.then(|| self.build_folded_expr(AstKind2::Expression(node))).flatten();
     let need_val = need_val && literal.is_none();
 
     let inner = match node {
@@ -199,14 +187,5 @@ impl<'a> Transformer<'a> {
     } else {
       inner
     }
-  }
-
-  // This is not good
-  pub fn get_expression_collected_literal(
-    &self,
-    node: &Expression<'a>,
-  ) -> Option<LiteralEntity<'a>> {
-    let data = self.get_data::<Data>(AstKind2::Expression(node));
-    data.collector.collected()
   }
 }
