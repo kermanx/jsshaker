@@ -323,6 +323,7 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::String(value, _) => {
         let mut mangler = transformer.mangler.borrow_mut();
         let mangled = atom.and_then(|a| mangler.resolve(a)).unwrap_or(value);
+        println!("B {:?} = {:?} -> {:?}", value, atom, mangled);
         ast_builder.expression_string_literal(span, mangled, None)
       }
       LiteralEntity::Number(value, raw) => {
@@ -500,28 +501,13 @@ impl<'a> LiteralEntity<'a> {
     (Some(self == other && self != LiteralEntity::NaN), None)
   }
 
-  pub fn with_mangle_atom(
-    self,
-    analyzer: &mut Analyzer<'a>,
-    existing_atom: &mut Option<MangleAtom>,
-  ) -> Entity<'a> {
-    let val = analyzer.factory.alloc(self);
+  pub fn with_mangle_atom(self, analyzer: &mut Analyzer<'a>) -> (Entity<'a>, Option<MangleAtom>) {
     match self {
-      LiteralEntity::String(value, None) => {
-        let atom = existing_atom.get_or_insert_with(|| analyzer.mangler.new_atom());
-        analyzer.factory.alloc(LiteralEntity::String(value, Some(*atom)))
+      LiteralEntity::String(value, atom) => {
+        let atom = atom.unwrap_or_else(|| analyzer.mangler.new_atom());
+        (analyzer.factory.alloc(LiteralEntity::String(value, Some(atom))), Some(atom))
       }
-      LiteralEntity::String(_, Some(atom)) => {
-        if let Some(existing_atom) = existing_atom {
-          analyzer
-            .factory
-            .computed(val, &*analyzer.allocator.alloc(MangleConstraint::Eq(atom, *existing_atom)))
-        } else {
-          *existing_atom = Some(atom);
-          val
-        }
-      }
-      _ => val,
+      _ => (analyzer.factory.alloc(self), None),
     }
   }
 }

@@ -3,6 +3,7 @@ mod builtins;
 mod config;
 mod consumable;
 mod entity;
+mod folding;
 mod mangling;
 mod module;
 mod nodes;
@@ -57,20 +58,29 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
     let analyzer = Analyzer::new_in(allocator.alloc(vfs), config, &allocator);
     analyzer.import_module(entry);
     analyzer.finalize();
-    let Analyzer { modules, diagnostics, mangler, data, referred_deps, conditional_data, .. } =
-      analyzer;
+    let Analyzer {
+      modules,
+      diagnostics,
+      folder,
+      mangler,
+      data,
+      referred_deps,
+      conditional_data,
+      ..
+    } = analyzer;
     let mangler = Rc::new(RefCell::new(mangler));
     let mut codegen_return = FxHashMap::default();
     for module_info in mem::take(&mut modules.modules) {
       let ModuleInfo { path, program, semantic, .. } = module_info;
 
-      // Setp 2: Transform
+      // Step 2: Transform
       let transformer = Transformer::new(
         config,
         &allocator,
         data,
         referred_deps,
         conditional_data,
+        folder,
         mangler.clone(),
         semantic,
       );

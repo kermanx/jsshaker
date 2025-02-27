@@ -10,6 +10,7 @@ pub struct ManglingDep<'a> {
 
 impl<'a> ConsumableTrait<'a> for ManglingDep<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    println!("self.constraint: {:?}", self.constraint);
     self.deps.0.consume_mangable(analyzer);
     self.deps.1.consume_mangable(analyzer);
     analyzer.consume(self.constraint);

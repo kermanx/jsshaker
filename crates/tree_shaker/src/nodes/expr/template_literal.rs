@@ -1,4 +1,6 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+};
 use oxc::{
   ast::ast::{Expression, TemplateElementValue, TemplateLiteral},
   span::{GetSpan, SPAN},
@@ -38,7 +40,7 @@ impl<'a> Transformer<'a> {
         let is_last = index == exprs_len - 1;
         let expr_span = expr.span();
         let quasi_str = quasis_iter.next().unwrap().value.cooked.as_ref().unwrap().to_string();
-        if let Some(literal) = self.get_expression_collected_literal(expr) {
+        if let Some(literal) = self.get_folded_literal(AstKind2::Expression(expr)) {
           if let Some(effect) = self.transform_expression(expr, false) {
             pending_effects.push(Some(effect));
           }

@@ -1,5 +1,6 @@
 use crate::{
   dep::{DepId, ReferredDeps},
+  folding::ConstantFolder,
   mangling::Mangler,
   scope::conditional::ConditionalDataMap,
   utils::{DataPlaceholder, ExtraData},
@@ -33,6 +34,7 @@ pub struct Transformer<'a> {
   pub data: &'a ExtraData<'a>,
   pub referred_deps: &'a ReferredDeps,
   pub conditional_data: &'a ConditionalDataMap<'a>,
+  pub folder: &'a ConstantFolder<'a>,
   pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
   pub semantic: &'a Semantic<'a>,
 
@@ -53,6 +55,7 @@ impl<'a> Transformer<'a> {
     data: &'a ExtraData<'a>,
     referred_deps: &'a ReferredDeps,
     conditional_data: &'a ConditionalDataMap<'a>,
+    folder: &'a ConstantFolder<'a>,
     mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
     semantic: &'a Semantic<'a>,
   ) -> Self {
@@ -62,6 +65,7 @@ impl<'a> Transformer<'a> {
       data,
       referred_deps,
       conditional_data,
+      folder,
       mangler,
       semantic,
 

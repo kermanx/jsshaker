@@ -1,6 +1,12 @@
-use oxc::ast::{ast::IdentifierName, VisitMut};
+use oxc::ast::{
+  ast::{Expression, IdentifierName},
+  VisitMut,
+};
 
-use crate::{transformer::Transformer, utils::ast::AstKind2};
+use crate::{
+  transformer::Transformer,
+  utils::{ast::AstKind2, dep_id::DepId},
+};
 
 use super::MangleAtom;
 
@@ -13,6 +19,12 @@ impl<'a> VisitMut<'a> for ManglerTransformer<'a> {
       if let Some(mangled) = mangler.resolve(*atom) {
         node.name = mangled.into();
       }
+    }
+  }
+
+  fn visit_expression(&mut self, node: &mut Expression<'a>) {
+    if let Some(folded) = self.0.build_folded_expr(DepId::from(AstKind2::Expression(node)).into()) {
+      *node = folded;
     }
   }
 }
