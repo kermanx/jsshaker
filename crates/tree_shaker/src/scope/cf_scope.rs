@@ -26,7 +26,8 @@ pub enum CfScopeKind<'a> {
   Module,
   Labeled(&'a LabeledStatement<'a>),
   Function,
-  Loop,
+  LoopBreak,
+  LoopContinue,
   Switch,
 
   Dependent,
@@ -41,11 +42,11 @@ impl<'a> CfScopeKind<'a> {
   }
 
   pub fn is_breakable_without_label(&self) -> bool {
-    matches!(self, CfScopeKind::Loop | CfScopeKind::Switch)
+    matches!(self, CfScopeKind::LoopBreak | CfScopeKind::Switch)
   }
 
   pub fn is_continuable(&self) -> bool {
-    matches!(self, CfScopeKind::Loop)
+    matches!(self, CfScopeKind::LoopContinue)
   }
 
   pub fn matches_label(&self, label: &'a Atom<'a>) -> Option<&'a LabeledStatement<'a>> {

@@ -17,9 +17,9 @@ impl<'a> Analyzer<'a> {
 
     let dep = self.consumable((AstKind2::WhileStatement(node), test));
 
-    self.push_cf_scope_with_deps(CfScopeKind::Loop, vec![dep], Some(false));
+    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, vec![dep], Some(false));
     self.exec_loop(move |analyzer| {
-      analyzer.push_cf_scope(CfScopeKind::Loop, None);
+      analyzer.push_cf_scope(CfScopeKind::LoopContinue, None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume(analyzer);

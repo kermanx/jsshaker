@@ -14,7 +14,7 @@ pub struct Data {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_do_while_statement(&mut self, node: &'a DoWhileStatement<'a>) {
-    self.push_cf_scope(CfScopeKind::Loop, Some(false));
+    self.push_cf_scope(CfScopeKind::LoopBreak, Some(false));
 
     // Execute the first round.
     self.exec_statement(&node.body);
@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
     data.need_loop = true;
 
     self.exec_loop(move |analyzer| {
-      analyzer.push_cf_scope(CfScopeKind::Loop, None);
+      analyzer.push_cf_scope(CfScopeKind::LoopContinue, None);
 
       analyzer.exec_statement(&node.body);
       analyzer.exec_expression(&node.test).consume(analyzer);
