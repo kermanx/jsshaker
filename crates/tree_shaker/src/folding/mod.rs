@@ -29,7 +29,7 @@ impl<'a> FoldingState<'a> {
 
   pub fn get_foldable_literal(self) -> Option<LiteralEntity<'a>> {
     match self {
-      Self::Initial => unreachable!(),
+      Self::Initial => None, // Change to `unreachable!()` later
       Self::Foldable(literal) => Some(literal),
       Self::UnFoldable => None,
     }
