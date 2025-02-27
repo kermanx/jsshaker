@@ -210,12 +210,12 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
 impl<'a> Analyzer<'a> {
   pub fn dynamic_implemented_builtin<F: BuiltinFnImplementation<'a> + 'a>(
     &mut self,
-    name: &'static str,
+    _name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self.factory.alloc(ImplementedBuiltinFnEntity {
       #[cfg(feature = "flame")]
-      name,
+      name: _name,
       implementation,
       object: Some(self.new_function_object()),
     })

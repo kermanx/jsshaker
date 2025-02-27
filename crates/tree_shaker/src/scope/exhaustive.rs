@@ -67,7 +67,7 @@ impl<'a> Analyzer<'a> {
 
   fn exec_exhaustively(
     &mut self,
-    kind: &str,
+    _kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
   ) -> FxHashSet<(VariableScopeId, SymbolId)> {
@@ -76,7 +76,7 @@ impl<'a> Analyzer<'a> {
     while self.cf_scope_mut().iterate_exhaustively() {
       #[cfg(feature = "flame")]
       let _scope_guard = flame::start_guard(format!(
-        "!{kind}@{:06X} x{}",
+        "!{_kind}@{:06X} x{}",
         (Rc::as_ptr(&runner) as *const () as usize) & 0xFFFFFF,
         round_counter
       ));

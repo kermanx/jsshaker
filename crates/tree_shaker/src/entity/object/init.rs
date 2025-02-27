@@ -1,3 +1,5 @@
+#![allow(clippy::unnecessary_unwrap)]
+
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
   analyzer::Analyzer,
@@ -79,7 +81,7 @@ impl<'a> ObjectEntity<'a> {
               existing.unwrap().possible_values.push(property_val);
             }
           }
-          LiteralEntity::Symbol(key, _) => todo!(),
+          LiteralEntity::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

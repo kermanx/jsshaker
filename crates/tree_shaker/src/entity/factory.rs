@@ -183,12 +183,12 @@ impl<'a> EntityFactory<'a> {
 
   pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
     &self,
-    name: &'static str,
+    _name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self.alloc(ImplementedBuiltinFnEntity {
       #[cfg(feature = "flame")]
-      name,
+      name: _name,
       implementation,
       object: None,
     })

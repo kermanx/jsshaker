@@ -12,7 +12,6 @@ mod never;
 mod object;
 mod primitive;
 mod react_element;
-mod symbol;
 mod typeof_result;
 mod union;
 mod unknown;

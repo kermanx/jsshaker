@@ -107,7 +107,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(analyzer.factory.unmatched_prototype_property);
             }
           }
-          LiteralEntity::Symbol(key, _) => todo!(),
+          LiteralEntity::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }
@@ -192,7 +192,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               break 'known;
             }
           }
-          LiteralEntity::Symbol(key, _) => todo!(),
+          LiteralEntity::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }
