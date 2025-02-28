@@ -61,7 +61,7 @@ impl<'a> Analyzer<'a> {
     decl_node: AstKind2<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol) {
+    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       let old_kind = variable.borrow().kind;
 
@@ -95,13 +95,13 @@ impl<'a> Analyzer<'a> {
         cf_scope: if kind.is_var() {
           self.cf_scope_id_of_call_scope()
         } else {
-          self.scope_context.cf.current_id()
+          self.scoping.cf.current_id()
         },
         exhausted: None,
         value: fn_value,
         decl_node,
       }));
-      self.scope_context.variable.get_mut(id).variables.insert(symbol, variable);
+      self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
         self.request_exhaustive_callbacks(false, (id, symbol));
       }
@@ -115,7 +115,7 @@ impl<'a> Analyzer<'a> {
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
   ) {
-    let variable = self.scope_context.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
+    let variable = self.scoping.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
     let variable_ref = variable.borrow();
     if variable_ref.kind.is_redeclarable() {
@@ -143,7 +143,7 @@ impl<'a> Analyzer<'a> {
     id: VariableScopeId,
     symbol: SymbolId,
   ) -> Option<Option<Entity<'a>>> {
-    self.scope_context.variable.get(id).variables.get(&symbol).copied().map(|variable| {
+    self.scoping.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
         variable_ref
@@ -180,7 +180,7 @@ impl<'a> Analyzer<'a> {
   }
 
   fn write_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol).copied() {
       let kind = variable.borrow().kind;
       if kind.is_untracked() {
         self.consume(new_val);
@@ -237,7 +237,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> bool {
-    if let Some(variable) = self.scope_context.variable.get(id).variables.get(&symbol).copied() {
+    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol).copied() {
       let variable_ref = variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
         drop(variable_ref);
@@ -264,7 +264,7 @@ impl<'a> Analyzer<'a> {
     let variable = self.allocator.alloc(RefCell::new(Variable {
       exhausted: Some(self.factory.consumed_lazy_consumable),
       kind: DeclarationKind::UntrackedVar,
-      cf_scope: self.scope_context.cf.stack[cf_scope_depth],
+      cf_scope: self.scoping.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),
       decl_node: AstKind2::Environment,
     }));
@@ -273,8 +273,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_arguments_on_scope(&mut self, id: VariableScopeId) -> bool {
-    if let Some((args_entity, args_symbols)) = self.scope_context.variable.get(id).arguments.clone()
-    {
+    if let Some((args_entity, args_symbols)) = self.scoping.variable.get(id).arguments.clone() {
       args_entity.consume(self);
       let mut arguments_consumed = true;
       for symbol in args_symbols {
@@ -299,7 +298,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
   ) {
-    let variable_scope = self.scope_context.variable.current_id();
+    let variable_scope = self.scoping.variable.current_id();
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if exporting {
@@ -320,14 +319,14 @@ impl<'a> Analyzer<'a> {
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
   ) {
-    let variable_scope = self.scope_context.variable.current_id();
+    let variable_scope = self.scoping.variable.current_id();
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
   /// `None` for TDZ
   pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let id = self.scope_context.variable.stack[depth];
+    for depth in (0..self.scoping.variable.stack.len()).rev() {
+      let id = self.scoping.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
         return value;
       }
@@ -337,8 +336,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let id = self.scope_context.variable.stack[depth];
+    for depth in (0..self.scoping.variable.stack.len()).rev() {
+      let id = self.scoping.variable.stack[depth];
       if self.write_on_scope(id, symbol, new_val) {
         return;
       }
@@ -365,8 +364,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn get_this(&self) -> Entity<'a> {
-    for depth in (0..self.scope_context.variable.stack.len()).rev() {
-      let scope = self.scope_context.variable.get_from_depth(depth);
+    for depth in (0..self.scoping.variable.stack.len()).rev() {
+      let scope = self.scoping.variable.get_from_depth(depth);
       if let Some(this) = scope.this {
         return this;
       }

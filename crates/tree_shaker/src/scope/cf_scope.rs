@@ -160,8 +160,8 @@ impl<'a> Analyzer<'a> {
 
   pub fn get_exec_dep(&mut self, target_depth: usize) -> Consumable<'a> {
     let mut deps = vec![];
-    for id in target_depth..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(id);
+    for id in target_depth..self.scoping.cf.stack.len() {
+      let scope = self.scoping.cf.get_mut_from_depth(id);
       if let Some(dep) = scope.deps.try_collect(self.factory) {
         deps.push(dep);
       }
@@ -170,11 +170,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
-    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), true, None);
+    self.exit_to_impl(target_depth, self.scoping.cf.stack.len(), true, None);
   }
 
   pub fn exit_to_not_must(&mut self, target_depth: usize) {
-    self.exit_to_impl(target_depth, self.scope_context.cf.stack.len(), false, None);
+    self.exit_to_impl(target_depth, self.scoping.cf.stack.len(), false, None);
   }
 
   /// `None` => Interrupted by if branch
@@ -187,8 +187,8 @@ impl<'a> Analyzer<'a> {
     mut acc_dep: Option<Consumable<'a>>,
   ) -> Option<Option<Consumable<'a>>> {
     for depth in (target_depth..from_depth).rev() {
-      let id = self.scope_context.cf.stack[depth];
-      let cf_scope = self.scope_context.cf.get_mut(id);
+      let id = self.scoping.cf.stack[depth];
+      let cf_scope = self.scoping.cf.get_mut(id);
       let this_dep = cf_scope.deps.try_collect(self.factory);
 
       // Update exited state
@@ -228,7 +228,7 @@ impl<'a> Analyzer<'a> {
     let mut is_closest_breakable = true;
     let mut target_depth = None;
     let mut label_used = false;
-    for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
+    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
       if cf_scope.kind.is_function() {
         break;
       }
@@ -259,7 +259,7 @@ impl<'a> Analyzer<'a> {
     let mut is_closest_continuable = true;
     let mut target_depth = None;
     let mut label_used = false;
-    for (idx, cf_scope) in self.scope_context.cf.iter_stack().enumerate().rev() {
+    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
       if cf_scope.kind.is_function() {
         break;
       }
@@ -290,8 +290,8 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    for depth in (0..self.scope_context.cf.stack.len()).rev() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+    for depth in (0..self.scoping.cf.stack.len()).rev() {
+      let scope = self.scoping.cf.get_mut_from_depth(depth);
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
@@ -302,7 +302,7 @@ impl<'a> Analyzer<'a> {
           scope.referred_state = ReferredState::ReferredClean;
           mem::take(&mut scope.deps).consume_all(self);
           for depth in (0..depth).rev() {
-            let scope = self.scope_context.cf.get_mut_from_depth(depth);
+            let scope = self.scoping.cf.get_mut_from_depth(depth);
             match scope.referred_state {
               ReferredState::Never => unreachable!("Logic error in refer_to_global"),
               ReferredState::ReferredClean => break,

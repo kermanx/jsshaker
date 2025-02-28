@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
             ModuleExportName::IdentifierReference(node) => {
               let reference = self.semantic().symbols().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
-                let scope = self.scope_context.variable.current_id();
+                let scope = self.scoping.variable.current_id();
                 self
                   .module_info_mut()
                   .named_exports
@@ -77,7 +77,7 @@ impl<'a> Analyzer<'a> {
         if self.module_stack.contains(&resolved) {
           // Circular dependency
           let module = self.current_module();
-          let scope = self.scope_context.variable.current_id();
+          let scope = self.scoping.variable.current_id();
           self.modules.modules[resolved].blocked_imports.push((module, scope, node));
           return;
         }

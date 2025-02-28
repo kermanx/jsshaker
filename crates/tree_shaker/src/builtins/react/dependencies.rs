@@ -116,9 +116,9 @@ pub fn check_dependencies<'a>(
   };
 
   if require_rerun {
-    for depth in 0..analyzer.scope_context.cf.stack.len() {
+    for depth in 0..analyzer.scoping.cf.stack.len() {
       if let CfScopeKind::Exhaustive(exhaustive_data) =
-        &mut analyzer.scope_context.cf.get_mut_from_depth(depth).kind
+        &mut analyzer.scoping.cf.get_mut_from_depth(depth).kind
       {
         exhaustive_data.clean = false;
         break;

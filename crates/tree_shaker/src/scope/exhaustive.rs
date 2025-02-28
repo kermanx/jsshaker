@@ -93,7 +93,7 @@ impl<'a> Analyzer<'a> {
       }
     }
     let id = self.pop_cf_scope();
-    let data = self.scope_context.cf.get_mut(id).exhaustive_data_mut().unwrap();
+    let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
     mem::take(&mut data.deps)
   }
 
@@ -105,7 +105,7 @@ impl<'a> Analyzer<'a> {
   ) {
     for (scope, symbol) in deps {
       self
-        .scope_context
+        .scoping
         .variable
         .get_mut(scope)
         .exhaustive_callbacks
@@ -116,8 +116,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn mark_exhaustive_read(&mut self, variable: (VariableScopeId, SymbolId), target: usize) {
-    for depth in target..self.scope_context.cf.stack.len() {
-      self.scope_context.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
+    for depth in target..self.scoping.cf.stack.len() {
+      self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
     }
   }
 
@@ -128,8 +128,8 @@ impl<'a> Analyzer<'a> {
   ) -> (bool, bool) {
     let mut should_consume = false;
     let mut indeterminate = false;
-    for depth in target..self.scope_context.cf.stack.len() {
-      let scope = self.scope_context.cf.get_mut_from_depth(depth);
+    for depth in target..self.scoping.cf.stack.len() {
+      let scope = self.scoping.cf.get_mut_from_depth(depth);
       if !should_consume {
         should_consume |= scope.mark_exhaustive_write(variable);
       }
@@ -144,7 +144,7 @@ impl<'a> Analyzer<'a> {
     (scope, symbol): (VariableScopeId, SymbolId),
   ) -> bool {
     if let Some(runners) =
-      self.scope_context.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
+      self.scoping.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
     {
       if runners.is_empty() {
         false
@@ -182,6 +182,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
-    self.scope_context.cf.iter_stack_range(target_depth..).any(|scope| scope.kind.is_exhaustive())
+    self.scoping.cf.iter_stack_range(target_depth..).any(|scope| scope.kind.is_exhaustive())
   }
 }

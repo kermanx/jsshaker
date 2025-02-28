@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
 
     let mut both_exit = true;
     let mut exit_target_inner = 0;
-    let mut exit_target_outer = self.scope_context.cf.stack.len();
+    let mut exit_target_outer = self.scoping.cf.stack.len();
     let mut acc_dep_1 = None;
     let mut acc_dep_2 = None;
 
@@ -71,12 +71,12 @@ impl<'a> Analyzer<'a> {
     let acc_dep = Some(self.consumable((acc_dep_1, acc_dep_2)));
     if both_exit {
       if let Some(acc_dep) =
-        self.exit_to_impl(exit_target_inner, self.scope_context.cf.stack.len(), true, acc_dep)
+        self.exit_to_impl(exit_target_inner, self.scoping.cf.stack.len(), true, acc_dep)
       {
         self.exit_to_impl(exit_target_outer, exit_target_inner, false, acc_dep);
       }
     } else {
-      self.exit_to_impl(exit_target_outer, self.scope_context.cf.stack.len(), false, acc_dep);
+      self.exit_to_impl(exit_target_outer, self.scoping.cf.stack.len(), false, acc_dep);
     }
   }
 }

@@ -6,8 +6,7 @@ use crate::{
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
-    conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap,
-    ScopeContext,
+    conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap, Scoping,
   },
   utils::ExtraData,
   vfs::Vfs,
@@ -31,7 +30,7 @@ pub struct Analyzer<'a> {
 
   pub module_stack: Vec<ModuleId>,
   pub span_stack: Vec<Span>,
-  pub scope_context: ScopeContext<'a>,
+  pub scoping: Scoping<'a>,
 
   pub data: ExtraData<'a>,
   pub referred_deps: ReferredDeps,
@@ -61,7 +60,7 @@ impl<'a> Analyzer<'a> {
 
       module_stack: vec![],
       span_stack: vec![],
-      scope_context: ScopeContext::new(factory),
+      scoping: Scoping::new(factory),
 
       data: Default::default(),
       referred_deps: Default::default(),

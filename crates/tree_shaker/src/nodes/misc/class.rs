@@ -52,12 +52,12 @@ impl<'a> Analyzer<'a> {
       self.current_module(),
       node,
       keys.clone(),
-      self.scope_context.variable.stack.clone(),
+      self.scoping.variable.stack.clone(),
       super_class,
       statics,
     );
 
-    let variable_scope_stack = self.scope_context.variable.stack.clone();
+    let variable_scope_stack = self.scoping.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
       self.factory.empty_consumable,

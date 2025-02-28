@@ -83,7 +83,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 
     if !self.finite_recursion {
       let mut recursion_depth = 0usize;
-      for scope in analyzer.scope_context.call.iter().rev() {
+      for scope in analyzer.scoping.call.iter().rev() {
         if scope.callee.node == self.callee.node {
           recursion_depth += 1;
           if recursion_depth >= analyzer.config.max_recursion_depth {
@@ -225,7 +225,12 @@ impl<'a> FunctionEntity<'a> {
 
     analyzer.consume(self.callee.into_node());
 
-    analyzer.exec_consumed_fn("consume_fn", move |analyzer| {
+    #[cfg(feature = "flame")]
+    let name = self.callee.debug_name;
+    #[cfg(not(feature = "flame"))]
+    let name = "";
+
+    analyzer.exec_consumed_fn(name, move |analyzer| {
       self.call_impl(
         analyzer,
         analyzer.factory.empty_consumable,
@@ -247,13 +252,13 @@ impl<'a> Analyzer<'a> {
       consumed: Rc::new(Cell::new(false)),
       body_consumed: Rc::new(Cell::new(false)),
       callee: self.new_callee_info(node),
-      variable_scope_stack: Rc::new(self.scope_context.variable.stack.clone()),
+      variable_scope_stack: Rc::new(self.scoping.variable.stack.clone()),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       object: self.new_function_object(),
     });
 
     let mut created_in_self = false;
-    for scope in self.scope_context.call.iter().rev() {
+    for scope in self.scoping.call.iter().rev() {
       if scope.callee.node == node {
         created_in_self = true;
         break;

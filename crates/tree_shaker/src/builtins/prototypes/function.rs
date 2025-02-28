@@ -12,7 +12,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
       let mut args = args.destruct_as_array(analyzer, dep, 2, false).0;
       let args_arg = {
         let arg = args.pop().unwrap();
-        let cf_scope = analyzer.scope_context.cf.current_id();
+        let cf_scope = analyzer.scoping.cf.current_id();
         // This can be any value
         let arguments_object_id = SymbolId::from_usize(0);
         match arg.test_is_undefined() {

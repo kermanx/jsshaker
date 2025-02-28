@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn throw_builtin_error(&mut self, message: impl Into<String>) {
-    if self.scope_context.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
+    if self.scoping.cf.iter_stack().all(|scope| scope.exited == Some(false)) {
       self.add_diagnostic(message);
     }
 

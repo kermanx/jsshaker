@@ -26,7 +26,7 @@ use try_scope::TryScope;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
 
-pub struct ScopeContext<'a> {
+pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
@@ -36,14 +36,14 @@ pub struct ScopeContext<'a> {
   pub object_symbol_counter: usize,
 }
 
-impl<'a> ScopeContext<'a> {
+impl<'a> Scoping<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut variable = ScopeTree::new();
     variable.push(VariableScope::new_with_this(factory.unknown()));
     let object_scope_id = variable.add_special(VariableScope::new());
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Root, vec![], Some(false)));
-    ScopeContext {
+    Scoping {
       call: vec![CallScope::new(
         DepId::from_counter(),
         CalleeInfo {
@@ -92,11 +92,11 @@ impl<'a> ScopeContext<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn call_scope(&self) -> &CallScope<'a> {
-    self.scope_context.call.last().unwrap()
+    self.scoping.call.last().unwrap()
   }
 
   pub fn call_scope_mut(&mut self) -> &mut CallScope<'a> {
-    self.scope_context.call.last_mut().unwrap()
+    self.scoping.call.last_mut().unwrap()
   }
 
   pub fn try_scope(&self) -> &TryScope<'a> {
@@ -108,28 +108,28 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn cf_scope(&self) -> &CfScope<'a> {
-    self.scope_context.cf.get_current()
+    self.scoping.cf.get_current()
   }
 
   pub fn cf_scope_mut(&mut self) -> &mut CfScope<'a> {
-    self.scope_context.cf.get_current_mut()
+    self.scoping.cf.get_current_mut()
   }
 
   pub fn cf_scope_id_of_call_scope(&self) -> CfScopeId {
     let depth = self.call_scope().cf_scope_depth;
-    self.scope_context.cf.stack[depth]
+    self.scoping.cf.stack[depth]
   }
 
   pub fn variable_scope(&self) -> &VariableScope<'a> {
-    self.scope_context.variable.get_current()
+    self.scoping.variable.get_current()
   }
 
   pub fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
-    self.scope_context.variable.get_current_mut()
+    self.scoping.variable.get_current_mut()
   }
 
   pub fn is_inside_pure(&self) -> bool {
-    // TODO: self.scope_context.pure > 0
+    // TODO: self.scoping.pure > 0
     false
   }
 
@@ -137,7 +137,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     new_stack: Vec<VariableScopeId>,
   ) -> Vec<VariableScopeId> {
-    self.scope_context.variable.replace_stack(new_stack)
+    self.scoping.variable.replace_stack(new_stack)
   }
 
   pub fn push_call_scope(
@@ -163,7 +163,7 @@ impl<'a> Analyzer<'a> {
       Some(false),
     );
 
-    self.scope_context.call.push(CallScope::new(
+    self.scoping.call.push(CallScope::new(
       dep_id,
       callee,
       old_variable_scope_stack,
@@ -175,7 +175,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_call_scope(&mut self) -> Entity<'a> {
-    let scope = self.scope_context.call.pop().unwrap();
+    let scope = self.scoping.call.pop().unwrap();
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
@@ -185,11 +185,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> VariableScopeId {
-    self.scope_context.variable.push(VariableScope::new())
+    self.scoping.variable.push(VariableScope::new())
   }
 
   pub fn pop_variable_scope(&mut self) -> VariableScopeId {
-    self.scope_context.variable.pop()
+    self.scoping.variable.pop()
   }
 
   pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, exited: Option<bool>) -> usize {
@@ -202,8 +202,8 @@ impl<'a> Analyzer<'a> {
     deps: ConsumableVec<'a>,
     exited: Option<bool>,
   ) -> usize {
-    self.scope_context.cf.push(CfScope::new(kind, deps, exited));
-    self.scope_context.cf.current_depth()
+    self.scoping.cf.push(CfScope::new(kind, deps, exited));
+    self.scoping.cf.current_depth()
   }
 
   pub fn push_indeterminate_cf_scope(&mut self) {
@@ -215,14 +215,14 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScopeId {
-    self.scope_context.cf.pop()
+    self.scoping.cf.pop()
   }
 
   pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>> {
     let mut exec_deps = vec![];
     for _ in 0..count {
-      let id = self.scope_context.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scope_context.cf.get_mut(id).deps.try_collect(self.factory) {
+      let id = self.scoping.cf.stack.pop().unwrap();
+      if let Some(dep) = self.scoping.cf.get_mut(id).deps.try_collect(self.factory) {
         exec_deps.push(dep);
       }
     }
@@ -235,12 +235,12 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
     let id = self.pop_cf_scope();
-    self.scope_context.cf.get_mut(id)
+    self.scoping.cf.get_mut(id)
   }
 
   pub fn push_try_scope(&mut self) {
     self.push_indeterminate_cf_scope();
-    let cf_scope_depth = self.scope_context.cf.current_depth();
+    let cf_scope_depth = self.scoping.cf.current_depth();
     self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
   }
 

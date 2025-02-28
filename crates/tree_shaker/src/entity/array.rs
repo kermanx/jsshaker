@@ -383,6 +383,6 @@ impl<'a> ArrayEntity<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&mut self) -> &'a mut ArrayEntity<'a> {
-    self.factory.array(self.scope_context.cf.current_id(), self.scope_context.alloc_object_id())
+    self.factory.array(self.scoping.cf.current_id(), self.scoping.alloc_object_id())
   }
 }

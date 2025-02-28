@@ -7,15 +7,15 @@ impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
     let pure = self.has_pure_notation(node.span);
 
-    self.scope_context.pure += pure;
+    self.scoping.pure += pure;
     let callee = self.exec_expression(&node.callee);
-    self.scope_context.pure -= pure;
+    self.scoping.pure -= pure;
 
     let arguments = self.exec_arguments(&node.arguments);
 
-    self.scope_context.pure += pure;
+    self.scoping.pure += pure;
     let value = callee.construct(self, self.consumable(AstKind2::NewExpression(node)), arguments);
-    self.scope_context.pure -= pure;
+    self.scoping.pure -= pure;
 
     value
   }

@@ -115,8 +115,8 @@ impl<'a> Analyzer<'a> {
     self.module_stack.push(module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
     let root_variable_scope =
-      self.scope_context.variable.push(VariableScope::new_with_this(self.factory.unknown()));
-    self.scope_context.call.push(CallScope::new(
+      self.scoping.variable.push(VariableScope::new_with_this(self.factory.unknown()));
+    self.scoping.call.push(CallScope::new(
       call_id,
       CalleeInfo {
         module_id,
@@ -131,8 +131,8 @@ impl<'a> Analyzer<'a> {
       true,
       false,
     ));
-    let old_cf_scope_stack = self.scope_context.cf.replace_stack(vec![CfScopeId::from(0)]);
-    self.scope_context.cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
+    let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![CfScopeId::from(0)]);
+    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
 
     let program = unsafe { &*program.get() };
     for node in &program.body {
@@ -147,16 +147,16 @@ impl<'a> Analyzer<'a> {
       self.init_statement(node);
     }
 
-    self.scope_context.cf.replace_stack(old_cf_scope_stack);
-    self.scope_context.call.pop();
+    self.scoping.cf.replace_stack(old_cf_scope_stack);
+    self.scoping.call.pop();
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
 
     for (module, scope, node) in mem::take(&mut self.modules.modules[module_id].blocked_imports) {
       self.module_stack.push(module);
-      self.scope_context.variable.stack.push(scope);
+      self.scoping.variable.stack.push(scope);
       self.init_import_declaration(node);
-      self.scope_context.variable.stack.pop();
+      self.scoping.variable.stack.pop();
       self.module_stack.pop();
     }
   }
