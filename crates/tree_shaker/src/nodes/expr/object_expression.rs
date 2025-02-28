@@ -27,7 +27,9 @@ impl<'a> Analyzer<'a> {
           let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
 
           if matches!(&node.key, PropertyKey::StaticIdentifier(node) if node.name == "__proto__") {
-            has_proto = true;
+            if value.test_nullish() != Some(true) {
+              has_proto = true;
+            }
             // Ensure the __proto__ is consumed - it may be overridden by the next property like ["__proto__"]: 1
             self.consume((key, value));
           } else {
