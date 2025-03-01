@@ -481,7 +481,7 @@ impl<'a> LiteralEntity<'a> {
     }
   }
 
-  pub fn strict_eq(self, other: LiteralEntity) -> (Option<bool>, Option<MangleConstraint>) {
+  pub fn strict_eq(self, other: LiteralEntity) -> (bool, Option<MangleConstraint>) {
     // 0.0 === -0.0
     if let (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) = (self, other) {
       let eq = if l == 0.0.into() || l == (-0.0).into() {
@@ -489,15 +489,15 @@ impl<'a> LiteralEntity<'a> {
       } else {
         l == r
       };
-      return (Some(eq), None);
+      return (eq, None);
     }
 
     if let (LiteralEntity::String(l, atom_l), LiteralEntity::String(r, atom_r)) = (self, other) {
       let eq = l == r;
-      return (Some(eq), MangleConstraint::equality(eq, atom_l, atom_r));
+      return (eq, MangleConstraint::equality(eq, atom_l, atom_r));
     }
 
-    (Some(self == other && self != LiteralEntity::NaN), None)
+    (self == other && self != LiteralEntity::NaN, None)
   }
 
   pub fn with_mangle_atom(self, analyzer: &mut Analyzer<'a>) -> (Entity<'a>, Option<MangleAtom>) {

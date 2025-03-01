@@ -1,13 +1,13 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, LiteralEntity, TypeofResult},
+  entity::{Entity, EntityTrait, LiteralEntity, TypeofResult},
   mangling::MangleConstraint,
 };
 use oxc::ast::ast::{BinaryOperator, UpdateOperator};
 use oxc_ecmascript::ToInt32;
 
 impl<'a> Analyzer<'a> {
-  pub fn op_eq(
+  pub fn op_loose_eq(
     &self,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
@@ -23,13 +23,25 @@ impl<'a> Analyzer<'a> {
     (None, None)
   }
 
-  pub fn op_neq(
+  pub fn op_loose_neq(
     &self,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint>) {
-    let (eq, m) = self.op_eq(lhs, rhs);
-    (eq.map(|v| !v), m.map(MangleConstraint::negate_equality))
+    if let (Some(eq), m) = self.op_loose_eq(lhs, rhs) {
+      return (Some(!eq), m.map(MangleConstraint::negate_equality));
+    }
+
+    let lhs_lit = lhs.get_literal(self);
+    let rhs_lit = rhs.get_literal(self);
+    if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
+      if lhs_lit.test_typeof() == rhs_lit.test_typeof() {
+        let (eq, m) = lhs_lit.strict_eq(rhs_lit);
+        return (Some(!eq), m.map(MangleConstraint::negate_equality));
+      }
+    }
+
+    (None, None)
   }
 
   pub fn op_strict_eq(
@@ -54,7 +66,8 @@ impl<'a> Analyzer<'a> {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = *lhs_lit.iter().next().unwrap();
         let rhs_lit = *rhs_lit.iter().next().unwrap();
-        return lhs_lit.strict_eq(rhs_lit);
+        let (eq, m) = lhs_lit.strict_eq(rhs_lit);
+        return (Some(eq), m);
       }
 
       let mut constraints = Some(vec![]);
@@ -62,7 +75,7 @@ impl<'a> Analyzer<'a> {
       'check: for l in &lhs_lit {
         for r in &rhs_lit {
           let (eq, mc) = l.strict_eq(*r);
-          all_neq &= eq == Some(false);
+          all_neq &= !eq;
           if let Some(mc) = mc {
             if let Some(constraints) = &mut constraints {
               constraints.push(mc);
@@ -307,8 +320,8 @@ impl<'a> Analyzer<'a> {
     };
 
     match operator {
-      BinaryOperator::Equality => to_eq_result(self.op_eq(lhs, rhs)),
-      BinaryOperator::Inequality => to_eq_result(self.op_neq(lhs, rhs)),
+      BinaryOperator::Equality => to_eq_result(self.op_loose_eq(lhs, rhs)),
+      BinaryOperator::Inequality => to_eq_result(self.op_loose_neq(lhs, rhs)),
       BinaryOperator::StrictEquality => to_eq_result(self.op_strict_eq(lhs, rhs)),
       BinaryOperator::StrictInequality => to_eq_result(self.op_strict_neq(lhs, rhs)),
       BinaryOperator::LessThan => to_result(self.op_lt(lhs, rhs, false)),
