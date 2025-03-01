@@ -1,6 +1,6 @@
 use crate::{
   builtins::{constants::OBJECT_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::{Entity, ObjectPropertyValue, TypeofResult},
+  entity::{Entity, LiteralEntity, ObjectPropertyValue, TypeofResult},
   init_namespace,
 };
 use std::borrow::BorrowMut;
@@ -20,6 +20,7 @@ impl<'a> Builtins<'a> {
       "values" => self.create_object_values_impl(),
       "entries" => self.create_object_entries_impl(),
       "freeze" => self.create_object_freeze_impl(),
+      "defineProperty" => self.create_object_define_property_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", object);
@@ -114,6 +115,50 @@ impl<'a> Builtins<'a> {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
       // TODO: Actually freeze the object
       analyzer.factory.computed(object, dep)
+    })
+  }
+
+  fn create_object_define_property_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.defineProperty", |analyzer, dep, _, args| {
+      let [object, key, descriptor] = args.destruct_as_array(analyzer, dep, 3, false).0[..] else {
+        unreachable!()
+      };
+
+      'trackable: {
+        if key.get_literal(analyzer).is_none() {
+          break 'trackable;
+        }
+        let (properties, dep) = descriptor.enumerate_properties(analyzer, dep);
+        let mut value = analyzer.factory.undefined;
+        for (definite, key, value2) in properties {
+          if !definite {
+            break 'trackable;
+          }
+          let Some(LiteralEntity::String(key_str, _)) = key.get_literal(analyzer) else {
+            break 'trackable;
+          };
+          match key_str {
+            "value" => {
+              value = self.factory.computed(value2, (key, value));
+            }
+            "get" => {
+              // FIXME: This is not safe, but OK for now.
+              value = self.factory.computed_unknown((value2, key, value));
+            }
+            "set" | "enumerable" | "configurable" | "writable" => {
+              // TODO: actually handle these
+              value = self.factory.computed(value, (key, value2));
+            }
+            _ => {}
+          }
+        }
+        object.set_property(analyzer, descriptor.get_destructable(analyzer, dep), key, value);
+        return object;
+      }
+
+      let dep = analyzer.factory.consumable((dep, key, descriptor));
+      object.unknown_mutate(analyzer, dep);
+      object
     })
   }
 }
