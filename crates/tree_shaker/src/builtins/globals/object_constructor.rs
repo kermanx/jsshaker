@@ -123,6 +123,7 @@ impl<'a> Builtins<'a> {
       let [object, key, descriptor] = args.destruct_as_array(analyzer, dep, 3, false).0[..] else {
         unreachable!()
       };
+      let key = key.get_to_property_key(analyzer);
 
       'trackable: {
         if key.get_literal(analyzer).is_none() {
