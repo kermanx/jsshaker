@@ -1,6 +1,6 @@
 mod dep;
 
-use std::cell::RefCell;
+use std::{cell::RefCell, mem};
 
 use dep::{FoldableDep, UnFoldableDep};
 use oxc::{ast::ast::Expression, span::GetSpan};
@@ -88,7 +88,9 @@ impl<'a> Analyzer<'a> {
           }
         }
       } else {
-        for value in data.used_values.drain(..) {
+        let values = mem::take(&mut data.used_values);
+        mem::drop(data);
+        for value in values {
           value.consume_mangable(self);
           changed = true;
         }
