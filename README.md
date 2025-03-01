@@ -2,7 +2,7 @@
 
 \[WIP\] This is an experimental tree shaker (code size optimizer) for JavaScript based on [the Oxc compiler](https://oxc.rs).
 
-[**Try online**](https://kermanx.github.io/tree-shaker/)
+[**Try online**](https://kermanx.github.io/tree-shaker/) | [**Run locally**](#run-locally)
 
 ## Features
 
@@ -237,6 +237,17 @@ export function main() {
   - Cf Scope: Control flow scope.
   - Variable Scope: Variable scope.
   - Try Scope: Try statement or function.
+
+## Run Locally
+
+1. Clone the repo.
+2. Run `cargo run ./path/to/bundled.js`
+3. The output files will be in `./output/...`
+4. (Optional) You can open the optimized file in VSCode and run the Open Diff command from the "Auto Diff Opener" extension to see the diff.
+
+Note that Rollup is recommended for bundling, because it has information about the side effects of the modules, and it produces much cleaner bundles.
+
+If you encounter any problems, please open an issue with the minimal reproduction. Thanks!
 
 ## Soundiness Statement
 
