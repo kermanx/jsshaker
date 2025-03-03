@@ -51,18 +51,22 @@ impl<'a> ObjectEntity<'a> {
       let mangable = self.is_mangable();
       for key in keys {
         let mut string_keyed = self.string_keyed.borrow_mut();
-        let properties = string_keyed.get_mut(&key).unwrap();
+        let property = string_keyed.get_mut(&key).unwrap();
 
-        let definite = properties.definite;
+        if !property.enumerable {
+          continue;
+        }
+
+        let definite = property.definite;
         let key_entity = if mangable {
-          analyzer.factory.mangable_string(key, properties.mangling.unwrap())
+          analyzer.factory.mangable_string(key, property.mangling.unwrap())
         } else {
           analyzer.factory.string(key)
         };
 
         let mut values = vec![];
         let mut getters = vec![];
-        properties.get(analyzer, &mut values, &mut getters, &mut non_existent);
+        property.get(analyzer, &mut values, &mut getters, &mut non_existent);
         mem::drop(string_keyed);
         for getter in getters {
           values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));

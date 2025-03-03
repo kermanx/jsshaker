@@ -285,6 +285,7 @@ impl<'a> Analyzer<'a> {
       "prototype",
       ObjectProperty {
         definite: true,
+        enumerable: false,
         possible_values: vec![ObjectPropertyValue::Field(
           self.new_empty_object(&self.builtins.prototypes.object, None),
           false,

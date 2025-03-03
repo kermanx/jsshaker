@@ -17,6 +17,7 @@ impl<'a> Builtins<'a> {
       "url",
       ObjectProperty {
         definite: true,
+        enumerable: true,
         possible_values: vec![ObjectPropertyValue::Property(
           Some(factory.implemented_builtin_fn("import.meta.url", |analyzer, _, _, _| {
             analyzer.factory.unknown_string

@@ -71,6 +71,7 @@ impl<'a> ObjectEntity<'a> {
             if definite || existing.is_none() {
               let property = ObjectProperty {
                 definite,
+                enumerable: true,
                 possible_values: vec![property_val],
                 non_existent: ConsumableCollector::default(),
                 key: Some(key),
@@ -118,6 +119,7 @@ impl<'a> ObjectEntity<'a> {
     } else {
       *rest = Some(ObjectProperty {
         definite: false,
+        enumerable: true,
         possible_values: vec![property],
         non_existent: ConsumableCollector::default(),
         key: None,

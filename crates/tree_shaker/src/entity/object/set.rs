@@ -84,6 +84,7 @@ impl<'a> ObjectEntity<'a> {
                 key_str,
                 ObjectProperty {
                   definite: !indeterminate,
+                  enumerable: true, /* TODO: Object.defineProperty */
                   possible_values: vec![ObjectPropertyValue::Field(value, false)],
                   non_existent: ConsumableCollector::default(),
                   key: Some(key),

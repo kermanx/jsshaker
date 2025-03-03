@@ -17,6 +17,8 @@ pub enum ObjectPropertyValue<'a> {
 pub struct ObjectProperty<'a> {
   /// Does this property definitely exist
   pub definite: bool,
+  /// Is this property enumerable
+  pub enumerable: bool,
   /// Possible values of this property
   pub possible_values: Vec<ObjectPropertyValue<'a>>,
   /// Why this property is non-existent
@@ -31,6 +33,7 @@ impl<'a> Default for ObjectProperty<'a> {
   fn default() -> Self {
     Self {
       definite: true,
+      enumerable: true,
       possible_values: vec![],
       non_existent: ConsumableCollector::default(),
       key: None,
