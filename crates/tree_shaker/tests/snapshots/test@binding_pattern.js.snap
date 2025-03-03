@@ -1,7 +1,7 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/binding_pattern.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/binding_pattern.js
 ---
 export function simple(unknown) {
 	effect(1);
@@ -11,7 +11,7 @@ export function simple(unknown) {
 	let { g: { h, i: { j } } } = unknown;
 }
 export function with_rest(unknown) {
-	let { a,...rest } = { b: unknown };
+	let { ...rest } = { b: unknown };
 	effect(void 0, rest.b, 2);
 	let { b,...__unused_56F4 } = unknown;
 	let { a: d } = { a: unknown };

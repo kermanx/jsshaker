@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, dep::DepId, entity::Entity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{
     AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
@@ -20,7 +18,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = self.consumable(DepId::from(AstKind2::AssignmentTargetProperty(node)));
+    let dep = self.consumable(AstKind2::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());
@@ -58,9 +56,8 @@ impl<'a> Transformer<'a> {
   pub fn transform_assignment_target_property(
     &self,
     node: &'a AssignmentTargetProperty<'a>,
-    has_rest: bool,
   ) -> Option<AssignmentTargetProperty<'a>> {
-    let need_binding = has_rest || self.is_referred(AstKind2::AssignmentTargetProperty(node));
+    let need_binding = self.is_referred(AstKind2::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let data =

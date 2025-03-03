@@ -14,7 +14,7 @@ export const result = {
 	s9: typeof f1,
 	s11: typeof unknown,
 	s12: (unknown, "string"),
-	s13: typeof (unknown ? "a" : 1)
+	s13: typeof (unknown ? "_" : 1)
 };
 export function deletion() {
 	const obj1 = { c: 3 };

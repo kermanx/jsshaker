@@ -1,7 +1,7 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/mangling/object_property.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/mangling/object_property.js
 ---
 export function plain_object(aaa, bbb) {
 	const obj = {
@@ -28,7 +28,7 @@ export function property_via_destructuring(aaa, bbb) {
 	console.log(bar);
 }
 export function with_rest(__unused_7A33, bbb) {
-	const { a: __unused_EBAD,...rest } = { bar: bbb };
+	const { ...rest } = { bar: bbb };
 	console.log(rest.bar);
 }
 export function dynamic_destructuring(unknown, aaa, bbb) {

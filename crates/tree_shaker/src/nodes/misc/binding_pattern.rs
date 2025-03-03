@@ -178,7 +178,7 @@ impl<'a> Transformer<'a> {
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
           let dep = AstKind2::BindingProperty(property);
-          let need_property = rest.is_some() || self.is_referred(dep);
+          let need_property = self.is_referred(dep);
 
           let BindingProperty { span, key, value, shorthand, computed } = property;
 

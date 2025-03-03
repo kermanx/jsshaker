@@ -62,7 +62,7 @@ impl<'a> Mangler<'a> {
           self.resolve_identity_group(*identity_group)
         } else if uniqueness_groups.is_empty() {
           // This is quite weird, isn't it?
-          "a"
+          "_"
         } else {
           let mut n =
             uniqueness_groups.iter().map(|&index| self.uniqueness_groups[index].1).max().unwrap();

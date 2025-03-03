@@ -3,7 +3,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
   entity::{consumed_object, Entity, EntityTrait, LiteralEntity},
-  mangling::MangleConstraint,
+  mangling::{MangleConstraint, ManglingDep},
 };
 
 impl<'a> ObjectEntity<'a> {
@@ -54,12 +54,12 @@ impl<'a> ObjectEntity<'a> {
                   let prev_atom = property.mangling.unwrap();
                   analyzer.consumable((
                     dep,
-                    // This is a hack
-                    analyzer.factory.mangable(
-                      analyzer.factory.immutable_unknown,
-                      (prev_key, key),
-                      analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
-                    ) as Entity<'a>,
+                    ManglingDep {
+                      deps: (prev_key, key),
+                      constraint: analyzer
+                        .factory
+                        .alloc(MangleConstraint::Eq(prev_atom, key_atom.unwrap())),
+                    },
                   ))
                 } else {
                   dep

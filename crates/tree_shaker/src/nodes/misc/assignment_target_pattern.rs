@@ -114,9 +114,7 @@ impl<'a> Transformer<'a> {
 
         let mut transformed_properties = self.ast_builder.vec();
         for property in properties {
-          if let Some(property) =
-            self.transform_assignment_target_property(property, rest.is_some())
-          {
+          if let Some(property) = self.transform_assignment_target_property(property) {
             transformed_properties.push(property);
           }
         }

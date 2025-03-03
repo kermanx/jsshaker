@@ -13,7 +13,6 @@ impl<'a> Analyzer<'a> {
     for key in enumerated {
       rest.delete_property(self, self.factory.empty_consumable, key);
     }
-
     rest
   }
 }
