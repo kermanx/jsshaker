@@ -24,6 +24,7 @@ pub struct TreeShakeConfig {
   pub iterate_side_effects: bool,
   pub unknown_property_read_side_effects: bool,
   pub unmatched_prototype_property_as_undefined: bool,
+  pub preserve_writablity: bool,
   pub preserve_exceptions: bool,
 
   pub min_simple_number_value: i64,
@@ -52,6 +53,7 @@ impl TreeShakeConfig {
       iterate_side_effects: true,
       unknown_property_read_side_effects: true,
       unmatched_prototype_property_as_undefined: false,
+      preserve_writablity: true,
       preserve_exceptions: true,
 
       min_simple_number_value: -999,
@@ -64,6 +66,7 @@ impl TreeShakeConfig {
     Self {
       preserve_function_name: false,
       preserve_function_length: false,
+      preserve_writablity: false,
       preserve_exceptions: false,
 
       ..Default::default()
@@ -78,6 +81,7 @@ impl TreeShakeConfig {
       iterate_side_effects: false,
       unknown_property_read_side_effects: false,
       unmatched_prototype_property_as_undefined: true,
+      preserve_writablity: false,
       preserve_exceptions: false,
 
       ..Default::default()

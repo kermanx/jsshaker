@@ -113,8 +113,13 @@ impl<'a> Builtins<'a> {
   fn create_object_freeze_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.freeze", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
-      // TODO: Actually freeze the object
-      analyzer.factory.computed(object, dep)
+      if analyzer.config.preserve_writablity {
+        object.unknown_mutate(analyzer, dep);
+        object
+      } else {
+        // TODO: Actually freeze the object
+        analyzer.factory.computed(object, dep)
+      }
     })
   }
 
@@ -126,6 +131,9 @@ impl<'a> Builtins<'a> {
       let key = key.get_to_property_key(analyzer);
 
       'trackable: {
+        if analyzer.config.preserve_writablity {
+          break 'trackable;
+        }
         if key.get_literal(analyzer).is_none() {
           break 'trackable;
         }
