@@ -64,11 +64,11 @@ impl<'a> Mangler<'a> {
           // This is quite weird, isn't it?
           "_"
         } else {
-          let mut n =
+          let n =
             uniqueness_groups.iter().map(|&index| self.uniqueness_groups[index].1).max().unwrap();
-          let name = get_mangled_name(&mut n);
+          let name = get_mangled_name(n);
           for &index in uniqueness_groups {
-            self.uniqueness_groups[index].1 = n;
+            self.uniqueness_groups[index].1 = n + 1;
           }
           self.allocator.alloc(name)
         };
@@ -98,9 +98,9 @@ impl<'a> Mangler<'a> {
           AtomState::NonMangable => unreachable!(),
         }
       }
-      let name = get_mangled_name(&mut n);
+      let name = get_mangled_name(n);
       for index in related_uniq_groups {
-        uniqueness_groups[index].1 = n;
+        uniqueness_groups[index].1 = n + 1;
       }
       self.allocator.alloc(name)
     })
