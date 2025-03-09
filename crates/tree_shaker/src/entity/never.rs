@@ -96,7 +96,7 @@ impl<'a> EntityTrait<'a> for NeverEntity {
     &'a self,
     _analyzer: &Analyzer<'a>,
   ) -> Option<rustc_hash::FxHashSet<super::LiteralEntity<'a>>> {
-    None
+    Some(rustc_hash::FxHashSet::default())
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralEntity<'a>> {
     None

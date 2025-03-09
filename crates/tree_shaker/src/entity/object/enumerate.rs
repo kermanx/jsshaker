@@ -1,4 +1,4 @@
-use super::ObjectEntity;
+use super::{get::GetPropertyContext, ObjectEntity};
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
@@ -21,25 +21,31 @@ impl<'a> ObjectEntity<'a> {
     analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![dep], None);
 
     let mut result = vec![];
-    let mut non_existent = vec![];
+    let mut context = GetPropertyContext {
+      key: analyzer.factory.never,
+      values: vec![],
+      getters: vec![],
+      extra_deps: vec![],
+    };
 
     {
-      let mut values = vec![];
-      let mut getters = vec![];
-
       {
         let mut unknown_keyed = self.unknown_keyed.borrow_mut();
-        unknown_keyed.get(analyzer, &mut values, &mut getters, &mut non_existent);
+        unknown_keyed.get(analyzer, &mut context, None);
         if let Some(rest) = &mut *self.rest.borrow_mut() {
-          rest.get(analyzer, &mut values, &mut getters, &mut non_existent);
+          rest.get(analyzer, &mut context, None);
         }
       }
 
-      for getter in getters {
-        values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
+      for getter in context.getters.drain(..) {
+        context.values.push(getter.call_as_getter(
+          analyzer,
+          analyzer.factory.empty_consumable,
+          self,
+        ));
       }
 
-      if let Some(value) = analyzer.factory.try_union(values) {
+      if let Some(value) = analyzer.factory.try_union(mem::take(&mut context.values)) {
         result.push((false, analyzer.factory.unknown_primitive, value));
       }
     }
@@ -64,15 +70,17 @@ impl<'a> ObjectEntity<'a> {
           analyzer.factory.string(key)
         };
 
-        let mut values = vec![];
-        let mut getters = vec![];
-        property.get(analyzer, &mut values, &mut getters, &mut non_existent);
+        property.get(analyzer, &mut context, None);
         mem::drop(string_keyed);
-        for getter in getters {
-          values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
+        for getter in context.getters.drain(..) {
+          context.values.push(getter.call_as_getter(
+            analyzer,
+            analyzer.factory.empty_consumable,
+            self,
+          ));
         }
 
-        if let Some(value) = analyzer.factory.try_union(values) {
+        if let Some(value) = analyzer.factory.try_union(mem::take(&mut context.values)) {
           result.push((definite, key_entity, value));
         }
       }
@@ -80,6 +88,6 @@ impl<'a> ObjectEntity<'a> {
 
     analyzer.pop_cf_scope();
 
-    (result, analyzer.consumable((dep, non_existent)))
+    (result, analyzer.consumable((dep, context.extra_deps)))
   }
 }

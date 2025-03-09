@@ -1,9 +1,11 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableVec},
+  consumable::{Consumable, ConsumableCollector},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
 };
+
+use super::get::GetPropertyContext;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPropertyValue<'a> {
@@ -43,35 +45,37 @@ impl<'a> Default for ObjectProperty<'a> {
 }
 
 impl<'a> ObjectProperty<'a> {
-  pub fn get(
+  pub(super) fn get(
     &mut self,
     analyzer: &Analyzer<'a>,
-    values: &mut Vec<Entity<'a>>,
-    getters: &mut Vec<Entity<'a>>,
-    non_existent: &mut ConsumableVec<'a>,
-  ) {
+    context: &mut GetPropertyContext<'a>,
+    key_atom: Option<MangleAtom>,
+  ) -> bool {
+    if let Some(key_atom) = key_atom {
+      self.get_mangable(analyzer, context, key_atom);
+    } else {
+      self.get_unmangable(analyzer, context);
+    }
+    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
+      context.extra_deps.push(dep);
+    }
+    self.definite
+  }
+
+  fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => values.push(*value),
-        ObjectPropertyValue::Property(Some(getter), _) => getters.push(*getter),
-        ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.undefined),
+        ObjectPropertyValue::Field(value, _) => context.values.push(*value),
+        ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(*getter),
+        ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.undefined),
       }
-    }
-
-    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
-      non_existent.push(dep);
-    } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 
-  pub fn get_mangable(
+  fn get_mangable(
     &mut self,
     analyzer: &Analyzer<'a>,
-    values: &mut Vec<Entity<'a>>,
-    getters: &mut Vec<Entity<'a>>,
-    non_existent: &mut ConsumableVec<'a>,
-    key: Entity<'a>,
+    context: &mut GetPropertyContext<'a>,
     key_atom: MangleAtom,
   ) {
     let prev_key = self.key.unwrap();
@@ -79,24 +83,20 @@ impl<'a> ObjectProperty<'a> {
     let constraint = &*analyzer.factory.alloc(MangleConstraint::Eq(prev_atom, key_atom));
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => {
-          values.push(analyzer.factory.mangable(*value, (prev_key, key), constraint))
-        }
-        ObjectPropertyValue::Property(Some(getter), _) => {
-          getters.push(analyzer.factory.mangable(*getter, (prev_key, key), constraint))
-        }
-        ObjectPropertyValue::Property(None, _) => values.push(analyzer.factory.mangable(
+        ObjectPropertyValue::Field(value, _) => context.values.push(analyzer.factory.mangable(
+          *value,
+          (prev_key, context.key),
+          constraint,
+        )),
+        ObjectPropertyValue::Property(Some(getter), _) => context
+          .getters
+          .push(analyzer.factory.mangable(*getter, (prev_key, context.key), constraint)),
+        ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.mangable(
           analyzer.factory.undefined,
-          (prev_key, key),
+          (prev_key, context.key),
           constraint,
         )),
       }
-    }
-
-    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
-      non_existent.push(dep);
-    } else if !self.definite && non_existent.is_empty() {
-      non_existent.push(analyzer.factory.empty_consumable);
     }
   }
 

@@ -1,6 +1,6 @@
 use crate::{
   builtins::{constants::SYMBOL_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::ObjectPropertyValue,
+  entity::{ObjectPropertyValue, ObjectPrototype},
   init_namespace,
 };
 use std::borrow::BorrowMut;
@@ -9,8 +9,11 @@ impl<'a> Builtins<'a> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 
-    let object =
-      factory.builtin_object(SYMBOL_CONSTRUCTOR_OBJECT_ID, &self.prototypes.function, false);
+    let object = factory.builtin_object(
+      SYMBOL_CONSTRUCTOR_OBJECT_ID,
+      ObjectPrototype::Builtin(&self.prototypes.function),
+      false,
+    );
     object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
     init_namespace!(object, {

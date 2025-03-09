@@ -1,4 +1,8 @@
-use crate::{analyzer::Analyzer, dep::DepId, entity::Entity};
+use crate::{
+  analyzer::Analyzer,
+  dep::DepId,
+  entity::{Entity, ObjectPrototype},
+};
 
 impl<'a> Analyzer<'a> {
   /// const { enumerated_1, enumerated_2, ...rest } = object;
@@ -8,7 +12,7 @@ impl<'a> Analyzer<'a> {
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {
-    let rest = self.new_empty_object(&self.builtins.prototypes.object, None);
+    let rest = self.new_empty_object(ObjectPrototype::ImplicitOrNull, None);
     rest.init_spread(self, self.consumable(dep.into()), object);
     for key in enumerated {
       rest.delete_property(self, self.factory.empty_consumable, key);

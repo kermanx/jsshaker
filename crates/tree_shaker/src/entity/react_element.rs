@@ -1,7 +1,9 @@
 use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer, consumable::Consumable, entity::ObjectPrototype, use_consumed_flag,
+};
 use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
@@ -23,8 +25,10 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
     // Is this the best way to handle this?
     let group_id = analyzer.new_object_mangling_group();
     analyzer.exec_consumed_fn("React_blackbox", move |analyzer| {
-      let copied_props =
-        analyzer.new_empty_object(&analyzer.builtins.prototypes.object, Some(group_id));
+      let copied_props = analyzer.new_empty_object(
+        ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object),
+        Some(group_id),
+      );
       copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
       tag.jsx(analyzer, copied_props)
     });
