@@ -13,6 +13,10 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     self.value.consume(analyzer);
   }
 
+  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
+    self.value.consume_mangable(analyzer)
+  }
+
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.value.unknown_mutate(analyzer, dep);
   }
