@@ -25,7 +25,7 @@ pub use builtin_fn::PureBuiltinFnEntity;
 pub use class::ClassEntity;
 pub use factory::EntityFactory;
 pub use literal::LiteralEntity;
-pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
+pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 pub use primitive::PrimitiveEntity;
 use rustc_hash::FxHashSet;
 use std::{cmp::Ordering, fmt::Debug};

@@ -1,12 +1,13 @@
 use super::{constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes, Builtins};
-use crate::entity::{Entity, EntityFactory, ObjectProperty, ObjectPropertyValue};
+use crate::entity::{Entity, EntityFactory, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 
 impl<'a> Builtins<'a> {
   pub fn create_import_meta(
     factory: &'a EntityFactory<'a>,
-    prototypes: &'a BuiltinPrototypes<'a>,
+    _prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
-    let object = factory.builtin_object(IMPORT_META_OBJECT_ID, &prototypes.null, true);
+    let object =
+      factory.builtin_object(IMPORT_META_OBJECT_ID, ObjectPrototype::ImplicitOrNull, true);
     object.init_rest(ObjectPropertyValue::Property(
       Some(factory.immutable_unknown),
       Some(factory.immutable_unknown),

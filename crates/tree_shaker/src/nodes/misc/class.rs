@@ -2,7 +2,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::ConsumableTrait,
-  entity::{ClassEntity, Entity},
+  entity::{ClassEntity, Entity, ObjectPrototype},
   transformer::Transformer,
   utils::CalleeNode,
 };
@@ -29,7 +29,8 @@ impl<'a> Analyzer<'a> {
 
     self.push_variable_scope();
 
-    let statics = self.new_empty_object(&self.builtins.prototypes.function, None);
+    let statics =
+      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), None);
     for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {
