@@ -13,7 +13,7 @@ use super::{
   prototypes::BuiltinPrototypes,
 };
 use crate::{
-  entity::{Entity, EntityFactory, ObjectPropertyValue},
+  entity::{Entity, EntityFactory, ObjectPropertyValue, ObjectPrototype},
   init_namespace,
 };
 pub use class_names::create_class_names_namespace;
@@ -36,9 +36,10 @@ pub struct AnalyzerDataForReact<'a> {
 
 pub fn create_react_namespace<'a>(
   factory: &'a EntityFactory<'a>,
-  prototypes: &'a BuiltinPrototypes<'a>,
+  _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let namespace = factory.builtin_object(REACT_NAMESPACE_OBJECT_ID, &prototypes.null, false);
+  let namespace =
+    factory.builtin_object(REACT_NAMESPACE_OBJECT_ID, ObjectPrototype::ImplicitOrNull, false);
   namespace.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
   init_namespace!(namespace, {
@@ -55,10 +56,13 @@ pub fn create_react_namespace<'a>(
 
 pub fn create_react_jsx_runtime_namespace<'a>(
   factory: &'a EntityFactory<'a>,
-  prototypes: &'a BuiltinPrototypes<'a>,
+  _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let object =
-    factory.builtin_object(REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID, &prototypes.null, false);
+  let object = factory.builtin_object(
+    REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID,
+    ObjectPrototype::ImplicitOrNull,
+    false,
+  );
   object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
   init_namespace!(object, {

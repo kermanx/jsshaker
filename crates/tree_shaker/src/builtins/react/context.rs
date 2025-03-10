@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait},
-  entity::{Entity, EntityFactory},
+  entity::{Entity, EntityFactory, ObjectPrototype},
   init_object,
 };
 use oxc::semantic::SymbolId;
@@ -42,7 +42,8 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let default_value =
       args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
 
-    let context = analyzer.new_empty_object(&analyzer.builtins.prototypes.object, None);
+    let context = analyzer
+      .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None);
 
     let context_id = analyzer.builtins.react_data.contexts.push(ReactContextData {
       object_id: context.object_id,

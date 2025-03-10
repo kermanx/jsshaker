@@ -2,9 +2,17 @@ use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
-  entity::{consumed_object, Entity, LiteralEntity},
+  entity::{consumed_object, object::ObjectPrototype, Entity, LiteralEntity},
+  mangling::MangleAtom,
   scope::CfScopeKind,
 };
+
+pub(crate) struct GetPropertyContext<'a> {
+  pub key: Entity<'a>,
+  pub values: Vec<Entity<'a>>,
+  pub getters: Vec<Entity<'a>>,
+  pub extra_deps: Vec<Consumable<'a>>,
+}
 
 impl<'a> ObjectEntity<'a> {
   pub fn get_property(
@@ -20,53 +28,32 @@ impl<'a> ObjectEntity<'a> {
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     let mut mangable = false;
-    let mut values = vec![];
-    let mut getters = vec![];
-    let mut non_existent = vec![];
+    let mut context =
+      GetPropertyContext { key, values: vec![], getters: vec![], extra_deps: vec![] };
 
     let mut check_rest = false;
-    let mut may_add_undefined = false;
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       mangable = self.check_mangable(analyzer, &key_literals);
-      let mut string_keyed = self.string_keyed.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key_str, key_atom) => {
-            if let Some(property) = string_keyed.get_mut(key_str) {
-              if mangable {
-                property.get_mangable(
-                  analyzer,
-                  &mut values,
-                  &mut getters,
-                  &mut non_existent,
-                  key,
-                  key_atom.unwrap(),
-                );
-              } else {
-                property.get(analyzer, &mut values, &mut getters, &mut non_existent);
-              }
-            } else {
+            if !self.get_string_keyed(
+              analyzer,
+              &mut context,
+              key_str,
+              if mangable { key_atom } else { None },
+            ) {
               check_rest = true;
-              if let Some(val) = self.prototype.get_string_keyed(key_str) {
-                values.push(if mangable { analyzer.factory.computed(val, key_atom) } else { val });
-              } else {
-                may_add_undefined = true;
-              }
             }
           }
           LiteralEntity::Symbol(_, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }
-
-      check_rest |= !non_existent.is_empty();
-      may_add_undefined |= !non_existent.is_empty();
     } else {
       self.disable_mangling(analyzer);
 
-      for property in self.string_keyed.borrow_mut().values_mut() {
-        property.get(analyzer, &mut values, &mut getters, &mut non_existent);
-      }
+      self.get_any_string_keyed(analyzer, &mut context);
 
       // TODO: prototype? Use a config IMO
       // Either:
@@ -74,42 +61,97 @@ impl<'a> ObjectEntity<'a> {
       // - Return unknown and call all getters
 
       check_rest = true;
-      may_add_undefined = true;
     }
 
     if check_rest {
       let mut rest = self.rest.borrow_mut();
       if let Some(rest) = &mut *rest {
-        rest.get(analyzer, &mut values, &mut getters, &mut non_existent);
-      } else if may_add_undefined {
-        values.push(analyzer.factory.undefined);
+        rest.get(analyzer, &mut context, None);
+      } else {
+        context.values.push(analyzer.factory.undefined);
       }
     }
 
-    let indeterminate_getter = !values.is_empty() || getters.len() > 1 || !non_existent.is_empty();
+    self.get_unknown_keyed(analyzer, &mut context);
 
-    {
-      let mut unknown_keyed = self.unknown_keyed.borrow_mut();
-      unknown_keyed.get(analyzer, &mut values, &mut getters, &mut non_existent);
-    }
-
-    if !getters.is_empty() {
+    if !context.getters.is_empty() {
+      let indeterminate = check_rest || !context.values.is_empty() || context.getters.len() > 1;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         vec![if mangable { dep } else { analyzer.consumable((dep, key)) }],
-        if indeterminate_getter { None } else { Some(false) },
+        if indeterminate { None } else { Some(false) },
       );
-      for getter in getters {
-        values.push(getter.call_as_getter(analyzer, analyzer.factory.empty_consumable, self));
+      for getter in context.getters {
+        context.values.push(getter.call_as_getter(
+          analyzer,
+          analyzer.factory.empty_consumable,
+          self,
+        ));
       }
       analyzer.pop_cf_scope();
     }
 
-    let value = analyzer.factory.try_union(values).unwrap_or(analyzer.factory.undefined);
+    let value = analyzer.factory.try_union(context.values).unwrap_or(analyzer.factory.undefined);
     if mangable {
-      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep)))
+      analyzer.factory.computed(value, analyzer.consumable((context.extra_deps, dep)))
     } else {
-      analyzer.factory.computed(value, analyzer.consumable((non_existent, dep, key)))
+      analyzer.factory.computed(value, analyzer.consumable((context.extra_deps, dep, key)))
+    }
+  }
+
+  fn get_string_keyed(
+    &self,
+    analyzer: &Analyzer<'a>,
+    context: &mut GetPropertyContext<'a>,
+    key_str: &str,
+    key_atom: Option<MangleAtom>,
+  ) -> bool {
+    let mut string_keyed = self.string_keyed.borrow_mut();
+    if let Some(property) = string_keyed.get_mut(key_str) {
+      if property.get(analyzer, context, key_atom) {
+        return true;
+      }
+    }
+    match self.prototype {
+      ObjectPrototype::ImplicitOrNull => false,
+      ObjectPrototype::Builtin(prototype) => {
+        if let Some(value) = prototype.get_string_keyed(key_str) {
+          context.values.push(if let Some(key_atom) = key_atom {
+            analyzer.factory.computed(value, key_atom)
+          } else {
+            value
+          });
+          true
+        } else {
+          false
+        }
+      }
+      ObjectPrototype::Custom(prototype) => {
+        prototype.get_string_keyed(analyzer, context, key_str, key_atom)
+      }
+    }
+  }
+
+  fn get_any_string_keyed(&self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
+    for property in self.string_keyed.borrow_mut().values_mut() {
+      property.get(analyzer, context, None);
+    }
+    match self.prototype {
+      ObjectPrototype::ImplicitOrNull => {}
+      ObjectPrototype::Builtin(_prototype) => {
+        // TODO: Control via an option
+      }
+      ObjectPrototype::Custom(prototype) => prototype.get_any_string_keyed(analyzer, context),
+    }
+  }
+
+  fn get_unknown_keyed(&self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
+    let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+    unknown_keyed.get(analyzer, context, None);
+    match self.prototype {
+      ObjectPrototype::ImplicitOrNull => {}
+      ObjectPrototype::Builtin(_) => {}
+      ObjectPrototype::Custom(prototype) => prototype.get_unknown_keyed(analyzer, context),
     }
   }
 }

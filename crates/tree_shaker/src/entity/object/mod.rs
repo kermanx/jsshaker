@@ -25,6 +25,13 @@ use std::cell::{Cell, RefCell};
 
 type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 
+#[derive(Debug, Clone, Copy)]
+pub enum ObjectPrototype<'a> {
+  ImplicitOrNull,
+  Builtin(&'a Prototype<'a>),
+  Custom(&'a ObjectEntity<'a>),
+}
+
 #[derive(Debug)]
 pub struct ObjectEntity<'a> {
   /// A built-in object is usually non-consumable
@@ -34,7 +41,7 @@ pub struct ObjectEntity<'a> {
   /// Where the object is created
   pub cf_scope: CfScopeId,
   pub object_id: SymbolId,
-  pub prototype: &'a Prototype<'a>,
+  pub prototype: ObjectPrototype<'a>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
   pub mangling_group: Option<ObjectManglingGroupId<'a>>,
@@ -260,7 +267,7 @@ impl<'a> ObjectEntity<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_empty_object(
     &mut self,
-    prototype: &'a Prototype<'a>,
+    prototype: ObjectPrototype<'a>,
     mangling_group: Option<ObjectManglingGroupId<'a>>,
   ) -> &'a mut ObjectEntity<'a> {
     self.allocator.alloc(ObjectEntity {
@@ -278,14 +285,15 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn new_function_object(&mut self) -> &'a ObjectEntity<'a> {
-    let object = self.new_empty_object(&self.builtins.prototypes.function, None);
+    let object =
+      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), None);
     object.string_keyed.borrow_mut().insert(
       "prototype",
       ObjectProperty {
         definite: true,
         enumerable: false,
         possible_values: vec![ObjectPropertyValue::Field(
-          self.new_empty_object(&self.builtins.prototypes.object, None),
+          self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.object), None),
           false,
         )],
         non_existent: Default::default(),
@@ -307,6 +315,9 @@ impl<'a> Analyzer<'a> {
     let mangling_group = self
       .load_data::<Option<ObjectManglingGroupId>>(dep_id)
       .get_or_insert_with(|| self.new_object_mangling_group());
-    self.new_empty_object(&self.builtins.prototypes.object, Some(*mangling_group))
+    self.new_empty_object(
+      ObjectPrototype::Builtin(&self.builtins.prototypes.object),
+      Some(*mangling_group),
+    )
   }
 }

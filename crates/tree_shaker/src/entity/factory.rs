@@ -1,5 +1,4 @@
 use crate::{
-  builtins::Prototype,
   consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   module::ModuleId,
@@ -18,8 +17,8 @@ use super::{
   react_element::ReactElementEntity,
   union::UnionEntity,
   utils::UnionLike,
-  ClassEntity, Entity, LiteralEntity, ObjectEntity, PrimitiveEntity, PureBuiltinFnEntity,
-  UnknownEntity,
+  ClassEntity, Entity, LiteralEntity, ObjectEntity, ObjectPrototype, PrimitiveEntity,
+  PureBuiltinFnEntity, UnknownEntity,
 };
 use oxc::semantic::SymbolId;
 use oxc::{allocator::Allocator, ast::ast::Class};
@@ -150,7 +149,7 @@ impl<'a> EntityFactory<'a> {
   pub fn builtin_object(
     &self,
     object_id: SymbolId,
-    prototype: &'a Prototype<'a>,
+    prototype: ObjectPrototype<'a>,
     consumable: bool,
   ) -> &'a mut ObjectEntity<'a> {
     self.alloc(ObjectEntity {
