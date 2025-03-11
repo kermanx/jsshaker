@@ -11,8 +11,8 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  builtins::Prototype,
-  consumable::Consumable,
+  builtins::BuiltinPrototype,
+  consumable::{Consumable, ConsumableTrait},
   dep::DepId,
   mangling::{is_literal_mangable, MangleAtom, UniquenessGroupId},
   scope::CfScopeId,
@@ -28,8 +28,20 @@ type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPrototype<'a> {
   ImplicitOrNull,
-  Builtin(&'a Prototype<'a>),
+  Builtin(&'a BuiltinPrototype<'a>),
   Custom(&'a ObjectEntity<'a>),
+  Unknown(Entity<'a>),
+}
+
+impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    match self {
+      ObjectPrototype::ImplicitOrNull => {}
+      ObjectPrototype::Builtin(prototype) => {}
+      ObjectPrototype::Custom(object) => object.consume(analyzer),
+      ObjectPrototype::Unknown(entity) => entity.consume(analyzer),
+    }
+  }
 }
 
 #[derive(Debug)]
@@ -41,7 +53,7 @@ pub struct ObjectEntity<'a> {
   /// Where the object is created
   pub cf_scope: CfScopeId,
   pub object_id: SymbolId,
-  pub prototype: ObjectPrototype<'a>,
+  pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
   pub mangling_group: Option<ObjectManglingGroupId<'a>>,
@@ -279,12 +291,14 @@ impl<'a> Analyzer<'a> {
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(None),
-      prototype,
+      prototype: Cell::new(prototype),
       mangling_group,
     })
   }
 
-  pub fn new_function_object(&mut self) -> &'a ObjectEntity<'a> {
+  pub fn new_function_object(&mut self) -> (&'a ObjectEntity<'a>, &'a ObjectEntity<'a>) {
+    let prototype =
+      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.object), None);
     let object =
       self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), None);
     object.string_keyed.borrow_mut().insert(
@@ -292,16 +306,13 @@ impl<'a> Analyzer<'a> {
       ObjectProperty {
         definite: true,
         enumerable: false,
-        possible_values: vec![ObjectPropertyValue::Field(
-          self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.object), None),
-          false,
-        )],
+        possible_values: vec![ObjectPropertyValue::Field(prototype, false)],
         non_existent: Default::default(),
         key: None,
         mangling: None,
       },
     );
-    self.allocator.alloc(object)
+    (object, prototype)
   }
 
   pub fn new_object_mangling_group(&mut self) -> ObjectManglingGroupId<'a> {

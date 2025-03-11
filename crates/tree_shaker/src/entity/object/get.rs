@@ -112,7 +112,7 @@ impl<'a> ObjectEntity<'a> {
         return true;
       }
     }
-    match self.prototype {
+    match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => false,
       ObjectPrototype::Builtin(prototype) => {
         if let Some(value) = prototype.get_string_keyed(key_str) {
@@ -129,6 +129,7 @@ impl<'a> ObjectEntity<'a> {
       ObjectPrototype::Custom(prototype) => {
         prototype.get_string_keyed(analyzer, context, key_str, key_atom)
       }
+      ObjectPrototype::Unknown(unknown) => false,
     }
   }
 
@@ -136,22 +137,26 @@ impl<'a> ObjectEntity<'a> {
     for property in self.string_keyed.borrow_mut().values_mut() {
       property.get(analyzer, context, None);
     }
-    match self.prototype {
+    match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_prototype) => {
         // TODO: Control via an option
       }
       ObjectPrototype::Custom(prototype) => prototype.get_any_string_keyed(analyzer, context),
+      ObjectPrototype::Unknown(unknown) => {}
     }
   }
 
   fn get_unknown_keyed(&self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
     let mut unknown_keyed = self.unknown_keyed.borrow_mut();
     unknown_keyed.get(analyzer, context, None);
-    match self.prototype {
+    match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_) => {}
       ObjectPrototype::Custom(prototype) => prototype.get_unknown_keyed(analyzer, context),
+      ObjectPrototype::Unknown(unknown) => {
+        context.values.push(analyzer.factory.computed_unknown(unknown))
+      }
     }
   }
 }

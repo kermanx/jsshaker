@@ -1,8 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::ConsumableTrait,
-  entity::{ClassEntity, Entity, ObjectPrototype},
+  entity::{Entity, EntityTrait, ObjectPrototype},
   transformer::Transformer,
   utils::CalleeNode,
 };
@@ -20,8 +19,10 @@ use oxc::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
+    // 1. Execute super class
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
+    // 2. Execute keys
     let mut keys = vec![];
     for element in &node.body.body {
       keys.push(element.property_key().map(|key| self.exec_property_key(key)));
@@ -29,8 +30,21 @@ impl<'a> Analyzer<'a> {
 
     self.push_variable_scope();
 
-    let statics =
-      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), None);
+    let class = self.new_function(CalleeNode::ClassConstructor(node));
+    if let Some(super_class) = &super_class {
+      // Because we can't re-define the "prototype" property, this should be side-effect free
+      if let Some((prototype_dep, super_prototype)) = super_class
+        .get_property(self, self.factory.empty_consumable, self.factory.string("prototype"))
+        .get_constructor_prototype(self, self.factory.empty_consumable)
+      {
+        class.prototype.prototype.set(super_prototype);
+        class.prototype.unknown_mutate(self, prototype_dep);
+      } else {
+        class.prototype.prototype.set(ObjectPrototype::Unknown(*super_class));
+      }
+    } else {
+      class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
+    };
     for (index, element) in node.body.body.iter().enumerate() {
       if let ClassElement::MethodDefinition(node) = element {
         if node.r#static {
@@ -42,21 +56,12 @@ impl<'a> Analyzer<'a> {
             MethodDefinitionKind::Get => PropertyKind::Get,
             MethodDefinitionKind::Set => PropertyKind::Set,
           };
-          statics.init_property(self, kind, key, value, true);
+          class.statics.init_property(self, kind, key, value, true);
         }
       }
     }
 
     self.pop_variable_scope();
-
-    let class = self.factory.class(
-      self.current_module(),
-      node,
-      keys.clone(),
-      self.scoping.variable.stack.clone(),
-      super_class,
-      statics,
-    );
 
     let variable_scope_stack = self.scoping.variable.stack.clone();
     self.push_call_scope(

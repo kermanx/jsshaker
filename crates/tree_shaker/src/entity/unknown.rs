@@ -1,5 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype,
+  TypeofResult,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::marker::PhantomData;

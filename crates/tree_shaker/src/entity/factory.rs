@@ -17,8 +17,8 @@ use super::{
   react_element::ReactElementEntity,
   union::UnionEntity,
   utils::UnionLike,
-  ClassEntity, Entity, LiteralEntity, ObjectEntity, ObjectPrototype, PrimitiveEntity,
-  PureBuiltinFnEntity, UnknownEntity,
+  Entity, LiteralEntity, ObjectEntity, ObjectPrototype, PrimitiveEntity, PureBuiltinFnEntity,
+  UnknownEntity,
 };
 use oxc::semantic::SymbolId;
 use oxc::{allocator::Allocator, ast::ast::Class};
@@ -160,7 +160,7 @@ impl<'a> EntityFactory<'a> {
       string_keyed: Default::default(),
       unknown_keyed: Default::default(),
       rest: Default::default(),
-      prototype,
+      prototype: Cell::new(prototype),
       mangling_group: None,
     })
   }
@@ -190,26 +190,6 @@ impl<'a> EntityFactory<'a> {
       name: _name,
       implementation,
       object: None,
-    })
-  }
-
-  pub fn class(
-    &self,
-    module: ModuleId,
-    node: &'a Class<'a>,
-    keys: Vec<Option<Entity<'a>>>,
-    variable_scope_stack: Vec<VariableScopeId>,
-    super_class: Option<Entity<'a>>,
-    statics: &'a ObjectEntity<'a>,
-  ) -> Entity<'a> {
-    self.alloc(ClassEntity {
-      consumed: Cell::new(false),
-      module,
-      node,
-      keys,
-      statics,
-      variable_scope_stack: Rc::new(variable_scope_stack),
-      super_class,
     })
   }
 

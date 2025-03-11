@@ -1,6 +1,6 @@
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable};
 
-use super::{Entity, EntityTrait};
+use super::{Entity, EntityTrait, ObjectPrototype};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NeverEntity;

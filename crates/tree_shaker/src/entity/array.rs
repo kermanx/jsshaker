@@ -1,9 +1,10 @@
 use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  ObjectPrototype, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
+  builtins::BuiltinPrototype,
   consumable::{Consumable, ConsumableCollector},
   scope::CfScopeId,
   use_consumed_flag,
