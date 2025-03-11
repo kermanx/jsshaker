@@ -212,7 +212,7 @@ impl<'a> Transformer<'a> {
       let id = if self.config.preserve_function_name {
         self.clone_node(id)
       } else if node.r#type == ClassType::ClassDeclaration && id.is_some() {
-        // Id cannot be omitted for class declaration
+        // `id` cannot be omitted for class declaration
         // However, we still check `id.is_some()` to handle `export default class {}`
         Some(
           transformed_id

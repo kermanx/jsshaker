@@ -27,6 +27,7 @@ pub struct VariableScope<'a> {
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
+  pub super_class: Option<Entity<'a>>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -368,6 +369,16 @@ impl<'a> Analyzer<'a> {
       let scope = self.scoping.variable.get_from_depth(depth);
       if let Some(this) = scope.this {
         return this;
+      }
+    }
+    unreachable!()
+  }
+
+  pub fn get_super(&self) -> Entity<'a> {
+    for depth in (0..self.scoping.variable.stack.len()).rev() {
+      let scope = self.scoping.variable.get_from_depth(depth);
+      if let Some(super_class) = scope.super_class {
+        return super_class;
       }
     }
     unreachable!()
