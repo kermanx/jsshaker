@@ -128,7 +128,7 @@ impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
     &'a self,
     analyzer: &Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.value.get_constructor_prototype(analyzer, dep)
   }
 

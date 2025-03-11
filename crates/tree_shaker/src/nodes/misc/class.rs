@@ -1,68 +1,91 @@
+use std::rc::Rc;
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  entity::{Entity, EntityTrait, ObjectPrototype},
+  consumable::Consumable,
+  entity::{Entity, EntityTrait, ObjectPrototype, TypeofResult},
+  scope::VariableScopeId,
   transformer::Transformer,
-  utils::CalleeNode,
+  utils::{CalleeInfo, CalleeNode},
 };
+
 use oxc::{
   allocator,
   ast::{
     ast::{
-      Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
-      PropertyKind, StaticBlock,
+      Class, ClassBody, ClassElement, ClassType, MethodDefinition, MethodDefinitionKind,
+      PropertyDefinitionType, PropertyKind, StaticBlock,
     },
     NONE,
   },
   span::GetSpan,
 };
 
+#[derive(Default)]
+struct Data<'a> {
+  pub constructor: Option<&'a MethodDefinition<'a>>,
+  pub keys: Vec<Option<Entity<'a>>>,
+}
+
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
+    let data = self.load_data::<Data>(AstKind2::Class(node));
+    let class = self.new_function(CalleeNode::ClassConstructor(node));
+
     // 1. Execute super class
     let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
-    // 2. Execute keys
-    let mut keys = vec![];
+    // 2. Execute keys and find constructor
     for element in &node.body.body {
-      keys.push(element.property_key().map(|key| self.exec_property_key(key)));
+      data.keys.push(element.property_key().map(|key| self.exec_property_key(key)));
+
+      if let ClassElement::MethodDefinition(method) = element {
+        if method.kind.is_constructor() {
+          if data.constructor.is_some() {
+            self.throw_builtin_error("A class may only have one constructor");
+          }
+          data.constructor = Some(method);
+        }
+      }
     }
 
-    self.push_variable_scope();
-
-    let class = self.new_function(CalleeNode::ClassConstructor(node));
+    // 3. Resolve inherited things
     if let Some(super_class) = &super_class {
       // Because we can't re-define the "prototype" property, this should be side-effect free
-      if let Some((prototype_dep, super_prototype)) = super_class
-        .get_property(self, self.factory.empty_consumable, self.factory.string("prototype"))
-        .get_constructor_prototype(self, self.factory.empty_consumable)
+      if let Some((prototype_dep, super_statics, super_prototype)) =
+        super_class.get_constructor_prototype(self, self.factory.empty_consumable)
       {
+        class.statics.prototype.set(super_statics);
         class.prototype.prototype.set(super_prototype);
         class.prototype.unknown_mutate(self, prototype_dep);
       } else {
+        class.statics.prototype.set(ObjectPrototype::Unknown(*super_class));
         class.prototype.prototype.set(ObjectPrototype::Unknown(*super_class));
       }
     } else {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
     };
-    for (index, element) in node.body.body.iter().enumerate() {
+
+    // 4. Register methods
+    for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
       if let ClassElement::MethodDefinition(node) = element {
+        let kind = match node.kind {
+          MethodDefinitionKind::Constructor => continue,
+          MethodDefinitionKind::Method => PropertyKind::Init,
+          MethodDefinitionKind::Get => PropertyKind::Get,
+          MethodDefinitionKind::Set => PropertyKind::Set,
+        };
+        let value = self.exec_function(&node.value);
         if node.r#static {
-          let key = keys[index].unwrap();
-          let value = self.exec_function(&node.value);
-          let kind = match node.kind {
-            MethodDefinitionKind::Constructor => unreachable!(),
-            MethodDefinitionKind::Method => PropertyKind::Init,
-            MethodDefinitionKind::Get => PropertyKind::Get,
-            MethodDefinitionKind::Set => PropertyKind::Set,
-          };
-          class.statics.init_property(self, kind, key, value, true);
+          class.statics.init_property(self, kind, key.unwrap(), value, true);
+        } else {
+          class.prototype.init_property(self, kind, key.unwrap(), value, true);
         }
       }
     }
 
-    self.pop_variable_scope();
-
+    // 5. Execute static blocks
     let variable_scope_stack = self.scoping.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
@@ -87,7 +110,7 @@ impl<'a> Analyzer<'a> {
         ClassElement::MethodDefinition(_node) => {}
         ClassElement::PropertyDefinition(node) if node.r#static => {
           if let Some(value) = &node.value {
-            let key = keys[index].unwrap();
+            let key = data.keys[index].unwrap();
             let value = self.exec_expression(value);
             class.set_property(
               self,
@@ -116,6 +139,62 @@ impl<'a> Analyzer<'a> {
     self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value));
 
     value
+  }
+
+  pub fn call_class_constructor(
+    &mut self,
+    callee: CalleeInfo<'a>,
+    call_dep: Consumable<'a>,
+    node: &'a Class<'a>,
+    variable_scopes: Rc<Vec<VariableScopeId>>,
+    this: Entity<'a>,
+    args: Entity<'a>,
+    consume: bool,
+  ) -> Entity<'a> {
+    let data = self.load_data::<Data>(AstKind2::Class(node));
+
+    self.push_call_scope(callee, call_dep, variable_scopes.as_ref().clone(), false, false, consume);
+
+    for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
+      if let ClassElement::PropertyDefinition(node) = element {
+        if !node.r#static {
+          if let Some(value) = &node.value {
+            let value = self.exec_expression(value);
+            this.set_property(
+              self,
+              self.factory.consumable(AstKind2::PropertyDefinition(node)),
+              key.unwrap(),
+              value,
+            );
+          }
+        }
+      }
+    }
+    if let Some(constructor) = data.constructor {
+      let variable_scope = self.variable_scope_mut();
+      variable_scope.this = Some(this);
+      variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
+
+      let function = constructor.value.as_ref();
+      self.exec_formal_parameters(&function.params, args, DeclarationKind::FunctionParameter);
+      self.exec_function_body(function.body.as_ref().unwrap());
+      if consume {
+        self.consume_return_values();
+      }
+    }
+
+    let ret = self.pop_call_scope();
+    let typeof_ret = ret.test_typeof();
+
+    match (
+      typeof_ret.intersects(TypeofResult::Object),
+      typeof_ret.intersects(TypeofResult::_Primitive),
+    ) {
+      (true, true) => self.factory.union((ret, this)),
+      (true, false) => ret,
+      (false, true) => this,
+      (false, false) => self.factory.never,
+    }
   }
 }
 

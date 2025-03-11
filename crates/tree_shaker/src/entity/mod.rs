@@ -109,7 +109,7 @@ pub trait EntityTrait<'a>: Debug {
     &'a self,
     _analyzer: &Analyzer<'a>,
     _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     None
   }
 

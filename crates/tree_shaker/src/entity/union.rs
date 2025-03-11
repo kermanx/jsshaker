@@ -201,7 +201,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     &'a self,
     _analyzer: &Analyzer<'a>,
     _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     // TODO: Support this
     None
   }

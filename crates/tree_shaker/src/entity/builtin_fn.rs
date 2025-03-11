@@ -154,7 +154,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     &'a self,
     _analyzer: &Analyzer<'a>,
     _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     todo!()
   }
 

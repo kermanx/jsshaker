@@ -142,7 +142,7 @@ impl<'a, T: ConsumableTrait<'a> + Copy + 'a> EntityTrait<'a> for ComputedEntity<
     &'a self,
     analyzer: &Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.val.get_constructor_prototype(analyzer, dep)
   }
 

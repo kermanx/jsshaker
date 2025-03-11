@@ -150,8 +150,8 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     &'a self,
     _analyzer: &Analyzer<'a>,
     dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>)> {
-    Some((dep, ObjectPrototype::Custom(self.prototype)))
+  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    Some((dep, ObjectPrototype::Custom(self.statics), ObjectPrototype::Custom(self.prototype)))
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -212,13 +212,36 @@ impl<'a> FunctionEntity<'a> {
         args,
         consume,
       ),
-      CalleeNode::ClassConstructor(_) => {
-        analyzer.throw_builtin_error("Cannot invoke class constructor without 'new'");
-        analyzer.factory.unknown()
+      CalleeNode::ClassConstructor(node) => {
+        // if !CTOR {
+        analyzer.call_class_constructor(
+          self.callee,
+          call_dep,
+          node,
+          variable_scopes,
+          this,
+          args,
+          consume,
+        )
+        // } else {
+        //   analyzer.throw_builtin_error("Cannot invoke class constructor without 'new'");
+        //   analyzer.factory.unknown()
+        // }
       }
       _ => unreachable!(),
     };
     analyzer.factory.computed(ret_val, call_dep)
+  }
+
+  pub fn construct_impl(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Consumable<'a>,
+    args: Entity<'a>,
+    consume: bool,
+  ) -> Entity<'a> {
+    let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), None);
+    self.call_impl(analyzer, dep, target, args, consume)
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {
