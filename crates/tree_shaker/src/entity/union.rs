@@ -2,10 +2,7 @@ use super::{
   consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
   LiteralEntity, ObjectPrototype, TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable, scope::CfScopeKind,
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, consumable::Consumable, scope::CfScopeKind, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{cell::Cell, fmt::Debug};
 

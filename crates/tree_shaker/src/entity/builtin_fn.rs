@@ -2,7 +2,7 @@ use super::{
   consumed_object, never::NeverEntity, Entity, EntityFactory, EntityTrait, EnumeratedProperties,
   IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult,
 };
-use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
 pub trait BuiltinFnEntity<'a>: Debug {

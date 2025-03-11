@@ -2,9 +2,7 @@ use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype,
   TypeofResult,
 };
-use crate::{
-  analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable, use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;
 
 #[derive(Debug, Default)]

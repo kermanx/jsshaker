@@ -79,17 +79,9 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       return consumed_object::call(self, analyzer, dep, this, args);
     }
 
-    if !self.finite_recursion {
-      let mut recursion_depth = 0usize;
-      for scope in analyzer.scoping.call.iter().rev() {
-        if scope.callee.node == self.callee.node {
-          recursion_depth += 1;
-          if recursion_depth >= analyzer.config.max_recursion_depth {
-            self.consume_body(analyzer);
-            return consumed_object::call(self, analyzer, dep, this, args);
-          }
-        }
-      }
+    if self.check_recursion(analyzer) {
+      self.consume_body(analyzer);
+      return consumed_object::call(self, analyzer, dep, this, args);
     }
 
     self.call_impl(analyzer, dep, this, args, false)
@@ -176,6 +168,21 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
 }
 
 impl<'a> FunctionEntity<'a> {
+  fn check_recursion(&self, analyzer: &Analyzer<'a>) -> bool {
+    if !self.finite_recursion {
+      let mut recursion_depth = 0usize;
+      for scope in analyzer.scoping.call.iter().rev() {
+        if scope.callee.node == self.callee.node {
+          recursion_depth += 1;
+          if recursion_depth >= analyzer.config.max_recursion_depth {
+            return true;
+          }
+        }
+      }
+    }
+    false
+  }
+
   pub fn call_impl(
     &'a self,
     analyzer: &mut Analyzer<'a>,

@@ -1,8 +1,7 @@
 use crate::{
   consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
-  module::ModuleId,
-  scope::{CfScopeId, VariableScopeId},
+  scope::CfScopeId,
   utils::F64WithEq,
   TreeShakeConfig,
 };
@@ -20,14 +19,13 @@ use super::{
   Entity, LiteralEntity, ObjectEntity, ObjectPrototype, PrimitiveEntity, PureBuiltinFnEntity,
   UnknownEntity,
 };
+use oxc::allocator::Allocator;
 use oxc::semantic::SymbolId;
-use oxc::{allocator::Allocator, ast::ast::Class};
 use oxc_syntax::operator::LogicalOperator;
 
 use std::{
   cell::{Cell, RefCell},
   fmt::Debug,
-  rc::Rc,
 };
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,

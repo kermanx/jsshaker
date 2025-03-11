@@ -129,7 +129,7 @@ impl<'a> ObjectEntity<'a> {
       ObjectPrototype::Custom(prototype) => {
         prototype.get_string_keyed(analyzer, context, key_str, key_atom)
       }
-      ObjectPrototype::Unknown(unknown) => false,
+      ObjectPrototype::Unknown(_unknown) => false,
     }
   }
 
@@ -143,7 +143,7 @@ impl<'a> ObjectEntity<'a> {
         // TODO: Control via an option
       }
       ObjectPrototype::Custom(prototype) => prototype.get_any_string_keyed(analyzer, context),
-      ObjectPrototype::Unknown(unknown) => {}
+      ObjectPrototype::Unknown(_unknown) => {}
     }
   }
 

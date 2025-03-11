@@ -1,6 +1,6 @@
 use super::{
   consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  ObjectPrototype, TypeofResult,
+  TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,

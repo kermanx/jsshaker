@@ -37,7 +37,7 @@ impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       ObjectPrototype::ImplicitOrNull => {}
-      ObjectPrototype::Builtin(prototype) => {}
+      ObjectPrototype::Builtin(_prototype) => {}
       ObjectPrototype::Custom(object) => object.consume(analyzer),
       ObjectPrototype::Unknown(entity) => entity.consume(analyzer),
     }
