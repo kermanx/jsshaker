@@ -249,7 +249,8 @@ impl<'a> FunctionEntity<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), None);
+    let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
+    let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
     self.call_impl(analyzer, dep, target, args, consume)
   }
 

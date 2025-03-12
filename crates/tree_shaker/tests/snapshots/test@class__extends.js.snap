@@ -11,4 +11,4 @@ class Derived {
 const a = new Derived();
 console.log("Base1Derived");
 console.log(1, 2, 4);
-a.run();
+a.a();

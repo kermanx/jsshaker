@@ -243,7 +243,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
-  fn is_mangable(&self) -> bool {
+  pub fn is_mangable(&self) -> bool {
     self.mangling_group.is_some_and(|group| group.get().is_some())
   }
 
