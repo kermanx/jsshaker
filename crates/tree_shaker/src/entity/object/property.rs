@@ -50,12 +50,8 @@ impl<'a> ObjectProperty<'a> {
     &mut self,
     analyzer: &Analyzer<'a>,
     context: &mut GetPropertyContext<'a>,
-    mut key_atom: Option<MangleAtom>,
+    key_atom: Option<MangleAtom>,
   ) {
-    if self.mangling.is_none() {
-      key_atom = None;
-    }
-
     if let Some(key_atom) = key_atom {
       self.get_mangable(analyzer, context, key_atom);
     } else {

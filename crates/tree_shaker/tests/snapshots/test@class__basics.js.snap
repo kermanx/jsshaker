@@ -11,6 +11,6 @@ class A {
 		return unknown();
 	}
 }
-console.log(1, 10, 10, 21);
+console.log(1, 10, 12, 21);
 const b = A.a();
 b.a;

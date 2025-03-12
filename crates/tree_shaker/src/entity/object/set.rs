@@ -36,7 +36,7 @@ impl<'a> ObjectEntity<'a> {
 
     let mut setters = vec![];
 
-    if self.lookup_unknown_keyed_setters( analyzer, &mut setters).may_found() {
+    if self.lookup_unknown_keyed_setters(analyzer, &mut setters).may_found() {
       indeterminate = true;
     }
 
@@ -119,6 +119,8 @@ impl<'a> ObjectEntity<'a> {
       if let Some(rest) = &mut *self.rest.borrow_mut() {
         rest.set(analyzer, true, non_mangable_value, &mut setters);
       }
+
+      self.lookup_any_string_keyed_setters_on_proto(analyzer, &mut setters);
     }
 
     if !setters.is_empty() {
@@ -142,9 +144,7 @@ impl<'a> ObjectEntity<'a> {
   ) -> Found {
     let mut found = Found::False;
 
-    for property in self.string_keyed.borrow_mut().values_mut() {
-      found += property.lookup_setters(analyzer, setters);
-    }
+    found += self.unknown_keyed.borrow_mut().lookup_setters(analyzer, setters);
 
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}
@@ -176,7 +176,7 @@ impl<'a> ObjectEntity<'a> {
       ObjectPrototype::ImplicitOrNull => Found::False,
       ObjectPrototype::Builtin(_) => Found::False, // FIXME: Setters on builtin prototypes
       ObjectPrototype::Custom(prototype) => {
-        let found1 = if let Some(property) = self.string_keyed.borrow_mut().get_mut(key_str) {
+        let found1 = if let Some(property) = prototype.string_keyed.borrow_mut().get_mut(key_str) {
           if prototype.is_mangable() {
             if key_atom.is_none() {
               prototype.disable_mangling(analyzer);
@@ -202,14 +202,30 @@ impl<'a> ObjectEntity<'a> {
 
         found1 + found2
       }
-      ObjectPrototype::Unknown(dep) => {
-        setters.push(PendingSetter {
-          indeterminate: true,
-          dep,
-          setter: analyzer.factory.computed_unknown(dep),
-        });
-        Found::Unknown
+      ObjectPrototype::Unknown(_dep) => Found::Unknown,
+    }
+  }
+
+  fn lookup_any_string_keyed_setters_on_proto(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    setters: &mut Vec<PendingSetter<'a>>,
+  ) {
+    match self.prototype.get() {
+      ObjectPrototype::ImplicitOrNull => {}
+      ObjectPrototype::Builtin(_) => {}
+      ObjectPrototype::Custom(prototype) => {
+        if prototype.is_mangable() {
+          prototype.disable_mangling(analyzer);
+        }
+
+        for property in prototype.string_keyed.borrow_mut().values_mut() {
+          property.lookup_setters(analyzer, setters);
+        }
+
+        prototype.lookup_any_string_keyed_setters_on_proto(analyzer, setters);
       }
+      ObjectPrototype::Unknown(_dep) => {}
     }
   }
 }

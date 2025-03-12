@@ -326,8 +326,8 @@ impl<'a> Analyzer<'a> {
         enumerable: false,
         possible_values: vec![ObjectPropertyValue::Field(prototype, false)],
         non_existent: Default::default(),
-        key: None,
-        mangling: None,
+        key: Some(self.factory.string("prototype")),
+        mangling: Some(self.mangler.builtin_atom),
       },
     );
     (statics, prototype)
