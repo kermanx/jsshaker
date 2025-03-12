@@ -225,7 +225,7 @@ impl<'a> Analyzer<'a> {
       #[cfg(feature = "flame")]
       name: _name,
       implementation,
-      object: Some(self.new_function_object().0),
+      object: Some(self.new_function_object(None).0),
     })
   }
 }

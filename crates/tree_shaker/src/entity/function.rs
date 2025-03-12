@@ -93,7 +93,16 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     dep: Consumable<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(self, analyzer, dep, args)
+    if self.body_consumed.get() {
+      return consumed_object::construct(self, analyzer, dep, args);
+    }
+
+    if self.check_recursion(analyzer) {
+      self.consume_body(analyzer);
+      return consumed_object::construct(self, analyzer, dep, args);
+    }
+
+    self.construct_impl(analyzer, dep, args, false)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -273,11 +282,8 @@ impl<'a> FunctionEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_mut_function(
-    &mut self,
-    node: CalleeNode<'a>,
-  ) -> Result<&'a mut FunctionEntity<'a>, &'a FunctionEntity<'a>> {
-    let (statics, prototype) = self.new_function_object();
+  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionEntity<'a> {
+    let (statics, prototype) = self.new_function_object(Some(node.into()));
     let function = self.factory.alloc(FunctionEntity {
       body_consumed: Rc::new(Cell::new(false)),
       callee: self.new_callee_info(node),
@@ -297,16 +303,8 @@ impl<'a> Analyzer<'a> {
 
     if created_in_self {
       function.consume_body(self);
-      Err(function)
-    } else {
-      Ok(function)
     }
-  }
 
-  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionEntity<'a> {
-    match self.new_mut_function(node) {
-      Ok(function) => function,
-      Err(function) => function,
-    }
+    function
   }
 }

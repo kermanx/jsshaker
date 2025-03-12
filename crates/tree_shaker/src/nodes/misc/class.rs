@@ -26,6 +26,7 @@ use oxc::{
 struct Data<'a> {
   pub constructor: Option<&'a MethodDefinition<'a>>,
   pub keys: Vec<Option<Entity<'a>>>,
+  pub super_class: Option<Entity<'a>>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -34,11 +35,12 @@ impl<'a> Analyzer<'a> {
     let class = self.new_function(CalleeNode::ClassConstructor(node));
 
     // 1. Execute super class
-    let super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
+    data.super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
 
     // 2. Execute keys and find constructor
     for element in &node.body.body {
-      data.keys.push(element.property_key().map(|key| self.exec_property_key(key)));
+      let key = element.property_key().map(|key| self.exec_property_key(key));
+      data.keys.push(key);
 
       if let ClassElement::MethodDefinition(method) = element {
         if method.kind.is_constructor() {
@@ -51,7 +53,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. Resolve inherited things
-    if let Some(super_class) = &super_class {
+    if let Some(super_class) = &data.super_class {
       // Because we can't re-define the "prototype" property, this should be side-effect free
       if let Some((prototype_dep, super_statics, super_prototype)) =
         super_class.get_constructor_prototype(self, self.factory.empty_consumable)
@@ -111,13 +113,11 @@ impl<'a> Analyzer<'a> {
         ClassElement::PropertyDefinition(node) if node.r#static => {
           if let Some(value) = &node.value {
             let key = data.keys[index].unwrap();
-            let value = self.exec_expression(value);
-            class.set_property(
-              self,
+            let value = self.factory.computed(
+              self.exec_expression(value),
               self.consumable(AstKind2::PropertyDefinition(node)),
-              key,
-              value,
             );
+            class.statics.init_property(self, PropertyKind::Init, key, value, true);
           }
         }
         _ => {}
@@ -154,7 +154,12 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(callee, call_dep, variable_scopes.as_ref().clone(), false, false, consume);
+    let variable_scope = self.variable_scope_mut();
+    variable_scope.this = Some(this);
+    variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */ ]));
+    variable_scope.super_class = data.super_class;
 
+    // 1. Init properties
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
       if let ClassElement::PropertyDefinition(node) = element {
         if !node.r#static {
@@ -170,12 +175,12 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    if let Some(constructor) = data.constructor {
-      let variable_scope = self.variable_scope_mut();
-      variable_scope.this = Some(this);
-      variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
 
+    // 2. Call constructor
+    if let Some(constructor) = data.constructor {
       let function = constructor.value.as_ref();
+      let dep = self.factory.consumable(AstKind2::Function(function));
+      self.cf_scope_mut().push_dep(dep);
       self.exec_formal_parameters(&function.params, args, DeclarationKind::FunctionParameter);
       self.exec_function_body(function.body.as_ref().unwrap());
       if consume {
@@ -222,10 +227,8 @@ impl<'a> Transformer<'a> {
         transformed_id
       };
 
-      let ever_constructed = self.is_referred(AstKind2::Class(node));
-
       let super_class = super_class.as_ref().and_then(|node| {
-        if ever_constructed || self.transform_expression(node, false).is_some() {
+        if self.transform_expression(node, false).is_some() {
           self.transform_expression(node, true)
         } else {
           None
@@ -238,18 +241,16 @@ impl<'a> Transformer<'a> {
         let mut transformed_body = self.ast_builder.vec();
 
         for element in body {
-          if ever_constructed || element.r#static() {
-            if let Some(element) = match element {
-              ClassElement::StaticBlock(node) => {
-                self.transform_static_block(node).map(ClassElement::StaticBlock)
-              }
-              ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
-              ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
-              ClassElement::AccessorProperty(_node) => unreachable!(),
-              ClassElement::TSIndexSignature(_node) => unreachable!(),
-            } {
-              transformed_body.push(element);
+          if let Some(element) = match element {
+            ClassElement::StaticBlock(node) => {
+              self.transform_static_block(node).map(ClassElement::StaticBlock)
             }
+            ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
+            ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
+            ClassElement::AccessorProperty(_node) => unreachable!(),
+            ClassElement::TSIndexSignature(_node) => unreachable!(),
+          } {
+            transformed_body.push(element);
           } else if let Some(key) =
             element.property_key().and_then(|key| self.transform_property_key(key, false))
           {
@@ -289,6 +290,8 @@ impl<'a> Transformer<'a> {
         false,
       ))
     } else {
+      // Side-effect only
+
       let mut statements = self.ast_builder.vec();
 
       if let Some(super_class) = super_class {

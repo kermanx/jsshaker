@@ -17,6 +17,7 @@ use crate::{
   mangling::{is_literal_mangable, MangleAtom, UniquenessGroupId},
   scope::CfScopeId,
   use_consumed_flag,
+  utils::ast::AstKind2,
 };
 use oxc::semantic::SymbolId;
 pub use property::{ObjectProperty, ObjectPropertyValue};
@@ -296,12 +297,29 @@ impl<'a> Analyzer<'a> {
     })
   }
 
-  pub fn new_function_object(&mut self) -> (&'a ObjectEntity<'a>, &'a ObjectEntity<'a>) {
-    let prototype =
-      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.object), None);
-    let object =
-      self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), None);
-    object.string_keyed.borrow_mut().insert(
+  pub fn new_function_object(
+    &mut self,
+    mangle_node: Option<AstKind2<'a>>,
+  ) -> (&'a ObjectEntity<'a>, &'a ObjectEntity<'a>) {
+    let mangling_group = if let Some(mangle_node) = mangle_node {
+      let (m1, m2) = *self
+        .load_data::<Option<(ObjectManglingGroupId, ObjectManglingGroupId)>>(mangle_node)
+        .get_or_insert_with(|| {
+          (self.new_object_mangling_group(), self.new_object_mangling_group())
+        });
+      (Some(m1), Some(m2))
+    } else {
+      (None, None)
+    };
+    let prototype = self.new_empty_object(
+      ObjectPrototype::Builtin(&self.builtins.prototypes.object),
+      mangling_group.0,
+    );
+    let statics = self.new_empty_object(
+      ObjectPrototype::Builtin(&self.builtins.prototypes.function),
+      mangling_group.1,
+    );
+    statics.string_keyed.borrow_mut().insert(
       "prototype",
       ObjectProperty {
         definite: true,
@@ -312,7 +330,7 @@ impl<'a> Analyzer<'a> {
         mangling: None,
       },
     );
-    (object, prototype)
+    (statics, prototype)
   }
 
   pub fn new_object_mangling_group(&mut self) -> ObjectManglingGroupId<'a> {

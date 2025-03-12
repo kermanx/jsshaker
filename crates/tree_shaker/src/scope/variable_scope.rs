@@ -118,19 +118,18 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scoping.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    let variable_ref = variable.borrow();
-    if variable_ref.kind.is_redeclarable() {
+    let mut variable = variable.borrow_mut();
+    if variable.kind.is_redeclarable() {
       if let Some(value) = value {
-        drop(variable_ref);
+        drop(variable);
         self.write_on_scope(id, symbol, self.factory.computed(value, init_node));
       } else {
         // Do nothing
       }
-    } else if let Some(deps) = variable_ref.exhausted {
+    } else if let Some(deps) = variable.exhausted {
       deps.push(self, self.consumable((init_node, value)));
     } else {
-      drop(variable_ref);
-      variable.borrow_mut().value =
+      variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
       self.request_exhaustive_callbacks(false, (id, symbol));
     }

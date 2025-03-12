@@ -32,8 +32,8 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, Entity<'a>), Entity<'a>> {
-    if matches!(node, Expression::ThisExpression(_)) {
-      return Ok((0, self.get_this(), None, self.get_this()));
+    if matches!(node, Expression::Super(_)) {
+      return Ok((0, self.get_super(), None, self.get_this()));
     }
 
     let dep = AstKind2::Callee(node);
