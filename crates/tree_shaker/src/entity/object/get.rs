@@ -37,12 +37,7 @@ impl<'a> ObjectEntity<'a> {
       for key_literal in key_literals {
         match key_literal {
           LiteralEntity::String(key_str, key_atom) => {
-            if !self.get_string_keyed(
-              analyzer,
-              &mut context,
-              key_str,
-              if mangable { key_atom } else { None },
-            ) {
+            if !self.get_string_keyed(analyzer, &mut context, key_str, key_atom) {
               check_rest = true;
             }
           }
@@ -101,17 +96,27 @@ impl<'a> ObjectEntity<'a> {
 
   fn get_string_keyed(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     context: &mut GetPropertyContext<'a>,
     key_str: &str,
-    key_atom: Option<MangleAtom>,
+    mut key_atom: Option<MangleAtom>,
   ) -> bool {
+    if self.is_mangable() {
+      if key_atom.is_none() {
+        self.disable_mangling(analyzer);
+      }
+    } else {
+      key_atom = None;
+    }
+
     let mut string_keyed = self.string_keyed.borrow_mut();
     if let Some(property) = string_keyed.get_mut(key_str) {
-      if property.get(analyzer, context, key_atom) {
+      property.get(analyzer, context, key_atom);
+      if property.definite {
         return true;
       }
     }
+
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => false,
       ObjectPrototype::Builtin(prototype) => {
@@ -143,7 +148,7 @@ impl<'a> ObjectEntity<'a> {
         // TODO: Control via an option
       }
       ObjectPrototype::Custom(prototype) => prototype.get_any_string_keyed(analyzer, context),
-      ObjectPrototype::Unknown(_unknown) => {}
+      ObjectPrototype::Unknown(_dep) => {}
     }
   }
 
@@ -154,8 +159,8 @@ impl<'a> ObjectEntity<'a> {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_) => {}
       ObjectPrototype::Custom(prototype) => prototype.get_unknown_keyed(analyzer, context),
-      ObjectPrototype::Unknown(unknown) => {
-        context.values.push(analyzer.factory.computed_unknown(unknown))
+      ObjectPrototype::Unknown(dep) => {
+        context.values.push(analyzer.factory.computed_unknown(dep))
       }
     }
   }

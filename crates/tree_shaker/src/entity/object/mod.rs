@@ -31,7 +31,7 @@ pub enum ObjectPrototype<'a> {
   ImplicitOrNull,
   Builtin(&'a BuiltinPrototype<'a>),
   Custom(&'a ObjectEntity<'a>),
-  Unknown(Entity<'a>),
+  Unknown(Consumable<'a>),
 }
 
 impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
@@ -40,7 +40,7 @@ impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_prototype) => {}
       ObjectPrototype::Custom(object) => object.consume(analyzer),
-      ObjectPrototype::Unknown(entity) => entity.consume(analyzer),
+      ObjectPrototype::Unknown(dep) => dep.consume(analyzer),
     }
   }
 }

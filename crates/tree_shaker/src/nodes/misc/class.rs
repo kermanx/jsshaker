@@ -62,8 +62,9 @@ impl<'a> Analyzer<'a> {
         class.prototype.prototype.set(super_prototype);
         class.prototype.unknown_mutate(self, prototype_dep);
       } else {
-        class.statics.prototype.set(ObjectPrototype::Unknown(*super_class));
-        class.prototype.prototype.set(ObjectPrototype::Unknown(*super_class));
+        let dep = self.factory.consumable(*super_class);
+        class.statics.prototype.set(ObjectPrototype::Unknown(dep));
+        class.prototype.prototype.set(ObjectPrototype::Unknown(dep));
       }
     } else {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
