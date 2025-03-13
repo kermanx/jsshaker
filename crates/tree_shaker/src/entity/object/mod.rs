@@ -76,6 +76,8 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     use_consumed_flag!(self);
 
+    self.prototype.get().consume(analyzer);
+
     self.disable_mangling(analyzer);
 
     for property in self.string_keyed.take().into_values() {
