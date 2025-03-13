@@ -373,13 +373,14 @@ impl<'a> Analyzer<'a> {
     unreachable!()
   }
 
-  pub fn get_super(&self) -> Entity<'a> {
+  pub fn get_super(&mut self) -> Entity<'a> {
     for depth in (0..self.scoping.variable.stack.len()).rev() {
       let scope = self.scoping.variable.get_from_depth(depth);
       if let Some(super_class) = scope.super_class {
         return super_class;
       }
     }
-    unreachable!()
+    self.throw_builtin_error("Unsupported reference to 'super'");
+    self.factory.unknown()
   }
 }
