@@ -39,7 +39,7 @@ impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
     match self {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_prototype) => {}
-      ObjectPrototype::Custom(object) => object.consume(analyzer),
+      ObjectPrototype::Custom(object) => object.consume_as_prototype(analyzer),
       ObjectPrototype::Unknown(dep) => dep.consume(analyzer),
     }
   }
@@ -50,6 +50,7 @@ pub struct ObjectEntity<'a> {
   /// A built-in object is usually non-consumable
   pub consumable: bool,
   pub consumed: Cell<bool>,
+  pub consumed_as_prototype: Cell<bool>,
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
@@ -76,14 +77,10 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     use_consumed_flag!(self);
 
-    self.prototype.get().consume(analyzer);
+    self.consume_as_prototype(analyzer);
 
-    self.disable_mangling(analyzer);
-
-    for property in self.string_keyed.take().into_values() {
-      property.consume(analyzer);
-    }
-    self.unknown_keyed.take().consume(analyzer);
+    self.string_keyed.take();
+    self.unknown_keyed.take();
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
@@ -245,6 +242,21 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 }
 
 impl<'a> ObjectEntity<'a> {
+  fn consume_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
+    if self.consumed_as_prototype.replace(true) {
+      return;
+    }
+
+    self.prototype.get().consume(analyzer);
+
+    for property in self.string_keyed.borrow().values() {
+      property.consume(analyzer);
+    }
+    self.unknown_keyed.borrow().consume(analyzer);
+
+    self.disable_mangling(analyzer);
+  }
+
   pub fn is_mangable(&self) -> bool {
     self.mangling_group.is_some_and(|group| group.get().is_some())
   }
@@ -288,6 +300,7 @@ impl<'a> Analyzer<'a> {
     self.allocator.alloc(ObjectEntity {
       consumable: true,
       consumed: Cell::new(false),
+      consumed_as_prototype: Cell::new(false),
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
       object_id: self.scoping.alloc_object_id(),

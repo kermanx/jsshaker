@@ -153,6 +153,7 @@ impl<'a> EntityFactory<'a> {
     self.alloc(ObjectEntity {
       consumable,
       consumed: Cell::new(false),
+      consumed_as_prototype: Cell::new(false),
       cf_scope: CfScopeId::new(0),
       object_id,
       string_keyed: Default::default(),

@@ -172,8 +172,8 @@ impl<'a> ObjectProperty<'a> {
     self.non_existent.push(dep);
   }
 
-  pub fn consume(self, analyzer: &mut Analyzer<'a>) {
-    for possible_value in self.possible_values {
+  pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    for &possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Field(value, _) => analyzer.consume(value),
         ObjectPropertyValue::Property(getter, setter) => {
