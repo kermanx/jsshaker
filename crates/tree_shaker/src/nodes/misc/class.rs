@@ -53,7 +53,6 @@ impl<'a> Analyzer<'a> {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
     };
 
-
     self.push_variable_scope();
     let variable_scope = self.variable_scope_mut();
     variable_scope.super_class = data.super_class;
