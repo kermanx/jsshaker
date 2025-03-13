@@ -53,10 +53,9 @@ impl<'a> Analyzer<'a> {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
     };
 
-
     self.push_variable_scope();
-    let variable_scope = self.variable_scope_mut();
-    variable_scope.super_class = data.super_class;
+    self.variable_scope_mut().super_class =
+      Some(data.super_class.unwrap_or(self.factory.undefined));
 
     // 2. Execute keys and find constructor
     for element in &node.body.body {
@@ -156,10 +155,11 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(callee, call_dep, variable_scopes.as_ref().clone(), false, false, consume);
+    let super_class = data.super_class.unwrap_or(self.factory.undefined);
     let variable_scope = self.variable_scope_mut();
     variable_scope.this = Some(this);
     variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */ ]));
-    variable_scope.super_class = data.super_class;
+    variable_scope.super_class = Some(super_class);
 
     // 1. Init properties
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
