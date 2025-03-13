@@ -251,7 +251,19 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
     let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
-    self.call_impl(analyzer, dep, target, args, consume)
+
+    let ret = self.call_impl(analyzer, dep, target, args, consume);
+
+    let typeof_ret = ret.test_typeof();
+    match (
+      typeof_ret.intersects(TypeofResult::Object),
+      typeof_ret.intersects(TypeofResult::_Primitive),
+    ) {
+      (true, true) => analyzer.factory.union((ret, target as Entity<'a>)),
+      (true, false) => ret,
+      (false, true) => target,
+      (false, false) => analyzer.factory.never,
+    }
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {

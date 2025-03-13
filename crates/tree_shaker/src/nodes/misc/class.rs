@@ -4,7 +4,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
-  entity::{Entity, EntityTrait, ObjectPrototype, TypeofResult},
+  entity::{Entity, EntityTrait, ObjectPrototype},
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
@@ -190,18 +190,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let ret = self.pop_call_scope();
-    let typeof_ret = ret.test_typeof();
-
-    match (
-      typeof_ret.intersects(TypeofResult::Object),
-      typeof_ret.intersects(TypeofResult::_Primitive),
-    ) {
-      (true, true) => self.factory.union((ret, this)),
-      (true, false) => ret,
-      (false, true) => this,
-      (false, false) => self.factory.never,
-    }
+    self.pop_call_scope()
   }
 }
 
