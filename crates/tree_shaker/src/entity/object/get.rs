@@ -159,9 +159,7 @@ impl<'a> ObjectEntity<'a> {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_) => {}
       ObjectPrototype::Custom(prototype) => prototype.get_unknown_keyed(analyzer, context),
-      ObjectPrototype::Unknown(dep) => {
-        context.values.push(analyzer.factory.computed_unknown(dep))
-      }
+      ObjectPrototype::Unknown(dep) => context.values.push(analyzer.factory.computed_unknown(dep)),
     }
   }
 }
