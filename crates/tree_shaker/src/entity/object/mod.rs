@@ -51,6 +51,7 @@ pub struct ObjectEntity<'a> {
   pub consumable: bool,
   pub consumed: Cell<bool>,
   pub consumed_as_prototype: Cell<bool>,
+  pub pending_clear: Cell<bool>,
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
@@ -79,8 +80,13 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
 
     self.consume_as_prototype(analyzer);
 
-    self.string_keyed.take();
-    self.unknown_keyed.take();
+    // FIXME: Need a better way to do this
+    if let Ok(mut string_keyed) = self.string_keyed.try_borrow_mut() {
+      string_keyed.clear();
+      self.unknown_keyed.take();
+    } else {
+      self.pending_clear.set(true);
+    }
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
@@ -247,6 +253,8 @@ impl<'a> ObjectEntity<'a> {
       return;
     }
 
+    self.disable_mangling(analyzer);
+
     self.prototype.get().consume(analyzer);
 
     for property in self.string_keyed.borrow().values() {
@@ -254,7 +262,10 @@ impl<'a> ObjectEntity<'a> {
     }
     self.unknown_keyed.borrow().consume(analyzer);
 
-    self.disable_mangling(analyzer);
+    if self.pending_clear.replace(false) {
+      self.string_keyed.borrow_mut().clear();
+      self.unknown_keyed.take();
+    }
   }
 
   pub fn is_mangable(&self) -> bool {
@@ -301,6 +312,7 @@ impl<'a> Analyzer<'a> {
       consumable: true,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
+      pending_clear: Cell::new(false),
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
       object_id: self.scoping.alloc_object_id(),
