@@ -50,6 +50,11 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
+    // TODO: Support analyzing this kind of mutation
+    if analyzer.op_strict_eq(key, analyzer.factory.string("prototype")).0 != Some(false) {
+      return consumed_object::set_property(analyzer, dep, key, value);
+    }
+
     self.statics.set_property(analyzer, self.forward_dep(dep, analyzer), key, value);
   }
 
