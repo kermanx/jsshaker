@@ -143,7 +143,9 @@ impl<'a, T: ConsumableTrait<'a> + Copy + 'a> EntityTrait<'a> for ComputedEntity<
     analyzer: &Analyzer<'a>,
     dep: Consumable<'a>,
   ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
-    self.val.get_constructor_prototype(analyzer, dep)
+    let (dep, statics, prototype) = self.val.get_constructor_prototype(analyzer, dep)?;
+    let dep = self.forward_dep(dep, analyzer);
+    Some((dep, statics, prototype))
   }
 
   fn test_typeof(&self) -> TypeofResult {

@@ -228,13 +228,7 @@ impl<'a> Transformer<'a> {
         transformed_id
       };
 
-      let super_class = super_class.as_ref().and_then(|node| {
-        if self.transform_expression(node, false).is_some() {
-          self.transform_expression(node, true)
-        } else {
-          None
-        }
-      });
+      let super_class = super_class.as_ref().and_then(|node| self.transform_expression(node, true));
 
       let body = {
         let ClassBody { span, body } = body.as_ref();
