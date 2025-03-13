@@ -172,13 +172,17 @@ impl<'a> ObjectProperty<'a> {
     self.non_existent.push(dep);
   }
 
-  pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  pub fn consume(&self, analyzer: &mut Analyzer<'a>, suspended: &mut Vec<Entity<'a>>) {
     for &possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => analyzer.consume(value),
+        ObjectPropertyValue::Field(value, _) => suspended.push(value),
         ObjectPropertyValue::Property(getter, setter) => {
-          analyzer.consume(getter);
-          analyzer.consume(setter);
+          if let Some(getter) = getter {
+            suspended.push(getter);
+          }
+          if let Some(setter) = setter {
+            suspended.push(setter);
+          }
         }
       }
     }
@@ -186,7 +190,7 @@ impl<'a> ObjectProperty<'a> {
     self.non_existent.consume_all(analyzer);
 
     if let Some(key) = self.key {
-      analyzer.consume(key);
+      suspended.push(key);
     }
   }
 }
