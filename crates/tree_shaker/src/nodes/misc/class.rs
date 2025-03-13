@@ -36,23 +36,6 @@ impl<'a> Analyzer<'a> {
 
     // 1. Execute super class
     data.super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
-
-    // 2. Execute keys and find constructor
-    for element in &node.body.body {
-      let key = element.property_key().map(|key| self.exec_property_key(key));
-      data.keys.push(key);
-
-      if let ClassElement::MethodDefinition(method) = element {
-        if method.kind.is_constructor() {
-          if data.constructor.is_some() {
-            self.throw_builtin_error("A class may only have one constructor");
-          }
-          data.constructor = Some(method);
-        }
-      }
-    }
-
-    // 3. Resolve inherited things
     if let Some(super_class) = &data.super_class {
       // Because we can't re-define the "prototype" property, this should be side-effect free
       if let Some((prototype_dep, super_statics, super_prototype)) =
@@ -70,7 +53,27 @@ impl<'a> Analyzer<'a> {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
     };
 
-    // 4. Register methods
+
+    self.push_variable_scope();
+    let variable_scope = self.variable_scope_mut();
+    variable_scope.super_class = data.super_class;
+
+    // 2. Execute keys and find constructor
+    for element in &node.body.body {
+      let key = element.property_key().map(|key| self.exec_property_key(key));
+      data.keys.push(key);
+
+      if let ClassElement::MethodDefinition(method) = element {
+        if method.kind.is_constructor() {
+          if data.constructor.is_some() {
+            self.throw_builtin_error("A class may only have one constructor");
+          }
+          data.constructor = Some(method);
+        }
+      }
+    }
+
+    // 3. Register methods
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
       if let ClassElement::MethodDefinition(node) = element {
         let kind = match node.kind {
@@ -88,7 +91,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    // 5. Execute static blocks
+    // 4. Execute static blocks
     let variable_scope_stack = self.scoping.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
@@ -98,9 +101,6 @@ impl<'a> Analyzer<'a> {
       false,
       false,
     );
-
-    let variable_scope = self.variable_scope_mut();
-    variable_scope.this = Some(class);
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
@@ -126,6 +126,7 @@ impl<'a> Analyzer<'a> {
     }
 
     self.pop_call_scope();
+    self.pop_variable_scope();
 
     class
   }
