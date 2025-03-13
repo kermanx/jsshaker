@@ -84,7 +84,7 @@ impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
       return consumed_object::call(self, analyzer, dep, this, args);
     }
 
-    self.call_impl(analyzer, dep, this, args, false)
+    self.call_impl::<false>(analyzer, dep, this, args, false)
   }
 
   fn construct(
@@ -192,7 +192,7 @@ impl<'a> FunctionEntity<'a> {
     false
   }
 
-  pub fn call_impl(
+  pub fn call_impl<const IS_NEW: bool>(
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Consumable<'a>,
@@ -239,6 +239,20 @@ impl<'a> FunctionEntity<'a> {
       }
       _ => unreachable!(),
     };
+    let ret_val = if IS_NEW {
+      let typeof_ret = ret_val.test_typeof();
+      match (
+        typeof_ret.intersects(TypeofResult::Object),
+        typeof_ret.intersects(TypeofResult::_Primitive),
+      ) {
+        (true, true) => analyzer.factory.union((ret_val, this)),
+        (true, false) => ret_val,
+        (false, true) => this,
+        (false, false) => analyzer.factory.never,
+      }
+    } else {
+      ret_val
+    };
     analyzer.factory.computed(ret_val, call_dep)
   }
 
@@ -251,19 +265,7 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
     let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
-
-    let ret = self.call_impl(analyzer, dep, target, args, consume);
-
-    let typeof_ret = ret.test_typeof();
-    match (
-      typeof_ret.intersects(TypeofResult::Object),
-      typeof_ret.intersects(TypeofResult::_Primitive),
-    ) {
-      (true, true) => analyzer.factory.union((ret, target as Entity<'a>)),
-      (true, false) => ret,
-      (false, true) => target,
-      (false, false) => analyzer.factory.never,
-    }
+    self.call_impl::<true>(analyzer, dep, target, args, consume)
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {
@@ -279,7 +281,7 @@ impl<'a> FunctionEntity<'a> {
     let name = "";
 
     analyzer.exec_consumed_fn(name, move |analyzer| {
-      self.call_impl(
+      self.call_impl::<false>(
         analyzer,
         analyzer.factory.empty_consumable,
         analyzer.factory.unknown(),
