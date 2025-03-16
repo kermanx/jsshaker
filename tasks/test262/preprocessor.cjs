@@ -31,7 +31,7 @@ module.exports = function(test) {
     let { output, diagnostics } = treeShake(main, "safest", do_minify);
 
     if (diagnostics.length) {
-      throw new Error(diagnostics.join('\n'));
+      throw new Error(diagnostics.join(' '));
     }
 
     test.contents = prelude + output;
