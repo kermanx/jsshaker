@@ -2,7 +2,7 @@ use super::{
   consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
   LiteralEntity, ObjectPrototype, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, scope::CfScopeKind, use_consumed_flag};
+use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{cell::Cell, fmt::Debug};
 
@@ -91,9 +91,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEnt
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![analyzer.consumable(self)], None);
-    let values = self.values.map(|v| v.call(analyzer, dep, this, args));
-    analyzer.pop_cf_scope();
+    let values = analyzer
+      .exec_indeterminately(|analyzer| self.values.map(|v| v.call(analyzer, dep, this, args)));
     analyzer.factory.union(values)
   }
 
