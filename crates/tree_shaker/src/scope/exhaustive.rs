@@ -105,7 +105,7 @@ impl<'a> Analyzer<'a> {
     }
     let id = self.pop_cf_scope();
     let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
-    mem::take(&mut data.deps)
+    mem::take(&mut data.self_deps)
   }
 
   fn register_exhaustive_callbacks(
@@ -124,9 +124,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, target: usize) {
+    let mut is_self_dep = true;
     for depth in target..self.scoping.cf.stack.len() {
-      if self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id) {
-        break;
+      if self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id, is_self_dep) {
+        is_self_dep = false
       }
     }
   }

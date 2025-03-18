@@ -17,7 +17,8 @@ define_index_type! {
 #[derive(Debug, Default)]
 pub struct ExhaustiveData {
   pub clean: bool,
-  pub deps: FxHashSet<ExhaustiveDepId>,
+  pub read_deps: FxHashSet<ExhaustiveDepId>,
+  pub self_deps: FxHashSet<ExhaustiveDepId>,
 }
 
 #[derive(Debug)]
@@ -117,10 +118,13 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId) -> bool {
+  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, is_self_dep: bool) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
       if data.clean {
-        data.deps.insert(id);
+        if is_self_dep {
+          data.self_deps.insert(id);
+        }
+        data.read_deps.insert(id);
         return true;
       }
     }
@@ -129,7 +133,7 @@ impl<'a> CfScope<'a> {
 
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
-      if data.clean && data.deps.contains(&id) {
+      if data.clean && data.read_deps.contains(&id) {
         data.clean = false;
       }
       true
@@ -144,7 +148,7 @@ impl<'a> CfScope<'a> {
     let clean = data.clean;
     data.clean = true;
     if !clean && !exited {
-      data.deps.clear();
+      data.read_deps.clear();
       true
     } else {
       false
