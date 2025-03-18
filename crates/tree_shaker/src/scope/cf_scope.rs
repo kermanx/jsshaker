@@ -14,11 +14,11 @@ define_index_type! {
   pub struct CfScopeId = u32;
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ExhaustiveData {
   pub clean: bool,
   pub read_deps: FxHashSet<ExhaustiveDepId>,
-  pub self_deps: FxHashSet<ExhaustiveDepId>,
+  pub self_deps: Option<FxHashSet<ExhaustiveDepId>>,
 }
 
 #[derive(Debug)]
@@ -118,17 +118,20 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, is_self_dep: bool) -> bool {
+  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, add_as_self_dep: bool) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
       if data.clean {
-        if is_self_dep {
-          data.self_deps.insert(id);
+        let newly_added = data.read_deps.insert(id);
+        if newly_added && add_as_self_dep {
+          if let Some(self_deps) = &mut data.self_deps {
+            self_deps.insert(id);
+          }
         }
-        data.read_deps.insert(id);
-        return true;
       }
+      data.self_deps.is_some()
+    } else {
+      false
     }
-    false
   }
 
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {

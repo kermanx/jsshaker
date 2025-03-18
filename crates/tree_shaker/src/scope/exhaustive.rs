@@ -1,4 +1,7 @@
-use super::{cf_scope::ReferredState, VariableScopeId};
+use super::{
+  cf_scope::{ExhaustiveData, ReferredState},
+  VariableScopeId,
+};
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, ObjectId, ObjectPropertyId},
@@ -40,7 +43,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
 
-    self.exec_exhaustively("loop", runner.clone(), false);
+    self.exec_exhaustively("loop", runner.clone(), false, false);
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
@@ -66,14 +69,14 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively(kind, runner.clone(), false);
-    self.register_exhaustive_callbacks(false, runner, deps);
+    let deps = self.exec_exhaustively(kind, runner.clone(), false, true);
+    self.register_exhaustive_callbacks(false, runner, deps.unwrap());
   }
 
   pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
-    let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
-    self.register_exhaustive_callbacks(true, runner, deps);
+    let deps = self.exec_exhaustively("async/generator", runner.clone(), true, true);
+    self.register_exhaustive_callbacks(true, runner, deps.unwrap());
   }
 
   fn exec_exhaustively(
@@ -81,8 +84,16 @@ impl<'a> Analyzer<'a> {
     _kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
-  ) -> FxHashSet<ExhaustiveDepId> {
-    self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
+    will_register: bool,
+  ) -> Option<FxHashSet<ExhaustiveDepId>> {
+    self.push_cf_scope(
+      CfScopeKind::Exhaustive(ExhaustiveData {
+        clean: false,
+        read_deps: FxHashSet::default(),
+        self_deps: will_register.then(FxHashSet::default),
+      }),
+      Some(false),
+    );
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
       #[cfg(feature = "flame")]
@@ -175,8 +186,8 @@ impl<'a> Analyzer<'a> {
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
         let ExhaustiveCallback { handler: runner, once } = runner;
-        let deps = self.exec_exhaustively("dep", runner.clone(), once);
-        self.register_exhaustive_callbacks(once, runner, deps);
+        let deps = self.exec_exhaustively("dep", runner.clone(), once, true);
+        self.register_exhaustive_callbacks(once, runner, deps.unwrap());
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;
       }
