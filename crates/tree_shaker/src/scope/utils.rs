@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.request_exhaustive_callbacks(true, ExhaustiveDepId::Object(object_id));
+    self.request_exhaustive_callbacks(ExhaustiveDepId::Object(object_id));
 
     (has_exhaustive, indeterminate, exec_deps)
   }
@@ -50,6 +50,6 @@ impl<'a> Analyzer<'a> {
       }
       mem::take(&mut scope.deps).consume_all(self);
     }
-    self.request_exhaustive_callbacks(true, ExhaustiveDepId::Object(object_id));
+    self.request_exhaustive_callbacks(ExhaustiveDepId::Object(object_id));
   }
 }

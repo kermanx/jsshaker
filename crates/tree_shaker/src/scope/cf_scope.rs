@@ -5,19 +5,12 @@ use crate::{
 };
 use oxc::{ast::ast::LabeledStatement, span::Atom};
 use oxc_index::define_index_type;
-use rustc_hash::FxHashSet;
 use std::mem;
 
-use super::exhaustive::ExhaustiveDepId;
+use super::exhaustive::{ExhaustiveData, ExhaustiveDepId};
 
 define_index_type! {
   pub struct CfScopeId = u32;
-}
-
-#[derive(Debug, Default)]
-pub struct ExhaustiveData {
-  pub clean: bool,
-  pub deps: FxHashSet<ExhaustiveDepId>,
 }
 
 #[derive(Debug)]
@@ -117,18 +110,14 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId) {
-    if let Some(data) = self.exhaustive_data_mut() {
-      if data.clean {
-        data.deps.insert(id);
-      }
-    }
-  }
-
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
-      if data.clean && data.deps.contains(&id) {
-        data.clean = false;
+      if data.clean {
+        if let Some(temp_deps) = &data.temp_deps {
+          if temp_deps.contains(&id) {
+            data.clean = false;
+          }
+        }
       }
       true
     } else {
@@ -136,14 +125,17 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn iterate_exhaustively(&mut self) -> bool {
+  pub fn post_exhaustive_iterate(&mut self) -> bool {
     let exited = self.must_exited();
     let data = self.exhaustive_data_mut().unwrap();
-    let clean = data.clean;
-    data.clean = true;
-    if !clean && !exited {
-      data.deps.clear();
-      true
+    if !data.clean && !exited {
+      if let Some(temp_deps) = &mut data.temp_deps {
+        temp_deps.clear();
+        data.clean = true;
+        true
+      } else {
+        false
+      }
     } else {
       false
     }
