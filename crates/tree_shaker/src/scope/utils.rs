@@ -1,8 +1,7 @@
-use crate::{analyzer::Analyzer, consumable::ConsumableVec};
-use oxc::semantic::SymbolId;
+use crate::{analyzer::Analyzer, consumable::ConsumableVec, entity::ObjectId};
 use std::mem;
 
-use super::cf_scope::CfScopeId;
+use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveDepId};
 
 impl<'a> Analyzer<'a> {
   pub fn find_first_different_cf_scope(&self, another: CfScopeId) -> usize {
@@ -13,7 +12,7 @@ impl<'a> Analyzer<'a> {
   pub fn pre_mutate_object(
     &mut self,
     cf_scope: CfScopeId,
-    object_id: SymbolId,
+    object_id: ObjectId,
   ) -> (bool, bool, ConsumableVec<'a>) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
 
@@ -23,7 +22,7 @@ impl<'a> Analyzer<'a> {
     for depth in target_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if !has_exhaustive {
-        has_exhaustive |= scope.mark_exhaustive_write((self.scoping.object_scope_id, object_id));
+        has_exhaustive |= scope.mark_exhaustive_write(ExhaustiveDepId::Object(object_id));
       }
       indeterminate |= scope.is_indeterminate();
       if let Some(dep) = scope.deps.try_collect(self.factory) {
@@ -31,26 +30,26 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.request_exhaustive_callbacks(true, (self.scoping.object_scope_id, object_id));
+    self.request_exhaustive_callbacks(true, ExhaustiveDepId::Object(object_id));
 
     (has_exhaustive, indeterminate, exec_deps)
   }
 
-  pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: CfScopeId, object_id: SymbolId) {
+  pub fn mark_object_property_exhaustive_read(&mut self, cf_scope: CfScopeId, object_id: ObjectId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
-    self.mark_exhaustive_read((self.scoping.object_scope_id, object_id), target_depth);
+    self.mark_exhaustive_read(ExhaustiveDepId::Object(object_id), target_depth);
   }
 
-  pub fn mark_object_consumed(&mut self, cf_scope: CfScopeId, object_id: SymbolId) {
+  pub fn mark_object_consumed(&mut self, cf_scope: CfScopeId, object_id: ObjectId) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
     let mut marked = false;
     for depth in target_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if !marked {
-        marked = scope.mark_exhaustive_write((self.scoping.object_scope_id, object_id));
+        marked = scope.mark_exhaustive_write(ExhaustiveDepId::Object(object_id));
       }
       mem::take(&mut scope.deps).consume_all(self);
     }
-    self.request_exhaustive_callbacks(true, (self.scoping.object_scope_id, object_id));
+    self.request_exhaustive_callbacks(true, ExhaustiveDepId::Object(object_id));
   }
 }

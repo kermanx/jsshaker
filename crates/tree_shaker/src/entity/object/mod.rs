@@ -19,8 +19,8 @@ use crate::{
   use_consumed_flag,
   utils::ast::AstKind2,
 };
-use oxc::semantic::SymbolId;
-pub use property::{ObjectProperty, ObjectPropertyValue};
+use oxc_index::define_index_type;
+pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyValue};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::cell::{Cell, RefCell};
 
@@ -45,6 +45,10 @@ impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
   }
 }
 
+define_index_type! {
+  pub struct ObjectId = u32;
+}
+
 #[derive(Debug)]
 pub struct ObjectEntity<'a> {
   /// A built-in object is usually non-consumable
@@ -54,7 +58,7 @@ pub struct ObjectEntity<'a> {
   // deps: RefCell<ConsumableCollector<'a>>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
-  pub object_id: SymbolId,
+  pub object_id: ObjectId,
   pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later

@@ -6,7 +6,10 @@ use crate::{
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
-    conditional::ConditionalDataMap, exhaustive::ExhaustiveCallback, r#loop::LoopDataMap, Scoping,
+    conditional::ConditionalDataMap,
+    exhaustive::{ExhaustiveCallback, ExhaustiveDepId},
+    r#loop::LoopDataMap,
+    Scoping,
   },
   utils::ExtraData,
   vfs::Vfs,
@@ -16,7 +19,7 @@ use oxc::{
   allocator::Allocator,
   span::{GetSpan, Span},
 };
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{collections::BTreeSet, mem};
 
 pub struct Analyzer<'a> {
@@ -33,6 +36,7 @@ pub struct Analyzer<'a> {
   pub scoping: Scoping<'a>,
 
   pub data: ExtraData<'a>,
+  pub exhaustive_callbacks: FxHashMap<ExhaustiveDepId, FxHashSet<ExhaustiveCallback<'a>>>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   pub loop_data: LoopDataMap<'a>,
@@ -63,6 +67,7 @@ impl<'a> Analyzer<'a> {
       scoping: Scoping::new(factory),
 
       data: Default::default(),
+      exhaustive_callbacks: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       loop_data: Default::default(),

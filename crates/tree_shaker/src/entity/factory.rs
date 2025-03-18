@@ -16,8 +16,8 @@ use super::{
   react_element::ReactElementEntity,
   union::UnionEntity,
   utils::UnionLike,
-  Entity, LiteralEntity, ObjectEntity, ObjectPrototype, PrimitiveEntity, PureBuiltinFnEntity,
-  UnknownEntity,
+  Entity, LiteralEntity, ObjectEntity, ObjectId, ObjectPrototype, PrimitiveEntity,
+  PureBuiltinFnEntity, UnknownEntity,
 };
 use oxc::allocator::Allocator;
 use oxc::semantic::SymbolId;
@@ -146,7 +146,7 @@ impl<'a> EntityFactory<'a> {
 
   pub fn builtin_object(
     &self,
-    object_id: SymbolId,
+    object_id: ObjectId,
     prototype: ObjectPrototype<'a>,
     consumable: bool,
   ) -> &'a mut ObjectEntity<'a> {
@@ -168,7 +168,7 @@ impl<'a> EntityFactory<'a> {
     self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
   }
 
-  pub fn array(&self, cf_scope: CfScopeId, object_id: SymbolId) -> &'a mut ArrayEntity<'a> {
+  pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayEntity<'a> {
     self.alloc(ArrayEntity {
       consumed: Cell::new(false),
       deps: Default::default(),

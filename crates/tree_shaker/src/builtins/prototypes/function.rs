@@ -1,10 +1,8 @@
 use super::{object::create_object_prototype, BuiltinPrototype};
 use crate::{
-  entity::{Entity, EntityFactory},
+  entity::{Entity, EntityFactory, ObjectId},
   init_prototype,
 };
-use oxc::semantic::SymbolId;
-use oxc_index::Idx;
 
 pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
@@ -14,7 +12,7 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> BuiltinProt
         let arg = args.pop().unwrap();
         let cf_scope = analyzer.scoping.cf.current_id();
         // This can be any value
-        let arguments_object_id = SymbolId::from_usize(0);
+        let arguments_object_id = ObjectId::from_usize(0);
         match arg.test_is_undefined() {
           Some(true) => analyzer.factory.array(cf_scope, arguments_object_id),
           Some(false) => arg,

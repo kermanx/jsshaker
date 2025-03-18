@@ -1,3 +1,5 @@
+use oxc_index::define_index_type;
+
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector},
@@ -7,6 +9,10 @@ use crate::{
 };
 
 use super::{get::GetPropertyContext, set::PendingSetter};
+
+define_index_type! {
+  pub struct ObjectPropertyId = u32;
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPropertyValue<'a> {

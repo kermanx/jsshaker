@@ -1,16 +1,16 @@
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait},
-  entity::{Entity, EntityFactory, ObjectPrototype},
+  entity::{Entity, EntityFactory, ObjectId, ObjectPrototype},
   init_object,
+  scope::exhaustive::ExhaustiveDepId,
 };
-use oxc::semantic::SymbolId;
 use oxc_index::{define_index_type, IndexVec};
 use std::mem;
 
 #[derive(Debug)]
 pub struct ReactContextData<'a> {
-  object_id: SymbolId,
+  object_id: ObjectId,
   consumed: bool,
   default_value: Entity<'a>,
   stack: Vec<Entity<'a>>,
@@ -97,8 +97,8 @@ fn create_react_context_provider_impl<'a>(
         let object_id = data.object_id;
         let dep = data.dep;
 
-        let should_consume = analyzer
-          .request_exhaustive_callbacks(true, (analyzer.scoping.object_scope_id, object_id));
+        let should_consume =
+          analyzer.request_exhaustive_callbacks(true, ExhaustiveDepId::Object(object_id));
 
         if should_consume {
           analyzer.consume(context_id);

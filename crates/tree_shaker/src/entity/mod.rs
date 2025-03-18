@@ -23,7 +23,9 @@ use crate::{
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use factory::EntityFactory;
 pub use literal::LiteralEntity;
-pub use object::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
+pub use object::{
+  ObjectEntity, ObjectId, ObjectProperty, ObjectPropertyId, ObjectPropertyValue, ObjectPrototype,
+};
 pub use primitive::PrimitiveEntity;
 use rustc_hash::FxHashSet;
 use std::{cmp::Ordering, fmt::Debug};

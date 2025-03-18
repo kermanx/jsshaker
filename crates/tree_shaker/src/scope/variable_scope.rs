@@ -1,11 +1,11 @@
-use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveCallback};
+use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveDepId};
 use crate::{
   analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
   utils::ast::AstKind2,
 };
 use oxc::semantic::SymbolId;
 use oxc_index::define_index_type;
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::{cell::RefCell, fmt};
 
 define_index_type! {
@@ -26,7 +26,6 @@ pub struct VariableScope<'a> {
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
-  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
   pub super_class: Option<Entity<'a>>,
 }
 
@@ -104,7 +103,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.request_exhaustive_callbacks(false, (id, symbol));
+        self.request_exhaustive_callbacks(false, ExhaustiveDepId::Variable(id, symbol));
       }
     }
   }
@@ -131,7 +130,7 @@ impl<'a> Analyzer<'a> {
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
-      self.request_exhaustive_callbacks(false, (id, symbol));
+      self.request_exhaustive_callbacks(false, ExhaustiveDepId::Variable(id, symbol));
     }
   }
 
@@ -163,7 +162,7 @@ impl<'a> Analyzer<'a> {
       } else {
         let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
         drop(variable_ref);
-        self.mark_exhaustive_read((id, symbol), target_cf_scope);
+        self.mark_exhaustive_read(ExhaustiveDepId::Variable(id, symbol), target_cf_scope);
         value
       };
 
@@ -199,14 +198,14 @@ impl<'a> Analyzer<'a> {
           let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
-            self.mark_exhaustive_write((id, symbol), target_cf_scope)
+            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           } else if !variable_ref.kind.is_redeclarable() {
             // TDZ write
             self.handle_tdz(target_cf_scope);
             (true, false)
           } else {
             // Write uninitialized `var`
-            self.mark_exhaustive_write((id, symbol), target_cf_scope)
+            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           };
           drop(variable_ref);
 
@@ -227,7 +226,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.request_exhaustive_callbacks(should_consume, (id, symbol));
+          self.request_exhaustive_callbacks(should_consume, ExhaustiveDepId::Variable(id, symbol));
         }
       }
       true

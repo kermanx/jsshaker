@@ -1,5 +1,9 @@
 use super::{cf_scope::ReferredState, VariableScopeId};
-use crate::{analyzer::Analyzer, entity::Entity, scope::CfScopeKind};
+use crate::{
+  analyzer::Analyzer,
+  entity::{Entity, ObjectId, ObjectPropertyId},
+  scope::CfScopeKind,
+};
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 use std::{
@@ -7,6 +11,13 @@ use std::{
   mem,
   rc::Rc,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExhaustiveDepId {
+  Variable(VariableScopeId, SymbolId),
+  Object(ObjectId),
+  ObjectProperty(ObjectId, ObjectPropertyId),
+}
 
 #[derive(Clone)]
 pub struct ExhaustiveCallback<'a> {
@@ -70,7 +81,7 @@ impl<'a> Analyzer<'a> {
     _kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
-  ) -> FxHashSet<(VariableScopeId, SymbolId)> {
+  ) -> FxHashSet<ExhaustiveDepId> {
     self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
@@ -101,37 +112,30 @@ impl<'a> Analyzer<'a> {
     &mut self,
     once: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<(VariableScopeId, SymbolId)>,
+    deps: FxHashSet<ExhaustiveDepId>,
   ) {
-    for (scope, symbol) in deps {
+    for id in deps {
       self
-        .scoping
-        .variable
-        .get_mut(scope)
         .exhaustive_callbacks
-        .entry(symbol)
+        .entry(id)
         .or_default()
         .insert(ExhaustiveCallback { handler: handler.clone(), once });
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, variable: (VariableScopeId, SymbolId), target: usize) {
+  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, target: usize) {
     for depth in target..self.scoping.cf.stack.len() {
-      self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(variable);
+      self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id);
     }
   }
 
-  pub fn mark_exhaustive_write(
-    &mut self,
-    variable: (VariableScopeId, SymbolId),
-    target: usize,
-  ) -> (bool, bool) {
+  pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId, target: usize) -> (bool, bool) {
     let mut should_consume = false;
     let mut indeterminate = false;
     for depth in target..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if !should_consume {
-        should_consume |= scope.mark_exhaustive_write(variable);
+        should_consume |= scope.mark_exhaustive_write(id);
       }
       indeterminate |= scope.is_indeterminate();
     }
@@ -141,11 +145,9 @@ impl<'a> Analyzer<'a> {
   pub fn request_exhaustive_callbacks(
     &mut self,
     should_consume: bool,
-    (scope, symbol): (VariableScopeId, SymbolId),
+    id: ExhaustiveDepId,
   ) -> bool {
-    if let Some(runners) =
-      self.scoping.variable.get_mut(scope).exhaustive_callbacks.get_mut(&symbol)
-    {
+    if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
       if runners.is_empty() {
         false
       } else {

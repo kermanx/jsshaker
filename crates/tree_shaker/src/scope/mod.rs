@@ -12,15 +12,13 @@ use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
-  entity::{Entity, EntityFactory},
+  entity::{Entity, EntityFactory, ObjectId},
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
-use oxc::semantic::SymbolId;
-use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
@@ -84,9 +82,9 @@ impl<'a> Scoping<'a> {
     self.call.pop().unwrap().scope_guard.end();
   }
 
-  pub fn alloc_object_id(&mut self) -> SymbolId {
+  pub fn alloc_object_id(&mut self) -> ObjectId {
     self.object_symbol_counter += 1;
-    SymbolId::from_usize(self.object_symbol_counter)
+    ObjectId::from_usize(self.object_symbol_counter)
   }
 }
 

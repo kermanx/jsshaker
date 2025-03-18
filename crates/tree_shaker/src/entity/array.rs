@@ -1,6 +1,6 @@
 use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  ObjectId, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -8,7 +8,6 @@ use crate::{
   scope::CfScopeId,
   use_consumed_flag,
 };
-use oxc::semantic::SymbolId;
 use std::{
   cell::{Cell, RefCell},
   fmt,
@@ -18,7 +17,7 @@ pub struct ArrayEntity<'a> {
   pub consumed: Cell<bool>,
   pub deps: RefCell<ConsumableCollector<'a>>,
   pub cf_scope: CfScopeId,
-  pub object_id: SymbolId,
+  pub object_id: ObjectId,
   pub elements: RefCell<Vec<Entity<'a>>>,
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
