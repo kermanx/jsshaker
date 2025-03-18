@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
 
-    self.exec_exhaustively("loop", runner.clone(), false);
+    self.exec_exhaustively("loop", false, false, runner.clone());
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
@@ -66,22 +66,20 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively(kind, runner.clone(), false);
-    self.register_exhaustive_callbacks(false, runner, deps);
+    self.exec_exhaustively(kind, false, true, runner);
   }
 
   pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
-    let runner = Rc::new(runner);
-    let deps = self.exec_exhaustively("async/generator", runner.clone(), true);
-    self.register_exhaustive_callbacks(true, runner, deps);
+    self.exec_exhaustively("async/generator", true, true, Rc::new(runner));
   }
 
   fn exec_exhaustively(
     &mut self,
     _kind: &str,
-    runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
-  ) -> FxHashSet<ExhaustiveDepId> {
+    register: bool,
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
+  ) {
     self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
     let mut round_counter = 0;
     while self.cf_scope_mut().iterate_exhaustively() {
@@ -105,7 +103,10 @@ impl<'a> Analyzer<'a> {
     }
     let id = self.pop_cf_scope();
     let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
-    mem::take(&mut data.deps)
+    if register {
+      let deps = mem::take(&mut data.deps);
+      self.register_exhaustive_callbacks(once, runner, deps);
+    }
   }
 
   fn register_exhaustive_callbacks(
@@ -168,8 +169,7 @@ impl<'a> Analyzer<'a> {
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
         let ExhaustiveCallback { handler: runner, once } = runner;
-        let deps = self.exec_exhaustively("dep", runner.clone(), once);
-        self.register_exhaustive_callbacks(once, runner, deps);
+        self.exec_exhaustively("dep", once, true, runner.clone());
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;
       }
