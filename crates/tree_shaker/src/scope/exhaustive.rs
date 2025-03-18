@@ -29,11 +29,11 @@ pub struct ExhaustiveData {
 #[derive(Clone)]
 pub struct ExhaustiveCallback<'a> {
   pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-  pub once: bool,
+  pub drain: bool,
 }
 impl<'a> PartialEq for ExhaustiveCallback<'a> {
   fn eq(&self, other: &Self) -> bool {
-    self.once == other.once && Rc::ptr_eq(&self.handler, &other.handler)
+    self.drain == other.drain && Rc::ptr_eq(&self.handler, &other.handler)
   }
 }
 impl<'a> Eq for ExhaustiveCallback<'a> {}
@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
 
-    self.exec_exhaustively("loop", false, false, runner.clone());
+    self.exec_exhaustively("loop", true, false, runner.clone());
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
@@ -73,24 +73,24 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    self.exec_exhaustively(kind, false, true, runner);
+    self.exec_exhaustively(kind, true, true, runner);
   }
 
   pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
-    self.exec_exhaustively("async/generator", true, true, Rc::new(runner));
+    self.exec_exhaustively("async/generator", false, true, Rc::new(runner));
   }
 
   fn exec_exhaustively(
     &mut self,
     _kind: &str,
-    once: bool,
+    drain: bool,
     register: bool,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   ) {
     self.push_cf_scope(
       CfScopeKind::Exhaustive(ExhaustiveData {
         clean: true,
-        temp_deps: (!once).then(FxHashSet::default),
+        temp_deps: drain.then(FxHashSet::default),
         register_deps: register.then(Default::default),
       }),
       Some(false),
@@ -114,15 +114,14 @@ impl<'a> Analyzer<'a> {
     }
     let id = self.pop_cf_scope();
     let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
-    if register {
-      let deps = data.register_deps.take().unwrap();
-      self.register_exhaustive_callbacks(once, runner, deps);
+    if let Some(register_deps) = data.register_deps.take() {
+      self.register_exhaustive_callbacks(drain, runner, register_deps);
     }
   }
 
   fn register_exhaustive_callbacks(
     &mut self,
-    once: bool,
+    drain: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     deps: FxHashSet<ExhaustiveDepId>,
   ) {
@@ -131,7 +130,7 @@ impl<'a> Analyzer<'a> {
         .exhaustive_callbacks
         .entry(id)
         .or_default()
-        .insert(ExhaustiveCallback { handler: handler.clone(), once });
+        .insert(ExhaustiveCallback { handler: handler.clone(), drain });
     }
   }
 
@@ -193,8 +192,8 @@ impl<'a> Analyzer<'a> {
       let runners = mem::take(&mut self.pending_deps);
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
-        let ExhaustiveCallback { handler: runner, once } = runner;
-        self.exec_exhaustively("dep", once, true, runner.clone());
+        let ExhaustiveCallback { handler: runner, drain } = runner;
+        self.exec_exhaustively("dep", drain, true, runner.clone());
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;
       }
