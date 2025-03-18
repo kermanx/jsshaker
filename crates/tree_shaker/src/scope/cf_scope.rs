@@ -125,13 +125,12 @@ impl<'a> CfScope<'a> {
         if newly_added && add_as_self_dep {
           if let Some(self_deps) = &mut data.self_deps {
             self_deps.insert(id);
+            return true;
           }
         }
       }
-      data.self_deps.is_some()
-    } else {
-      false
     }
+    false
   }
 
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {
