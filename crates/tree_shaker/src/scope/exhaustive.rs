@@ -155,16 +155,25 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId, target: usize) -> (bool, bool) {
-    let mut should_consume = false;
+    let mut exhaustive = false;
     let mut indeterminate = false;
+    let mut need_mark = true;
     for depth in target..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
-      if !should_consume {
-        should_consume |= scope.mark_exhaustive_write(id);
-      }
       indeterminate |= scope.is_indeterminate();
+      if let Some(data) = scope.exhaustive_data_mut() {
+        exhaustive = true;
+        if (need_mark || data.register_deps.is_some()) && data.clean {
+          if let Some(temp_deps) = &data.temp_deps {
+            if temp_deps.contains(&id) {
+              data.clean = false;
+            }
+            need_mark = false;
+          }
+        }
+      }
     }
-    (should_consume, indeterminate)
+    (exhaustive, indeterminate)
   }
 
   pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId) -> bool {
