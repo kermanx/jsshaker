@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, object::alloc_object_id, Entity, EntityTrait, EnumeratedProperties,
-  IteratedElements, LiteralEntity, ObjectId, TypeofResult,
+  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
+  ObjectId, TypeofResult,
 };
 use crate::{
   analyzer::Analyzer,
@@ -382,6 +382,6 @@ impl<'a> ArrayEntity<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&mut self) -> &'a mut ArrayEntity<'a> {
-    self.factory.array(self.scoping.cf.current_id(), alloc_object_id())
+    self.factory.array(self.scoping.cf.current_id(), self.scoping.alloc_object_id())
   }
 }

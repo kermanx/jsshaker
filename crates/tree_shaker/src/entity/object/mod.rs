@@ -49,11 +49,6 @@ define_index_type! {
   pub struct ObjectId = u32;
 }
 
-pub fn alloc_object_id<'a>() -> ObjectId {
-  static COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(128);
-  ObjectId::from(COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed))
-}
-
 #[derive(Debug)]
 pub struct ObjectEntity<'a> {
   /// A built-in object is usually non-consumable
@@ -314,7 +309,7 @@ impl<'a> Analyzer<'a> {
       consumed_as_prototype: Cell::new(false),
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
-      object_id: alloc_object_id(),
+      object_id: self.scoping.alloc_object_id(),
       string_keyed: RefCell::new(FxHashMap::default()),
       unknown_keyed: RefCell::new(ObjectProperty::default()),
       rest: RefCell::new(None),

@@ -76,6 +76,12 @@ impl<I: Idx, T> ScopeTree<I, T> {
     self.nodes.get(id).unwrap().parent
   }
 
+  pub fn add_special(&mut self, data: T) -> I {
+    let id = I::from_usize(self.nodes.len());
+    self.nodes.push(NodeInfo { data, depth: 0, parent: None });
+    id
+  }
+
   pub fn push(&mut self, data: T) -> I {
     let id = I::from_usize(self.nodes.len());
     self.nodes.push(NodeInfo { data, depth: self.stack.len(), parent: self.stack.last().copied() });
