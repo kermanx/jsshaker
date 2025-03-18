@@ -144,18 +144,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn request_exhaustive_callbacks(
     &mut self,
-    should_consume: bool,
+    _should_consume: bool,
     id: ExhaustiveDepId,
   ) -> bool {
     if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
       if runners.is_empty() {
         false
       } else {
-        if should_consume {
-          self.pending_deps.extend(runners.drain());
-        } else {
-          self.pending_deps.extend(runners.iter().cloned());
-        }
+        self.pending_deps.extend(runners.drain());
         true
       }
     } else {
