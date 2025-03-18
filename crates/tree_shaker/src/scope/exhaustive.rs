@@ -125,7 +125,9 @@ impl<'a> Analyzer<'a> {
 
   pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, target: usize) {
     for depth in target..self.scoping.cf.stack.len() {
-      self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id);
+      if self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id) {
+        break;
+      }
     }
   }
 

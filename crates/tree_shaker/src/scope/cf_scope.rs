@@ -117,12 +117,14 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId) {
+  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId) -> bool {
     if let Some(data) = self.exhaustive_data_mut() {
       if data.clean {
         data.deps.insert(id);
+        return true;
       }
     }
+    false
   }
 
   pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {
