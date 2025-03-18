@@ -69,14 +69,12 @@ impl<'a> Analyzer<'a> {
       }
       analyzer.pop_cf_scope();
     });
-    let deps = self.exec_exhaustively(kind, runner.clone(), false, true);
-    self.register_exhaustive_callbacks(false, runner, deps.unwrap());
+    self.exec_exhaustively(kind, runner.clone(), false, true);
   }
 
   pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
     let runner = Rc::new(runner);
-    let deps = self.exec_exhaustively("async/generator", runner.clone(), true, true);
-    self.register_exhaustive_callbacks(true, runner, deps.unwrap());
+    self.exec_exhaustively("async/generator", runner.clone(), true, true);
   }
 
   fn exec_exhaustively(
@@ -84,13 +82,13 @@ impl<'a> Analyzer<'a> {
     _kind: &str,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
     once: bool,
-    will_register: bool,
-  ) -> Option<FxHashSet<ExhaustiveDepId>> {
+    register_callbacks: bool,
+  ) {
     self.push_cf_scope(
       CfScopeKind::Exhaustive(ExhaustiveData {
         clean: false,
         read_deps: FxHashSet::default(),
-        self_deps: will_register.then(FxHashSet::default),
+        self_deps: register_callbacks.then(FxHashSet::default),
       }),
       Some(false),
     );
@@ -116,7 +114,10 @@ impl<'a> Analyzer<'a> {
     }
     let id = self.pop_cf_scope();
     let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
-    mem::take(&mut data.self_deps)
+    if register_callbacks {
+      let self_deps = data.self_deps.take().unwrap();
+      self.register_exhaustive_callbacks(once, runner, self_deps);
+    }
   }
 
   fn register_exhaustive_callbacks(
@@ -186,8 +187,7 @@ impl<'a> Analyzer<'a> {
       for runner in runners {
         // let old_count = self.referred_deps.debug_count();
         let ExhaustiveCallback { handler: runner, once } = runner;
-        let deps = self.exec_exhaustively("dep", runner.clone(), once, true);
-        self.register_exhaustive_callbacks(once, runner, deps.unwrap());
+        self.exec_exhaustively("dep", runner.clone(), once, true);
         // let new_count = self.referred_deps.debug_count();
         // self.debug += 1;
       }
