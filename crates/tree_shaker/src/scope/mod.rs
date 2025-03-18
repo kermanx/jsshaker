@@ -12,7 +12,7 @@ use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait, ConsumableVec},
   dep::DepId,
-  entity::{Entity, EntityFactory},
+  entity::{Entity, EntityFactory, ObjectId},
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
 };
@@ -29,12 +29,16 @@ pub struct Scoping<'a> {
   pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
   pub pure: usize,
+
+  pub object_scope_id: VariableScopeId,
+  pub object_symbol_counter: usize,
 }
 
 impl<'a> Scoping<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut variable = ScopeTree::new();
     variable.push(VariableScope::new_with_this(factory.unknown()));
+    let object_scope_id = variable.add_special(VariableScope::new());
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Root, vec![], Some(false)));
     Scoping {
@@ -56,6 +60,9 @@ impl<'a> Scoping<'a> {
       variable,
       cf,
       pure: 0,
+
+      object_scope_id,
+      object_symbol_counter: 128,
     }
   }
 
@@ -73,6 +80,11 @@ impl<'a> Scoping<'a> {
 
     #[cfg(feature = "flame")]
     self.call.pop().unwrap().scope_guard.end();
+  }
+
+  pub fn alloc_object_id(&mut self) -> ObjectId {
+    self.object_symbol_counter += 1;
+    ObjectId::from_usize(self.object_symbol_counter)
   }
 }
 
