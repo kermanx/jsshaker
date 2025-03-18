@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.request_exhaustive_callbacks(false, ExhaustiveDepId::Variable(id, symbol));
+        self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
       }
     }
   }
@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
-      self.request_exhaustive_callbacks(false, ExhaustiveDepId::Variable(id, symbol));
+      self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
     }
   }
 
@@ -226,7 +226,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.request_exhaustive_callbacks(should_consume, ExhaustiveDepId::Variable(id, symbol));
+          self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
         }
       }
       true

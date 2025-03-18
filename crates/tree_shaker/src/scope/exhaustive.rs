@@ -167,11 +167,7 @@ impl<'a> Analyzer<'a> {
     (should_consume, indeterminate)
   }
 
-  pub fn request_exhaustive_callbacks(
-    &mut self,
-    _should_consume: bool,
-    id: ExhaustiveDepId,
-  ) -> bool {
+  pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId) -> bool {
     if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
       if runners.is_empty() {
         false
