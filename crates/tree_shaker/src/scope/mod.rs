@@ -28,6 +28,7 @@ pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
+  pub detached_cf: Option<CfScopeId>,
   pub pure: usize,
 }
 
@@ -55,6 +56,7 @@ impl<'a> Scoping<'a> {
       )],
       variable,
       cf,
+      detached_cf: None,
       pure: 0,
     }
   }
@@ -233,5 +235,13 @@ impl<'a> Analyzer<'a> {
   pub fn pop_try_scope(&mut self) -> TryScope<'a> {
     self.pop_cf_scope();
     self.call_scope_mut().try_scopes.pop().unwrap()
+  }
+
+  pub fn detached_cf_scope(&self) -> Option<&CfScope<'a>> {
+    self.scoping.detached_cf.map(|id| self.scoping.cf.get(id))
+  }
+
+  pub fn detached_cf_scope_mut(&mut self) -> Option<&mut CfScope<'a>> {
+    self.scoping.detached_cf.map(|id| self.scoping.cf.get_mut(id))
   }
 }

@@ -19,6 +19,13 @@ pub enum ExhaustiveDepId {
   ObjectProperty(ObjectId, ObjectPropertyId),
 }
 
+#[derive(Debug)]
+pub struct ExhaustiveData {
+  pub clean: bool,
+  pub temp_deps: Option<FxHashSet<ExhaustiveDepId>>,
+  pub register_deps: Option<FxHashSet<ExhaustiveDepId>>,
+}
+
 #[derive(Clone)]
 pub struct ExhaustiveCallback<'a> {
   pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
@@ -80,31 +87,35 @@ impl<'a> Analyzer<'a> {
     register: bool,
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   ) {
-    self.push_cf_scope(CfScopeKind::Exhaustive(Default::default()), Some(false));
+    self.push_cf_scope(
+      CfScopeKind::Exhaustive(ExhaustiveData {
+        clean: true,
+        temp_deps: (!once).then(FxHashSet::default),
+        register_deps: register.then(Default::default),
+      }),
+      Some(false),
+    );
     let mut round_counter = 0;
-    while self.cf_scope_mut().iterate_exhaustively() {
+    loop {
       #[cfg(feature = "flame")]
       let _scope_guard = flame::start_guard(format!(
         "!{_kind}@{:06X} x{}",
         (Rc::as_ptr(&runner) as *const () as usize) & 0xFFFFFF,
         round_counter
       ));
-
       runner(self);
       round_counter += 1;
-      if once {
-        let data = self.cf_scope_mut().exhaustive_data_mut().unwrap();
-        data.clean = true;
-        break;
-      }
       if round_counter > 1000 {
         unreachable!("Exhaustive loop is too deep");
+      }
+      if !self.cf_scope_mut().post_exhaustive_iterate() {
+        break;
       }
     }
     let id = self.pop_cf_scope();
     let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
     if register {
-      let deps = mem::take(&mut data.deps);
+      let deps = data.register_deps.take().unwrap();
       self.register_exhaustive_callbacks(once, runner, deps);
     }
   }
@@ -125,8 +136,22 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, target: usize) {
-    for depth in target..self.scoping.cf.stack.len() {
-      self.scoping.cf.get_mut_from_depth(depth).mark_exhaustive_read(id);
+    let mut registered = false;
+    for depth in (target..self.scoping.cf.stack.len()).rev() {
+      let scope = self.scoping.cf.get_mut_from_depth(depth);
+      if let Some(data) = scope.exhaustive_data_mut() {
+        if data.clean {
+          if let Some(temp_deps) = data.temp_deps.as_mut() {
+            temp_deps.insert(id);
+          }
+        }
+        if !registered {
+          if let Some(register_deps) = data.register_deps.as_mut() {
+            registered = true;
+            register_deps.insert(id);
+          }
+        }
+      }
     }
   }
 
