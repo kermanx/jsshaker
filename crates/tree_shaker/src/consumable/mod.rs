@@ -3,7 +3,7 @@ mod impls;
 mod lazy;
 mod once;
 
-use crate::{analyzer::Analyzer, entity::Entity};
+use crate::analyzer::Analyzer;
 pub use collector::*;
 pub use lazy::*;
 pub use once::*;

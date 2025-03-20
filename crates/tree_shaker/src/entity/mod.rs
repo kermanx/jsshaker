@@ -38,7 +38,8 @@ pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consum
 /// (vec![known_elements], rest, dep)
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>);
 
-pub trait ValueTrait<'a>: ConsumableTrait<'a> {
+pub trait ValueTrait<'a>: Debug {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>);
   /// Returns true if the entity is completely consumed
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     self.consume(analyzer);

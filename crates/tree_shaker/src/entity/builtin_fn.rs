@@ -2,13 +2,10 @@ use super::{
   consumed_object, never::NeverEntity, Entity, EntityFactory, EnumeratedProperties,
   IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
 };
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
-trait BuiltinFnEntity<'a>: ConsumableTrait<'a> {
+trait BuiltinFnEntity<'a>: Debug {
   #[cfg(feature = "flame")]
   fn name(&self) -> &'static str;
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
@@ -24,6 +21,12 @@ trait BuiltinFnEntity<'a>: ConsumableTrait<'a> {
 }
 
 impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+    if let Some(object) = self.object() {
+      object.consume(analyzer);
+    }
+  }
+
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }
@@ -191,16 +194,6 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEnti
   }
 }
 
-impl<'a, F: BuiltinFnImplementation<'a> + 'a> ConsumableTrait<'a>
-  for ImplementedBuiltinFnEntity<'a, F>
-{
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(object) = self.object() {
-      object.consume(analyzer);
-    }
-  }
-}
-
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
   for ImplementedBuiltinFnEntity<'a, F>
 {
@@ -243,14 +236,6 @@ impl<'a> Analyzer<'a> {
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
   return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
-}
-
-impl<'a> ConsumableTrait<'a> for PureBuiltinFnEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(object) = self.object() {
-      object.consume(analyzer);
-    }
-  }
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {

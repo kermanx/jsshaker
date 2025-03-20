@@ -73,8 +73,8 @@ pub struct ObjectEntity<'a> {
   // TODO: symbol_keyed
 }
 
-impl<'a> ConsumableTrait<'a> for ObjectEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if !self.consumable {
       return;
     }
@@ -88,9 +88,7 @@ impl<'a> ConsumableTrait<'a> for ObjectEntity<'a> {
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
-}
 
-impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);

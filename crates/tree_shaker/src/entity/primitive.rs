@@ -2,11 +2,7 @@ use super::{
   consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
   TypeofResult, ValueTrait,
 };
-use crate::{
-  analyzer::Analyzer,
-  builtins::BuiltinPrototype,
-  consumable::{Consumable, ConsumableTrait},
-};
+use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveEntity {
@@ -19,11 +15,9 @@ pub enum PrimitiveEntity {
   Symbol,
 }
 
-impl<'a> ConsumableTrait<'a> for PrimitiveEntity {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
-}
-
 impl<'a> ValueTrait<'a> for PrimitiveEntity {
+  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }

@@ -4,14 +4,14 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
+  consumable::Consumable,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
 };
 use oxc::span::GetSpan;
 use std::{cell::Cell, rc::Rc};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct FunctionEntity<'a> {
   body_consumed: Rc<Cell<bool>>,
   pub callee: CalleeInfo<'a>,
@@ -22,15 +22,13 @@ pub struct FunctionEntity<'a> {
   pub prototype: &'a ObjectEntity<'a>,
 }
 
-impl<'a> ConsumableTrait<'a> for FunctionEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    (analyzer.allocator.alloc(self.clone())).consume_body(analyzer);
+impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+    self.consume_body(analyzer);
     self.statics.consume(analyzer);
     self.prototype.consume(analyzer);
   }
-}
 
-impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     self.consume(analyzer);
     consumed_object::unknown_mutate(analyzer, dep);

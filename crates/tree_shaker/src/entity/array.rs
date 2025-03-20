@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  consumable::{Consumable, ConsumableCollector},
   scope::CfScopeId,
   use_consumed_flag,
 };
@@ -33,8 +33,8 @@ impl<'a> fmt::Debug for ArrayEntity<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for ArrayEntity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
@@ -44,9 +44,7 @@ impl<'a> ConsumableTrait<'a> for ArrayEntity<'a> {
     analyzer.consume(self.elements.take());
     analyzer.consume(self.rest.take());
   }
-}
 
-impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
