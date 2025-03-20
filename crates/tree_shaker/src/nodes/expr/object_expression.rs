@@ -1,9 +1,5 @@
 use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, EntityTrait},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::ast::{
@@ -43,11 +39,11 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    let object = Entity::from(object);
     if has_proto {
       // Deoptimize the object
-      object.consume(self);
+      self.consume(object);
     }
-
     object
   }
 }

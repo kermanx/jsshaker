@@ -34,6 +34,6 @@ impl<'a> Builtins<'a> {
       // "toString" => factory.string("__#toString__"),
     });
 
-    self.globals.borrow_mut().insert("Symbol", object);
+    self.globals.borrow_mut().insert("Symbol", object.into());
   }
 }

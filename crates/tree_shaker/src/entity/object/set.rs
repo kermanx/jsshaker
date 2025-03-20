@@ -131,7 +131,7 @@ impl<'a> ObjectEntity<'a> {
         if indeterminate { None } else { Some(false) },
       );
       for s in setters {
-        s.setter.call_as_setter(analyzer, s.dep, self, non_mangable_value);
+        s.setter.call_as_setter(analyzer, s.dep, self.into(), non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }

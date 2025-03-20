@@ -209,7 +209,7 @@ impl<'a> FunctionEntity<'a> {
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
-        self,
+        self.into(),
         self.callee,
         call_dep,
         node,
@@ -270,7 +270,7 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
     let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
-    self.call_impl::<true>(analyzer, dep, target, args, consume)
+    self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {

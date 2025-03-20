@@ -80,7 +80,7 @@ impl<'a> ObjectEntity<'a> {
         context.values.push(getter.call_as_getter(
           analyzer,
           analyzer.factory.empty_consumable,
-          self,
+          self.into(),
         ));
       }
       analyzer.pop_cf_scope();

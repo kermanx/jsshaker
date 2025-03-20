@@ -14,6 +14,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     let rest = self.new_empty_object(ObjectPrototype::ImplicitOrNull, None);
     rest.init_spread(self, self.consumable(dep.into()), object);
+    let rest = Entity::from(rest);
     for key in enumerated {
       rest.delete_property(self, self.factory.empty_consumable, key);
     }

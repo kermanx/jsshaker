@@ -60,7 +60,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
       "Consumer" => create_react_context_consumer_impl(analyzer, context_id),
     });
 
-    context
+    context.into()
   })
 }
 

@@ -194,7 +194,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
@@ -345,7 +345,7 @@ impl<'a> Analyzer<'a> {
       ObjectProperty {
         definite: true,
         enumerable: false,
-        possible_values: vec![ObjectPropertyValue::Field(prototype, false)],
+        possible_values: vec![ObjectPropertyValue::Field((&*prototype).into(), false)],
         non_existent: Default::default(),
         key: Some(self.factory.string("prototype")),
         mangling: Some(self.mangler.builtin_atom),

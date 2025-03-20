@@ -290,7 +290,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    analyzer.factory.computed(self, dep)
+    analyzer.factory.computed(self.into(), dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -342,7 +342,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn test_typeof(&self) -> TypeofResult {

@@ -96,7 +96,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -107,11 +107,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn test_typeof(&self) -> TypeofResult {

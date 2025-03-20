@@ -31,6 +31,6 @@ impl<'a> Builtins<'a> {
       },
     );
 
-    object
+    object.into()
   }
 }

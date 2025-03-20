@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, Some(class));
+      self.init_binding_identifier(id, Some(class.into()));
     }
 
     for (index, element) in node.body.body.iter().enumerate() {
@@ -127,7 +127,7 @@ impl<'a> Analyzer<'a> {
     self.pop_call_scope();
     self.pop_variable_scope();
 
-    class
+    class.into()
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {

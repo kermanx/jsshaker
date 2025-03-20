@@ -17,7 +17,7 @@ use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
-    self.new_function(CalleeNode::Function(node))
+    self.new_function(CalleeNode::Function(node)).into()
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {

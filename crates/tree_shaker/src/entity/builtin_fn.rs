@@ -40,7 +40,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     if let Some(object) = self.object() {
       object.get_property(analyzer, dep, key)
     } else {
-      analyzer.builtins.prototypes.function.get_property(analyzer, self, key, dep)
+      analyzer.builtins.prototypes.function.get_property(analyzer, self.into(), key, dep)
     }
   }
 
@@ -109,7 +109,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -221,12 +221,15 @@ impl<'a> Analyzer<'a> {
     _name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.factory.alloc(ImplementedBuiltinFnEntity {
-      #[cfg(feature = "flame")]
-      name: _name,
-      implementation,
-      object: Some(self.new_function_object(None).0),
-    })
+    self
+      .factory
+      .alloc(ImplementedBuiltinFnEntity {
+        #[cfg(feature = "flame")]
+        name: _name,
+        implementation,
+        object: Some(self.new_function_object(None).0),
+      })
+      .into()
   }
 }
 

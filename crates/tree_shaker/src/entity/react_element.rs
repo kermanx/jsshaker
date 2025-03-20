@@ -30,7 +30,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
         Some(group_id),
       );
       copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
-      tag.jsx(analyzer, copied_props)
+      tag.jsx(analyzer, copied_props.into())
     });
   }
 
@@ -139,7 +139,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -150,11 +150,11 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_constructor_prototype(

@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       array.init_rest(self.factory.union(rest));
     }
 
-    array
+    array.into()
   }
 }
 
