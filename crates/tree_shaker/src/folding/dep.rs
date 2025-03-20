@@ -45,7 +45,7 @@ impl<'a> ConsumableTrait<'a> for FoldableDep<'a> {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct UnFoldableDep<'a> {
   pub data: &'a RefCell<FoldingData<'a>>,
 }

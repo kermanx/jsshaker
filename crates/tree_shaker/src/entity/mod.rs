@@ -17,7 +17,7 @@ mod utils;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
+  consumable::{Consumable, ConsumableTrait, ConsumeTrait},
 };
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use factory::EntityFactory;
@@ -151,7 +151,7 @@ pub trait EntityTrait<'a>: ConsumableTrait<'a> {
       rest_arr.deps.borrow_mut().push(if extras.is_empty() && rest.is_none() {
         analyzer.consumable((self, dep))
       } else {
-        analyzer.consumable(dep)
+        dep
       });
       rest_arr.elements.borrow_mut().extend(extras);
       if let Some(rest) = rest {
@@ -223,14 +223,14 @@ impl<'a> Entity<'a> {
     }
   }
 
-  fn forward_value(&self, value: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if let Some(d1) = self.dep {
-      analyzer.factory.entity_with_dep(
-        value.value,
-        if let Some(d2) = value.dep { analyzer.factory.consumable((d1, d2)) } else { d1 },
-      )
-    } else {
-      value
+  fn forward_value(&self, entity: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    Entity {
+      value: entity.value,
+      dep: match (self.dep, entity.dep) {
+        (Some(d1), Some(d2)) => Some(analyzer.factory.consumable((d1, d2))),
+        (Some(d), None) | (None, Some(d)) => Some(d),
+        (None, None) => None,
+      },
     }
   }
 
@@ -413,13 +413,13 @@ impl<'a> EntityFactory<'a> {
     Entity { value, dep: Some(dep) }
   }
 
-  pub fn computed(&self, entity: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) -> Entity<'a> {
+  pub fn computed(&self, entity: Entity<'a>, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
     Entity {
       value: entity.value,
       dep: if let Some(d) = entity.dep {
         Some(self.consumable((d, dep)))
       } else {
-        Some(self.consumable(dep))
+        Some(dep.uniform(self.allocator))
       },
     }
   }

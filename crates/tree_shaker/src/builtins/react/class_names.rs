@@ -28,6 +28,6 @@ pub fn create_class_names_namespace<'a>(
       }
     }
 
-    analyzer.factory.computed_unknown_string(analyzer.consumable((deps_1, deps_2, rest)))
+    analyzer.factory.computed_unknown_string((deps_1, deps_2, rest))
   })
 }

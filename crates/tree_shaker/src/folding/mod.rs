@@ -67,12 +67,9 @@ impl<'a> Analyzer<'a> {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
       let (literal_value, mangle_atom) = literal.with_mangle_atom(self);
-      self.factory.computed(
-        literal_value,
-        self.factory.consumable(FoldableDep { data, literal, value, mangle_atom }),
-      )
+      self.factory.computed(literal_value, FoldableDep { data, literal, value, mangle_atom })
     } else {
-      self.factory.computed(value, self.factory.consumable(UnFoldableDep { data }))
+      self.factory.computed(value, UnFoldableDep { data })
     }
   }
 

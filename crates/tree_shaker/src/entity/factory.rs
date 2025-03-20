@@ -1,5 +1,5 @@
 use crate::{
-  consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
+  consumable::{Consumable, ConsumableTrait, ConsumeTrait, LazyConsumable, OnceConsumable},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
   utils::F64WithEq,
@@ -320,7 +320,7 @@ impl<'a> EntityFactory<'a> {
     }
   }
 
-  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
+  pub fn computed_union<T: ConsumeTrait<'a> + 'a>(
     &self,
     values: Vec<Entity<'a>>,
     dep: T,
@@ -332,7 +332,7 @@ impl<'a> EntityFactory<'a> {
     self.immutable_unknown
   }
 
-  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + Copy + 'a) -> Entity<'a> {
+  pub fn computed_unknown(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
     self.computed(self.immutable_unknown, dep)
   }
 
@@ -369,7 +369,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
+      pub fn $name(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*
