@@ -1,7 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::Consumable, scope::CfScopeKind,
-  transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,

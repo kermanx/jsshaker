@@ -10,7 +10,7 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableVec, ConsumeTrait, IntoConsumable},
+  consumable::{Consumable, ConsumableVec, IntoConsumable},
   dep::DepId,
   entity::{Entity, EntityFactory, ObjectId},
   module::ModuleId,
