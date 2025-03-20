@@ -2,7 +2,11 @@ use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype,
   TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+  use_consumed_flag,
+};
 use std::cell::Cell;
 
 #[derive(Debug, Default)]
@@ -11,15 +15,17 @@ pub struct ArgumentsEntity<'a> {
   pub arguments: Vec<(bool, Entity<'a>)>,
 }
 
-impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ConsumableTrait<'a> for ArgumentsEntity<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     for (_, entity) in &self.arguments {
       entity.consume(analyzer);
     }
   }
+}
 
+impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);

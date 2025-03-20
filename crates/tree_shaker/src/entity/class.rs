@@ -17,7 +17,7 @@ pub struct ClassEntity<'a> {
 }
 
 impl<'a> EntityTrait<'a> for ClassEntity<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     self.statics.consume(analyzer);

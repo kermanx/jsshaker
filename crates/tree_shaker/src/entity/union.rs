@@ -2,7 +2,11 @@ use super::{
   consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
   LiteralEntity, ObjectPrototype, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+  use_consumed_flag,
+};
 use rustc_hash::FxHashSet;
 use std::{cell::Cell, fmt::Debug};
 
@@ -14,15 +18,17 @@ pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
   pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ConsumableTrait<'a> for UnionEntity<'a, V> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     for value in self.values.iter() {
       value.consume(analyzer);
     }
   }
+}
 
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     if !self.consumed.get() {
       let mut consumed = true;

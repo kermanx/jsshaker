@@ -1,8 +1,8 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector},
-  entity::{consumed_object, Entity, EntityTrait, LiteralEntity},
+  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  entity::{consumed_object, Entity, LiteralEntity},
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,

@@ -1,7 +1,10 @@
 use super::{
   Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+};
 
 #[derive(Debug, Clone)]
 pub struct LogicalResultEntity<'a> {
@@ -10,11 +13,13 @@ pub struct LogicalResultEntity<'a> {
   pub result: Option<bool>,
 }
 
-impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ConsumableTrait<'a> for LogicalResultEntity<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
   }
+}
 
+impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     self.value.consume_mangable(analyzer)
   }

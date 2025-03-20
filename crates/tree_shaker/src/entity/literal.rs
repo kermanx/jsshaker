@@ -5,7 +5,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
-  consumable::Consumable,
+  consumable::{Consumable, ConsumableTrait},
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
   utils::F64WithEq,
@@ -33,13 +33,15 @@ pub enum LiteralEntity<'a> {
   Undefined,
 }
 
-impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ConsumableTrait<'a> for LiteralEntity<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     if let LiteralEntity::String(_, Some(atom)) = self {
       analyzer.consume(*atom);
     }
   }
+}
 
+impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   fn consume_mangable(&'a self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     !matches!(self, LiteralEntity::String(_, Some(_)))

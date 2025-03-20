@@ -2,7 +2,10 @@ use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
 use crate::{
-  analyzer::Analyzer, consumable::Consumable, entity::ObjectPrototype, use_consumed_flag,
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+  entity::ObjectPrototype,
+  use_consumed_flag,
 };
 use std::cell::{Cell, RefCell};
 
@@ -14,8 +17,8 @@ pub struct ReactElementEntity<'a> {
   pub deps: RefCell<Vec<Consumable<'a>>>,
 }
 
-impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+impl<'a> ConsumableTrait<'a> for ReactElementEntity<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
     analyzer.consume(self.deps.take());
@@ -33,7 +36,9 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
       tag.jsx(analyzer, copied_props.into())
     });
   }
+}
 
+impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);

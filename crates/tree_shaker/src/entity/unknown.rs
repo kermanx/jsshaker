@@ -1,15 +1,20 @@
 use super::{
   consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{
+  analyzer::Analyzer,
+  consumable::{Consumable, ConsumableTrait},
+};
 use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
 pub struct UnknownEntity<'a>(PhantomData<&'a ()>);
 
-impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
-  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+impl<'a> ConsumableTrait<'a> for UnknownEntity<'a> {
+  fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
+}
 
+impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     consumed_object::unknown_mutate(analyzer, dep)
   }
