@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectEntity,
-  ObjectPrototype, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -22,7 +22,7 @@ pub struct FunctionEntity<'a> {
   pub prototype: &'a ObjectEntity<'a>,
 }
 
-impl<'a> EntityTrait<'a> for FunctionEntity<'a> {
+impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.consume_body(analyzer);
     self.statics.consume(analyzer);
@@ -209,7 +209,7 @@ impl<'a> FunctionEntity<'a> {
     let variable_scopes = self.variable_scope_stack.clone();
     let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
-        self,
+        self.into(),
         self.callee,
         call_dep,
         node,
@@ -270,7 +270,7 @@ impl<'a> FunctionEntity<'a> {
   ) -> Entity<'a> {
     let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
     let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
-    self.call_impl::<true>(analyzer, dep, target, args, consume)
+    self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {

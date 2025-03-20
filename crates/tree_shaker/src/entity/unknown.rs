@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::marker::PhantomData;
@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 #[derive(Debug, Default)]
 pub struct UnknownEntity<'a>(PhantomData<&'a ()>);
 
-impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
+impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
@@ -96,7 +96,7 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -107,11 +107,11 @@ impl<'a> EntityTrait<'a> for UnknownEntity<'a> {
   }
 
   fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn test_typeof(&self) -> TypeofResult {

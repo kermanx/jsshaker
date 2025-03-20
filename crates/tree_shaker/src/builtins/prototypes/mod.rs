@@ -73,7 +73,7 @@ impl<'a> BuiltinPrototype<'a> {
     key: Entity<'a>,
     dep: Consumable<'a>,
   ) -> Entity<'a> {
-    let dep = analyzer.consumable((dep, target, key));
+    let dep = (dep, target, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut values = vec![];
       for key_literal in key_literals {

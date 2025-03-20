@@ -1,11 +1,11 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EntityFactory, EntityTrait, EnumeratedProperties,
-  IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EntityFactory, EnumeratedProperties,
+  IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 use std::fmt::Debug;
 
-pub trait BuiltinFnEntity<'a>: Debug {
+trait BuiltinFnEntity<'a>: Debug {
   #[cfg(feature = "flame")]
   fn name(&self) -> &'static str;
   fn object(&self) -> Option<&'a ObjectEntity<'a>> {
@@ -20,7 +20,7 @@ pub trait BuiltinFnEntity<'a>: Debug {
   ) -> Entity<'a>;
 }
 
-impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
+impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if let Some(object) = self.object() {
       object.consume(analyzer);
@@ -40,7 +40,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
     if let Some(object) = self.object() {
       object.get_property(analyzer, dep, key)
     } else {
-      analyzer.builtins.prototypes.function.get_property(analyzer, self, key, dep)
+      analyzer.builtins.prototypes.function.get_property(analyzer, self.into(), key, dep)
     }
   }
 
@@ -109,7 +109,7 @@ impl<'a, T: BuiltinFnEntity<'a>> EntityTrait<'a> for T {
   }
 
   fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -221,12 +221,15 @@ impl<'a> Analyzer<'a> {
     _name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.factory.alloc(ImplementedBuiltinFnEntity {
-      #[cfg(feature = "flame")]
-      name: _name,
-      implementation,
-      object: Some(self.new_function_object(None).0),
-    })
+    self
+      .factory
+      .alloc(ImplementedBuiltinFnEntity {
+        #[cfg(feature = "flame")]
+        name: _name,
+        implementation,
+        object: Some(self.new_function_object(None).0),
+      })
+      .into()
   }
 }
 

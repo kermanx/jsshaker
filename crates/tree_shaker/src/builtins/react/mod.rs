@@ -51,7 +51,7 @@ pub fn create_react_namespace<'a>(
     "useMemo" => create_react_use_memo_impl(factory),
   });
 
-  namespace
+  namespace.into()
 }
 
 pub fn create_react_jsx_runtime_namespace<'a>(
@@ -70,5 +70,5 @@ pub fn create_react_jsx_runtime_namespace<'a>(
     "jsxs" => create_react_jsxs_impl(factory),
   });
 
-  object
+  object.into()
 }

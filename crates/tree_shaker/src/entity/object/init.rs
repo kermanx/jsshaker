@@ -3,7 +3,7 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector},
+  consumable::{ConsumableCollector, ConsumeTrait},
   entity::{Entity, LiteralEntity},
   mangling::MangleConstraint,
 };
@@ -101,7 +101,7 @@ impl<'a> ObjectEntity<'a> {
   pub fn init_spread(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     argument: Entity<'a>,
   ) {
     let (properties, deps) = argument.enumerate_properties(analyzer, dep);

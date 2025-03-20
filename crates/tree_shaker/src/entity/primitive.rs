@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
+  TypeofResult, ValueTrait,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable};
 
@@ -15,7 +15,7 @@ pub enum PrimitiveEntity {
   Symbol,
 }
 
-impl<'a> EntityTrait<'a> for PrimitiveEntity {
+impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
@@ -33,7 +33,7 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
       analyzer.factory.computed_unknown((self, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
-      prototype.get_property(analyzer, self, key, dep)
+      prototype.get_property(analyzer, self.into(), key, dep)
     }
   }
 
@@ -105,7 +105,7 @@ impl<'a> EntityTrait<'a> for PrimitiveEntity {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
-    analyzer.factory.computed(self, dep)
+    analyzer.factory.entity_with_dep(self, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {

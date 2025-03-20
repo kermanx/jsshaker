@@ -1,6 +1,6 @@
 use super::{object::create_object_prototype, BuiltinPrototype};
 use crate::{
-  entity::{Entity, EntityFactory, ObjectId},
+  entity::{EntityFactory, ObjectId},
   init_prototype,
 };
 
@@ -14,11 +14,11 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> BuiltinProt
         // This can be any value
         let arguments_object_id = ObjectId::from_usize(0);
         match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id),
+          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id).into(),
           Some(false) => arg,
           None => analyzer.factory.union((
             arg,
-            analyzer.factory.array(cf_scope, arguments_object_id) as Entity<'a>,
+            analyzer.factory.array(cf_scope, arguments_object_id).into(),
           )),
         }
       };

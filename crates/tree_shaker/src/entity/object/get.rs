@@ -80,7 +80,7 @@ impl<'a> ObjectEntity<'a> {
         context.values.push(getter.call_as_getter(
           analyzer,
           analyzer.factory.empty_consumable,
-          self,
+          self.into(),
         ));
       }
       analyzer.pop_cf_scope();
@@ -88,9 +88,9 @@ impl<'a> ObjectEntity<'a> {
 
     let value = analyzer.factory.try_union(context.values).unwrap_or(analyzer.factory.undefined);
     if mangable {
-      analyzer.factory.computed(value, analyzer.consumable((context.extra_deps, dep)))
+      analyzer.factory.computed(value, (context.extra_deps, dep))
     } else {
-      analyzer.factory.computed(value, analyzer.consumable((context.extra_deps, dep, key)))
+      analyzer.factory.computed(value, (context.extra_deps, dep, key))
     }
   }
 

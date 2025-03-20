@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -33,7 +33,7 @@ pub enum LiteralEntity<'a> {
   Undefined,
 }
 
-impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
+impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if let LiteralEntity::String(_, Some(atom)) = self {
       analyzer.consume(*atom);
@@ -175,7 +175,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
-    analyzer.factory.computed(self, dep)
+    analyzer.factory.computed(self.into(), dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -206,10 +206,13 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
   }
 
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.alloc(LiteralEntity::String(
-      self.to_string(analyzer.allocator),
-      if let LiteralEntity::String(_, Some(atom)) = self { Some(*atom) } else { None },
-    ))
+    analyzer
+      .factory
+      .alloc(LiteralEntity::String(
+        self.to_string(analyzer.allocator),
+        if let LiteralEntity::String(_, Some(atom)) = self { Some(*atom) } else { None },
+      ))
+      .into()
   }
 
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -217,7 +220,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
       LiteralEntity::Number(_, _)
       | LiteralEntity::BigInt(_)
       | LiteralEntity::NaN
-      | LiteralEntity::Infinity(_) => self,
+      | LiteralEntity::Infinity(_) => self.into(),
       LiteralEntity::Boolean(value) => {
         if *value {
           analyzer.factory.number(1.0, Some("1"))
@@ -250,7 +253,7 @@ impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
 
   fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
-      LiteralEntity::Symbol(_, _) => self,
+      LiteralEntity::Symbol(_, _) => self.into(),
       _ => self.get_to_string(analyzer),
     }
   }
@@ -504,9 +507,9 @@ impl<'a> LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value, atom) => {
         let atom = atom.unwrap_or_else(|| analyzer.mangler.new_atom());
-        (analyzer.factory.alloc(LiteralEntity::String(value, Some(atom))), Some(atom))
+        (analyzer.factory.alloc(LiteralEntity::String(value, Some(atom))).into(), Some(atom))
       }
-      _ => (analyzer.factory.alloc(self), None),
+      _ => (analyzer.factory.alloc(self).into(), None),
     }
   }
 }

@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer, consumable::Consumable, entity::ObjectPrototype, use_consumed_flag,
@@ -14,7 +14,7 @@ pub struct ReactElementEntity<'a> {
   pub deps: RefCell<Vec<Consumable<'a>>>,
 }
 
-impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
+impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -30,7 +30,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
         Some(group_id),
       );
       copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
-      tag.jsx(analyzer, copied_props)
+      tag.jsx(analyzer, copied_props.into())
     });
   }
 
@@ -139,7 +139,7 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -150,11 +150,11 @@ impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
   }
 
   fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_constructor_prototype(

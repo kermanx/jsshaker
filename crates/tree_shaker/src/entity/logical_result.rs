@@ -1,5 +1,5 @@
 use super::{
-  Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable};
 
@@ -10,7 +10,7 @@ pub struct LogicalResultEntity<'a> {
   pub result: Option<bool>,
 }
 
-impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
+impl<'a> ValueTrait<'a> for LogicalResultEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
   }

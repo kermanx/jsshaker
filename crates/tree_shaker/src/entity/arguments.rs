@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype,
-  TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  ValueTrait,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;
@@ -11,7 +11,7 @@ pub struct ArgumentsEntity<'a> {
   pub arguments: Vec<(bool, Entity<'a>)>,
 }
 
-impl<'a> EntityTrait<'a> for ArgumentsEntity<'a> {
+impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 

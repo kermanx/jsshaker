@@ -41,7 +41,7 @@ impl<'a> ObjectEntity<'a> {
         context.values.push(getter.call_as_getter(
           analyzer,
           analyzer.factory.empty_consumable,
-          self,
+          self.into(),
         ));
       }
 
@@ -76,7 +76,7 @@ impl<'a> ObjectEntity<'a> {
           context.values.push(getter.call_as_getter(
             analyzer,
             analyzer.factory.empty_consumable,
-            self,
+            self.into(),
           ));
         }
 

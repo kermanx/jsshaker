@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
 
     let args = self.exec_arguments(&node.arguments);
 
-    let ret_val = callee.call(self, self.consumable(dep_id), this, args);
+    let ret_val = callee.call(self, dep_id, this, args);
 
     Ok((scope_count, ret_val, undefined))
   }

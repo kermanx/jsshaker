@@ -17,9 +17,7 @@ impl<'a> Analyzer<'a> {
 
     self.declare_for_statement_left(&node.left);
 
-    let Some(iterated) =
-      right.iterate_result_union(self, self.consumable(AstKind2::ForOfStatement(node)))
-    else {
+    let Some(iterated) = right.iterate_result_union(self, AstKind2::ForOfStatement(node)) else {
       return;
     };
 

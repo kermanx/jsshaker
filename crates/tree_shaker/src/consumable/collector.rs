@@ -1,20 +1,20 @@
-use super::{Consumable, ConsumableTrait};
+use super::{Consumable, ConsumeTrait};
 use crate::{analyzer::Analyzer, entity::EntityFactory};
 use std::mem;
 
 #[derive(Debug)]
-pub struct ConsumableCollector<'a, T: ConsumableTrait<'a> + 'a = Consumable<'a>> {
+pub struct ConsumableCollector<'a, T: ConsumeTrait<'a> + 'a = Consumable<'a>> {
   pub current: Vec<T>,
   pub node: Option<Consumable<'a>>,
 }
 
-impl<'a, T: ConsumableTrait<'a> + 'a> Default for ConsumableCollector<'a, T> {
+impl<'a, T: ConsumeTrait<'a> + 'a> Default for ConsumableCollector<'a, T> {
   fn default() -> Self {
     Self { current: Vec::new(), node: None }
   }
 }
 
-impl<'a, T: ConsumableTrait<'a> + 'a> ConsumableCollector<'a, T> {
+impl<'a, T: ConsumeTrait<'a> + 'a> ConsumableCollector<'a, T> {
   pub fn new(current: Vec<T>) -> Self {
     Self { current, node: None }
   }

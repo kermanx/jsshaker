@@ -4,7 +4,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
-  entity::{Entity, EntityTrait, ObjectPrototype},
+  entity::{Entity, ObjectPrototype, ValueTrait},
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, Some(class));
+      self.init_binding_identifier(id, Some(class.into()));
     }
 
     for (index, element) in node.body.body.iter().enumerate() {
@@ -113,10 +113,9 @@ impl<'a> Analyzer<'a> {
         ClassElement::PropertyDefinition(node) if node.r#static => {
           if let Some(value) = &node.value {
             let key = data.keys[index].unwrap();
-            let value = self.factory.computed(
-              self.exec_expression(value),
-              self.consumable(AstKind2::PropertyDefinition(node)),
-            );
+            let value = self
+              .factory
+              .computed(self.exec_expression(value), AstKind2::PropertyDefinition(node));
             class.statics.init_property(self, PropertyKind::Init, key, value, true);
           }
         }
@@ -127,7 +126,7 @@ impl<'a> Analyzer<'a> {
     self.pop_call_scope();
     self.pop_variable_scope();
 
-    class
+    class.into()
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {
@@ -167,12 +166,7 @@ impl<'a> Analyzer<'a> {
         if !node.r#static {
           if let Some(value) = &node.value {
             let value = self.exec_expression(value);
-            this.set_property(
-              self,
-              self.factory.consumable(AstKind2::PropertyDefinition(node)),
-              key.unwrap(),
-              value,
-            );
+            this.set_property(self, AstKind2::PropertyDefinition(node), key.unwrap(), value);
           }
         }
       }

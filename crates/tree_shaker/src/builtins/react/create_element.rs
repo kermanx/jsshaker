@@ -6,13 +6,14 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     let [tag, props] = args[..] else { unreachable!() };
     let props = match props.test_nullish() {
       Some(true) => analyzer
-        .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None),
+        .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None)
+        .into(),
       Some(false) => props,
       None => analyzer.factory.union((
         props,
         analyzer
           .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None)
-          as Entity<'a>,
+          .into(),
       )),
     };
 

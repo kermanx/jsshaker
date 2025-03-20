@@ -1,5 +1,5 @@
 use crate::{
-  consumable::{Consumable, ConsumableTrait, LazyConsumable, OnceConsumable},
+  consumable::{Consumable, ConsumableTrait, ConsumeTrait, LazyConsumable, OnceConsumable},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
   utils::F64WithEq,
@@ -10,7 +10,6 @@ use super::{
   arguments::ArgumentsEntity,
   array::ArrayEntity,
   builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity},
-  computed::ComputedEntity,
   logical_result::LogicalResultEntity,
   never::NeverEntity,
   react_element::ReactElementEntity,
@@ -65,32 +64,38 @@ pub struct EntityFactory<'a> {
 
 impl<'a> EntityFactory<'a> {
   pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> EntityFactory<'a> {
-    let r#true = allocator.alloc(LiteralEntity::Boolean(true));
-    let r#false = allocator.alloc(LiteralEntity::Boolean(false));
-    let nan = allocator.alloc(LiteralEntity::NaN);
-    let null = allocator.alloc(LiteralEntity::Null);
-    let undefined = allocator.alloc(LiteralEntity::Undefined);
+    let r#true = allocator.alloc(LiteralEntity::Boolean(true)).into();
+    let r#false = allocator.alloc(LiteralEntity::Boolean(false)).into();
+    let nan = allocator.alloc(LiteralEntity::NaN).into();
+    let null = allocator.alloc(LiteralEntity::Null).into();
+    let undefined = allocator.alloc(LiteralEntity::Undefined).into();
 
-    let never = allocator.alloc(NeverEntity);
-    let immutable_unknown = allocator.alloc(UnknownEntity::new());
-    let unknown_primitive = allocator.alloc(PrimitiveEntity::Mixed);
-    let unknown_string = allocator.alloc(PrimitiveEntity::String);
-    let unknown_number = allocator.alloc(PrimitiveEntity::Number);
-    let unknown_bigint = allocator.alloc(PrimitiveEntity::BigInt);
-    let unknown_boolean = allocator.alloc(PrimitiveEntity::Boolean);
-    let unknown_symbol = allocator.alloc(PrimitiveEntity::Symbol);
+    let never = allocator.alloc(NeverEntity).into();
+    let immutable_unknown = allocator.alloc(UnknownEntity::new()).into();
+    let unknown_primitive = allocator.alloc(PrimitiveEntity::Mixed).into();
+    let unknown_string = allocator.alloc(PrimitiveEntity::String).into();
+    let unknown_number = allocator.alloc(PrimitiveEntity::Number).into();
+    let unknown_bigint = allocator.alloc(PrimitiveEntity::BigInt).into();
+    let unknown_boolean = allocator.alloc(PrimitiveEntity::Boolean).into();
+    let unknown_symbol = allocator.alloc(PrimitiveEntity::Symbol).into();
 
-    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown()));
+    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown())).into();
 
-    let pure_fn_returns_string = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_string));
-    let pure_fn_returns_number = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_number));
-    let pure_fn_returns_bigint = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_bigint));
-    let pure_fn_returns_boolean = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_boolean));
-    let pure_fn_returns_symbol = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_symbol));
-    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnEntity::new(|f| f.null));
-    let pure_fn_returns_undefined = allocator.alloc(PureBuiltinFnEntity::new(|f| f.undefined));
+    let pure_fn_returns_string =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_string)).into();
+    let pure_fn_returns_number =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_number)).into();
+    let pure_fn_returns_bigint =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_bigint)).into();
+    let pure_fn_returns_boolean =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_boolean)).into();
+    let pure_fn_returns_symbol =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_symbol)).into();
+    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnEntity::new(|f| f.null)).into();
+    let pure_fn_returns_undefined =
+      allocator.alloc(PureBuiltinFnEntity::new(|f| f.undefined)).into();
 
-    let empty_arguments = allocator.alloc(ArgumentsEntity::default());
+    let empty_arguments = allocator.alloc(ArgumentsEntity::default()).into();
     let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
@@ -165,7 +170,7 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn arguments(&self, arguments: Vec<(bool, Entity<'a>)>) -> Entity<'a> {
-    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments })
+    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments }).into()
   }
 
   pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayEntity<'a> {
@@ -184,20 +189,14 @@ impl<'a> EntityFactory<'a> {
     _name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
-    self.alloc(ImplementedBuiltinFnEntity {
-      #[cfg(feature = "flame")]
-      name: _name,
-      implementation,
-      object: None,
-    })
-  }
-
-  pub fn computed<T: ConsumableTrait<'a> + Copy + 'a>(
-    &self,
-    val: Entity<'a>,
-    dep: T,
-  ) -> Entity<'a> {
-    self.alloc(ComputedEntity { val, dep, consumed: Cell::new(false) })
+    self
+      .alloc(ImplementedBuiltinFnEntity {
+        #[cfg(feature = "flame")]
+        name: _name,
+        implementation,
+        object: None,
+      })
+      .into()
   }
 
   pub fn consumable_no_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
@@ -212,11 +211,7 @@ impl<'a> EntityFactory<'a> {
     self.consumable_once(dep)
   }
 
-  pub fn optional_computed(
-    &self,
-    val: Entity<'a>,
-    dep: Option<impl ConsumableTrait<'a> + Copy + 'a>,
-  ) -> Entity<'a> {
+  pub fn optional_computed(&self, val: Entity<'a>, dep: Option<Consumable<'a>>) -> Entity<'a> {
     match dep {
       Some(dep) => self.computed(val, dep),
       None => val,
@@ -224,18 +219,18 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, None))
+    self.alloc(LiteralEntity::String(value, None)).into()
   }
 
   pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, Some(atom)))
+    self.alloc(LiteralEntity::String(value, Some(atom))).into()
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
-    self.alloc(LiteralEntity::Number(value.into(), str_rep))
+    self.alloc(LiteralEntity::Number(value.into(), str_rep)).into()
   }
   pub fn big_int(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::BigInt(value))
+    self.alloc(LiteralEntity::BigInt(value)).into()
   }
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
@@ -254,11 +249,11 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn infinity(&self, positivie: bool) -> Entity<'a> {
-    self.alloc(LiteralEntity::Infinity(positivie))
+    self.alloc(LiteralEntity::Infinity(positivie)).into()
   }
 
   pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::Symbol(id, str_rep))
+    self.alloc(LiteralEntity::Symbol(id, str_rep)).into()
   }
 
   /// Only used when (maybe_left, maybe_right) == (true, true)
@@ -267,25 +262,27 @@ impl<'a> EntityFactory<'a> {
     left: Entity<'a>,
     right: Entity<'a>,
     operator: LogicalOperator,
-  ) -> &'a mut LogicalResultEntity<'a> {
-    self.alloc(LogicalResultEntity {
-      value: self.union((left, right)),
-      is_coalesce: operator == LogicalOperator::Coalesce,
-      result: match operator {
-        LogicalOperator::Or => match right.test_truthy() {
-          Some(true) => Some(true),
-          _ => None,
+  ) -> Entity<'a> {
+    self
+      .alloc(LogicalResultEntity {
+        value: self.union((left, right)),
+        is_coalesce: operator == LogicalOperator::Coalesce,
+        result: match operator {
+          LogicalOperator::Or => match right.test_truthy() {
+            Some(true) => Some(true),
+            _ => None,
+          },
+          LogicalOperator::And => match right.test_truthy() {
+            Some(false) => Some(false),
+            _ => None,
+          },
+          LogicalOperator::Coalesce => match right.test_nullish() {
+            Some(true) => Some(true),
+            _ => None,
+          },
         },
-        LogicalOperator::And => match right.test_truthy() {
-          Some(false) => Some(false),
-          _ => None,
-        },
-        LogicalOperator::Coalesce => match right.test_nullish() {
-          Some(true) => Some(true),
-          _ => None,
-        },
-      },
-    })
+      })
+      .into()
   }
 
   pub fn try_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(
@@ -295,11 +292,15 @@ impl<'a> EntityFactory<'a> {
     match values.len() {
       0 => None,
       1 => Some(values.iter().next().unwrap()),
-      _ => Some(self.alloc(UnionEntity {
-        values,
-        consumed: Cell::new(false),
-        phantom: std::marker::PhantomData,
-      })),
+      _ => Some(
+        self
+          .alloc(UnionEntity {
+            values,
+            consumed: Cell::new(false),
+            phantom: std::marker::PhantomData,
+          })
+          .into(),
+      ),
     }
   }
 
@@ -319,7 +320,7 @@ impl<'a> EntityFactory<'a> {
     }
   }
 
-  pub fn computed_union<T: ConsumableTrait<'a> + Copy + 'a>(
+  pub fn computed_union<T: ConsumeTrait<'a> + 'a>(
     &self,
     values: Vec<Entity<'a>>,
     dep: T,
@@ -331,7 +332,7 @@ impl<'a> EntityFactory<'a> {
     self.immutable_unknown
   }
 
-  pub fn computed_unknown(&self, dep: impl ConsumableTrait<'a> + Copy + 'a) -> Entity<'a> {
+  pub fn computed_unknown(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
     self.computed(self.immutable_unknown, dep)
   }
 
@@ -339,17 +340,15 @@ impl<'a> EntityFactory<'a> {
     LazyConsumable(self.alloc(RefCell::new(Some(vec![consumable]))))
   }
 
-  pub fn react_element(
-    &self,
-    tag: Entity<'a>,
-    props: Entity<'a>,
-  ) -> &'a mut ReactElementEntity<'a> {
-    self.alloc(ReactElementEntity {
-      consumed: Cell::new(false),
-      tag,
-      props,
-      deps: RefCell::new(vec![]),
-    })
+  pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
+    self
+      .alloc(ReactElementEntity {
+        consumed: Cell::new(false),
+        tag,
+        props,
+        deps: RefCell::new(vec![]),
+      })
+      .into()
   }
 
   pub fn mangable(
@@ -370,7 +369,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name<T: ConsumableTrait<'a> + Copy + 'a>(&self, dep: T) -> Entity<'a> {
+      pub fn $name(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*

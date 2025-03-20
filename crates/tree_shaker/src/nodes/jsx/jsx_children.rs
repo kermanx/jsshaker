@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
         JSXChild::Spread(node) => self.exec_jsx_spread_child(node),
       })
       .collect();
-    self.factory.computed_unknown(self.consumable(values))
+    self.factory.computed_unknown(values)
   }
 }
 

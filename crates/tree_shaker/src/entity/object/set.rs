@@ -1,8 +1,8 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector},
-  entity::{consumed_object, Entity, EntityTrait, LiteralEntity},
+  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  entity::{consumed_object, Entity, LiteralEntity},
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
@@ -40,7 +40,7 @@ impl<'a> ObjectEntity<'a> {
       indeterminate = true;
     }
 
-    let value = analyzer.factory.computed(value, analyzer.consumable((exec_deps, dep)));
+    let value = analyzer.factory.computed(value, (exec_deps, dep));
     let non_mangable_value = analyzer.factory.computed(value, key);
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
@@ -131,7 +131,7 @@ impl<'a> ObjectEntity<'a> {
         if indeterminate { None } else { Some(false) },
       );
       for s in setters {
-        s.setter.call_as_setter(analyzer, s.dep, self, non_mangable_value);
+        s.setter.call_as_setter(analyzer, s.dep, self.into(), non_mangable_value);
       }
       analyzer.pop_cf_scope();
     }

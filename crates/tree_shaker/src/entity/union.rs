@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  LiteralEntity, ObjectPrototype, TypeofResult,
+  consumed_object, utils::UnionLike, Entity, EnumeratedProperties, IteratedElements, LiteralEntity,
+  ObjectPrototype, TypeofResult, ValueTrait,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;
@@ -14,7 +14,7 @@ pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
   pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEntity<'a, V> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 

@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  ObjectId, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -33,7 +33,7 @@ impl<'a> fmt::Debug for ArrayEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
+impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -95,7 +95,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
               result.push(self.get_length().map_or_else(
                 || {
                   let dep = self.rest.borrow().clone();
-                  analyzer.factory.computed_unknown_number(analyzer.consumable(dep))
+                  analyzer.factory.computed_unknown_number(dep)
                 },
                 |length| analyzer.factory.number(length as f64, None),
               ));
@@ -112,10 +112,10 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
       }
       analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown(analyzer.consumable((
+      analyzer.factory.computed_unknown((
         self.elements.borrow().iter().chain(self.rest.borrow().iter()).cloned().collect::<Vec<_>>(),
         dep,
-      )))
+      ))
     }
   }
 
@@ -290,7 +290,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
-    analyzer.factory.computed(self, dep)
+    analyzer.factory.computed(self.into(), dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
@@ -342,7 +342,7 @@ impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn test_typeof(&self) -> TypeofResult {

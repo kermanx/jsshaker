@@ -6,8 +6,8 @@ mod property;
 mod set;
 
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
+  ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -40,7 +40,7 @@ impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_prototype) => {}
       ObjectPrototype::Custom(object) => object.consume_as_prototype(analyzer),
-      ObjectPrototype::Unknown(dep) => dep.consume(analyzer),
+      ObjectPrototype::Unknown(dep) => analyzer.consume(*dep),
     }
   }
 }
@@ -73,7 +73,7 @@ pub struct ObjectEntity<'a> {
   // TODO: symbol_keyed
 }
 
-impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
+impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if !self.consumable {
       return;
@@ -194,7 +194,7 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
   }
 
   fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self
+    self.into()
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
@@ -215,17 +215,15 @@ impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
       };
       let key_entity = analyzer.factory.computed(
         key_entity,
-        analyzer.factory.consumable(
-          property
-            .possible_values
-            .iter()
-            .map(|value| match value {
-              ObjectPropertyValue::Field(value, _) => *value,
-              ObjectPropertyValue::Property(Some(getter), _) => *getter,
-              ObjectPropertyValue::Property(None, _) => analyzer.factory.undefined,
-            })
-            .collect::<Vec<_>>(),
-        ),
+        property
+          .possible_values
+          .iter()
+          .map(|value| match value {
+            ObjectPropertyValue::Field(value, _) => *value,
+            ObjectPropertyValue::Property(Some(getter), _) => *getter,
+            ObjectPropertyValue::Property(None, _) => analyzer.factory.undefined,
+          })
+          .collect::<Vec<_>>(),
       );
       keys.push((property.definite, key_entity));
     }
@@ -345,7 +343,7 @@ impl<'a> Analyzer<'a> {
       ObjectProperty {
         definite: true,
         enumerable: false,
-        possible_values: vec![ObjectPropertyValue::Field(prototype, false)],
+        possible_values: vec![ObjectPropertyValue::Field((&*prototype).into(), false)],
         non_existent: Default::default(),
         key: Some(self.factory.string("prototype")),
         mangling: Some(self.mangler.builtin_atom),

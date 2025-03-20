@@ -19,7 +19,7 @@ impl<'a> TryScope<'a> {
       if self.thrown_values.is_empty() {
         analyzer.factory.unknown()
       } else {
-        analyzer.factory.computed_unknown(analyzer.consumable(self.thrown_values))
+        analyzer.factory.computed_unknown(self.thrown_values)
       }
     })
   }
@@ -58,7 +58,7 @@ impl<'a> Analyzer<'a> {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = self.factory.computed_unknown(self.consumable(values));
+      let thrown_val = self.factory.computed_unknown(values);
       self.explicit_throw_impl(thrown_val);
 
       let try_scope = self.try_scope();
