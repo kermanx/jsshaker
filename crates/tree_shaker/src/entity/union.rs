@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, utils::UnionLike, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  LiteralEntity, ObjectPrototype, TypeofResult,
+  consumed_object, utils::UnionLike, Entity, EnumeratedProperties, IteratedElements, LiteralEntity,
+  ObjectPrototype, TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -28,7 +28,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ConsumableTrait<'a> for Unio
   }
 }
 
-impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> EntityTrait<'a> for UnionEntity<'a, V> {
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEntity<'a, V> {
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     if !self.consumed.get() {
       let mut consumed = true;

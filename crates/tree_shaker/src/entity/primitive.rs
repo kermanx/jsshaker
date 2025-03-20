@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -23,7 +23,7 @@ impl<'a> ConsumableTrait<'a> for PrimitiveEntity {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 }
 
-impl<'a> EntityTrait<'a> for PrimitiveEntity {
+impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
     // No effect
   }

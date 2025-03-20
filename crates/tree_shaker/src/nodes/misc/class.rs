@@ -4,7 +4,7 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   consumable::Consumable,
-  entity::{Entity, EntityTrait, ObjectPrototype},
+  entity::{Entity, ObjectPrototype, ValueTrait},
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},

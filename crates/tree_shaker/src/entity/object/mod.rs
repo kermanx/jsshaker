@@ -6,8 +6,8 @@ mod property;
 mod set;
 
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
+  ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -90,7 +90,7 @@ impl<'a> ConsumableTrait<'a> for ObjectEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for ObjectEntity<'a> {
+impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);

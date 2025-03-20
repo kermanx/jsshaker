@@ -38,7 +38,7 @@ pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Consum
 /// (vec![known_elements], rest, dep)
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>);
 
-pub trait EntityTrait<'a>: ConsumableTrait<'a> {
+pub trait ValueTrait<'a>: ConsumableTrait<'a> {
   /// Returns true if the entity is completely consumed
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     self.consume(analyzer);
@@ -200,13 +200,13 @@ pub trait EntityTrait<'a>: ConsumableTrait<'a> {
   }
 }
 
-impl<'a, T: EntityTrait<'a> + 'a + ?Sized> ConsumableTrait<'a> for &'a T {
+impl<'a, T: ValueTrait<'a> + 'a + ?Sized> ConsumableTrait<'a> for &'a T {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     (*self).consume(analyzer)
   }
 }
 
-pub type Value<'a> = &'a (dyn EntityTrait<'a> + 'a);
+pub type Value<'a> = &'a (dyn ValueTrait<'a> + 'a);
 
 #[derive(Debug, Clone, Copy)]
 pub struct Entity<'a> {
@@ -418,12 +418,12 @@ impl<'a> ConsumableTrait<'a> for Entity<'a> {
   }
 }
 
-impl<'a, T: EntityTrait<'a> + 'a> From<&'a T> for Entity<'a> {
+impl<'a, T: ValueTrait<'a> + 'a> From<&'a T> for Entity<'a> {
   fn from(value: &'a T) -> Self {
     Entity { value, dep: None }
   }
 }
-impl<'a, T: EntityTrait<'a> + 'a> From<&'a mut T> for Entity<'a> {
+impl<'a, T: ValueTrait<'a> + 'a> From<&'a mut T> for Entity<'a> {
   fn from(value: &'a mut T) -> Self {
     (&*value).into()
   }

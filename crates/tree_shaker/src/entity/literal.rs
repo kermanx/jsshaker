@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EntityTrait, EnumeratedProperties, IteratedElements,
-  TypeofResult,
+  consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -41,7 +41,7 @@ impl<'a> ConsumableTrait<'a> for LiteralEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for LiteralEntity<'a> {
+impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn consume_mangable(&'a self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     !matches!(self, LiteralEntity::String(_, Some(_)))

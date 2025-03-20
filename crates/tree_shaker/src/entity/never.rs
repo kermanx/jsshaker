@@ -3,7 +3,7 @@ use crate::{
   consumable::{Consumable, ConsumableTrait},
 };
 
-use super::{Entity, EntityTrait};
+use super::{Entity, ValueTrait};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NeverEntity;
@@ -12,7 +12,7 @@ impl<'a> ConsumableTrait<'a> for NeverEntity {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {}
 }
 
-impl<'a> EntityTrait<'a> for NeverEntity {
+impl<'a> ValueTrait<'a> for NeverEntity {
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {}
 
   fn get_property(

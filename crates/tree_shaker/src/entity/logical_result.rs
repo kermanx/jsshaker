@@ -1,5 +1,5 @@
 use super::{
-  Entity, EntityTrait, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -19,7 +19,7 @@ impl<'a> ConsumableTrait<'a> for LogicalResultEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for LogicalResultEntity<'a> {
+impl<'a> ValueTrait<'a> for LogicalResultEntity<'a> {
   fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
     self.value.consume_mangable(analyzer)
   }

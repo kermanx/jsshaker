@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, LiteralEntity,
-  ObjectId, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId,
+  TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -46,7 +46,7 @@ impl<'a> ConsumableTrait<'a> for ArrayEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for ArrayEntity<'a> {
+impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);

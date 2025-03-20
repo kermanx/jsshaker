@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, EntityTrait, LiteralEntity, TypeofResult},
+  entity::{Entity, LiteralEntity, TypeofResult, ValueTrait},
   mangling::MangleConstraint,
 };
 use oxc::ast::ast::{BinaryOperator, UpdateOperator};

@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Entity, EntityTrait, EnumeratedProperties, IteratedElements, TypeofResult,
+  consumed_object, Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
 };
 use crate::{
   analyzer::Analyzer,
@@ -38,7 +38,7 @@ impl<'a> ConsumableTrait<'a> for ReactElementEntity<'a> {
   }
 }
 
-impl<'a> EntityTrait<'a> for ReactElementEntity<'a> {
+impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
