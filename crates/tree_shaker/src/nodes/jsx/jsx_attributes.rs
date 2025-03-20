@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, self.consumable(dep_id), argument);
+          object.init_spread(self, dep_id, argument);
         }
       }
     }

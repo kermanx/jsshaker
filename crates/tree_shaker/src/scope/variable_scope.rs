@@ -221,7 +221,7 @@ impl<'a> Analyzer<'a> {
               } else {
                 new_val
               },
-              self.consumable(dep),
+              dep,
             ));
           };
           drop(variable_ref);

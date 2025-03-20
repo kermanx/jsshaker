@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let dep = self.consumable(AstKind2::ArrayExpressionElement(element));
+          let dep = AstKind2::ArrayExpressionElement(element);
           let value = self.exec_expression(element.to_expression());
           let element = self.factory.computed(value, dep);
           if rest.is_empty() {

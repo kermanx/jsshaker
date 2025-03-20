@@ -84,7 +84,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = self.consumable(DepId::from(AstKind2::BindingProperty(property)));
+          let dep = DepId::from(AstKind2::BindingProperty(property));
 
           self.push_dependent_cf_scope(init);
           let key = self.exec_property_key(&property.key);
@@ -108,7 +108,7 @@ impl<'a> Analyzer<'a> {
 
         let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
-          self.consumable(AstKind2::ArrayPattern(node)),
+          AstKind2::ArrayPattern(node),
           node.elements.len(),
           node.rest.is_some(),
         );

@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let key = self.factory.string(&node.property.name);
-          object.delete_property(self, self.consumable(dep), key)
+          object.delete_property(self, dep, key)
         }
         Expression::PrivateFieldExpression(node) => {
           self.add_diagnostic("SyntaxError: private fields can't be deleted");
@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let key = self.exec_expression(&node.expression).get_to_property_key(self);
-          object.delete_property(self, self.consumable(dep), key)
+          object.delete_property(self, dep, key)
         }
         Expression::Identifier(_node) => {
           self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");

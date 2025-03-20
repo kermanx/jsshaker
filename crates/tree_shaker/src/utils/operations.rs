@@ -231,12 +231,11 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let dep = self.consumable((lhs, rhs));
     if values.is_empty() {
       // TODO: throw warning
-      self.factory.computed_unknown(dep)
+      self.factory.computed_unknown((lhs, rhs))
     } else {
-      self.factory.computed_union(values, dep)
+      self.factory.computed_union(values, (lhs, rhs))
     }
   }
 

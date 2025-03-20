@@ -215,11 +215,15 @@ pub struct Entity<'a> {
 }
 
 impl<'a> Entity<'a> {
-  fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
+  fn forward_dep(
+    &self,
+    dep: impl ConsumeTrait<'a> + 'a,
+    analyzer: &Analyzer<'a>,
+  ) -> Consumable<'a> {
     if let Some(d) = self.dep {
       analyzer.factory.consumable((d, dep))
     } else {
-      dep
+      dep.into_consumable(analyzer.factory.allocator)
     }
   }
 
@@ -244,14 +248,14 @@ impl<'a> Entity<'a> {
     self.value.consume_mangable(analyzer)
   }
 
-  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: impl ConsumeTrait<'a> + 'a) {
     self.value.unknown_mutate(analyzer, self.forward_dep(dep, analyzer));
   }
 
   pub fn get_property(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     key: Entity<'a>,
   ) -> Entity<'a> {
     self.value.get_property(analyzer, self.forward_dep(dep, analyzer), key)
@@ -259,7 +263,7 @@ impl<'a> Entity<'a> {
   pub fn set_property(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -268,17 +272,22 @@ impl<'a> Entity<'a> {
   pub fn enumerate_properties(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
   ) -> EnumeratedProperties<'a> {
     self.value.enumerate_properties(analyzer, self.forward_dep(dep, analyzer))
   }
-  pub fn delete_property(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  pub fn delete_property(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
+    key: Entity<'a>,
+  ) {
     self.value.delete_property(analyzer, self.forward_dep(dep, analyzer), key)
   }
   pub fn call(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -287,7 +296,7 @@ impl<'a> Entity<'a> {
   pub fn construct(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     args: Entity<'a>,
   ) -> Entity<'a> {
     self.value.construct(analyzer, self.forward_dep(dep, analyzer), args)
@@ -295,13 +304,25 @@ impl<'a> Entity<'a> {
   pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.forward_value(self.value.jsx(analyzer, props), analyzer)
   }
-  pub fn r#await(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  pub fn r#await(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
+  ) -> Entity<'a> {
     self.forward_value(self.value.r#await(analyzer, self.forward_dep(dep, analyzer)), analyzer)
   }
-  pub fn iterate(&self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  pub fn iterate(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
+  ) -> IteratedElements<'a> {
     self.value.iterate(analyzer, self.forward_dep(dep, analyzer))
   }
-  pub fn get_destructable(&self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
+  pub fn get_destructable(
+    &self,
+    analyzer: &Analyzer<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
+  ) -> Consumable<'a> {
     self.value.get_destructable(analyzer, self.forward_dep(dep, analyzer))
   }
   pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -335,7 +356,7 @@ impl<'a> Entity<'a> {
   pub fn get_constructor_prototype(
     &self,
     analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
   ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.value.get_constructor_prototype(analyzer, self.forward_dep(dep, analyzer))
   }
@@ -355,7 +376,7 @@ impl<'a> Entity<'a> {
   pub fn destruct_as_array(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Consumable<'a>) {
@@ -365,7 +386,7 @@ impl<'a> Entity<'a> {
   pub fn iterate_result_union(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
   ) -> Option<Entity<'a>> {
     self.value.iterate_result_union(analyzer, self.forward_dep(dep, analyzer))
   }
@@ -373,7 +394,7 @@ impl<'a> Entity<'a> {
   pub fn call_as_getter(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     this: Entity<'a>,
   ) -> Entity<'a> {
     self.value.call_as_getter(analyzer, self.forward_dep(dep, analyzer), this)
@@ -382,7 +403,7 @@ impl<'a> Entity<'a> {
   pub fn call_as_setter(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: impl ConsumeTrait<'a> + 'a,
     this: Entity<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
@@ -419,7 +440,7 @@ impl<'a> EntityFactory<'a> {
       dep: if let Some(d) = entity.dep {
         Some(self.consumable((d, dep)))
       } else {
-        Some(dep.uniform(self.allocator))
+        Some(dep.into_consumable(self.allocator))
       },
     }
   }

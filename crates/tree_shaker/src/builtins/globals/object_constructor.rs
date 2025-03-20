@@ -168,8 +168,7 @@ impl<'a> Builtins<'a> {
         return object;
       }
 
-      let dep = analyzer.factory.consumable((dep, key, descriptor));
-      object.unknown_mutate(analyzer, dep);
+      object.unknown_mutate(analyzer, (dep, key, descriptor));
       object
     })
   }

@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = self.consumable(AstKind2::AssignmentTargetProperty(node));
+    let dep = AstKind2::AssignmentTargetProperty(node);
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());

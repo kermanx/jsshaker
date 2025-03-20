@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let (element_values, rest_value, dep) = value.destruct_as_array(
           self,
-          self.consumable(AstKind2::ArrayAssignmentTarget(node)),
+          AstKind2::ArrayAssignmentTarget(node),
           node.elements.len(),
           node.rest.is_some(),
         );

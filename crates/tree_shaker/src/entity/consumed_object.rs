@@ -90,7 +90,7 @@ pub fn construct<'a>(
   args: Entity<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
-    args.unknown_mutate(analyzer, analyzer.consumable((target, dep, args)));
+    args.unknown_mutate(analyzer, (target, dep, args));
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume((target, dep, args));
