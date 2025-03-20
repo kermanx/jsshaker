@@ -223,7 +223,7 @@ impl<'a> Entity<'a> {
     if let Some(d) = self.dep {
       analyzer.factory.consumable((d, dep))
     } else {
-      dep.into_consumable(analyzer.factory.allocator)
+      dep.uniform(analyzer.factory.allocator)
     }
   }
 
@@ -440,7 +440,7 @@ impl<'a> EntityFactory<'a> {
       dep: if let Some(d) = entity.dep {
         Some(self.consumable((d, dep)))
       } else {
-        Some(dep.into_consumable(self.allocator))
+        Some(dep.uniform(self.allocator))
       },
     }
   }

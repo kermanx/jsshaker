@@ -3,7 +3,7 @@ mod impls;
 mod lazy;
 mod once;
 
-use crate::analyzer::Analyzer;
+use crate::{analyzer::Analyzer, entity::Entity};
 pub use collector::*;
 pub use lazy::*;
 pub use once::*;
@@ -14,38 +14,29 @@ pub trait ConsumableTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
 }
 
-pub trait IntoConsumable<'a> {
-  fn into_consumable(self, allocator: &'a Allocator) -> Consumable<'a>;
-}
-
-pub trait ConsumeTrait<'a>: Debug + IntoConsumable<'a> {
+pub trait ConsumeTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);
-}
-
-impl<'a, T: ConsumableTrait<'a> + 'a> IntoConsumable<'a> for T {
-  fn into_consumable(self, allocator: &'a Allocator) -> Consumable<'a> {
-    Consumable(allocator.alloc(self))
-  }
+  fn uniform(self, allocator: &'a Allocator) -> Consumable<'a>;
 }
 
 impl<'a, T: ConsumableTrait<'a> + 'a> ConsumeTrait<'a> for T {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.consume(analyzer);
   }
+  fn uniform(self, allocator: &'a Allocator) -> Consumable<'a> {
+    Consumable(allocator.alloc(self))
+  }
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Consumable<'a>(pub &'a (dyn ConsumableTrait<'a> + 'a));
 
-impl<'a> IntoConsumable<'a> for Consumable<'a> {
-  fn into_consumable(self, _allocator: &'a Allocator) -> Consumable<'a> {
-    self
-  }
-}
-
 impl<'a> ConsumeTrait<'a> for Consumable<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer);
+  }
+  fn uniform(self, _: &'a Allocator) -> Consumable<'a> {
+    self
   }
 }
 
