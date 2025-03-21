@@ -1,11 +1,11 @@
 use crate::{
-  builtins::{constants::SYMBOL_CONSTRUCTOR_OBJECT_ID, Builtins},
+  builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
   entity::{ObjectPropertyValue, ObjectPrototype},
   init_namespace,
 };
 use std::borrow::BorrowMut;
 
-impl<'a> Builtins<'a> {
+impl Builtins<'_> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 

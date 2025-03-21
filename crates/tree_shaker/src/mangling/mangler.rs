@@ -1,4 +1,4 @@
-use super::{utils::get_mangled_name, MangleAtom};
+use super::{MangleAtom, utils::get_mangled_name};
 use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
 use rustc_hash::FxHashSet;

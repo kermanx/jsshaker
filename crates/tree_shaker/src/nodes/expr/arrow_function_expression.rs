@@ -8,8 +8,8 @@ use crate::{
   utils::{CalleeInfo, CalleeNode},
 };
 use oxc::ast::{
-  ast::{ArrowFunctionExpression, Expression},
   NONE,
+  ast::{ArrowFunctionExpression, Expression},
 };
 use std::rc::Rc;
 

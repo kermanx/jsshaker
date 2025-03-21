@@ -2,7 +2,7 @@ use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableTrait},
-  entity::{consumed_object, Entity, LiteralEntity},
+  entity::{Entity, LiteralEntity, consumed_object},
   mangling::{MangleConstraint, ManglingDep},
 };
 

@@ -1,4 +1,5 @@
 use crate::{
+  TreeShakeConfig,
   builtins::Builtins,
   dep::{DepId, ReferredDeps},
   entity::EntityFactory,
@@ -6,14 +7,13 @@ use crate::{
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
+    Scoping,
     conditional::ConditionalDataMap,
     exhaustive::{ExhaustiveCallback, ExhaustiveDepId},
     r#loop::LoopDataMap,
-    Scoping,
   },
   utils::ExtraData,
   vfs::Vfs,
-  TreeShakeConfig,
 };
 use oxc::{
   allocator::Allocator,

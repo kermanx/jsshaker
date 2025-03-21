@@ -58,12 +58,12 @@ impl<'a, T1: ConsumeTrait<'a> + 'a, T2: ConsumeTrait<'a> + 'a, T3: ConsumeTrait<
 }
 
 impl<
-    'a,
-    T1: ConsumeTrait<'a> + 'a,
-    T2: ConsumeTrait<'a> + 'a,
-    T3: ConsumeTrait<'a> + 'a,
-    T4: ConsumeTrait<'a> + 'a,
-  > ConsumableTrait<'a> for (T1, T2, T3, T4)
+  'a,
+  T1: ConsumeTrait<'a> + 'a,
+  T2: ConsumeTrait<'a> + 'a,
+  T3: ConsumeTrait<'a> + 'a,
+  T4: ConsumeTrait<'a> + 'a,
+> ConsumableTrait<'a> for (T1, T2, T3, T4)
 {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.0.consume(analyzer);

@@ -1,5 +1,5 @@
 use super::{
-  consumed_object, Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
 };
 use crate::{
   analyzer::Analyzer, consumable::Consumable, entity::ObjectPrototype, use_consumed_flag,

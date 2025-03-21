@@ -83,12 +83,12 @@ impl<'a> Transformer<'a> {
           let str = self.allocator.alloc(quasi);
           quasis.push(self.ast_builder.template_element(
             *span,
-            index == quasis_len - 1,
             TemplateElementValue {
               // FIXME: escape
               raw: self.escape_template_element_value(str.as_str()).into(),
               cooked: Some(str.as_str().into()),
             },
+            index == quasis_len - 1,
           ));
         }
         Some(self.ast_builder.expression_template_literal(*span, quasis, transformed_exprs))

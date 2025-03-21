@@ -2,7 +2,7 @@ use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 use crate::{
   analyzer::Analyzer,
   consumable::{Consumable, ConsumableCollector, ConsumableTrait},
-  entity::{consumed_object, Entity, LiteralEntity},
+  entity::{Entity, LiteralEntity, consumed_object},
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
@@ -188,11 +188,7 @@ impl<'a> ObjectEntity<'a> {
           if property.definite && found.must_found() {
             return Found::True;
           }
-          if found == Found::False {
-            Found::False
-          } else {
-            Found::Unknown
-          }
+          if found == Found::False { Found::False } else { Found::Unknown }
         } else {
           Found::False
         };

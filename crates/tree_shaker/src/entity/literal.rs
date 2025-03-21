@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, never::NeverEntity, Entity, EnumeratedProperties, IteratedElements,
-  TypeofResult, ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
+  never::NeverEntity,
 };
 use crate::{
   analyzer::Analyzer,
@@ -14,7 +14,7 @@ use oxc::{
   allocator::Allocator,
   ast::ast::{BigintBase, Expression, NumberBase, UnaryOperator},
   semantic::SymbolId,
-  span::{Atom, Span, SPAN},
+  span::{Atom, SPAN, Span},
 };
 use oxc_ecmascript::StringToNumber;
 use oxc_syntax::number::ToJsString;
@@ -345,16 +345,16 @@ impl<'a> LiteralEntity<'a> {
       LiteralEntity::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
       LiteralEntity::Infinity(positive) => {
         if *positive {
-          ast_builder.expression_identifier_reference(span, "Infinity")
+          ast_builder.expression_identifier(span, "Infinity")
         } else {
           ast_builder.expression_unary(
             span,
             UnaryOperator::UnaryNegation,
-            ast_builder.expression_identifier_reference(span, "Infinity"),
+            ast_builder.expression_identifier(span, "Infinity"),
           )
         }
       }
-      LiteralEntity::NaN => ast_builder.expression_identifier_reference(span, "NaN"),
+      LiteralEntity::NaN => ast_builder.expression_identifier(span, "NaN"),
       LiteralEntity::Null => ast_builder.expression_null_literal(span),
       LiteralEntity::Undefined => ast_builder.expression_unary(
         span,

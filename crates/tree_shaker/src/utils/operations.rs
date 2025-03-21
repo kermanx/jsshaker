@@ -348,11 +348,7 @@ impl<'a> Analyzer<'a> {
           BinaryOperator::Exponential => l.powf(r),
           _ => unreachable!(),
         };
-        if value.is_nan() {
-          factory.nan
-        } else {
-          factory.number(value, None)
-        }
+        if value.is_nan() { factory.nan } else { factory.number(value, None) }
       }),
 
       BinaryOperator::ShiftLeft

@@ -6,15 +6,15 @@ mod property;
 mod set;
 
 use super::{
-  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult,
-  ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult, ValueTrait,
+  consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
   consumable::{Consumable, ConsumableTrait},
   dep::DepId,
-  mangling::{is_literal_mangable, MangleAtom, UniquenessGroupId},
+  mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,

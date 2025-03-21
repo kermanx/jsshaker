@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, utils::UnionLike, Entity, EnumeratedProperties, IteratedElements, LiteralEntity,
-  ObjectPrototype, TypeofResult, ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectPrototype, TypeofResult,
+  ValueTrait, consumed_object, utils::UnionLike,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use rustc_hash::FxHashSet;

@@ -5,7 +5,7 @@ use crate::{
   init_object,
   scope::exhaustive::ExhaustiveDepId,
 };
-use oxc_index::{define_index_type, IndexVec};
+use oxc_index::{IndexVec, define_index_type};
 use std::mem;
 
 #[derive(Debug)]

@@ -13,11 +13,11 @@ use crate::{
 use oxc::{
   allocator,
   ast::{
+    NONE,
     ast::{
       Class, ClassBody, ClassElement, ClassType, MethodDefinition, MethodDefinitionKind,
       PropertyDefinitionType, PropertyKind, StaticBlock,
     },
-    NONE,
   },
   span::GetSpan,
 };

@@ -4,8 +4,8 @@ use crate::{
 };
 use oxc::{
   ast::{
-    ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
     NONE,
+    ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
   },
   span::GetSpan,
 };

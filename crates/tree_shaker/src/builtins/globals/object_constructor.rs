@@ -1,5 +1,5 @@
 use crate::{
-  builtins::{constants::OBJECT_CONSTRUCTOR_OBJECT_ID, Builtins},
+  builtins::{Builtins, constants::OBJECT_CONSTRUCTOR_OBJECT_ID},
   entity::{Entity, LiteralEntity, ObjectPropertyValue, ObjectPrototype, TypeofResult},
   init_namespace,
 };

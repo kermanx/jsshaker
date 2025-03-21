@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId,
-  TypeofResult, ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId, TypeofResult,
+  ValueTrait, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -22,7 +22,7 @@ pub struct ArrayEntity<'a> {
   pub rest: RefCell<Vec<Entity<'a>>>,
 }
 
-impl<'a> fmt::Debug for ArrayEntity<'a> {
+impl fmt::Debug for ArrayEntity<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.debug_struct("ArrayEntity")
       .field("consumed", &self.consumed.get())
@@ -368,11 +368,7 @@ impl<'a> ArrayEntity<'a> {
   }
 
   pub fn get_length(&self) -> Option<usize> {
-    if self.rest.borrow().is_empty() {
-      Some(self.elements.borrow().len())
-    } else {
-      None
-    }
+    if self.rest.borrow().is_empty() { Some(self.elements.borrow().len()) } else { None }
   }
 }
 

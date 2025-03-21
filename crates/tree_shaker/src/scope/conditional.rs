@@ -218,7 +218,7 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-impl<'a> Transformer<'a> {
+impl Transformer<'_> {
   pub fn get_conditional_result(&self, dep_id: impl Into<DepId>) -> (bool, bool, bool) {
     let data = &self.conditional_data.node_to_data[&dep_id.into()];
     if data.maybe_true && data.maybe_false {

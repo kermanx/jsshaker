@@ -19,18 +19,17 @@ use mangling::ManglerTransformer;
 use module::ModuleInfo;
 use oxc::{
   allocator::Allocator,
-  ast::VisitMut,
   codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
   parser::Parser,
   span::SourceType,
 };
+use oxc_ast_visit::VisitMut;
 use rustc_hash::FxHashMap;
 use transformer::Transformer;
 use utils::{
-  ast,
+  Diagnostics, ast,
   dep_id::{self as dep},
-  Diagnostics,
 };
 
 pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
@@ -86,7 +85,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
       );
       let program = if config.mangling == Some(true) {
         // Mangling only
-        let program = unsafe { &mut **program.get() };
+        let program = unsafe { &mut *program.get() };
         ManglerTransformer(transformer).visit_program(program);
         program
       } else {
@@ -103,7 +102,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
       // Step 4: Generate output
       let codegen = CodeGenerator::new()
         .with_options(codegen_options.clone())
-        .with_mangler(minifier_return.and_then(|r| r.mangler));
+        .with_scoping(minifier_return.and_then(|r| r.scoping));
       codegen_return.insert(path.to_string(), codegen.build(program));
     }
     TreeShakeReturn { codegen_return, diagnostics: mem::take(diagnostics) }
@@ -119,7 +118,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
     });
     let codegen = CodeGenerator::new()
       .with_options(codegen_options.clone())
-      .with_mangler(minifier_return.and_then(|r| r.mangler));
+      .with_scoping(minifier_return.and_then(|r| r.scoping));
     let mut codegen_return = FxHashMap::default();
     codegen_return.insert(entry, codegen.build(&program));
     let mut diagnostics = BTreeSet::<String>::default();

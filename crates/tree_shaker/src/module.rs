@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, mem, rc::Rc};
+use std::{cell::UnsafeCell, mem};
 
 use line_index::LineIndex;
 use oxc::{
@@ -8,7 +8,7 @@ use oxc::{
   semantic::{Semantic, SemanticBuilder, SymbolId},
   span::{Atom, SourceType},
 };
-use oxc_index::{define_index_type, IndexVec};
+use oxc_index::{IndexVec, define_index_type};
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -16,17 +16,17 @@ use crate::{
   consumable::ConsumableTrait,
   entity::Entity,
   scope::{
-    call_scope::CallScope, cf_scope::CfScope, variable_scope::VariableScope, CfScopeId,
-    CfScopeKind, VariableScopeId,
+    CfScopeId, CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
+    variable_scope::VariableScope,
   },
-  utils::{dep_id::DepId, CalleeInfo, CalleeNode},
+  utils::{CalleeInfo, CalleeNode, dep_id::DepId},
 };
 
 #[derive(Clone)]
 pub struct ModuleInfo<'a> {
   pub path: Atom<'a>,
   pub line_index: LineIndex,
-  pub program: Rc<UnsafeCell<&'a mut Program<'a>>>,
+  pub program: &'a UnsafeCell<Program<'a>>,
   pub semantic: &'a Semantic<'a>,
   pub call_id: DepId,
 
@@ -85,16 +85,16 @@ impl<'a> Analyzer<'a> {
       SourceType::mjs().with_jsx(self.config.jsx.is_enabled()),
     );
     let parsed = parser.parse();
-    let program = self.allocator.alloc(parsed.program);
+    let program = self.allocator.alloc(UnsafeCell::new(parsed.program));
     for error in parsed.errors {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
-    let semantic = SemanticBuilder::new().build(program).semantic;
+    let semantic = SemanticBuilder::new().build(unsafe { &*program.get() }).semantic;
     let semantic = self.allocator.alloc(semantic);
     let module_id = self.modules.modules.push(ModuleInfo {
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
-      program: Rc::new(UnsafeCell::new(program)),
+      program,
       semantic,
       call_id: DepId::from_counter(),
 
@@ -174,7 +174,7 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for ModuleId {
+impl ConsumableTrait<'_> for ModuleId {
   fn consume(&self, analyzer: &mut Analyzer) {
     analyzer.consume_exports(*self);
   }

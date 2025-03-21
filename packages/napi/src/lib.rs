@@ -1,7 +1,7 @@
 #![deny(clippy::all)]
 
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
-use tree_shaker::{vfs::SingleFileFs, TreeShakeOptions};
+use tree_shaker::{TreeShakeOptions, vfs::SingleFileFs};
 
 #[macro_use]
 extern crate napi_derive;

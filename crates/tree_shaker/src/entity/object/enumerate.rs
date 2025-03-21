@@ -1,8 +1,8 @@
-use super::{get::GetPropertyContext, ObjectEntity};
+use super::{ObjectEntity, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
   consumable::Consumable,
-  entity::{consumed_object, EnumeratedProperties},
+  entity::{EnumeratedProperties, consumed_object},
   scope::CfScopeKind,
 };
 use std::mem;

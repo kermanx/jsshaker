@@ -132,7 +132,7 @@ pub enum AstKind2<'a> {
   JSXAttributeName(&'a JSXAttributeName<'a>),
 }
 
-impl<'a> GetSpan for AstKind2<'a> {
+impl GetSpan for AstKind2<'_> {
   fn span(&self) -> Span {
     match self {
       AstKind2::Environment | AstKind2::Index(_) => SPAN,
@@ -253,7 +253,7 @@ impl<'a> GetSpan for AstKind2<'a> {
   }
 }
 
-impl<'a> fmt::Debug for AstKind2<'a> {
+impl fmt::Debug for AstKind2<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     self.span().fmt(f)
   }

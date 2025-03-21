@@ -30,7 +30,7 @@ pub struct BuiltinPrototype<'a> {
   symbol_keyed: FxHashMap<SymbolId, Entity<'a>>,
 }
 
-impl<'a> fmt::Debug for BuiltinPrototype<'a> {
+impl fmt::Debug for BuiltinPrototype<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     f.write_str(format!("Prototype({})", self.name).as_str())
   }

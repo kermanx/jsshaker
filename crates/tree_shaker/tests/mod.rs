@@ -1,7 +1,7 @@
 use insta::{assert_snapshot, glob};
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use std::fs;
-use tree_shaker::{tree_shake, vfs::SingleFileFs, TreeShakeConfig, TreeShakeOptions};
+use tree_shaker::{TreeShakeConfig, TreeShakeOptions, tree_shake, vfs::SingleFileFs};
 
 fn do_tree_shake(input: String) -> String {
   let do_minify = input.contains("@minify");

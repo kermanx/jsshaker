@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype,
-  TypeofResult, ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult,
+  ValueTrait, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,

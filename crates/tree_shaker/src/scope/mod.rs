@@ -228,11 +228,7 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
-    if exec_deps.is_empty() {
-      None
-    } else {
-      Some(self.consumable(exec_deps))
-    }
+    if exec_deps.is_empty() { None } else { Some(self.consumable(exec_deps)) }
   }
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {

@@ -301,7 +301,7 @@ impl<'a> Analyzer<'a> {
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if exporting {
-      let name = self.semantic().symbols().get_name(symbol).into();
+      let name = self.semantic().scoping().symbol_name(symbol).into();
       self.module_info_mut().named_exports.insert(name, (variable_scope, symbol));
     }
 
@@ -346,7 +346,7 @@ impl<'a> Analyzer<'a> {
   }
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
-    if self.semantic().symbols().get_flags(symbol).is_function_scoped_declaration() {
+    if self.semantic().scoping().symbol_flags(symbol).is_function_scoped_declaration() {
       self.mark_untracked_on_scope(symbol);
     } else {
       self.throw_builtin_error("Unresolved identifier reference");

@@ -1,12 +1,14 @@
 use crate::{
+  TreeShakeConfig,
   consumable::{Consumable, ConsumableTrait, ConsumeTrait, LazyConsumable, OnceConsumable},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
   utils::F64WithEq,
-  TreeShakeConfig,
 };
 
 use super::{
+  Entity, LiteralEntity, ObjectEntity, ObjectId, ObjectPrototype, PrimitiveEntity,
+  PureBuiltinFnEntity, UnknownEntity,
   arguments::ArgumentsEntity,
   array::ArrayEntity,
   builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity},
@@ -15,8 +17,6 @@ use super::{
   react_element::ReactElementEntity,
   union::UnionEntity,
   utils::UnionLike,
-  Entity, LiteralEntity, ObjectEntity, ObjectId, ObjectPrototype, PrimitiveEntity,
-  PureBuiltinFnEntity, UnknownEntity,
 };
 use oxc::allocator::Allocator;
 use oxc::semantic::SymbolId;
@@ -234,18 +234,10 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
-    if value {
-      self.r#true
-    } else {
-      self.r#false
-    }
+    if value { self.r#true } else { self.r#false }
   }
   pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
-    if let Some(value) = value {
-      self.boolean(value)
-    } else {
-      self.unknown_boolean
-    }
+    if let Some(value) = value { self.boolean(value) } else { self.unknown_boolean }
   }
 
   pub fn infinity(&self, positivie: bool) -> Entity<'a> {

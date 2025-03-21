@@ -1,6 +1,6 @@
 use super::{
-  consumed_object, Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
-  ValueTrait,
+  Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
+  consumed_object,
 };
 use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
 use std::cell::Cell;

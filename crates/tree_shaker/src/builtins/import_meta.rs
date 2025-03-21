@@ -1,4 +1,4 @@
-use super::{constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes, Builtins};
+use super::{Builtins, constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes};
 use crate::entity::{Entity, EntityFactory, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 
 impl<'a> Builtins<'a> {

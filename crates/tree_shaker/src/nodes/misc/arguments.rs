@@ -1,8 +1,8 @@
 use crate::{
+  Analyzer,
   ast::{Arguments, AstKind2},
   entity::Entity,
   transformer::Transformer,
-  Analyzer,
 };
 use oxc::{
   ast::ast::{Argument, Expression},

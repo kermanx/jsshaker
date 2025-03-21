@@ -38,7 +38,7 @@ pub struct ObjectProperty<'a> {
   pub mangling: Option<MangleAtom>,
 }
 
-impl<'a> Default for ObjectProperty<'a> {
+impl Default for ObjectProperty<'_> {
   fn default() -> Self {
     Self {
       definite: true,
@@ -162,11 +162,7 @@ impl<'a> ObjectProperty<'a> {
         found_others = false;
       }
     }
-    if found_others {
-      Found::Unknown
-    } else {
-      Found::known(found_setter)
-    }
+    if found_others { Found::Unknown } else { Found::known(found_setter) }
   }
 
   pub fn delete(&mut self, indeterminate: bool, dep: Consumable<'a>) {
