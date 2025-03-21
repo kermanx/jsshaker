@@ -3,7 +3,7 @@ use crate::{
   analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
   utils::ast::AstKind2,
 };
-use oxc::semantic::SymbolId;
+use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
 use oxc_index::define_index_type;
 use rustc_hash::FxHashMap;
 use std::{cell::RefCell, fmt};
@@ -301,7 +301,7 @@ impl<'a> Analyzer<'a> {
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if exporting {
-      let name = self.semantic().scoping().symbol_name(symbol).into();
+      let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
       self.module_info_mut().named_exports.insert(name, (variable_scope, symbol));
     }
 

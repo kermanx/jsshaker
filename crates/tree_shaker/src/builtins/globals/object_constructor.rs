@@ -14,9 +14,9 @@ impl<'a> Builtins<'a> {
       ObjectPrototype::Builtin(&self.prototypes.function),
       false,
     );
-    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
+    object.init_rest(factory, ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
-    init_namespace!(object, {
+    init_namespace!(object, factory, {
       "prototype" => factory.immutable_unknown,
       "assign" => self.create_object_assign_impl(),
       "keys" => self.create_object_keys_impl(),

@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
 
     self.push_cf_scope_with_deps(
       kind,
-      vec![self.consumable(dep)],
+      self.factory.vec1(self.consumable(dep)),
       if maybe_true && maybe_false { None } else { Some(false) },
     );
 

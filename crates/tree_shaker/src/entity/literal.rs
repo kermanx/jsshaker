@@ -66,7 +66,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
       let prototype = self.get_prototype(analyzer);
       let dep = analyzer.consumable((self, dep, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
-        let mut values = vec![];
+        let mut values = analyzer.factory.vec();
         for key_literal in key_literals {
           if let Some(property) = self.get_known_instance_property(analyzer, key_literal) {
             values.push(property);
@@ -114,8 +114,8 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
             .map(|(i, c)| {
               (
                 true,
-                analyzer.factory.string(analyzer.allocator.alloc(i.to_string())),
-                analyzer.factory.string(analyzer.allocator.alloc(c.to_string())),
+                analyzer.factory.string(analyzer.allocator.alloc_str(&i.to_string())),
+                analyzer.factory.string(analyzer.allocator.alloc_str(&c.to_string())),
               )
             })
             .collect(),
@@ -387,7 +387,7 @@ impl<'a> LiteralEntity<'a> {
     match self {
       LiteralEntity::String(value, _) => value,
       LiteralEntity::Number(value, str_rep) => {
-        str_rep.unwrap_or_else(|| allocator.alloc(value.0.to_js_string()))
+        str_rep.unwrap_or_else(|| allocator.alloc_str(&value.0.to_js_string()))
       }
       LiteralEntity::BigInt(value) => value,
       LiteralEntity::Boolean(value) => {

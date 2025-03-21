@@ -104,7 +104,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
       analyzer,
       analyzer.factory.empty_consumable,
       analyzer.factory.immutable_unknown,
-      analyzer.factory.arguments(vec![(false, props)]),
+      analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
     )
   }
 

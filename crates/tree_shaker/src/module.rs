@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, mem};
+use std::{cell::UnsafeCell, mem, rc::Rc};
 
 use line_index::LineIndex;
 use oxc::{
@@ -27,7 +27,7 @@ pub struct ModuleInfo<'a> {
   pub path: Atom<'a>,
   pub line_index: LineIndex,
   pub program: &'a UnsafeCell<Program<'a>>,
-  pub semantic: &'a Semantic<'a>,
+  pub semantic: Rc<Semantic<'a>>,
   pub call_id: DepId,
 
   pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId)>,
@@ -56,8 +56,8 @@ impl<'a> Analyzer<'a> {
     &mut self.modules.modules[module_id]
   }
 
-  pub fn semantic(&self) -> &'a Semantic<'a> {
-    self.module_info().semantic
+  pub fn semantic<'b>(&'b self) -> &'b Semantic<'a> {
+    &self.module_info().semantic
   }
 
   pub fn line_index(&self) -> &LineIndex {
@@ -77,7 +77,7 @@ impl<'a> Analyzer<'a> {
       return *module_id;
     }
 
-    let source_text = self.allocator.alloc(self.vfs.read_file(path.as_str()));
+    let source_text = self.allocator.alloc_str(&self.vfs.read_file(path.as_str()));
     let line_index = LineIndex::new(source_text);
     let parser = Parser::new(
       self.allocator,
@@ -90,7 +90,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
     let semantic = SemanticBuilder::new().build(unsafe { &*program.get() }).semantic;
-    let semantic = self.allocator.alloc(semantic);
+    let semantic = Rc::new(semantic);
     let module_id = self.modules.modules.push(ModuleInfo {
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
@@ -116,7 +116,7 @@ impl<'a> Analyzer<'a> {
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
     let root_variable_scope =
       self.scoping.variable.push(VariableScope::new_with_this(self.factory.unknown()));
-    self.scoping.call.push(CallScope::new(
+    self.scoping.call.push(CallScope::new_in(
       call_id,
       CalleeInfo {
         module_id,
@@ -130,9 +130,10 @@ impl<'a> Analyzer<'a> {
       root_variable_scope,
       true,
       false,
+      self.allocator,
     ));
     let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![CfScopeId::from(0)]);
-    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, vec![], Some(false)));
+    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), Some(false)));
 
     let program = unsafe { &*program.get() };
     for node in &program.body {

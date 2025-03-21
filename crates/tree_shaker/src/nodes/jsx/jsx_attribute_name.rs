@@ -27,7 +27,7 @@ fn get_text<'a>(allocator: &'a Allocator, node: &'a JSXAttributeName<'a>) -> &'a
   match node {
     JSXAttributeName::Identifier(node) => node.name.as_str(),
     JSXAttributeName::NamespacedName(node) => {
-      allocator.alloc(format!("{}:{}", node.namespace.name, node.name))
+      allocator.alloc_str(&format!("{}:{}", node.namespace.name, node.name))
     }
   }
 }

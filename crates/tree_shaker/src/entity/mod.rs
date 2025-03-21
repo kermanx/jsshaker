@@ -25,6 +25,7 @@ pub use literal::LiteralEntity;
 pub use object::{
   ObjectEntity, ObjectId, ObjectProperty, ObjectPropertyId, ObjectPropertyValue, ObjectPrototype,
 };
+use oxc::allocator;
 pub use primitive::PrimitiveEntity;
 use rustc_hash::FxHashSet;
 use std::{cmp::Ordering, fmt::Debug};
@@ -166,11 +167,14 @@ pub trait ValueTrait<'a>: Debug {
   ) -> Option<Entity<'a>> {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
     if let Some(rest) = rest {
-      let mut result = elements;
+      let mut result = allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator);
       result.push(rest);
       Some(analyzer.factory.computed_union(result, deps))
     } else if !elements.is_empty() {
-      Some(analyzer.factory.computed_union(elements, deps))
+      Some(analyzer.factory.computed_union(
+        allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator),
+        deps,
+      ))
     } else {
       None
     }
@@ -192,7 +196,12 @@ pub trait ValueTrait<'a>: Debug {
     this: Entity<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    self.call(analyzer, dep, this, analyzer.factory.arguments(vec![(false, value)]))
+    self.call(
+      analyzer,
+      dep,
+      this,
+      analyzer.factory.arguments(analyzer.factory.vec1((false, value))),
+    )
   }
 }
 

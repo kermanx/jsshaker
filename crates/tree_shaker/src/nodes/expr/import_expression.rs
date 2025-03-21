@@ -10,7 +10,7 @@ use oxc::ast::ast::{Expression, ImportExpression};
 impl<'a> Analyzer<'a> {
   pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
     let specifier = self.exec_expression(&node.source).get_to_string(self);
-    let mut deps = vec![specifier];
+    let mut deps = self.factory.vec1(specifier);
     for option in &node.options {
       deps.push(self.exec_expression(option));
     }

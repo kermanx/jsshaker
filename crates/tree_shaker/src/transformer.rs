@@ -36,7 +36,7 @@ pub struct Transformer<'a> {
   pub conditional_data: &'a ConditionalDataMap<'a>,
   pub folder: &'a ConstantFolder<'a>,
   pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
-  pub semantic: &'a Semantic<'a>,
+  pub semantic: Rc<Semantic<'a>>,
 
   pub ast_builder: AstBuilder<'a>,
 
@@ -57,7 +57,7 @@ impl<'a> Transformer<'a> {
     conditional_data: &'a ConditionalDataMap<'a>,
     folder: &'a ConstantFolder<'a>,
     mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
-    semantic: &'a Semantic<'a>,
+    semantic: Rc<Semantic<'a>>,
   ) -> Self {
     Transformer {
       config,
@@ -376,6 +376,8 @@ impl<'a> Transformer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepId>) -> &'a D {
+    const { assert!(!std::mem::needs_drop::<D>(), "Cannot allocate Drop type in arena") };
+
     let existing = self.data.get(&key.into());
     match existing {
       Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },

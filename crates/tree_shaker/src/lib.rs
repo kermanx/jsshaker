@@ -47,14 +47,18 @@ pub struct TreeShakeReturn {
   pub diagnostics: Diagnostics,
 }
 
-pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeShakeReturn {
+pub fn tree_shake<F: Vfs + 'static>(
+  options: TreeShakeOptions<F>,
+  entry: String,
+) -> TreeShakeReturn {
   let TreeShakeOptions { vfs, config, minify_options, codegen_options } = options;
-  let allocator = Allocator::default();
-  let config = allocator.alloc(config);
 
   if config.enabled {
+    let allocator = Allocator::default();
+    let config = allocator.alloc(config);
+
     // Step 1: Analyze
-    let analyzer = Analyzer::new_in(allocator.alloc(vfs), config, &allocator);
+    let mut analyzer = Analyzer::new_in(Box::new(vfs), config, &allocator);
     analyzer.import_module(entry);
     analyzer.finalize();
     let Analyzer {
@@ -66,7 +70,7 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
       referred_deps,
       conditional_data,
       ..
-    } = analyzer;
+    } = unsafe { &mut *(&mut analyzer as *mut _) };
     let mangler = Rc::new(RefCell::new(mangler));
     let mut codegen_return = FxHashMap::default();
     for module_info in mem::take(&mut modules.modules) {
@@ -107,6 +111,9 @@ pub fn tree_shake<F: Vfs>(options: TreeShakeOptions<F>, entry: String) -> TreeSh
     }
     TreeShakeReturn { codegen_return, diagnostics: mem::take(diagnostics) }
   } else {
+    let allocator = Allocator::default();
+    let config = allocator.alloc(config);
+
     let source_text = vfs.read_file(&entry);
     let parser =
       Parser::new(&allocator, &source_text, SourceType::mjs().with_jsx(config.jsx.is_enabled()));

@@ -14,9 +14,9 @@ impl Builtins<'_> {
       ObjectPrototype::Builtin(&self.prototypes.function),
       false,
     );
-    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
+    object.init_rest(factory, ObjectPropertyValue::Field(factory.immutable_unknown, true));
 
-    init_namespace!(object, {
+    init_namespace!(object, factory, {
       "prototype" => factory.immutable_unknown,
       // "asyncIterator" => factory.string("__#asyncIterator__"),
       // "hasInstance" => factory.string("__#hasInstance__"),

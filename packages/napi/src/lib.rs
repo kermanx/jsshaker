@@ -1,10 +1,8 @@
 #![deny(clippy::all)]
 
+use napi_derive::napi;
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 use tree_shaker::{TreeShakeOptions, vfs::SingleFileFs};
-
-#[macro_use]
-extern crate napi_derive;
 
 #[napi]
 pub struct TreeShakeResultBinding {
