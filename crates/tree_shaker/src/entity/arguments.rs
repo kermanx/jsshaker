@@ -114,10 +114,6 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)
   }
 
-  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, _dep: Consumable<'a>) -> Consumable<'a> {
-    unreachable!()
-  }
-
   fn get_typeof(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }

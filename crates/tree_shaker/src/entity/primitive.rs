@@ -121,10 +121,6 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
     }
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    analyzer.consumable((self, dep))
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if let Some(str) = self.test_typeof().to_string() {
       analyzer.factory.string(str)

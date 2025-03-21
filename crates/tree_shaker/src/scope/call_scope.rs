@@ -61,9 +61,7 @@ impl<'a> CallScope<'a> {
         if !try_scope.thrown_values.is_empty() {
           parent_try_scope.thrown_values.push(unknown);
         }
-        for value in try_scope.thrown_values {
-          value.consume(analyzer);
-        }
+        analyzer.consume(try_scope.thrown_values);
       } else if self.is_async {
         promise_error = Some(try_scope.thrown_values);
       } else {

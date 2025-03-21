@@ -137,14 +137,6 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
     (vec![], analyzer.factory.try_union(results), analyzer.factory.empty_consumable)
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    let mut values = Vec::new();
-    for entity in self.values.iter() {
-      values.push(entity.get_destructable(analyzer, dep));
-    }
-    analyzer.consumable(values)
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: collect literals
     let values = self.values.map(|v| v.get_typeof(analyzer));

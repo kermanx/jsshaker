@@ -128,10 +128,6 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    analyzer.consumable((self, dep))
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }

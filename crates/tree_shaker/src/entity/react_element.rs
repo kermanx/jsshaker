@@ -126,10 +126,6 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    analyzer.consumable((self, dep))
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.computed_unknown_string(self)
   }

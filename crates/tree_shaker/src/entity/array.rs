@@ -311,10 +311,6 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     )
   }
 
-  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    dep
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("object")
   }

@@ -197,10 +197,6 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn get_destructable(&'a self, _analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    dep
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string(self.test_typeof().to_string().unwrap())
   }

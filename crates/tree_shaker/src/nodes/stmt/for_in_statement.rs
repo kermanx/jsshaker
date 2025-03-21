@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
     let right = self.exec_expression(&node.right);
 
     if let Some(keys) = right.get_own_keys(self) {
-      let dep = right.get_destructable(self, AstKind2::ForInStatement(node));
+      let dep = self.factory.consumable((right.shallow_dep(), AstKind2::ForInStatement(node)));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, vec![dep], Some(false));
       for (definite, key) in keys {
         self.push_cf_scope_with_deps(

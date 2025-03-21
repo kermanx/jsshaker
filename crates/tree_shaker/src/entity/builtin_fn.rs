@@ -121,10 +121,6 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
     }
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a> {
-    analyzer.consumable((self, dep))
-  }
-
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.string("function")
   }

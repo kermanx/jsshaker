@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
         self.pop_cf_scope();
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        self.push_dependent_cf_scope(value.get_destructable(self, self.factory.empty_consumable));
+        self.push_dependent_cf_scope(value.shallow_dep());
 
         let is_nullish = value.test_nullish();
         if is_nullish != Some(false) {

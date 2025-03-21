@@ -83,7 +83,6 @@ pub trait ValueTrait<'a>: Debug {
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a>;
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a>;
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, dep: Consumable<'a>) -> Consumable<'a>;
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
@@ -216,6 +215,10 @@ pub struct Entity<'a> {
 }
 
 impl<'a> Entity<'a> {
+  pub fn shallow_dep(&self) -> Option<Consumable<'a>> {
+    self.dep
+  }
+
   fn forward_dep(
     &self,
     dep: impl ConsumeTrait<'a> + 'a,
@@ -318,13 +321,6 @@ impl<'a> Entity<'a> {
     dep: impl ConsumeTrait<'a> + 'a,
   ) -> IteratedElements<'a> {
     self.value.iterate(analyzer, self.forward_dep(dep, analyzer))
-  }
-  pub fn get_destructable(
-    &self,
-    analyzer: &Analyzer<'a>,
-    dep: impl ConsumeTrait<'a> + 'a,
-  ) -> Consumable<'a> {
-    self.value.get_destructable(analyzer, self.forward_dep(dep, analyzer))
   }
   pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.get_typeof(analyzer), analyzer)

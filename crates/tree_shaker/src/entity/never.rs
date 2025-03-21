@@ -71,9 +71,6 @@ impl<'a> ValueTrait<'a> for NeverEntity {
     (Vec::new(), None, analyzer.factory.empty_consumable)
   }
 
-  fn get_destructable(&'a self, analyzer: &Analyzer<'a>, _dep: Consumable<'a>) -> Consumable<'a> {
-    analyzer.factory.empty_consumable
-  }
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }

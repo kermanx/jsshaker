@@ -164,7 +164,12 @@ impl<'a> Builtins<'a> {
             _ => {}
           }
         }
-        object.set_property(analyzer, descriptor.get_destructable(analyzer, dep), key, value);
+        object.set_property(
+          analyzer,
+          analyzer.factory.consumable((dep, descriptor.shallow_dep())),
+          key,
+          value,
+        );
         return object;
       }
 
