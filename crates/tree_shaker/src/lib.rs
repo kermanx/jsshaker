@@ -1,7 +1,7 @@
 mod analyzer;
 mod builtins;
 mod config;
-mod consumable;
+mod dep;
 mod entity;
 mod folding;
 mod mangling;
@@ -27,10 +27,7 @@ use oxc::{
 use oxc_ast_visit::VisitMut;
 use rustc_hash::FxHashMap;
 use transformer::Transformer;
-use utils::{
-  Diagnostics, ast,
-  dep_id::{self as dep},
-};
+use utils::{Diagnostics, ast};
 
 pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 use vfs::Vfs;

@@ -2,7 +2,7 @@ use super::{
   Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectPrototype, TypeofResult,
   ValueTrait, consumed_object, utils::UnionLike,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
 use rustc_hash::FxHashSet;
 use std::{cell::Cell, fmt::Debug};
 
@@ -36,7 +36,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
     }
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     for value in self.values.iter() {
       value.unknown_mutate(analyzer, dep);
     }
@@ -45,7 +45,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
@@ -57,7 +57,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -71,13 +71,13 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     // FIXME:
     consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
         entity.delete_property(analyzer, dep, key);
@@ -88,7 +88,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -101,7 +101,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
@@ -117,14 +117,14 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
     analyzer.factory.union(values)
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| v.r#await(analyzer, dep))
     });
     analyzer.factory.union(values)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     let mut results = analyzer.factory.vec();
     let mut has_undefined = false;
     analyzer.push_indeterminate_cf_scope();
@@ -139,7 +139,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
     if has_undefined {
       results.push(analyzer.factory.undefined);
     }
-    (vec![], analyzer.factory.try_union(results), analyzer.factory.empty_consumable)
+    (vec![], analyzer.factory.try_union(results), analyzer.factory.no_dep)
   }
 
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -196,8 +196,8 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
   fn get_constructor_prototype(
     &'a self,
     _analyzer: &Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    _dep: Dep<'a>,
+  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     // TODO: Support this
     None
   }

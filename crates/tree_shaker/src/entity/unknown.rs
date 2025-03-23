@@ -1,7 +1,7 @@
 use super::{
   Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, dep::Dep};
 use std::marker::PhantomData;
 
 #[derive(Debug, Default)]
@@ -10,14 +10,14 @@ pub struct UnknownEntity<'a>(PhantomData<&'a ()>);
 impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     consumed_object::unknown_mutate(analyzer, dep)
   }
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::get_property(self, analyzer, dep, key)
@@ -26,7 +26,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -37,7 +37,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
@@ -45,7 +45,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
     consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
@@ -53,7 +53,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -63,7 +63,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
@@ -73,12 +73,12 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
     consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }

@@ -2,7 +2,10 @@ use oxc::allocator::{self, Allocator};
 
 use super::{try_scope::TryScope, variable_scope::VariableScopeId};
 use crate::{
-  analyzer::Analyzer, consumable::ConsumeTrait, dep::DepId, entity::Entity, utils::CalleeInfo,
+  analyzer::Analyzer,
+  dep::DepTrait,
+  entity::Entity,
+  utils::{CalleeInfo, dep_id::DepId},
 };
 use std::mem;
 
@@ -92,7 +95,7 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumeTrait<'a> + 'a) {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl DepTrait<'a> + 'a) {
     let call_scope = self.call_scope();
     let exec_dep = self.get_exec_dep(call_scope.cf_scope_depth);
     let value = self.factory.computed(value, (exec_dep, dep));

@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::Consumable,
+  dep::Dep,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
 };
@@ -29,7 +29,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
     self.prototype.consume(analyzer);
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     self.consume(analyzer);
     consumed_object::unknown_mutate(analyzer, dep);
   }
@@ -37,7 +37,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     self.statics.get_property(analyzer, self.forward_dep(dep, analyzer), key)
@@ -46,7 +46,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -58,14 +58,14 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
     self.statics.set_property(analyzer, self.forward_dep(dep, analyzer), key, value);
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.statics.delete_property(analyzer, self.forward_dep(dep, analyzer), key);
   }
 
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
@@ -76,7 +76,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -95,7 +95,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     if self.body_consumed.get() {
@@ -113,17 +113,17 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call(
       analyzer,
-      analyzer.factory.empty_consumable,
+      analyzer.factory.no_dep,
       analyzer.factory.immutable_unknown,
       analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
     )
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
@@ -159,8 +159,8 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   fn get_constructor_prototype(
     &'a self,
     _analyzer: &Analyzer<'a>,
-    dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    dep: Dep<'a>,
+  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     Some((dep, ObjectPrototype::Custom(self.statics), ObjectPrototype::Custom(self.prototype)))
   }
 
@@ -196,12 +196,12 @@ impl<'a> FunctionEntity<'a> {
   pub fn call_impl<const IS_NEW: bool>(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let call_dep = analyzer.consumable((self.callee.into_node(), dep));
+    let call_dep = analyzer.dep((self.callee.into_node(), dep));
     let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
         self.into(),
@@ -259,7 +259,7 @@ impl<'a> FunctionEntity<'a> {
   pub fn construct_impl(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
@@ -283,7 +283,7 @@ impl<'a> FunctionEntity<'a> {
     analyzer.exec_consumed_fn(name, move |analyzer| {
       self.call_impl::<false>(
         analyzer,
-        analyzer.factory.empty_consumable,
+        analyzer.factory.no_dep,
         analyzer.factory.unknown(),
         analyzer.factory.unknown(),
         true,
@@ -291,8 +291,8 @@ impl<'a> FunctionEntity<'a> {
     });
   }
 
-  fn forward_dep(&self, dep: Consumable<'a>, analyzer: &Analyzer<'a>) -> Consumable<'a> {
-    analyzer.consumable((dep, self.callee.into_node()))
+  fn forward_dep(&self, dep: Dep<'a>, analyzer: &Analyzer<'a>) -> Dep<'a> {
+    analyzer.dep((dep, self.callee.into_node()))
   }
 }
 

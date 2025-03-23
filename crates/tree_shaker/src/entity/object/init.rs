@@ -3,7 +3,7 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
   analyzer::Analyzer,
-  consumable::{ConsumableCollector, ConsumeTrait},
+  dep::{DepCollector, DepTrait},
   entity::{Entity, EntityFactory, LiteralEntity},
   mangling::MangleConstraint,
 };
@@ -73,7 +73,7 @@ impl<'a> ObjectEntity<'a> {
                 definite,
                 enumerable: true,
                 possible_values: analyzer.factory.vec1(property_val),
-                non_existent: ConsumableCollector::new(analyzer.factory.vec()),
+                non_existent: DepCollector::new(analyzer.factory.vec()),
                 key: Some(key),
                 mangling: mangable.then(|| key_atom.unwrap()),
               };
@@ -101,7 +101,7 @@ impl<'a> ObjectEntity<'a> {
   pub fn init_spread(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: impl ConsumeTrait<'a> + 'a,
+    dep: impl DepTrait<'a> + 'a,
     argument: Entity<'a>,
   ) {
     let (properties, deps) = argument.enumerate_properties(analyzer, dep);
@@ -121,7 +121,7 @@ impl<'a> ObjectEntity<'a> {
         definite: false,
         enumerable: true,
         possible_values: factory.vec1(property),
-        non_existent: ConsumableCollector::new(factory.vec()),
+        non_existent: DepCollector::new(factory.vec()),
         key: None,
         mangling: None,
       });

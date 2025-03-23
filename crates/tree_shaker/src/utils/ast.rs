@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 use oxc::{
   allocator::Vec,
   ast::ast::*,
@@ -261,7 +261,7 @@ impl fmt::Debug for AstKind2<'_> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for AstKind2<'a> {
+impl<'a> CustomDepTrait<'a> for AstKind2<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
   }

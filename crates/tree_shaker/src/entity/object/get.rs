@@ -3,7 +3,7 @@ use oxc::allocator;
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableVec},
+  dep::{Dep, DepVec},
   entity::{Entity, LiteralEntity, consumed_object, object::ObjectPrototype},
   mangling::MangleAtom,
   scope::CfScopeKind,
@@ -13,14 +13,14 @@ pub(crate) struct GetPropertyContext<'a> {
   pub key: Entity<'a>,
   pub values: Vec<Entity<'a>>,
   pub getters: Vec<Entity<'a>>,
-  pub extra_deps: ConsumableVec<'a>,
+  pub extra_deps: DepVec<'a>,
 }
 
 impl<'a> ObjectEntity<'a> {
   pub fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
@@ -79,15 +79,11 @@ impl<'a> ObjectEntity<'a> {
       let indeterminate = check_rest || !context.values.is_empty() || context.getters.len() > 1;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
-        analyzer.factory.vec1(if mangable { dep } else { analyzer.consumable((dep, key)) }),
+        analyzer.factory.vec1(if mangable { dep } else { analyzer.dep((dep, key)) }),
         if indeterminate { None } else { Some(false) },
       );
       for getter in context.getters {
-        context.values.push(getter.call_as_getter(
-          analyzer,
-          analyzer.factory.empty_consumable,
-          self.into(),
-        ));
+        context.values.push(getter.call_as_getter(analyzer, analyzer.factory.no_dep, self.into()));
       }
       analyzer.pop_cf_scope();
     }

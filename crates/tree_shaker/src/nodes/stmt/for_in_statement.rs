@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
     let right = self.exec_expression(&node.right);
 
     if let Some(keys) = right.get_own_keys(self) {
-      let dep = self.factory.consumable((right.shallow_dep(), AstKind2::ForInStatement(node)));
+      let dep = self.factory.dep((right.shallow_dep(), AstKind2::ForInStatement(node)));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       for (definite, key) in keys {
         self.push_cf_scope_with_deps(
@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
       }
       self.pop_cf_scope();
     } else {
-      let dep = self.consumable((AstKind2::ForInStatement(node), right));
+      let dep = self.dep((AstKind2::ForInStatement(node), right));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       self.exec_loop(move |analyzer| {
         analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, analyzer.factory.vec(), None);

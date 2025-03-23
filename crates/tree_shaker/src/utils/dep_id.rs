@@ -1,6 +1,4 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, consumable::ConsumableTrait, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, ast::AstKind2, dep::CustomDepTrait, transformer::Transformer};
 use oxc::span::{GetSpan, Span};
 use rustc_hash::FxHashSet;
 use std::{
@@ -18,7 +16,7 @@ impl Debug for DepId {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for DepId {
+impl<'a> CustomDepTrait<'a> for DepId {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
   }

@@ -5,7 +5,7 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
-  consumable::Consumable,
+  dep::Dep,
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
   utils::F64WithEq,
@@ -45,14 +45,14 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
     !matches!(self, LiteralEntity::String(_, Some(_)))
   }
 
-  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
     // No effect
   }
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
@@ -64,7 +64,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
       }
     } else {
       let prototype = self.get_prototype(analyzer);
-      let dep = analyzer.consumable((self, dep, key));
+      let dep = analyzer.dep((self, dep, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = analyzer.factory.vec();
         for key_literal in key_literals {
@@ -86,7 +86,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -103,10 +103,10 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if let LiteralEntity::String(value, atom) = self {
-      let dep = analyzer.consumable((dep, *atom));
+      let dep = analyzer.dep((dep, *atom));
       if value.len() <= analyzer.config.max_simple_string_length {
         (
           value
@@ -130,7 +130,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
     }
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, _key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, _key: Entity<'a>) {
     if matches!(self, LiteralEntity::Null | LiteralEntity::Undefined) {
       analyzer.throw_builtin_error("Cannot delete property of null or undefined");
       if analyzer.config.preserve_exceptions {
@@ -144,7 +144,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -159,7 +159,7 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
@@ -174,16 +174,16 @@ impl<'a> ValueTrait<'a> for LiteralEntity<'a> {
     analyzer.factory.computed_unknown((self, attributes))
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     analyzer.factory.computed(self.into(), dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     match self {
       LiteralEntity::String(value, atom) => (
         vec![],
         (!value.is_empty()).then_some(analyzer.factory.unknown_string),
-        analyzer.consumable((self, dep, *atom)),
+        analyzer.dep((self, dep, *atom)),
       ),
       _ => {
         analyzer.throw_builtin_error("Cannot iterate over a non-iterable object");

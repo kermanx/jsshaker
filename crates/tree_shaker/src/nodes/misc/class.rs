@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::Consumable,
+  dep::Dep,
   entity::{Entity, ObjectPrototype, ValueTrait},
   scope::VariableScopeId,
   transformer::Transformer,
@@ -37,13 +37,13 @@ impl<'a> Analyzer<'a> {
     if let Some(super_class) = &data.super_class {
       // Because we can't re-define the "prototype" property, this should be side-effect free
       if let Some((prototype_dep, super_statics, super_prototype)) =
-        super_class.get_constructor_prototype(self, self.factory.empty_consumable)
+        super_class.get_constructor_prototype(self, self.factory.no_dep)
       {
         class.statics.prototype.set(super_statics);
         class.prototype.prototype.set(super_prototype);
         class.prototype.unknown_mutate(self, prototype_dep);
       } else {
-        let dep = self.factory.consumable(*super_class);
+        let dep = self.factory.dep(*super_class);
         class.statics.prototype.set(ObjectPrototype::Unknown(dep));
         class.prototype.prototype.set(ObjectPrototype::Unknown(dep));
       }
@@ -92,7 +92,7 @@ impl<'a> Analyzer<'a> {
     let variable_scope_stack = self.scoping.variable.stack.clone();
     self.push_call_scope(
       self.new_callee_info(CalleeNode::ClassStatics(node)),
-      self.factory.empty_consumable,
+      self.factory.no_dep,
       variable_scope_stack,
       false,
       false,
@@ -142,7 +142,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_class_constructor(
     &mut self,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     node: &'a Class<'a>,
     variable_scopes: &'a [VariableScopeId],
     this: Entity<'a>,
@@ -173,7 +173,7 @@ impl<'a> Analyzer<'a> {
     // 2. Call constructor
     if let Some(constructor) = data.constructor {
       let function = constructor.value.as_ref();
-      let dep = self.factory.consumable(AstKind2::Function(function));
+      let dep = self.factory.dep(AstKind2::Function(function));
       self.cf_scope_mut().push_dep(dep);
       self.exec_formal_parameters(&function.params, args, DeclarationKind::FunctionParameter);
       self.exec_function_body(function.body.as_ref().unwrap());

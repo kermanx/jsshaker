@@ -1,7 +1,6 @@
 use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveDepId};
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
-  utils::ast::AstKind2,
+  analyzer::Analyzer, ast::DeclarationKind, dep::LazyDep, entity::Entity, utils::ast::AstKind2,
 };
 use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
 use oxc_index::define_index_type;
@@ -16,7 +15,7 @@ define_index_type! {
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
-  pub exhausted: Option<LazyConsumable<'a>>,
+  pub exhausted: Option<LazyDep<'a>>,
   pub value: Option<Entity<'a>>,
   pub decl_node: AstKind2<'a>,
 }
@@ -126,7 +125,7 @@ impl<'a> Analyzer<'a> {
         // Do nothing
       }
     } else if let Some(deps) = variable.exhausted {
-      deps.push(self, self.consumable((init_node, value)));
+      deps.push(self, self.dep((init_node, value)));
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
@@ -193,7 +192,7 @@ impl<'a> Analyzer<'a> {
         let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_node);
 
         if let Some(deps) = variable_ref.exhausted {
-          deps.push(self, self.consumable((dep, new_val)));
+          deps.push(self, self.dep((dep, new_val)));
         } else {
           let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
@@ -211,8 +210,7 @@ impl<'a> Analyzer<'a> {
 
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
-            variable_ref.exhausted =
-              Some(self.factory.new_lazy_consumable(self.consumable((dep, new_val, old_val))));
+            variable_ref.exhausted = Some(self.factory.lazy_dep(self.dep((dep, new_val, old_val))));
             variable_ref.value = Some(self.factory.unknown());
           } else {
             variable_ref.value = Some(self.factory.computed(
@@ -249,7 +247,7 @@ impl<'a> Analyzer<'a> {
         drop(variable_ref);
 
         let mut variable_ref = variable.borrow_mut();
-        variable_ref.exhausted = Some(self.factory.consumed_lazy_consumable);
+        variable_ref.exhausted = Some(self.factory.consumed_lazy_dep);
         variable_ref.value = Some(self.factory.unknown());
       }
       true
@@ -261,7 +259,7 @@ impl<'a> Analyzer<'a> {
   fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = self.allocator.alloc(RefCell::new(Variable {
-      exhausted: Some(self.factory.consumed_lazy_consumable),
+      exhausted: Some(self.factory.consumed_lazy_dep),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown()),

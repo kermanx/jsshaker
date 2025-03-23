@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::Consumable,
+  dep::Dep,
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_arrow_function_expression(
     &mut self,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: &'a [VariableScopeId],
     args: Entity<'a>,

@@ -1,10 +1,10 @@
 use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-  dep::DepId,
+  dep::{CustomDepTrait, Dep},
   entity::Entity,
   transformer::Transformer,
+  utils::dep_id::DepId,
 };
 use rustc_hash::FxHashMap;
 use std::{cell::Cell, fmt::Debug, mem};
@@ -51,7 +51,7 @@ impl<'a> ConditionalBranch<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for &'a ConditionalBranch<'a> {
+impl<'a> CustomDepTrait<'a> for &'a ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.dep_id);
     self.refer_with_data(data);
@@ -69,7 +69,7 @@ impl<'a> Analyzer<'a> {
     maybe_alternate: bool,
     is_consequent: bool,
     has_contra: bool,
-  ) -> Consumable<'a> {
+  ) -> Dep<'a> {
     let dep = self.push_conditional_cf_scope(
       dep_id,
       kind,
@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
       is_consequent,
       has_contra,
     );
-    self.consumable(dep)
+    self.dep(dep)
   }
 
   pub fn forward_logical_left_val(
@@ -100,7 +100,7 @@ impl<'a> Analyzer<'a> {
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
-  ) -> Consumable<'a> {
+  ) -> Dep<'a> {
     assert!(maybe_right);
     let dep = self.push_conditional_cf_scope(
       dep_id,
@@ -111,7 +111,7 @@ impl<'a> Analyzer<'a> {
       false,
       false,
     );
-    self.consumable(dep)
+    self.dep(dep)
   }
 
   #[allow(clippy::too_many_arguments)]
@@ -124,13 +124,13 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> impl ConsumableTrait<'a> + 'a {
+  ) -> impl CustomDepTrait<'a> + 'a {
     let dep =
       self.register_conditional_data(dep_id, test, maybe_true, maybe_false, is_true, has_contra);
 
     self.push_cf_scope_with_deps(
       kind,
-      self.factory.vec1(self.consumable(dep)),
+      self.factory.vec1(self.dep(dep)),
       if maybe_true && maybe_false { None } else { Some(false) },
     );
 

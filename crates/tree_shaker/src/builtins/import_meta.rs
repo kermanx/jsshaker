@@ -1,6 +1,6 @@
 use super::{Builtins, constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes};
 use crate::{
-  consumable::ConsumableCollector,
+  dep::DepCollector,
   entity::{Entity, EntityFactory, ObjectProperty, ObjectPropertyValue, ObjectPrototype},
 };
 
@@ -31,7 +31,7 @@ impl<'a> Builtins<'a> {
           })),
           None,
         )),
-        non_existent: ConsumableCollector::new(factory.vec()),
+        non_existent: DepCollector::new(factory.vec()),
         key: None,
         mangling: None,
       },

@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::Consumable,
+  dep::Dep,
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     fn_entity: Entity<'a>,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     node: &'a Function<'a>,
     variable_scopes: &'a [VariableScopeId],
     this: Entity<'a>,

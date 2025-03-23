@@ -1,8 +1,6 @@
 use crate::{
   TreeShakeConfig,
-  consumable::{
-    Consumable, ConsumableCollector, ConsumableTrait, ConsumeTrait, LazyConsumable, OnceConsumable,
-  },
+  dep::{CustomDepTrait, Dep, DepCollector, DepTrait, LazyDep, OnceDep},
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
   utils::F64WithEq,
@@ -60,8 +58,8 @@ pub struct EntityFactory<'a> {
   pub empty_arguments: Entity<'a>,
   pub unmatched_prototype_property: Entity<'a>,
 
-  pub empty_consumable: Consumable<'a>,
-  pub consumed_lazy_consumable: LazyConsumable<'a>,
+  pub no_dep: Dep<'a>,
+  pub consumed_lazy_dep: LazyDep<'a>,
 }
 
 impl<'a> EntityFactory<'a> {
@@ -106,8 +104,8 @@ impl<'a> EntityFactory<'a> {
     let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
-    let empty_consumable = Consumable(allocator.alloc(()));
-    let consumed_lazy_consumable = LazyConsumable(allocator.alloc(RefCell::new(None)));
+    let no_dep = Dep(allocator.alloc(()));
+    let consumed_lazy_dep = LazyDep(allocator.alloc(RefCell::new(None)));
 
     EntityFactory {
       allocator,
@@ -141,8 +139,8 @@ impl<'a> EntityFactory<'a> {
       empty_arguments,
       unmatched_prototype_property,
 
-      empty_consumable,
-      consumed_lazy_consumable,
+      no_dep,
+      consumed_lazy_dep,
     }
   }
 
@@ -193,7 +191,7 @@ impl<'a> EntityFactory<'a> {
   pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayEntity<'a> {
     self.alloc(ArrayEntity {
       consumed: Cell::new(false),
-      deps: RefCell::new(ConsumableCollector::new(self.vec())),
+      deps: RefCell::new(DepCollector::new(self.vec())),
       cf_scope,
       object_id,
       elements: RefCell::new(self.vec()),
@@ -216,19 +214,19 @@ impl<'a> EntityFactory<'a> {
       .into()
   }
 
-  pub fn consumable_no_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    Consumable(self.alloc(dep))
+  pub fn dep_no_once(&self, dep: impl CustomDepTrait<'a> + 'a) -> Dep<'a> {
+    Dep(self.alloc(dep))
   }
 
-  pub fn consumable_once(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    self.consumable_no_once(OnceConsumable::new(dep))
+  pub fn dep_once(&self, dep: impl CustomDepTrait<'a> + 'a) -> Dep<'a> {
+    self.dep_no_once(OnceDep::new(dep))
   }
 
-  pub fn consumable(&self, dep: impl ConsumableTrait<'a> + 'a) -> Consumable<'a> {
-    self.consumable_once(dep)
+  pub fn dep(&self, dep: impl CustomDepTrait<'a> + 'a) -> Dep<'a> {
+    self.dep_once(dep)
   }
 
-  pub fn optional_computed(&self, val: Entity<'a>, dep: Option<Consumable<'a>>) -> Entity<'a> {
+  pub fn optional_computed(&self, val: Entity<'a>, dep: Option<Dep<'a>>) -> Entity<'a> {
     match dep {
       Some(dep) => self.computed(val, dep),
       None => val,
@@ -329,7 +327,7 @@ impl<'a> EntityFactory<'a> {
     }
   }
 
-  pub fn computed_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a, T: ConsumeTrait<'a> + 'a>(
+  pub fn computed_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a, T: DepTrait<'a> + 'a>(
     &self,
     values: V,
     dep: T,
@@ -341,12 +339,12 @@ impl<'a> EntityFactory<'a> {
     self.immutable_unknown
   }
 
-  pub fn computed_unknown(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
+  pub fn computed_unknown(&self, dep: impl DepTrait<'a> + 'a) -> Entity<'a> {
     self.computed(self.immutable_unknown, dep)
   }
 
-  pub fn new_lazy_consumable(&self, consumable: Consumable<'a>) -> LazyConsumable<'a> {
-    LazyConsumable(self.alloc(RefCell::new(Some(self.vec1(consumable)))))
+  pub fn lazy_dep(&self, dep: Dep<'a>) -> LazyDep<'a> {
+    LazyDep(self.alloc(RefCell::new(Some(self.vec1(dep)))))
   }
 
   pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -369,8 +367,8 @@ impl<'a> EntityFactory<'a> {
     self.computed(val, ManglingDep { deps, constraint })
   }
 
-  pub fn always_mangable_dep(&self, dep: Entity<'a>) -> Consumable<'a> {
-    self.consumable(AlwaysMangableDep { dep })
+  pub fn always_mangable_dep(&self, dep: Entity<'a>) -> Dep<'a> {
+    self.dep(AlwaysMangableDep { dep })
   }
 }
 
@@ -378,7 +376,7 @@ macro_rules! unknown_entity_ctors {
   ($($name:ident -> $var:ident,)*) => {
     $(
       #[allow(unused)]
-      pub fn $name(&self, dep: impl ConsumeTrait<'a> + 'a) -> Entity<'a> {
+      pub fn $name(&self, dep: impl DepTrait<'a> + 'a) -> Entity<'a> {
         self.computed(self.$var, dep)
       }
     )*

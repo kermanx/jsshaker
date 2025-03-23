@@ -3,7 +3,7 @@ use oxc::allocator::{self, Allocator};
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
 use crate::utils::get_two_mut_from_vec;
-use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 use std::mem;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -66,7 +66,7 @@ impl<'a> MangleConstraint<'a> {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for MangleConstraint<'a> {
+impl<'a> CustomDepTrait<'a> for MangleConstraint<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.add_to_mangler(&mut analyzer.mangler);
   }

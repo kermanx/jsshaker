@@ -15,7 +15,7 @@ use std::fmt;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::Consumable,
+  dep::Dep,
   entity::{Entity, EntityFactory, LiteralEntity},
 };
 use oxc::{allocator, semantic::SymbolId};
@@ -77,7 +77,7 @@ impl<'a> BuiltinPrototype<'a> {
     analyzer: &Analyzer<'a>,
     target: Entity<'a>,
     key: Entity<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> Entity<'a> {
     let dep = (dep, target, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {

@@ -1,7 +1,7 @@
 use rustc_hash::FxHashMap;
 use std::mem;
 
-use crate::{analyzer::Analyzer, dep::DepId, entity::Entity};
+use crate::{analyzer::Analyzer, entity::Entity};
 
 pub struct LoopData<'a> {
   call_id: DepId,

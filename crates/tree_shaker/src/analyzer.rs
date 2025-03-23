@@ -1,18 +1,19 @@
 use crate::{
   TreeShakeConfig,
   builtins::Builtins,
-  dep::{DepId, ReferredDeps},
   entity::EntityFactory,
   folding::ConstantFolder,
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
-    Scoping,
+    Scoping, // r#loop::LoopDataMap,
     conditional::ConditionalDataMap,
     exhaustive::{ExhaustiveCallback, ExhaustiveDepId},
-    // r#loop::LoopDataMap,
   },
-  utils::ExtraData,
+  utils::{
+    ExtraData,
+    dep_id::{DepId, ReferredDeps},
+  },
   vfs::Vfs,
 };
 use oxc::{

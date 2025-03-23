@@ -23,9 +23,9 @@ impl<'a> Analyzer<'a> {
       if test.test_truthy() == Some(false) {
         return;
       }
-      self.consumable((AstKind2::ForStatement(node), test))
+      self.dep((AstKind2::ForStatement(node), test))
     } else {
-      self.consumable(AstKind2::ForStatement(node))
+      self.dep(AstKind2::ForStatement(node))
     };
 
     self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
 
       if let Some(test) = &node.test {
         let test = analyzer.exec_expression(test);
-        let test = analyzer.consumable(test);
+        let test = analyzer.dep(test);
         analyzer.cf_scope_mut().push_dep(test);
       }
     });

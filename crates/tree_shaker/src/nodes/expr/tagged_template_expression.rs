@@ -1,6 +1,5 @@
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, dep::DepId, entity::Entity,
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 use oxc::{
   ast::{
@@ -24,7 +23,7 @@ impl<'a> Analyzer<'a> {
 
     for expr in &node.quasi.expressions {
       let value = self.exec_expression(expr);
-      let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
+      let dep = AstKind2::ExpressionInTaggedTemplate(expr);
       arguments.push((false, self.factory.computed(value, dep)));
     }
 

@@ -90,7 +90,7 @@ impl<'a> Analyzer<'a> {
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
               let key = self.factory.string(node.imported.name().as_str());
-              known.namespace.get_property(self, self.factory.empty_consumable, key)
+              known.namespace.get_property(self, self.factory.no_dep, key)
             }
           }
         } else if let Some(resolved) = resolved {

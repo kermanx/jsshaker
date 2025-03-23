@@ -4,11 +4,7 @@ use oxc::ast::ast::{Expression, Super};
 impl<'a> Analyzer<'a> {
   pub fn exec_super(&mut self, _node: &'a Super) -> Entity<'a> {
     // Should only be called in member expression
-    self.get_super().get_property(
-      self,
-      self.factory.empty_consumable,
-      self.factory.string("prototype"),
-    )
+    self.get_super().get_property(self, self.factory.no_dep, self.factory.string("prototype"))
   }
 }
 

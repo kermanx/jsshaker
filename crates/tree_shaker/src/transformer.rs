@@ -1,10 +1,12 @@
 use crate::{
   TreeShakeConfig,
-  dep::{DepId, ReferredDeps},
   folding::ConstantFolder,
   mangling::Mangler,
   scope::conditional::ConditionalDataMap,
-  utils::{DataPlaceholder, ExtraData},
+  utils::{
+    DataPlaceholder, ExtraData,
+    dep_id::{DepId, ReferredDeps},
+  },
 };
 use oxc::{
   allocator::{Allocator, CloneIn},

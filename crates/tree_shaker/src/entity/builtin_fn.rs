@@ -2,7 +2,7 @@ use super::{
   Entity, EntityFactory, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype,
   TypeofResult, ValueTrait, consumed_object, never::NeverEntity,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, dep::Dep};
 use std::fmt::Debug;
 
 trait BuiltinFnEntity<'a>: Debug {
@@ -14,7 +14,7 @@ trait BuiltinFnEntity<'a>: Debug {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
@@ -27,14 +27,14 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
     }
   }
 
-  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
     // No effect
   }
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if let Some(object) = self.object() {
@@ -47,7 +47,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -61,7 +61,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
     }
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if let Some(object) = self.object() {
       object.delete_property(analyzer, dep, key)
     } else {
@@ -73,7 +73,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn enumerate_properties(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     (vec![], dep)
   }
@@ -81,7 +81,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -93,7 +93,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
@@ -102,17 +102,17 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     self.call_impl(
       analyzer,
-      analyzer.factory.empty_consumable,
+      analyzer.factory.no_dep,
       analyzer.factory.immutable_unknown,
       analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
     )
   }
 
-  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> Entity<'a> {
     self.into()
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     analyzer.throw_builtin_error("Cannot iterate over function");
     if analyzer.config.preserve_exceptions {
       consumed_object::iterate(analyzer, dep)
@@ -149,8 +149,8 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
   fn get_constructor_prototype(
     &'a self,
     _analyzer: &Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    _dep: Dep<'a>,
+  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     todo!()
   }
 
@@ -168,10 +168,10 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
 }
 
 pub trait BuiltinFnImplementation<'a>:
-  Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
+  Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
 {
 }
-impl<'a, T: Fn(&mut Analyzer<'a>, Consumable<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>>
+impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>>
   BuiltinFnImplementation<'a> for T
 {
 }
@@ -203,7 +203,7 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -242,12 +242,12 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   fn call_impl(
     &self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     let ret_val = (self.return_value)(analyzer.factory);
-    let dep = analyzer.consumable((dep, this, args));
+    let dep = analyzer.dep((dep, this, args));
     this.unknown_mutate(analyzer, dep);
     args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed(ret_val, dep)

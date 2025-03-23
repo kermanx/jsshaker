@@ -2,7 +2,7 @@ use std::{cell::RefCell, mem};
 
 use crate::{
   analyzer::Analyzer,
-  consumable::ConsumableTrait,
+  dep::CustomDepTrait,
   entity::{Entity, LiteralEntity},
   mangling::MangleAtom,
 };
@@ -17,7 +17,7 @@ pub struct FoldableDep<'a> {
   pub mangle_atom: Option<MangleAtom>,
 }
 
-impl<'a> ConsumableTrait<'a> for FoldableDep<'a> {
+impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let mut data = self.data.borrow_mut();
 
@@ -50,7 +50,7 @@ pub struct UnFoldableDep<'a> {
   pub data: &'a RefCell<FoldingData<'a>>,
 }
 
-impl<'a> ConsumableTrait<'a> for UnFoldableDep<'a> {
+impl<'a> CustomDepTrait<'a> for UnFoldableDep<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {
     let mut data = self.data.borrow_mut();
     data.state = FoldingState::UnFoldable;

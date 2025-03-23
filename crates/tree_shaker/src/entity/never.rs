@@ -1,4 +1,4 @@
-use crate::{analyzer::Analyzer, consumable::Consumable};
+use crate::{analyzer::Analyzer, dep::Dep};
 
 use super::{Entity, ValueTrait};
 
@@ -8,12 +8,12 @@ pub struct NeverEntity;
 impl<'a> ValueTrait<'a> for NeverEntity {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {}
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {}
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _key: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.factory.never
@@ -21,7 +21,7 @@ impl<'a> ValueTrait<'a> for NeverEntity {
   fn set_property(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _key: Entity<'a>,
     _value: Entity<'a>,
   ) {
@@ -29,21 +29,15 @@ impl<'a> ValueTrait<'a> for NeverEntity {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
   ) -> super::EnumeratedProperties<'a> {
-    (Vec::new(), analyzer.factory.empty_consumable)
+    (Vec::new(), analyzer.factory.no_dep)
   }
-  fn delete_property(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-    _key: Entity<'a>,
-  ) {
-  }
+  fn delete_property(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>, _key: Entity<'a>) {}
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _this: Entity<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
@@ -52,7 +46,7 @@ impl<'a> ValueTrait<'a> for NeverEntity {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.factory.never
@@ -60,15 +54,11 @@ impl<'a> ValueTrait<'a> for NeverEntity {
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, _props: Entity<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn iterate(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> super::IteratedElements<'a> {
-    (Vec::new(), None, analyzer.factory.empty_consumable)
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> super::IteratedElements<'a> {
+    (Vec::new(), None, analyzer.factory.no_dep)
   }
 
   fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

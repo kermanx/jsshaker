@@ -13,7 +13,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::ConsumableTrait,
+  dep::CustomDepTrait,
   entity::Entity,
   scope::{
     CfScopeId, CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
@@ -175,7 +175,7 @@ impl<'a> Analyzer<'a> {
   }
 }
 
-impl ConsumableTrait<'_> for ModuleId {
+impl CustomDepTrait<'_> for ModuleId {
   fn consume(&self, analyzer: &mut Analyzer) {
     analyzer.consume_exports(*self);
   }

@@ -18,17 +18,14 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     };
 
     // Special prop: ref
-    let r#ref = props.get_property(
-      analyzer,
-      analyzer.factory.empty_consumable,
-      analyzer.factory.string("ref"),
-    );
+    let r#ref =
+      props.get_property(analyzer, analyzer.factory.no_dep, analyzer.factory.string("ref"));
     if r#ref.test_nullish() != Some(true) {
       // TODO: currently we haven't implemented useRef, so we just consider it as a callback
       analyzer.exec_consumed_fn("React_ref", move |analyzer| {
         r#ref.call(
           analyzer,
-          analyzer.factory.empty_consumable,
+          analyzer.factory.no_dep,
           analyzer.factory.unknown(),
           analyzer.factory.unknown(),
         )
@@ -36,18 +33,14 @@ pub fn create_react_create_element_impl<'a>(factory: &'a EntityFactory<'a>) -> E
     }
 
     // Special prop: key
-    let key = props.get_property(
-      analyzer,
-      analyzer.factory.empty_consumable,
-      analyzer.factory.string("key"),
-    );
+    let key = props.get_property(analyzer, analyzer.factory.no_dep, analyzer.factory.string("key"));
     if r#ref.test_nullish() != Some(true) {
       analyzer.consume(key);
     }
 
     props.set_property(
       analyzer,
-      analyzer.factory.empty_consumable,
+      analyzer.factory.no_dep,
       analyzer.factory.string("children"),
       children.unwrap(),
     );

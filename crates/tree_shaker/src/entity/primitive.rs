@@ -2,7 +2,7 @@ use super::{
   Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
   never::NeverEntity,
 };
-use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, consumable::Consumable};
+use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveEntity {
@@ -18,14 +18,14 @@ pub enum PrimitiveEntity {
 impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
-  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
     // No effect
   }
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     // TODO: PrimitiveEntity::String
@@ -40,7 +40,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn set_property(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _key: Entity<'a>,
     _value: Entity<'a>,
   ) {
@@ -50,31 +50,26 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if *self == PrimitiveEntity::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        analyzer.consumable((self, dep)),
+        analyzer.dep((self, dep)),
       )
     } else {
-      (vec![], analyzer.consumable((self, dep)))
+      (vec![], analyzer.dep((self, dep)))
     }
   }
 
-  fn delete_property(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-    _key: Entity<'a>,
-  ) {
+  fn delete_property(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>, _key: Entity<'a>) {
     // No effect
   }
 
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -89,7 +84,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot construct non-object");
@@ -104,13 +99,13 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
     analyzer.factory.computed_unknown((self, props))
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     analyzer.factory.entity_with_dep(self, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     if *self == PrimitiveEntity::String {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((self, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.dep((self, dep)));
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
     if analyzer.config.preserve_exceptions {

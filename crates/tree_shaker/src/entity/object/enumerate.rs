@@ -3,7 +3,7 @@ use oxc::allocator;
 use super::{ObjectEntity, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
-  consumable::Consumable,
+  dep::Dep,
   entity::{EnumeratedProperties, consumed_object},
   scope::CfScopeKind,
 };
@@ -13,7 +13,7 @@ impl<'a> ObjectEntity<'a> {
   pub fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(self, analyzer, dep);
@@ -40,11 +40,7 @@ impl<'a> ObjectEntity<'a> {
       }
 
       for getter in context.getters.drain(..) {
-        context.values.push(getter.call_as_getter(
-          analyzer,
-          analyzer.factory.empty_consumable,
-          self.into(),
-        ));
+        context.values.push(getter.call_as_getter(analyzer, analyzer.factory.no_dep, self.into()));
       }
 
       if let Some(value) = analyzer
@@ -80,7 +76,7 @@ impl<'a> ObjectEntity<'a> {
         for getter in context.getters.drain(..) {
           context.values.push(getter.call_as_getter(
             analyzer,
-            analyzer.factory.empty_consumable,
+            analyzer.factory.no_dep,
             self.into(),
           ));
         }
@@ -96,6 +92,6 @@ impl<'a> ObjectEntity<'a> {
 
     analyzer.pop_cf_scope();
 
-    (result, analyzer.consumable((dep, context.extra_deps)))
+    (result, analyzer.dep((dep, context.extra_deps)))
   }
 }

@@ -10,11 +10,10 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableVec, ConsumeTrait},
-  dep::DepId,
+  dep::{Dep, DepTrait, DepVec},
   entity::{Entity, EntityFactory, ObjectId},
   module::ModuleId,
-  utils::{CalleeInfo, CalleeNode},
+  utils::{CalleeInfo, CalleeNode, dep_id::DepId},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -142,7 +141,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_call_scope(
     &mut self,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     variable_scope_stack: Vec<VariableScopeId>,
     is_async: bool,
     is_generator: bool,
@@ -158,7 +157,7 @@ impl<'a> Analyzer<'a> {
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function,
-      self.factory.vec1(self.consumable((call_dep, dep_id))),
+      self.factory.vec1(self.dep((call_dep, dep_id))),
       Some(false),
     );
 
@@ -199,7 +198,7 @@ impl<'a> Analyzer<'a> {
   pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind<'a>,
-    deps: ConsumableVec<'a>,
+    deps: DepVec<'a>,
     exited: Option<bool>,
   ) -> usize {
     self.scoping.cf.push(CfScope::new(kind, deps, exited));
@@ -210,7 +209,7 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::Indeterminate, None);
   }
 
-  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumeTrait<'a> + 'a) {
+  pub fn push_dependent_cf_scope(&mut self, dep: impl DepTrait<'a> + 'a) {
     self.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       self.factory.vec1(dep.uniform(self.allocator)),
@@ -222,7 +221,7 @@ impl<'a> Analyzer<'a> {
     self.scoping.cf.pop()
   }
 
-  pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>> {
+  pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Dep<'a>> {
     let mut exec_deps = self.factory.vec();
     for _ in 0..count {
       let id = self.scoping.cf.stack.pop().unwrap();
@@ -230,7 +229,7 @@ impl<'a> Analyzer<'a> {
         exec_deps.push(dep);
       }
     }
-    if exec_deps.is_empty() { None } else { Some(self.consumable(exec_deps)) }
+    if exec_deps.is_empty() { None } else { Some(self.dep(exec_deps)) }
   }
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {

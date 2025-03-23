@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     for option in &node.options {
       deps.push(self.exec_expression(option));
     }
-    let dep = self.consumable((AstKind2::ImportExpression(node), deps));
+    let dep = self.dep((AstKind2::ImportExpression(node), deps));
 
     if let Some(LiteralEntity::String(specifier, _m)) = specifier.get_literal(self) {
       if let Some(module_id) = self.resolve_and_import_module(specifier) {

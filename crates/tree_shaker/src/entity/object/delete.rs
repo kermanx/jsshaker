@@ -1,18 +1,13 @@
 use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
+  dep::{CustomDepTrait, Dep},
   entity::{Entity, LiteralEntity, consumed_object},
   mangling::{MangleConstraint, ManglingDep},
 };
 
 impl<'a> ObjectEntity<'a> {
-  pub fn delete_property(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
-    key: Entity<'a>,
-  ) {
+  pub fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
@@ -25,19 +20,19 @@ impl<'a> ObjectEntity<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let dep = analyzer.consumable((exec_deps, dep));
+    let dep = analyzer.dep((exec_deps, dep));
 
     {
       let mut unknown_keyed = self.unknown_keyed.borrow_mut();
       if !unknown_keyed.possible_values.is_empty() {
-        unknown_keyed.delete(true, analyzer.consumable((dep, key)));
+        unknown_keyed.delete(true, analyzer.dep((dep, key)));
       }
     }
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let indeterminate = indeterminate || key_literals.len() > 1;
       let mangable = self.check_mangable(analyzer, &key_literals);
-      let dep = if mangable { dep } else { analyzer.consumable((dep, key)) };
+      let dep = if mangable { dep } else { analyzer.dep((dep, key)) };
 
       let mut string_keyed = self.string_keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
@@ -50,7 +45,7 @@ impl<'a> ObjectEntity<'a> {
                 if mangable {
                   let prev_key = property.key.unwrap();
                   let prev_atom = property.mangling.unwrap();
-                  analyzer.consumable((
+                  analyzer.dep((
                     dep,
                     ManglingDep {
                       deps: (prev_key, key),
@@ -62,7 +57,7 @@ impl<'a> ObjectEntity<'a> {
                 },
               );
             } else if let Some(rest) = &mut *rest {
-              rest.delete(true, analyzer.consumable((dep, key)));
+              rest.delete(true, analyzer.dep((dep, key)));
             } else if mangable {
               self.add_to_mangling_group(analyzer, key_atom.unwrap());
             }
@@ -74,7 +69,7 @@ impl<'a> ObjectEntity<'a> {
     } else {
       self.disable_mangling(analyzer);
 
-      let dep = analyzer.consumable((dep, key));
+      let dep = analyzer.dep((dep, key));
 
       let mut string_keyed = self.string_keyed.borrow_mut();
       for property in string_keyed.values_mut() {

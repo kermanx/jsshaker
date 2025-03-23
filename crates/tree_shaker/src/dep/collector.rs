@@ -1,15 +1,15 @@
-use super::{Consumable, ConsumeTrait};
+use super::{Dep, DepTrait};
 use crate::{analyzer::Analyzer, entity::EntityFactory};
 use oxc::allocator;
 use std::mem;
 
 #[derive(Debug)]
-pub struct ConsumableCollector<'a, T: ConsumeTrait<'a> + 'a = Consumable<'a>> {
+pub struct DepCollector<'a, T: DepTrait<'a> + 'a = Dep<'a>> {
   pub current: allocator::Vec<'a, T>,
-  pub node: Option<Consumable<'a>>,
+  pub node: Option<Dep<'a>>,
 }
 
-impl<'a, T: ConsumeTrait<'a> + 'a> ConsumableCollector<'a, T> {
+impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
   pub fn new(current: allocator::Vec<'a, T>) -> Self {
     Self { current, node: None }
   }
@@ -22,23 +22,23 @@ impl<'a, T: ConsumeTrait<'a> + 'a> ConsumableCollector<'a, T> {
     self.current.push(value);
   }
 
-  pub fn try_collect(&mut self, factory: &EntityFactory<'a>) -> Option<Consumable<'a>> {
+  pub fn try_collect(&mut self, factory: &EntityFactory<'a>) -> Option<Dep<'a>> {
     if self.current.is_empty() {
       self.node
     } else {
       let current = mem::replace(&mut self.current, factory.vec());
       let node = Some(if let Some(node) = self.node {
-        factory.consumable((current, node))
+        factory.dep((current, node))
       } else {
-        factory.consumable(current)
+        factory.dep(current)
       });
       self.node = node;
       node
     }
   }
 
-  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Consumable<'a> {
-    self.try_collect(factory).unwrap_or(factory.empty_consumable)
+  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Dep<'a> {
+    self.try_collect(factory).unwrap_or(factory.no_dep)
   }
 
   pub fn consume_all(&self, analyzer: &mut Analyzer<'a>) {

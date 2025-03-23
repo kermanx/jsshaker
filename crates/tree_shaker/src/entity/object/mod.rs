@@ -12,12 +12,11 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
-  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
-  dep::DepId,
+  dep::{CustomDepTrait, Dep, DepCollector},
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
-  utils::ast::AstKind2,
+  utils::{ast::AstKind2, dep_id::DepId},
 };
 use oxc::allocator;
 use oxc_index::define_index_type;
@@ -35,10 +34,10 @@ pub enum ObjectPrototype<'a> {
   ImplicitOrNull,
   Builtin(&'a BuiltinPrototype<'a>),
   Custom(&'a ObjectEntity<'a>),
-  Unknown(Consumable<'a>),
+  Unknown(Dep<'a>),
 }
 
-impl<'a> ConsumableTrait<'a> for ObjectPrototype<'a> {
+impl<'a> CustomDepTrait<'a> for ObjectPrototype<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       ObjectPrototype::ImplicitOrNull => {}
@@ -58,7 +57,7 @@ pub struct ObjectEntity<'a> {
   pub consumable: bool,
   pub consumed: Cell<bool>,
   pub consumed_as_prototype: Cell<bool>,
-  // deps: RefCell<ConsumableCollector<'a>>,
+  // deps: RefCell<DepCollector<'a>>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
   pub object_id: ObjectId,
@@ -98,7 +97,7 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -109,7 +108,7 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     self.get_property(analyzer, dep, key)
@@ -118,7 +117,7 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -128,19 +127,19 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     self.enumerate_properties(analyzer, dep)
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.delete_property(analyzer, dep, key);
   }
 
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -150,7 +149,7 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
@@ -160,12 +159,12 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
     consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
@@ -348,7 +347,7 @@ impl<'a> Analyzer<'a> {
         definite: true,
         enumerable: false,
         possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),
-        non_existent: ConsumableCollector::new(self.factory.vec()),
+        non_existent: DepCollector::new(self.factory.vec()),
         key: Some(self.factory.string("prototype")),
         mangling: Some(self.mangler.builtin_atom),
       },

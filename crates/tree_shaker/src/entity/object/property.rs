@@ -3,7 +3,7 @@ use oxc_index::define_index_type;
 
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector},
+  dep::{Dep, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   utils::Found,
@@ -32,7 +32,7 @@ pub struct ObjectProperty<'a> {
   /// Possible values of this property
   pub possible_values: allocator::Vec<'a, ObjectPropertyValue<'a>>,
   /// Why this property is non-existent
-  pub non_existent: ConsumableCollector<'a>,
+  pub non_existent: DepCollector<'a>,
   /// The key entity. None if it is just LiteralEntity(key)
   pub key: Option<Entity<'a>>,
   /// key_atom if this property's key is mangable
@@ -45,7 +45,7 @@ impl<'a> ObjectProperty<'a> {
       definite: true,
       enumerable: true,
       possible_values: allocator::Vec::new_in(allocator),
-      non_existent: ConsumableCollector::new(allocator::Vec::new_in(allocator)),
+      non_existent: DepCollector::new(allocator::Vec::new_in(allocator)),
       key: None,
       mangling: None,
     }
@@ -168,7 +168,7 @@ impl<'a> ObjectProperty<'a> {
     if found_others { Found::Unknown } else { Found::known(found_setter) }
   }
 
-  pub fn delete(&mut self, indeterminate: bool, dep: Consumable<'a>) {
+  pub fn delete(&mut self, indeterminate: bool, dep: Dep<'a>) {
     self.definite = false;
     if !indeterminate {
       self.possible_values.clear();

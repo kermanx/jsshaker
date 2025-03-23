@@ -1,12 +1,11 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, dep::DepId, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 use oxc::ast::ast::{ReturnStatement, Statement};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_return_statement(&mut self, node: &'a ReturnStatement) {
     let value =
       node.argument.as_ref().map_or(self.factory.undefined, |expr| self.exec_expression(expr));
-    let dep = DepId::from(AstKind2::ReturnStatement(node));
-    self.return_value(value, dep);
+    self.return_value(value, AstKind2::ReturnStatement(node));
   }
 }
 

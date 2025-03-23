@@ -1,7 +1,7 @@
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  dep::{CustomDepTrait, Dep, DepCollector},
   entity::{Entity, LiteralEntity, consumed_object},
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
@@ -10,7 +10,7 @@ use crate::{
 
 pub struct PendingSetter<'a> {
   pub indeterminate: bool,
-  pub dep: Consumable<'a>,
+  pub dep: Dep<'a>,
   pub setter: Entity<'a>,
 }
 
@@ -18,7 +18,7 @@ impl<'a> ObjectEntity<'a> {
   pub fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -93,7 +93,7 @@ impl<'a> ObjectEntity<'a> {
                 definite: !indeterminate && found.must_not_found(),
                 enumerable: true, /* TODO: Object.defineProperty */
                 possible_values: analyzer.factory.vec1(ObjectPropertyValue::Field(value, false)),
-                non_existent: ConsumableCollector::new(analyzer.factory.vec()),
+                non_existent: DepCollector::new(analyzer.factory.vec()),
                 key: Some(key),
                 mangling: mangable.then(|| key_atom.unwrap()),
               },
@@ -127,7 +127,7 @@ impl<'a> ObjectEntity<'a> {
       let indeterminate = indeterminate || setters.len() > 1 || setters[0].indeterminate;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
-        analyzer.factory.vec1(analyzer.consumable((dep, key))),
+        analyzer.factory.vec1(analyzer.dep((dep, key))),
         if indeterminate { None } else { Some(false) },
       );
       for s in setters {

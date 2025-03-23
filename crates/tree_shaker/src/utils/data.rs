@@ -1,6 +1,7 @@
-use crate::dep::DepId;
 use rustc_hash::FxHashMap;
 use std::collections::BTreeSet;
+
+use super::dep_id::DepId;
 
 pub struct DataPlaceholder<'a> {
   _phantom: std::marker::PhantomData<&'a ()>,

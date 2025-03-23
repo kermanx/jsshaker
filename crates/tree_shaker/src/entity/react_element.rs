@@ -3,7 +3,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableVec},
+  dep::{Dep, DepVec},
   entity::ObjectPrototype,
   use_consumed_flag,
 };
@@ -14,7 +14,7 @@ pub struct ReactElementEntity<'a> {
   pub consumed: Cell<bool>,
   pub tag: Entity<'a>,
   pub props: Entity<'a>,
-  pub deps: RefCell<ConsumableVec<'a>>,
+  pub deps: RefCell<DepVec<'a>>,
 }
 
 impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
@@ -32,12 +32,12 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
         ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object),
         Some(group_id),
       );
-      copied_props.init_spread(analyzer, analyzer.factory.empty_consumable, props);
+      copied_props.init_spread(analyzer, analyzer.factory.no_dep, props);
       tag.jsx(analyzer, copied_props.into())
     });
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -48,7 +48,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::get_property(self, analyzer, dep, key)
@@ -57,7 +57,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -68,7 +68,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
@@ -76,7 +76,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
     consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.consume(analyzer);
     consumed_object::delete_property(analyzer, dep, key)
   }
@@ -84,7 +84,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -99,7 +99,7 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
@@ -119,12 +119,12 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
     }
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
     consumed_object::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
     consumed_object::iterate(analyzer, dep)
   }
@@ -159,8 +159,8 @@ impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
   fn get_constructor_prototype(
     &'a self,
     _analyzer: &Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    _dep: Dep<'a>,
+  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     None
   }
 

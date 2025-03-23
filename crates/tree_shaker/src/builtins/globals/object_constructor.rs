@@ -166,7 +166,7 @@ impl<'a> Builtins<'a> {
         }
         object.set_property(
           analyzer,
-          analyzer.factory.consumable((dep, descriptor.shallow_dep())),
+          analyzer.factory.dep((dep, descriptor.shallow_dep())),
           key,
           value,
         );

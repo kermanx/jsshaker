@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let dep = self.consumable((AstKind2::WhileStatement(node), test));
+    let dep = self.dep((AstKind2::WhileStatement(node), test));
 
     self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
     self.exec_loop(move |analyzer| {
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
 
       let test = analyzer.exec_expression(&node.test);
-      let test = analyzer.consumable(test);
+      let test = analyzer.dep(test);
       analyzer.cf_scope_mut().push_dep(test);
     });
     self.pop_cf_scope();

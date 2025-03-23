@@ -4,7 +4,7 @@ use super::{
   Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
   consumed_object,
 };
-use crate::{analyzer::Analyzer, consumable::Consumable, use_consumed_flag};
+use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
 
 use std::cell::Cell;
 
@@ -23,7 +23,7 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
     }
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -36,7 +36,7 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn get_property(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _key: Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()
@@ -45,7 +45,7 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn set_property(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _key: Entity<'a>,
     _value: Entity<'a>,
   ) {
@@ -55,24 +55,19 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn enumerate_properties(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     unreachable!()
   }
 
-  fn delete_property(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
-    _key: Entity<'a>,
-  ) {
+  fn delete_property(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>, _key: Entity<'a>) {
     unreachable!()
   }
 
   fn call(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _this: Entity<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
@@ -82,7 +77,7 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn construct(
     &'a self,
     _analyzer: &mut Analyzer<'a>,
-    _dep: Consumable<'a>,
+    _dep: Dep<'a>,
     _args: Entity<'a>,
   ) -> Entity<'a> {
     unreachable!()
@@ -92,11 +87,11 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
     unreachable!()
   }
 
-  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> Entity<'a> {
     unreachable!()
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     let mut elements = Vec::new();
     let mut rest: Option<allocator::Vec<'a, Entity<'a>>> = None;
     for (spread, entity) in &self.arguments {
@@ -144,8 +139,8 @@ impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
   fn get_constructor_prototype(
     &'a self,
     _analyzer: &Analyzer<'a>,
-    _dep: Consumable<'a>,
-  ) -> Option<(Consumable<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    _dep: Dep<'a>,
+  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     unreachable!()
   }
 

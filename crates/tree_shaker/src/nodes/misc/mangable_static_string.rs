@@ -1,5 +1,6 @@
 use crate::{
-  analyzer::Analyzer, dep::DepId, entity::Entity, mangling::MangleAtom, transformer::Transformer,
+  analyzer::Analyzer, entity::Entity, mangling::MangleAtom, transformer::Transformer,
+  utils::dep_id::DepId,
 };
 
 impl<'a> Analyzer<'a> {

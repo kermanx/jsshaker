@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
+  dep::{CustomDepTrait, Dep},
   entity::{Entity, EntityFactory, ObjectId, ObjectPrototype},
   init_object,
   scope::exhaustive::ExhaustiveDepId,
@@ -14,7 +14,7 @@ pub struct ReactContextData<'a> {
   consumed: bool,
   default_value: Entity<'a>,
   stack: Vec<Entity<'a>>,
-  dep: Consumable<'a>,
+  dep: Dep<'a>,
 }
 
 impl<'a> ReactContextData<'a> {
@@ -39,8 +39,7 @@ pub type ReactContexts<'a> = IndexVec<ContextId, ReactContextData<'a>>;
 
 pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createContext", |analyzer, dep, _this, args| {
-    let default_value =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+    let default_value = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
 
     let context = analyzer
       .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None);
@@ -64,7 +63,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
   })
 }
 
-impl<'a> ConsumableTrait<'a> for ContextId {
+impl<'a> CustomDepTrait<'a> for ContextId {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = &mut analyzer.builtins.react_data.contexts[*self];
     data.consumed = true;
@@ -146,11 +145,10 @@ fn create_react_context_consumer_impl<'a>(
 
 pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useContext", move |analyzer, dep, _this, args| {
-    let context_object =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+    let context_object = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
     let context_id = context_object.get_property(
       analyzer,
-      analyzer.factory.empty_consumable,
+      analyzer.factory.no_dep,
       analyzer.factory.string("__#internal__context_id"),
     );
     if let Some(id) = analyzer.parse_internal_symbol_id::<ContextId>(context_id) {

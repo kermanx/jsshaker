@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  consumable::{Consumable, ConsumableCollector, ConsumableTrait},
+  dep::{CustomDepTrait, Dep, DepCollector},
   scope::CfScopeId,
   use_consumed_flag,
 };
@@ -16,7 +16,7 @@ use std::{
 
 pub struct ArrayEntity<'a> {
   pub consumed: Cell<bool>,
-  pub deps: RefCell<ConsumableCollector<'a>>,
+  pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
   pub object_id: ObjectId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
@@ -45,7 +45,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     self.rest.borrow().consume(analyzer);
   }
 
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) {
+  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -57,13 +57,13 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    self.deps.borrow_mut().push(analyzer.consumable((exec_deps, dep)));
+    self.deps.borrow_mut().push(analyzer.dep((exec_deps, dep)));
   }
 
   fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
@@ -76,7 +76,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       return analyzer.factory.computed_unknown((self, dep, key));
     }
 
-    let dep = analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
+    let dep = analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = analyzer.factory.vec();
       let mut rest_added = false;
@@ -116,7 +116,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
@@ -191,7 +191,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       }
       if has_effect {
         let mut deps = self.deps.borrow_mut();
-        deps.push(analyzer.consumable((exec_deps, dep)));
+        deps.push(analyzer.dep((exec_deps, dep)));
       }
       return;
     }
@@ -199,13 +199,13 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     // Unknown
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(analyzer.consumable((exec_deps, key, value)));
+    deps.push(analyzer.dep((exec_deps, key, value)));
   }
 
   fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
       return consumed_object::enumerate_properties(self, analyzer, dep);
@@ -216,7 +216,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     if !self.deps.borrow().is_empty() {
       return (
         vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
-        analyzer.consumable((self, dep)),
+        analyzer.dep((self, dep)),
       );
     }
 
@@ -239,10 +239,10 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       ));
     }
 
-    (entries, analyzer.consumable((self.deps.borrow_mut().collect(analyzer.factory), dep)))
+    (entries, analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep)))
   }
 
-  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>, key: Entity<'a>) {
+  fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
@@ -256,13 +256,13 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
 
     let mut deps = self.deps.borrow_mut();
     deps.push(dep);
-    deps.push(analyzer.consumable((exec_deps, key)));
+    deps.push(analyzer.dep((exec_deps, key)));
   }
 
   fn call(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
@@ -272,7 +272,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   fn construct(
     &'a self,
     analyzer: &mut Analyzer<'a>,
-    dep: Consumable<'a>,
+    dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
@@ -282,14 +282,14 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     consumed_object::jsx(self, analyzer, props)
   }
 
-  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> Entity<'a> {
+  fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::r#await(analyzer, dep);
     }
     analyzer.factory.computed(self.into(), dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Consumable<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     if self.consumed.get() {
       return consumed_object::iterate(analyzer, dep);
     }
@@ -297,7 +297,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.consumable((self, dep)));
+      return (vec![], Some(analyzer.factory.unknown()), analyzer.dep((self, dep)));
     }
 
     (
@@ -306,7 +306,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
         self.rest.borrow().iter().copied(),
         analyzer.allocator,
       )),
-      analyzer.consumable((dep, self.deps.borrow_mut().collect(analyzer.factory))),
+      analyzer.dep((dep, self.deps.borrow_mut().collect(analyzer.factory))),
     )
   }
 

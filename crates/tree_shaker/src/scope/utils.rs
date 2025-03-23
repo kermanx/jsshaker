@@ -1,6 +1,6 @@
 use crate::{
   analyzer::Analyzer,
-  consumable::{ConsumableCollector, ConsumableVec},
+  dep::{DepCollector, DepVec},
   entity::ObjectId,
 };
 use std::mem;
@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     cf_scope: CfScopeId,
     object_id: ObjectId,
-  ) -> (bool, bool, ConsumableVec<'a>) {
+  ) -> (bool, bool, DepVec<'a>) {
     let target_depth = self.find_first_different_cf_scope(cf_scope);
 
     let mut has_exhaustive = false;
@@ -53,7 +53,7 @@ impl<'a> Analyzer<'a> {
       if !marked {
         marked = scope.mark_exhaustive_write(ExhaustiveDepId::Object(object_id));
       }
-      let deps = mem::replace(&mut scope.deps, ConsumableCollector::new(factory.vec()));
+      let deps = mem::replace(&mut scope.deps, DepCollector::new(factory.vec()));
       deps.consume_all(self);
     }
     self.request_exhaustive_callbacks(ExhaustiveDepId::Object(object_id));

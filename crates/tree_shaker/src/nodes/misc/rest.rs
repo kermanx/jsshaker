@@ -1,7 +1,7 @@
 use crate::{
   analyzer::Analyzer,
-  dep::DepId,
   entity::{Entity, ObjectPrototype},
+  utils::dep_id::DepId,
 };
 
 impl<'a> Analyzer<'a> {
@@ -16,7 +16,7 @@ impl<'a> Analyzer<'a> {
     rest.init_spread(self, dep.into(), object);
     let rest = Entity::from(rest);
     for key in enumerated {
-      rest.delete_property(self, self.factory.empty_consumable, key);
+      rest.delete_property(self, self.factory.no_dep, key);
     }
     rest
   }
