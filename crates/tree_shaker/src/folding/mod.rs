@@ -8,10 +8,11 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
+  dep::DepAtom,
   entity::{Entity, LiteralEntity},
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
-  utils::{ast::AstKind2, dep_id::DepId},
+  utils::ast::AstKind2,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -45,7 +46,7 @@ pub struct FoldingData<'a> {
 
 #[derive(Debug, Default)]
 pub struct ConstantFolder<'a> {
-  nodes: FxHashMap<DepId, &'a RefCell<FoldingData<'a>>>,
+  nodes: FxHashMap<DepAtom, &'a RefCell<FoldingData<'a>>>,
 }
 
 impl<'a> Analyzer<'a> {

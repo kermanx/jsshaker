@@ -2,7 +2,6 @@ mod annotation;
 pub mod ast;
 mod callee_info;
 mod data;
-pub mod dep_id;
 pub mod effect_builder;
 mod escape_template_element_value;
 mod f64_with_eq;

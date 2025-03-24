@@ -13,13 +13,13 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
-  dep::CustomDepTrait,
+  dep::{CustomDepTrait, DepAtom},
   entity::Entity,
   scope::{
     CfScopeId, CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
     variable_scope::VariableScope,
   },
-  utils::{CalleeInfo, CalleeNode, dep_id::DepId},
+  utils::{CalleeInfo, CalleeNode},
 };
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ pub struct ModuleInfo<'a> {
   pub line_index: LineIndex,
   pub program: &'a UnsafeCell<Program<'a>>,
   pub semantic: Rc<Semantic<'a>>,
-  pub call_id: DepId,
+  pub call_id: DepAtom,
 
   pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId)>,
   pub default_export: Option<Entity<'a>>,
@@ -96,7 +96,7 @@ impl<'a> Analyzer<'a> {
       line_index,
       program,
       semantic,
-      call_id: DepId::from_counter(),
+      call_id: DepAtom::from_counter(),
 
       named_exports: Default::default(),
       default_export: Default::default(),

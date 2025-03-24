@@ -3,14 +3,14 @@ use oxc::allocator::{self, Allocator};
 use super::{try_scope::TryScope, variable_scope::VariableScopeId};
 use crate::{
   analyzer::Analyzer,
-  dep::DepTrait,
+  dep::{DepAtom, DepTrait},
   entity::Entity,
-  utils::{CalleeInfo, dep_id::DepId},
+  utils::CalleeInfo,
 };
 use std::mem;
 
 pub struct CallScope<'a> {
-  pub call_id: DepId,
+  pub call_id: DepAtom,
   pub callee: CalleeInfo<'a>,
   pub old_variable_scope_stack: Vec<VariableScopeId>,
   pub cf_scope_depth: usize,
@@ -27,7 +27,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new_in(
-    call_id: DepId,
+    call_id: DepAtom,
     callee: CalleeInfo<'a>,
     old_variable_scope_stack: Vec<VariableScopeId>,
     cf_scope_depth: usize,

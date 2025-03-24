@@ -10,10 +10,10 @@ pub mod variable_scope;
 
 use crate::{
   analyzer::Analyzer,
-  dep::{Dep, DepTrait, DepVec},
+  dep::{Dep, DepAtom, DepTrait, DepVec},
   entity::{Entity, EntityFactory, ObjectId},
   module::ModuleId,
-  utils::{CalleeInfo, CalleeNode, dep_id::DepId},
+  utils::{CalleeInfo, CalleeNode},
 };
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -42,7 +42,7 @@ impl<'a> Scoping<'a> {
     cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), Some(false)));
     Scoping {
       call: vec![CallScope::new_in(
-        DepId::from_counter(),
+        DepAtom::from_counter(),
         CalleeInfo {
           module_id: ModuleId::from(0),
           node: CalleeNode::Root,
@@ -147,7 +147,7 @@ impl<'a> Analyzer<'a> {
     is_generator: bool,
     consume: bool,
   ) {
-    let dep_id = DepId::from_counter();
+    let dep_id = DepAtom::from_counter();
     if consume {
       self.refer_dep(dep_id);
     }

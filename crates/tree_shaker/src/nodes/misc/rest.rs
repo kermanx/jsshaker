@@ -1,14 +1,14 @@
 use crate::{
   analyzer::Analyzer,
+  dep::DepAtom,
   entity::{Entity, ObjectPrototype},
-  utils::dep_id::DepId,
 };
 
 impl<'a> Analyzer<'a> {
   /// const { enumerated_1, enumerated_2, ...rest } = object;
   pub fn exec_object_rest(
     &mut self,
-    dep: impl Into<DepId>,
+    dep: impl Into<DepAtom>,
     object: Entity<'a>,
     enumerated: Vec<Entity<'a>>,
   ) -> Entity<'a> {

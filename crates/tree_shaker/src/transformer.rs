@@ -1,12 +1,10 @@
 use crate::{
   TreeShakeConfig,
+  dep::{DepAtom, ReferredDeps},
   folding::ConstantFolder,
   mangling::Mangler,
   scope::conditional::ConditionalDataMap,
-  utils::{
-    DataPlaceholder, ExtraData,
-    dep_id::{DepId, ReferredDeps},
-  },
+  utils::{DataPlaceholder, ExtraData},
 };
 use oxc::{
   allocator::{Allocator, CloneIn},
@@ -377,7 +375,7 @@ impl<'a> Transformer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepId>) -> &'a D {
+  pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepAtom>) -> &'a D {
     const { assert!(!std::mem::needs_drop::<D>(), "Cannot allocate Drop type in arena") };
 
     let existing = self.data.get(&key.into());

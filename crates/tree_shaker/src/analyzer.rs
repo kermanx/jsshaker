@@ -1,19 +1,17 @@
 use crate::{
   TreeShakeConfig,
   builtins::Builtins,
+  dep::{DepAtom, ReferredDeps},
   entity::EntityFactory,
   folding::ConstantFolder,
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::{
-    Scoping, // r#loop::LoopDataMap,
+    Scoping,
     conditional::ConditionalDataMap,
     exhaustive::{ExhaustiveCallback, ExhaustiveDepId},
   },
-  utils::{
-    ExtraData,
-    dep_id::{DepId, ReferredDeps},
-  },
+  utils::ExtraData,
   vfs::Vfs,
 };
 use oxc::{
@@ -118,13 +116,13 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn set_data(&mut self, key: impl Into<DepId>, data: impl Default + 'a) {
+  pub fn set_data(&mut self, key: impl Into<DepAtom>, data: impl Default + 'a) {
     self.data.insert(key.into(), unsafe { mem::transmute(Box::new(data)) });
   }
 
   pub fn get_data_or_insert_with<D: 'a>(
     &mut self,
-    key: impl Into<DepId>,
+    key: impl Into<DepAtom>,
     default: impl FnOnce() -> D,
   ) -> &'a mut D {
     let boxed =
@@ -132,7 +130,7 @@ impl<'a> Analyzer<'a> {
     unsafe { mem::transmute(boxed.as_mut()) }
   }
 
-  pub fn load_data<D: Default + 'a>(&mut self, key: impl Into<DepId>) -> &'a mut D {
+  pub fn load_data<D: Default + 'a>(&mut self, key: impl Into<DepAtom>) -> &'a mut D {
     self.get_data_or_insert_with(key, Default::default)
   }
 

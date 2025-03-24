@@ -12,11 +12,11 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
-  dep::{CustomDepTrait, Dep, DepCollector},
+  dep::{CustomDepTrait, Dep, DepAtom, DepCollector},
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
-  utils::{ast::AstKind2, dep_id::DepId},
+  utils::ast::AstKind2,
 };
 use oxc::allocator;
 use oxc_index::define_index_type;
@@ -361,7 +361,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn use_mangable_plain_object(
     &mut self,
-    dep_id: impl Into<DepId>,
+    dep_id: impl Into<DepAtom>,
   ) -> &'a mut ObjectEntity<'a> {
     let mangling_group = self
       .load_data::<Option<ObjectManglingGroupId>>(dep_id)

@@ -1,13 +1,13 @@
 use rustc_hash::FxHashMap;
 use std::collections::BTreeSet;
 
-use super::dep_id::DepId;
+use crate::dep::DepAtom;
 
 pub struct DataPlaceholder<'a> {
   _phantom: std::marker::PhantomData<&'a ()>,
 }
 
-pub type ExtraData<'a> = FxHashMap<DepId, Box<DataPlaceholder<'a>>>;
+pub type ExtraData<'a> = FxHashMap<DepAtom, Box<DataPlaceholder<'a>>>;
 
 pub type Diagnostics = BTreeSet<String>;
 

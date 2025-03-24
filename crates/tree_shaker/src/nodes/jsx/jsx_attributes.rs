@@ -14,16 +14,16 @@ impl<'a> Analyzer<'a> {
     let object = self.use_mangable_plain_object(AstKind2::JSXOpeningElement(node));
 
     for attr in &node.attributes {
-      let dep_id = AstKind2::JSXAttributeItem(attr);
+      let dep = AstKind2::JSXAttributeItem(attr);
       match attr {
         JSXAttributeItem::Attribute(node) => {
           let key = self.exec_jsx_attribute_name(&node.name);
-          let value = self.factory.computed(self.exec_jsx_attribute_value(&node.value), dep_id);
+          let value = self.factory.computed(self.exec_jsx_attribute_value(&node.value), dep);
           object.init_property(self, PropertyKind::Init, key, value, true);
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, dep_id, argument);
+          object.init_spread(self, dep, argument);
         }
       }
     }

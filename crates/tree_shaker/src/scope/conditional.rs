@@ -1,10 +1,9 @@
 use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep},
+  dep::{CustomDepTrait, Dep, DepAtom},
   entity::Entity,
   transformer::Transformer,
-  utils::dep_id::DepId,
 };
 use rustc_hash::FxHashMap;
 use std::{cell::Cell, fmt::Debug, mem};
@@ -20,13 +19,13 @@ struct ConditionalData<'a> {
 
 #[derive(Debug, Default)]
 pub struct ConditionalDataMap<'a> {
-  call_to_branches: FxHashMap<DepId, Vec<&'a ConditionalBranch<'a>>>,
-  node_to_data: FxHashMap<DepId, ConditionalData<'a>>,
+  call_to_branches: FxHashMap<DepAtom, Vec<&'a ConditionalBranch<'a>>>,
+  node_to_data: FxHashMap<DepAtom, ConditionalData<'a>>,
 }
 
 #[derive(Debug, Clone)]
 struct ConditionalBranch<'a> {
-  dep_id: DepId,
+  id: DepAtom,
   is_true_branch: bool,
   maybe_true: bool,
   maybe_false: bool,
@@ -53,7 +52,7 @@ impl<'a> ConditionalBranch<'a> {
 
 impl<'a> CustomDepTrait<'a> for &'a ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    let data = analyzer.get_conditional_data_mut(self.dep_id);
+    let data = analyzer.get_conditional_data_mut(self.id);
     self.refer_with_data(data);
   }
 }
@@ -62,7 +61,7 @@ impl<'a> Analyzer<'a> {
   #[allow(clippy::too_many_arguments)]
   pub fn push_if_like_branch_cf_scope(
     &mut self,
-    dep_id: impl Into<DepId>,
+    id: impl Into<DepAtom>,
     kind: CfScopeKind<'a>,
     test: Entity<'a>,
     maybe_consequent: bool,
@@ -71,7 +70,7 @@ impl<'a> Analyzer<'a> {
     has_contra: bool,
   ) -> Dep<'a> {
     let dep = self.push_conditional_cf_scope(
-      dep_id,
+      id,
       kind,
       test,
       maybe_consequent,
@@ -84,26 +83,26 @@ impl<'a> Analyzer<'a> {
 
   pub fn forward_logical_left_val(
     &mut self,
-    dep_id: impl Into<DepId>,
+    id: impl Into<DepAtom>,
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
     assert!(maybe_left);
-    let dep = self.register_conditional_data(dep_id, left, maybe_left, maybe_right, true, true);
+    let dep = self.register_conditional_data(id, left, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
 
   pub fn push_logical_right_cf_scope(
     &mut self,
-    dep_id: impl Into<DepId>,
+    id: impl Into<DepAtom>,
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
   ) -> Dep<'a> {
     assert!(maybe_right);
     let dep = self.push_conditional_cf_scope(
-      dep_id,
+      id,
       CfScopeKind::Indeterminate,
       left,
       maybe_left,
@@ -117,7 +116,7 @@ impl<'a> Analyzer<'a> {
   #[allow(clippy::too_many_arguments)]
   fn push_conditional_cf_scope(
     &mut self,
-    dep_id: impl Into<DepId>,
+    id: impl Into<DepAtom>,
     kind: CfScopeKind<'a>,
     test: Entity<'a>,
     maybe_true: bool,
@@ -126,7 +125,7 @@ impl<'a> Analyzer<'a> {
     has_contra: bool,
   ) -> impl CustomDepTrait<'a> + 'a {
     let dep =
-      self.register_conditional_data(dep_id, test, maybe_true, maybe_false, is_true, has_contra);
+      self.register_conditional_data(id, test, maybe_true, maybe_false, is_true, has_contra);
 
     self.push_cf_scope_with_deps(
       kind,
@@ -139,18 +138,18 @@ impl<'a> Analyzer<'a> {
 
   fn register_conditional_data(
     &mut self,
-    dep_id: impl Into<DepId>,
+    id: impl Into<DepAtom>,
     test: Entity<'a>,
     maybe_true: bool,
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
   ) -> &'a ConditionalBranch<'a> {
-    let dep_id = dep_id.into();
+    let id = id.into();
     let call_id = self.call_scope().call_id;
 
     let branch = self.allocator.alloc(ConditionalBranch {
-      dep_id,
+      id,
       is_true_branch: is_true,
       maybe_true,
       maybe_false,
@@ -164,7 +163,7 @@ impl<'a> Analyzer<'a> {
       call_to_branches.entry(call_id).or_insert_with(Default::default).push(branch);
     }
 
-    node_to_data.entry(dep_id).or_insert_with(ConditionalData::default);
+    node_to_data.entry(id).or_insert_with(ConditionalData::default);
 
     branch
   }
@@ -173,7 +172,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     branch: &'a ConditionalBranch<'a>,
   ) -> Option<&mut ConditionalData<'a>> {
-    let data = self.get_conditional_data_mut(branch.dep_id);
+    let data = self.get_conditional_data_mut(branch.id);
     if branch.is_true_branch { data.impure_false } else { data.impure_true }.then_some(data)
   }
 
@@ -213,23 +212,23 @@ impl<'a> Analyzer<'a> {
     dirty
   }
 
-  fn get_conditional_data_mut(&mut self, dep_id: DepId) -> &mut ConditionalData<'a> {
-    self.conditional_data.node_to_data.get_mut(&dep_id).unwrap()
+  fn get_conditional_data_mut(&mut self, id: DepAtom) -> &mut ConditionalData<'a> {
+    self.conditional_data.node_to_data.get_mut(&id).unwrap()
   }
 }
 
 impl Transformer<'_> {
-  pub fn get_conditional_result(&self, dep_id: impl Into<DepId>) -> (bool, bool, bool) {
-    let data = &self.conditional_data.node_to_data[&dep_id.into()];
+  pub fn get_conditional_result(&self, id: impl Into<DepAtom>) -> (bool, bool, bool) {
+    let data = &self.conditional_data.node_to_data[&id.into()];
     if data.maybe_true && data.maybe_false {
       assert!(data.tests_to_consume.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }
 
-  pub fn get_chain_result(&self, dep_id: impl Into<DepId>, optional: bool) -> (bool, bool) {
+  pub fn get_chain_result(&self, id: impl Into<DepAtom>, optional: bool) -> (bool, bool) {
     if optional {
-      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(dep_id);
+      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(id);
       (need_optional, !may_not_short_circuit)
     } else {
       (false, false)
