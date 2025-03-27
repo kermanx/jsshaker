@@ -1,9 +1,10 @@
+use std::fmt::Debug;
+
 use super::{
   Entity, EntityFactory, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype,
   TypeofResult, ValueTrait, consumed_object, never::NeverEntity,
 };
 use crate::{analyzer::Analyzer, dep::Dep};
-use std::fmt::Debug;
 
 trait BuiltinFnEntity<'a>: Debug {
   #[cfg(feature = "flame")]

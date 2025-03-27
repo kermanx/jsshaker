@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::Declaration;
+
+use crate::{analyzer::Analyzer, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {

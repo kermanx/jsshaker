@@ -1,7 +1,9 @@
+use std::mem;
+
+use oxc::allocator;
+
 use super::{Dep, DepTrait};
 use crate::{analyzer::Analyzer, entity::EntityFactory};
-use oxc::allocator;
-use std::mem;
 
 #[derive(Debug)]
 pub struct DepCollector<'a, T: DepTrait<'a> + 'a = Dep<'a>> {

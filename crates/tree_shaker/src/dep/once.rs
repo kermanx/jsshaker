@@ -1,6 +1,7 @@
+use std::{cell::Cell, fmt::Debug, marker::PhantomData};
+
 use super::CustomDepTrait;
 use crate::analyzer::Analyzer;
-use std::{cell::Cell, fmt::Debug, marker::PhantomData};
 
 pub struct OnceDep<'a, T: CustomDepTrait<'a> + 'a>(Cell<Option<T>>, PhantomData<&'a ()>);
 

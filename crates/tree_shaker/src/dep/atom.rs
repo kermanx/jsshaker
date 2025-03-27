@@ -1,11 +1,13 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, dep::CustomDepTrait, transformer::Transformer};
-use oxc::span::{GetSpan, Span};
-use rustc_hash::FxHashSet;
 use std::{
   fmt::Debug,
   hash::Hash,
   sync::atomic::{AtomicUsize, Ordering},
 };
+
+use oxc::span::{GetSpan, Span};
+use rustc_hash::FxHashSet;
+
+use crate::{analyzer::Analyzer, ast::AstKind2, dep::CustomDepTrait, transformer::Transformer};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DepAtom((usize, usize));

@@ -1,9 +1,10 @@
-use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
   ImportSpecifier, ModuleDeclaration, ModuleExportName,
 };
+
+use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {

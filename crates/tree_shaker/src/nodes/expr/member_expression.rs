@@ -1,12 +1,13 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
-};
 use oxc::{
   ast::ast::{
     ComputedMemberExpression, Expression, MemberExpression, PrivateFieldExpression,
     StaticMemberExpression,
   },
   span::GetSpan,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 pub type MemberExpressionReadResult<'a> =

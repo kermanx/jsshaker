@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXFragment},
 };
+
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_fragment(&mut self, node: &'a JSXFragment<'a>) -> Entity<'a> {

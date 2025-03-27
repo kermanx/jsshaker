@@ -1,3 +1,5 @@
+use std::mem;
+
 use oxc::allocator;
 
 use super::{ObjectEntity, get::GetPropertyContext};
@@ -7,7 +9,6 @@ use crate::{
   entity::{EnumeratedProperties, consumed_object},
   scope::CfScopeKind,
 };
-use std::mem;
 
 impl<'a> ObjectEntity<'a> {
   pub fn enumerate_properties(

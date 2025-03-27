@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer, utils::ast::AstKind2};
 use oxc::ast::ast::{AwaitExpression, Expression};
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer, utils::ast::AstKind2};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_await_expression(&mut self, node: &'a AwaitExpression<'a>) -> Entity<'a> {

@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity};
 use oxc::ast::ast::Expression;
+
+use crate::{analyzer::Analyzer, entity::Entity};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_with_default(

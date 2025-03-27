@@ -1,12 +1,14 @@
-use crate::{
-  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
-};
+use std::mem;
+
 use oxc::{
   allocator::FromIn,
   ast::ast::{Expression, TemplateElementValue, TemplateLiteral},
   span::{Atom, GetSpan, SPAN},
 };
-use std::mem;
+
+use crate::{
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_template_literal(&mut self, node: &'a TemplateLiteral<'a>) -> Entity<'a> {

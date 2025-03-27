@@ -1,3 +1,10 @@
+use oxc::{
+  allocator,
+  ast::ast::{Expression, UnaryExpression, UnaryOperator},
+  span::SPAN,
+};
+use oxc_ecmascript::ToInt32;
+
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
@@ -5,12 +12,6 @@ use crate::{
   entity::{Entity, LiteralEntity},
   transformer::Transformer,
 };
-use oxc::{
-  allocator,
-  ast::ast::{Expression, UnaryExpression, UnaryOperator},
-  span::SPAN,
-};
-use oxc_ecmascript::ToInt32;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {

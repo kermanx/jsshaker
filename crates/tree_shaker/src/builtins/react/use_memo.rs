@@ -1,10 +1,11 @@
+use oxc::span::Span;
+use rustc_hash::FxHashMap;
+
 use super::dependencies::check_dependencies;
 use crate::{
   entity::{Entity, EntityFactory},
   module::ModuleId,
 };
-use oxc::span::Span;
-use rustc_hash::FxHashMap;
 
 pub type ReactUseMemos<'a> = FxHashMap<(ModuleId, Span), Entity<'a>>;
 

@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::{
@@ -6,6 +5,8 @@ use oxc::{
     ast::{Expression, JSXClosingElement, JSXElement, JSXOpeningElement, PropertyKind},
   },
 };
+
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_element(&mut self, node: &'a JSXElement<'a>) -> Entity<'a> {

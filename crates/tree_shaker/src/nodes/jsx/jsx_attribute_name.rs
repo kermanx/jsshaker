@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{allocator::Allocator, ast::ast::JSXAttributeName, span::GetSpan};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_attribute_name(&mut self, node: &'a JSXAttributeName<'a>) -> Entity<'a> {

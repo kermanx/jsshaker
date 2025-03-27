@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     NONE,
@@ -6,6 +5,8 @@ use oxc::{
   },
   span::{GetSpan, SPAN},
 };
+
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(

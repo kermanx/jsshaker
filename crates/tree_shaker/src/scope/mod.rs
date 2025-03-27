@@ -6,13 +6,6 @@ pub mod try_scope;
 mod utils;
 pub mod variable_scope;
 
-use crate::{
-  analyzer::Analyzer,
-  dep::{Dep, DepAtom, DepTrait, DepVec},
-  entity::{Entity, EntityFactory, ObjectId},
-  module::ModuleId,
-  utils::{CalleeInfo, CalleeNode},
-};
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
@@ -20,6 +13,14 @@ use scope_tree::ScopeTree;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
+
+use crate::{
+  analyzer::Analyzer,
+  dep::{Dep, DepAtom, DepTrait, DepVec},
+  entity::{Entity, EntityFactory, ObjectId},
+  module::ModuleId,
+  utils::{CalleeInfo, CalleeNode},
+};
 
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,

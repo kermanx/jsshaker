@@ -1,3 +1,8 @@
+use std::{cell::RefCell, rc::Rc, vec};
+
+use oxc::span::Span;
+use rustc_hash::FxHashMap;
+
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepCollector},
@@ -5,9 +10,6 @@ use crate::{
   module::ModuleId,
   scope::CfScopeKind,
 };
-use oxc::span::Span;
-use rustc_hash::FxHashMap;
-use std::{cell::RefCell, rc::Rc, vec};
 
 #[derive(Debug)]
 pub struct ReactDependenciesData<'a> {

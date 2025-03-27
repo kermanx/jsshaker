@@ -1,10 +1,11 @@
+use std::{fs::File, io::Write, path::PathBuf};
+
 use clap::Parser;
 use flate2::{Compression, write::GzEncoder};
 use oxc::{
   codegen::CodegenOptions,
   minifier::{MangleOptions, MinifierOptions},
 };
-use std::{fs::File, io::Write, path::PathBuf};
 use tree_shaker::{
   TreeShakeConfig, TreeShakeOptions, tree_shake,
   vfs::{SingleFileFs, StdFs, Vfs},

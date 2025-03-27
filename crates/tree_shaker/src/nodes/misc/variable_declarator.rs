@@ -1,10 +1,11 @@
+use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   entity::Entity,
   transformer::Transformer,
 };
-use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declarator(

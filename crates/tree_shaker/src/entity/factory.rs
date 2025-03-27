@@ -1,10 +1,11 @@
-use crate::{
-  TreeShakeConfig,
-  dep::{CustomDepTrait, Dep, DepCollector, DepTrait, LazyDep, OnceDep},
-  mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
-  scope::CfScopeId,
-  utils::F64WithEq,
+use std::{
+  cell::{Cell, RefCell},
+  fmt::Debug,
 };
+
+use oxc::allocator::{self, Allocator};
+use oxc::semantic::SymbolId;
+use oxc_syntax::operator::LogicalOperator;
 
 use super::{
   Entity, LiteralEntity, ObjectEntity, ObjectId, ObjectProperty, ObjectPrototype, PrimitiveEntity,
@@ -18,13 +19,12 @@ use super::{
   union::UnionEntity,
   utils::UnionLike,
 };
-use oxc::allocator::{self, Allocator};
-use oxc::semantic::SymbolId;
-use oxc_syntax::operator::LogicalOperator;
-
-use std::{
-  cell::{Cell, RefCell},
-  fmt::Debug,
+use crate::{
+  TreeShakeConfig,
+  dep::{CustomDepTrait, Dep, DepCollector, DepTrait, LazyDep, OnceDep},
+  mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
+  scope::CfScopeId,
+  utils::F64WithEq,
 };
 pub struct EntityFactory<'a> {
   pub allocator: &'a Allocator,

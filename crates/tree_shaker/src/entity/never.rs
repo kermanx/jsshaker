@@ -1,6 +1,5 @@
-use crate::{analyzer::Analyzer, dep::Dep};
-
 use super::{Entity, ValueTrait};
+use crate::{analyzer::Analyzer, dep::Dep};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NeverEntity;

@@ -1,3 +1,7 @@
+use std::cell::Cell;
+
+use oxc::{allocator, span::GetSpan};
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult,
   ValueTrait, consumed_object,
@@ -8,8 +12,6 @@ use crate::{
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
 };
-use oxc::{allocator, span::GetSpan};
-use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct FunctionEntity<'a> {

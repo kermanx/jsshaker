@@ -1,9 +1,10 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, scope::CfScopeKind, transformer::Transformer,
-};
 use oxc::{
   ast::ast::{DoWhileStatement, NumberBase, Statement},
   span::GetSpan,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, scope::CfScopeKind, transformer::Transformer,
 };
 
 #[derive(Debug, Default, Clone)]

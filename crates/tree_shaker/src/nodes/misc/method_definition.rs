@@ -1,4 +1,3 @@
-use crate::transformer::Transformer;
 use oxc::ast::{
   NONE,
   ast::{
@@ -6,6 +5,8 @@ use oxc::ast::{
     PropertyDefinitionType,
   },
 };
+
+use crate::transformer::Transformer;
 
 impl<'a> Transformer<'a> {
   pub fn transform_method_definition(

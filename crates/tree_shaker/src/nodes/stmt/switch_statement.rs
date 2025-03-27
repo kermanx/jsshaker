@@ -1,10 +1,11 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
-  utils::StatementVecData,
-};
 use oxc::{
   ast::ast::{Expression, Statement, SwitchCase, SwitchStatement},
   span::Span,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
+  utils::StatementVecData,
 };
 
 impl<'a> Analyzer<'a> {

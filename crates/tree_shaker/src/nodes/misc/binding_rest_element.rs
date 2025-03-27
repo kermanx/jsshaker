@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::BindingRestElement;
+
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_binding_rest_element(

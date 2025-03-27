@@ -15,10 +15,8 @@ mod union;
 mod unknown;
 mod utils;
 
-use crate::{
-  analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep, DepTrait},
-};
+use std::{cmp::Ordering, fmt::Debug};
+
 pub use builtin_fn::PureBuiltinFnEntity;
 pub use factory::EntityFactory;
 pub use literal::LiteralEntity;
@@ -28,10 +26,14 @@ pub use object::{
 use oxc::allocator;
 pub use primitive::PrimitiveEntity;
 use rustc_hash::FxHashSet;
-use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
 pub use unknown::UnknownEntity;
 pub use utils::*;
+
+use crate::{
+  analyzer::Analyzer,
+  dep::{CustomDepTrait, Dep, DepTrait},
+};
 
 /// (vec![(definite, key, value)], dep)
 pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Dep<'a>);

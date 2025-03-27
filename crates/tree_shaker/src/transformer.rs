@@ -1,7 +1,9 @@
-use crate::{
-  TreeShakeConfig, analyzer::conditional::ConditionalDataMap, dep::ReferredDeps,
-  folding::ConstantFolder, mangling::Mangler, utils::ExtraData,
+use std::{
+  cell::{Cell, RefCell},
+  hash::{DefaultHasher, Hasher},
+  rc::Rc,
 };
+
 use oxc::{
   allocator::{Allocator, CloneIn},
   ast::{
@@ -17,10 +19,10 @@ use oxc::{
   span::{GetSpan, SPAN, Span},
 };
 use rustc_hash::FxHashMap;
-use std::{
-  cell::{Cell, RefCell},
-  hash::{DefaultHasher, Hasher},
-  rc::Rc,
+
+use crate::{
+  TreeShakeConfig, analyzer::conditional::ConditionalDataMap, dep::ReferredDeps,
+  folding::ConstantFolder, mangling::Mangler, utils::ExtraData,
 };
 
 pub struct Transformer<'a> {

@@ -1,5 +1,6 @@
-use crate::analyzer::Analyzer;
 use oxc::{ast::CommentKind, span::Span};
+
+use crate::analyzer::Analyzer;
 
 impl Analyzer<'_> {
   fn has_annotation(&self, span: Span, test: fn(&str) -> bool) -> bool {

@@ -1,3 +1,5 @@
+use std::cell::{Cell, RefCell};
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
 };
@@ -7,7 +9,6 @@ use crate::{
   entity::ObjectPrototype,
   use_consumed_flag,
 };
-use std::cell::{Cell, RefCell};
 
 #[derive(Debug)]
 pub struct ReactElementEntity<'a> {

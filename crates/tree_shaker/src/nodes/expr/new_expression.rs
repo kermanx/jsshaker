@@ -1,7 +1,8 @@
+use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
+
 use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {

@@ -1,10 +1,11 @@
+use std::mem;
+
 use oxc::allocator::{self, Allocator};
 
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
 use crate::utils::get_two_mut_from_vec;
 use crate::{analyzer::Analyzer, dep::CustomDepTrait};
-use std::mem;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MangleConstraint<'a> {

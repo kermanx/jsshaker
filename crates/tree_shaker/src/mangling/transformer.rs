@@ -1,9 +1,8 @@
 use oxc::ast::ast::{Expression, IdentifierName};
 use oxc_ast_visit::VisitMut;
 
-use crate::{dep::DepAtom, transformer::Transformer, utils::ast::AstKind2};
-
 use super::MangleAtom;
+use crate::{dep::DepAtom, transformer::Transformer, utils::ast::AstKind2};
 
 pub struct ManglerTransformer<'a>(pub Transformer<'a>);
 

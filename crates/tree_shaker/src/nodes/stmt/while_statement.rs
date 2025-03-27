@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{Statement, WhileStatement},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_while_statement(&mut self, node: &'a WhileStatement<'a>) {

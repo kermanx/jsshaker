@@ -1,14 +1,15 @@
+use oxc::{
+  allocator,
+  ast::ast::{Expression, JSXExpression, JSXExpressionContainer},
+  span::GetSpan,
+};
+
 use crate::{
   analyzer::Analyzer,
   ast::AstKind2,
   build_effect,
   entity::{Entity, LiteralEntity},
   transformer::Transformer,
-};
-use oxc::{
-  allocator,
-  ast::ast::{Expression, JSXExpression, JSXExpressionContainer},
-  span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {

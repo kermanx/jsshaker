@@ -1,10 +1,12 @@
+use std::{cell::Cell, fmt::Debug};
+
+use rustc_hash::FxHashSet;
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectPrototype, TypeofResult,
   ValueTrait, consumed_object, utils::UnionLike,
 };
 use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
-use rustc_hash::FxHashSet;
-use std::{cell::Cell, fmt::Debug};
 
 #[derive(Debug)]
 pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {

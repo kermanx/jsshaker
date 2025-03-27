@@ -1,6 +1,7 @@
 use oxc::allocator::{self, Allocator};
 use oxc_index::define_index_type;
 
+use super::{get::GetPropertyContext, set::PendingSetter};
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepCollector},
@@ -8,8 +9,6 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   utils::Found,
 };
-
-use super::{get::GetPropertyContext, set::PendingSetter};
 
 define_index_type! {
   pub struct ObjectPropertyId = u32;

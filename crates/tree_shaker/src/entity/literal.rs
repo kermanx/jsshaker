@@ -1,3 +1,13 @@
+use oxc::{
+  allocator::Allocator,
+  ast::ast::{BigintBase, Expression, NumberBase, UnaryOperator},
+  semantic::SymbolId,
+  span::{Atom, SPAN, Span},
+};
+use oxc_ecmascript::StringToNumber;
+use oxc_syntax::number::ToJsString;
+use rustc_hash::FxHashSet;
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
   never::NeverEntity,
@@ -10,15 +20,6 @@ use crate::{
   transformer::Transformer,
   utils::F64WithEq,
 };
-use oxc::{
-  allocator::Allocator,
-  ast::ast::{BigintBase, Expression, NumberBase, UnaryOperator},
-  semantic::SymbolId,
-  span::{Atom, SPAN, Span},
-};
-use oxc_ecmascript::StringToNumber;
-use oxc_syntax::number::ToJsString;
-use rustc_hash::FxHashSet;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LiteralEntity<'a> {

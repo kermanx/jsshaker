@@ -1,8 +1,9 @@
-use crate::{Analyzer, entity::Entity};
 use oxc::ast::ast::{
   BigIntLiteral, BooleanLiteral, NullLiteral, NumberBase, NumericLiteral, RegExpLiteral,
   StringLiteral,
 };
+
+use crate::{Analyzer, entity::Entity};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {

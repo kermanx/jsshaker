@@ -1,13 +1,3 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::{AstKind2, DeclarationKind},
-  dep::Dep,
-  entity::{Entity, ObjectPrototype, ValueTrait},
-  scope::VariableScopeId,
-  transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-};
-
 use oxc::{
   allocator,
   ast::{
@@ -18,6 +8,16 @@ use oxc::{
     },
   },
   span::GetSpan,
+};
+
+use crate::{
+  analyzer::Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  dep::Dep,
+  entity::{Entity, ObjectPrototype, ValueTrait},
+  scope::VariableScopeId,
+  transformer::Transformer,
+  utils::{CalleeInfo, CalleeNode},
 };
 
 #[derive(Default)]

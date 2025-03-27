@@ -1,3 +1,8 @@
+use std::mem;
+
+use oxc::{ast::ast::LabeledStatement, span::Atom};
+use oxc_index::define_index_type;
+
 use crate::{
   analyzer::{
     Analyzer,
@@ -6,9 +11,6 @@ use crate::{
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
 };
-use oxc::{ast::ast::LabeledStatement, span::Atom};
-use oxc_index::define_index_type;
-use std::mem;
 
 define_index_type! {
   pub struct CfScopeId = u32;

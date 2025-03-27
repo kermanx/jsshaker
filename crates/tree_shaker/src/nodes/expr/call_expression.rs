@@ -1,12 +1,13 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
-};
 use oxc::{
   ast::{
     NONE,
     ast::{CallExpression, Expression},
   },
   span::SPAN,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 impl<'a> Analyzer<'a> {

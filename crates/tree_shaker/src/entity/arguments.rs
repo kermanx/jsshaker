@@ -1,3 +1,5 @@
+use std::cell::Cell;
+
 use oxc::allocator;
 
 use super::{
@@ -5,8 +7,6 @@ use super::{
   consumed_object,
 };
 use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
-
-use std::cell::Cell;
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {

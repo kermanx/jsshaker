@@ -1,3 +1,9 @@
+use std::{cell::RefCell, fmt};
+
+use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
+use oxc_index::define_index_type;
+use rustc_hash::FxHashMap;
+
 use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
@@ -6,10 +12,6 @@ use crate::{
   entity::Entity,
   utils::ast::AstKind2,
 };
-use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
-use oxc_index::define_index_type;
-use rustc_hash::FxHashMap;
-use std::{cell::RefCell, fmt};
 
 define_index_type! {
   pub struct VariableScopeId = u32;

@@ -1,10 +1,11 @@
+use oxc::ast::ast::{BinaryOperator, UpdateOperator};
+use oxc_ecmascript::ToInt32;
+
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, LiteralEntity, TypeofResult, ValueTrait},
   mangling::MangleConstraint,
 };
-use oxc::ast::ast::{BinaryOperator, UpdateOperator};
-use oxc_ecmascript::ToInt32;
 
 impl<'a> Analyzer<'a> {
   pub fn op_loose_eq(

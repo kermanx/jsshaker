@@ -1,3 +1,8 @@
+use oxc::ast::{
+  NONE,
+  ast::{ArrowFunctionExpression, Expression},
+};
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
@@ -6,10 +11,6 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-};
-use oxc::ast::{
-  NONE,
-  ast::{ArrowFunctionExpression, Expression},
 };
 
 impl<'a> Analyzer<'a> {

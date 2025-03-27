@@ -13,14 +13,14 @@ mod utils;
 
 use std::fmt;
 
+use oxc::{allocator, semantic::SymbolId};
+
+use super::Builtins;
 use crate::{
   analyzer::Analyzer,
   dep::Dep,
   entity::{Entity, EntityFactory, LiteralEntity},
 };
-use oxc::{allocator, semantic::SymbolId};
-
-use super::Builtins;
 
 pub struct BuiltinPrototype<'a> {
   name: &'static str,

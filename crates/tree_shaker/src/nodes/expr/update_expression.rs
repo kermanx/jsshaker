@@ -1,10 +1,11 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{
     BinaryOperator, Expression, NumberBase, UnaryOperator, UpdateExpression, UpdateOperator,
   },
   span::SPAN,
 };
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_update_expression(&mut self, node: &'a UpdateExpression<'a>) -> Entity<'a> {

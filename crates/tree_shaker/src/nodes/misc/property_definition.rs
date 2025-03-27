@@ -1,8 +1,9 @@
-use crate::{transformer::Transformer, utils::ast::AstKind2};
 use oxc::ast::{
   NONE,
   ast::{ClassElement, PropertyDefinition},
 };
+
+use crate::{transformer::Transformer, utils::ast::AstKind2};
 
 impl<'a> Transformer<'a> {
   pub fn transform_property_definition(

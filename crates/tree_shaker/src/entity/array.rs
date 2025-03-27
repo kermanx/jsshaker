@@ -1,3 +1,10 @@
+use std::{
+  cell::{Cell, RefCell},
+  fmt,
+};
+
+use oxc::allocator;
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId, TypeofResult,
   ValueTrait, consumed_object,
@@ -7,11 +14,6 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepCollector},
   scope::CfScopeId,
   use_consumed_flag,
-};
-use oxc::allocator;
-use std::{
-  cell::{Cell, RefCell},
-  fmt,
 };
 
 pub struct ArrayEntity<'a> {

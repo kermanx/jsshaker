@@ -1,7 +1,9 @@
+use std::cell::RefCell;
+
+use oxc::allocator;
+
 use super::{CustomDepTrait, DepTrait};
 use crate::analyzer::Analyzer;
-use oxc::allocator;
-use std::cell::RefCell;
 
 impl<'a> CustomDepTrait<'a> for () {
   fn consume(&self, _: &mut Analyzer<'a>) {}

@@ -1,11 +1,11 @@
+use std::mem;
+
+use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{DepCollector, DepVec},
   entity::ObjectId,
 };
-use std::mem;
-
-use super::cf_scope::CfScopeId;
 
 impl<'a> Analyzer<'a> {
   /// Returns (has_exhaustive, indeterminate, exec_deps)

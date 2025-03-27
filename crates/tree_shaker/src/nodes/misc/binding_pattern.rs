@@ -1,9 +1,3 @@
-use crate::{
-  Analyzer,
-  ast::{AstKind2, DeclarationKind},
-  entity::Entity,
-  transformer::Transformer,
-};
 use oxc::{
   ast::{
     NONE,
@@ -13,6 +7,13 @@ use oxc::{
     },
   },
   span::GetSpan,
+};
+
+use crate::{
+  Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  entity::Entity,
+  transformer::Transformer,
 };
 
 #[derive(Debug, Default)]

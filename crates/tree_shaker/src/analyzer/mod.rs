@@ -2,6 +2,16 @@ pub mod conditional;
 pub mod exhaustive;
 mod operations;
 
+use std::{collections::BTreeSet, mem};
+
+use conditional::ConditionalDataMap;
+use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
+use oxc::{
+  allocator::Allocator,
+  span::{GetSpan, Span},
+};
+use rustc_hash::{FxHashMap, FxHashSet};
+
 use crate::{
   TreeShakeConfig,
   builtins::Builtins,
@@ -14,14 +24,6 @@ use crate::{
   utils::ExtraData,
   vfs::Vfs,
 };
-use conditional::ConditionalDataMap;
-use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
-use oxc::{
-  allocator::Allocator,
-  span::{GetSpan, Span},
-};
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::{collections::BTreeSet, mem};
 
 pub struct Analyzer<'a> {
   pub vfs: Box<dyn Vfs>,

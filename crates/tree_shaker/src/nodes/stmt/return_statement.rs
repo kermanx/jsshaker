@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 use oxc::ast::ast::{ReturnStatement, Statement};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_return_statement(&mut self, node: &'a ReturnStatement) {

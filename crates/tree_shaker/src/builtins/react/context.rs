@@ -1,11 +1,13 @@
+use std::mem;
+
+use oxc_index::{IndexVec, define_index_type};
+
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{CustomDepTrait, Dep},
   entity::{Entity, EntityFactory, ObjectId, ObjectPrototype},
   init_object,
 };
-use oxc_index::{IndexVec, define_index_type};
-use std::mem;
 
 #[derive(Debug)]
 pub struct ReactContextData<'a> {

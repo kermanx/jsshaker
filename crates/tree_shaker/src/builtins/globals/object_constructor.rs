@@ -1,9 +1,10 @@
+use std::borrow::BorrowMut;
+
 use crate::{
   builtins::{Builtins, constants::OBJECT_CONSTRUCTOR_OBJECT_ID},
   entity::{Entity, LiteralEntity, ObjectPropertyValue, ObjectPrototype, TypeofResult},
   init_namespace,
 };
-use std::borrow::BorrowMut;
 
 impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {

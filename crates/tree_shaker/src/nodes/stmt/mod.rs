@@ -16,7 +16,6 @@ mod throw_statement;
 mod try_statement;
 mod while_statement;
 
-use crate::{Analyzer, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ExpressionStatement, Statement},
@@ -24,6 +23,8 @@ use oxc::{
   },
   span::GetSpan,
 };
+
+use crate::{Analyzer, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_statement(&mut self, node: &'a Statement) {

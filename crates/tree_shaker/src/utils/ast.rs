@@ -1,10 +1,12 @@
-use crate::{analyzer::Analyzer, dep::CustomDepTrait};
+use std::fmt::{self, Debug};
+
 use oxc::{
   allocator::Vec,
   ast::ast::*,
   span::{GetSpan, SPAN},
 };
-use std::fmt::{self, Debug};
+
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
 pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 

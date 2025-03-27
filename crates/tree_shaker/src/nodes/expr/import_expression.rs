@@ -1,3 +1,5 @@
+use oxc::ast::ast::{Expression, ImportExpression};
+
 use crate::{
   analyzer::Analyzer,
   build_effect,
@@ -5,7 +7,6 @@ use crate::{
   transformer::Transformer,
   utils::ast::AstKind2,
 };
-use oxc::ast::ast::{Expression, ImportExpression};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {

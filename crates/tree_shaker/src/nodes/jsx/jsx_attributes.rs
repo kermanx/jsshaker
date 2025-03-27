@@ -1,10 +1,11 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::ObjectEntity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{
     Expression, JSXAttribute, JSXAttributeItem, JSXOpeningElement, JSXSpreadAttribute, PropertyKind,
   },
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::ObjectEntity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_attributes(

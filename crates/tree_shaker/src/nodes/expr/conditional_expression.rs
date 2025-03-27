@@ -1,8 +1,9 @@
+use oxc::ast::ast::{ConditionalExpression, Expression, LogicalOperator};
+
 use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, scope::CfScopeKind,
   transformer::Transformer,
 };
-use oxc::ast::ast::{ConditionalExpression, Expression, LogicalOperator};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_conditional_expression(&mut self, node: &'a ConditionalExpression<'a>) -> Entity<'a> {

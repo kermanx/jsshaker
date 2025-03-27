@@ -1,8 +1,9 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
-};
 use oxc::ast::ast::{
   AssignmentExpression, AssignmentOperator, BinaryOperator, Expression, LogicalOperator,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 impl<'a> Analyzer<'a> {

@@ -1,8 +1,9 @@
+use oxc_index::Idx;
+
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, LiteralEntity},
 };
-use oxc_index::Idx;
 
 impl<'a> Analyzer<'a> {
   pub fn serialize_internal_id(&self, symbol_id: impl Idx) -> Entity<'a> {

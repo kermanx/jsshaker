@@ -1,7 +1,8 @@
-use super::{MangleAtom, utils::get_mangled_name};
 use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
 use rustc_hash::FxHashSet;
+
+use super::{MangleAtom, utils::get_mangled_name};
 
 oxc_index::define_index_type! {
   pub struct IdentityGroupId = u32;

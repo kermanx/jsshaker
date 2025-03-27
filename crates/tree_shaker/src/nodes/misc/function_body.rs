@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 use oxc::{
   ast::ast::{ExpressionStatement, FunctionBody, Statement},
   semantic::ScopeId,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {

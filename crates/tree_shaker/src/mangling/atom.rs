@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 use oxc_index::define_index_type;
+
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
 define_index_type! {
   pub struct MangleAtom = u32;

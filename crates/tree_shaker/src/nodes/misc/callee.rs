@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ChainElement, Expression, MemberExpression},
@@ -6,6 +5,8 @@ use oxc::{
   },
   span::{GetSpan, SPAN},
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 /// Returns Some((node, same_chain))
 fn unwrap_to_member_expression<'a>(

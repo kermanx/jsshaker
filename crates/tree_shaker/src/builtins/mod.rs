@@ -6,15 +6,16 @@ mod prototypes;
 mod react;
 mod utils;
 
-use crate::{
-  TreeShakeConfig,
-  entity::{Entity, EntityFactory},
-};
 use known_modules::KnownModule;
 pub use prototypes::BuiltinPrototype;
 use prototypes::BuiltinPrototypes;
 use react::AnalyzerDataForReact;
 use rustc_hash::FxHashMap;
+
+use crate::{
+  TreeShakeConfig,
+  entity::{Entity, EntityFactory},
+};
 
 pub struct Builtins<'a> {
   pub config: &'a TreeShakeConfig,

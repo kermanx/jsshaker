@@ -1,6 +1,7 @@
+use std::fs;
+
 use insta::{assert_snapshot, glob};
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
-use std::fs;
 use tree_shaker::{TreeShakeConfig, TreeShakeOptions, tree_shake, vfs::SingleFileFs};
 
 fn do_tree_shake(input: String) -> String {

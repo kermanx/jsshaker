@@ -1,10 +1,16 @@
-use super::ast::AstKind2;
-use crate::{analyzer::Analyzer, module::ModuleId};
+use std::hash;
+
 use oxc::{
-  ast::ast::{ArrowFunctionExpression, Class, Function},
+  ast::{
+    AstKind,
+    ast::{ArrowFunctionExpression, Class, Function, PropertyKind},
+  },
+  semantic::ScopeId,
   span::{GetSpan, Span},
 };
-use std::hash;
+
+use super::ast::AstKind2;
+use crate::{analyzer::Analyzer, module::ModuleId};
 
 #[derive(Debug, Clone, Copy)]
 pub enum CalleeNode<'a> {

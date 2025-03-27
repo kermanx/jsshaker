@@ -1,14 +1,16 @@
-use crate::{
-  analyzer::Analyzer,
-  entity::{Entity, ObjectId, ObjectPropertyId},
-  scope::{CfScopeKind, VariableScopeId, cf_scope::ReferredState},
-};
-use oxc::semantic::SymbolId;
-use rustc_hash::FxHashSet;
 use std::{
   hash::{Hash, Hasher},
   mem,
   rc::Rc,
+};
+
+use oxc::semantic::SymbolId;
+use rustc_hash::FxHashSet;
+
+use crate::{
+  analyzer::Analyzer,
+  entity::{Entity, ObjectId, ObjectPropertyId},
+  scope::{CfScopeKind, VariableScopeId, cf_scope::ReferredState},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

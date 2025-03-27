@@ -14,6 +14,8 @@ pub mod vfs;
 
 use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};
 
+pub use analyzer::Analyzer;
+pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 use mangling::ManglerTransformer;
 use module::ModuleInfo;
 use oxc::{
@@ -28,9 +30,6 @@ use rustc_hash::FxHashMap;
 use transformer::Transformer;
 use utils::ast;
 use vfs::Vfs;
-
-pub use analyzer::Analyzer;
-pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 
 pub struct TreeShakeOptions<F: Vfs> {
   pub vfs: F,

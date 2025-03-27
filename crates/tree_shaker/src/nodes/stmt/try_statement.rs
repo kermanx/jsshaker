@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Statement, TryStatement};
+
+use crate::{analyzer::Analyzer, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {

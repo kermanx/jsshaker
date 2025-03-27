@@ -1,3 +1,5 @@
+use std::mem;
+
 use oxc::allocator::{self, Allocator};
 
 use super::{try_scope::TryScope, variable_scope::VariableScopeId};
@@ -7,7 +9,6 @@ use crate::{
   entity::Entity,
   utils::CalleeInfo,
 };
-use std::mem;
 
 pub struct CallScope<'a> {
   pub call_id: DepAtom,

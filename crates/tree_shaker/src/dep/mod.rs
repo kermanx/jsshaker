@@ -4,13 +4,15 @@ mod impls;
 mod lazy;
 mod once;
 
-use crate::analyzer::Analyzer;
+use std::fmt::Debug;
+
 pub use atom::*;
 pub use collector::*;
 pub use lazy::*;
 pub use once::*;
 use oxc::allocator::{self, Allocator};
-use std::fmt::Debug;
+
+use crate::analyzer::Analyzer;
 
 pub trait CustomDepTrait<'a>: Debug {
   fn consume(&self, analyzer: &mut Analyzer<'a>);

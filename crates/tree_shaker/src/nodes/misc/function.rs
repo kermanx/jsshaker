@@ -1,3 +1,10 @@
+use oxc::{
+  allocator,
+  ast::ast::{
+    Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
+  },
+};
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
@@ -6,12 +13,6 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-};
-use oxc::{
-  allocator,
-  ast::ast::{
-    Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
-  },
 };
 
 impl<'a> Analyzer<'a> {

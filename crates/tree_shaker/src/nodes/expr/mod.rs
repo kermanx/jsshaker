@@ -24,14 +24,15 @@ mod unary_expression;
 mod update_expression;
 mod yield_expression;
 
-use crate::{
-  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
-};
 use oxc::{
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
 use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
+
+use crate::{
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {

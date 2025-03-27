@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{BinaryExpression, Expression};
+
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_binary_expression(&mut self, node: &'a BinaryExpression<'a>) -> Entity<'a> {

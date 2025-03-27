@@ -1,3 +1,7 @@
+use std::{cell::Cell, fmt::Debug, mem};
+
+use rustc_hash::FxHashMap;
+
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepAtom},
@@ -5,8 +9,6 @@ use crate::{
   scope::CfScopeKind,
   transformer::Transformer,
 };
-use rustc_hash::FxHashMap;
-use std::{cell::Cell, fmt::Debug, mem};
 
 #[derive(Debug, Default)]
 struct ConditionalData<'a> {

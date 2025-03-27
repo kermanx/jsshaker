@@ -1,6 +1,7 @@
+use std::cell::RefCell;
+
 use super::{CustomDepTrait, Dep, DepVec};
 use crate::analyzer::Analyzer;
-use std::cell::RefCell;
 
 #[derive(Debug, Clone, Copy)]
 pub struct LazyDep<'a>(pub &'a RefCell<Option<DepVec<'a>>>);

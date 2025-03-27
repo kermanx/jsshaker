@@ -1,12 +1,13 @@
+use oxc::{
+  ast::ast::{Argument, Expression},
+  span::GetSpan,
+};
+
 use crate::{
   Analyzer,
   ast::{Arguments, AstKind2},
   entity::Entity,
   transformer::Transformer,
-};
-use oxc::{
-  ast::ast::{Argument, Expression},
-  span::GetSpan,
 };
 
 impl<'a> Analyzer<'a> {

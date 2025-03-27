@@ -1,9 +1,10 @@
+use std::borrow::BorrowMut;
+
 use crate::{
   builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
   entity::{ObjectPropertyValue, ObjectPrototype},
   init_namespace,
 };
-use std::borrow::BorrowMut;
 
 impl Builtins<'_> {
   pub fn init_symbol_constructor(&mut self) {

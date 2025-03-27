@@ -5,6 +5,16 @@ mod init;
 mod property;
 mod set;
 
+use std::{
+  cell::{Cell, RefCell},
+  fmt::Debug,
+};
+
+use oxc::allocator;
+use oxc_index::define_index_type;
+pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyValue};
+use rustc_hash::FxHashSet;
+
 use super::{
   Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult, ValueTrait,
   consumed_object,
@@ -17,14 +27,6 @@ use crate::{
   scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,
-};
-use oxc::allocator;
-use oxc_index::define_index_type;
-pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyValue};
-use rustc_hash::FxHashSet;
-use std::{
-  cell::{Cell, RefCell},
-  fmt::Debug,
 };
 
 type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;

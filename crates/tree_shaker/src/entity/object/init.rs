@@ -1,5 +1,7 @@
 #![allow(clippy::unnecessary_unwrap)]
 
+use oxc::ast::ast::PropertyKind;
+
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
   analyzer::Analyzer,
@@ -7,7 +9,6 @@ use crate::{
   entity::{Entity, EntityFactory, LiteralEntity},
   mangling::MangleConstraint,
 };
-use oxc::ast::ast::PropertyKind;
 
 impl<'a> ObjectEntity<'a> {
   pub fn init_property(
