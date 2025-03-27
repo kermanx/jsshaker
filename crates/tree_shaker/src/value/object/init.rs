@@ -2,7 +2,7 @@
 
 use oxc::ast::ast::PropertyKind;
 
-use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
+use super::{ObjectProperty, ObjectPropertyValue, ObjectValue};
 use crate::{
   analyzer::{Analyzer, Factory},
   dep::{DepCollector, DepTrait},
@@ -11,7 +11,7 @@ use crate::{
   value::LiteralValue,
 };
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   pub fn init_property(
     &self,
     analyzer: &mut Analyzer<'a>,

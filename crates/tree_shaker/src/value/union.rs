@@ -9,14 +9,14 @@ use super::{
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
 #[derive(Debug)]
-pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
+pub struct UnionValue<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
   /// Possible values
   pub values: V,
   pub consumed: Cell<bool>,
   pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEntity<'a, V> {
+impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 

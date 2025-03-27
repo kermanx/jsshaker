@@ -1,6 +1,6 @@
 use oxc::allocator;
 
-use super::ObjectEntity;
+use super::ObjectValue;
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
@@ -17,7 +17,7 @@ pub(crate) struct GetPropertyContext<'a> {
   pub extra_deps: DepVec<'a>,
 }
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   pub fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,

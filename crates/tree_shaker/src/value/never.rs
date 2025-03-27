@@ -2,9 +2,9 @@ use super::ValueTrait;
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
-pub struct NeverEntity;
+pub struct NeverValue;
 
-impl<'a> ValueTrait<'a> for NeverEntity {
+impl<'a> ValueTrait<'a> for NeverValue {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {}

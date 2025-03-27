@@ -10,14 +10,14 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct ReactElementEntity<'a> {
+pub struct ReactElementValue<'a> {
   pub consumed: Cell<bool>,
   pub tag: Entity<'a>,
   pub props: Entity<'a>,
   pub deps: RefCell<DepVec<'a>>,
 }
 
-impl<'a> ValueTrait<'a> for ReactElementEntity<'a> {
+impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 

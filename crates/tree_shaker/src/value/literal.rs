@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 
 use super::{
   EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-  never::NeverEntity,
+  never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -193,7 +193,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
           self.consume(analyzer);
           consumed_object::iterate(analyzer, dep)
         } else {
-          NeverEntity.iterate(analyzer, dep)
+          NeverValue.iterate(analyzer, dep)
         }
       }
     }

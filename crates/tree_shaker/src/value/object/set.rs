@@ -1,4 +1,4 @@
-use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
+use super::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepCollector},
@@ -15,7 +15,7 @@ pub struct PendingSetter<'a> {
   pub setter: Entity<'a>,
 }
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   pub fn set_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,

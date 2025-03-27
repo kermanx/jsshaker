@@ -9,12 +9,12 @@ use super::{
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
 #[derive(Debug)]
-pub struct ArgumentsEntity<'a> {
+pub struct ArgumentsValue<'a> {
   pub consumed: Cell<bool>,
   pub arguments: allocator::Vec<'a, (bool, Entity<'a>)>,
 }
 
-impl<'a> ValueTrait<'a> for ArgumentsEntity<'a> {
+impl<'a> ValueTrait<'a> for ArgumentsValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 

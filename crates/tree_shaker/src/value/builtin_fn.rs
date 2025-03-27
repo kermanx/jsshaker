@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
-  consumed_object, never::NeverEntity,
+  EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
+  consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::{Analyzer, Factory},
@@ -10,10 +10,10 @@ use crate::{
   entity::Entity,
 };
 
-trait BuiltinFnEntity<'a>: Debug {
+trait BuiltinFnImpl<'a>: Debug {
   #[cfg(feature = "flame")]
   fn name(&self) -> &'static str;
-  fn object(&self) -> Option<&'a ObjectEntity<'a>> {
+  fn object(&self) -> Option<&'a ObjectValue<'a>> {
     None
   }
   fn call_impl(
@@ -25,7 +25,7 @@ trait BuiltinFnEntity<'a>: Debug {
   ) -> Entity<'a>;
 }
 
-impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
+impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if let Some(object) = self.object() {
       object.consume(analyzer);
@@ -122,7 +122,7 @@ impl<'a, T: BuiltinFnEntity<'a>> ValueTrait<'a> for T {
     if analyzer.config.preserve_exceptions {
       consumed_object::iterate(analyzer, dep)
     } else {
-      NeverEntity.iterate(analyzer, dep)
+      NeverValue.iterate(analyzer, dep)
     }
   }
 
@@ -182,27 +182,27 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
 }
 
 #[derive(Clone, Copy)]
-pub struct ImplementedBuiltinFnEntity<'a, F: BuiltinFnImplementation<'a> + 'a> {
+pub struct ImplementedBuiltinFnValue<'a, F: BuiltinFnImplementation<'a> + 'a> {
   #[cfg(feature = "flame")]
   pub name: &'static str,
   pub implementation: F,
-  pub object: Option<&'a ObjectEntity<'a>>,
+  pub object: Option<&'a ObjectValue<'a>>,
 }
 
-impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnEntity<'a, F> {
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnValue<'a, F> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("ImplementedBuiltinFnEntity").finish()
+    f.debug_struct("ImplementedBuiltinFnValue").finish()
   }
 }
 
-impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnEntity<'a>
-  for ImplementedBuiltinFnEntity<'a, F>
+impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
+  for ImplementedBuiltinFnValue<'a, F>
 {
   #[cfg(feature = "flame")]
   fn name(&self) -> &'static str {
     self.name
   }
-  fn object(&self) -> Option<&'a ObjectEntity<'a>> {
+  fn object(&self) -> Option<&'a ObjectValue<'a>> {
     self.object
   }
   fn call_impl(
@@ -224,7 +224,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     self
       .factory
-      .alloc(ImplementedBuiltinFnEntity {
+      .alloc(ImplementedBuiltinFnValue {
         #[cfg(feature = "flame")]
         name: _name,
         implementation,
@@ -235,11 +235,11 @@ impl<'a> Analyzer<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct PureBuiltinFnEntity<'a> {
+pub struct PureBuiltinFnValue<'a> {
   return_value: fn(&Factory<'a>) -> Entity<'a>,
 }
 
-impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
+impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
   #[cfg(feature = "flame")]
   fn name(&self) -> &'static str {
     "<PureBuiltin>"
@@ -259,7 +259,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
   }
 }
 
-impl<'a> PureBuiltinFnEntity<'a> {
+impl<'a> PureBuiltinFnValue<'a> {
   pub fn new(return_value: fn(&Factory<'a>) -> Entity<'a>) -> Self {
     Self { return_value }
   }

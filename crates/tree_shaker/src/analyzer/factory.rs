@@ -15,16 +15,16 @@ use crate::{
   scope::CfScopeId,
   utils::F64WithEq,
   value::{
-    LiteralValue, ObjectEntity, ObjectId, ObjectProperty, ObjectPrototype,
-    arguments::ArgumentsEntity,
-    array::ArrayEntity,
-    builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity, PureBuiltinFnEntity},
-    logical_result::LogicalResultEntity,
-    never::NeverEntity,
-    primitive::PrimitiveEntity,
-    react_element::ReactElementEntity,
-    union::UnionEntity,
-    unknown::UnknownEntity,
+    LiteralValue, ObjectId, ObjectProperty, ObjectPrototype, ObjectValue,
+    arguments::ArgumentsValue,
+    array::ArrayValue,
+    builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnValue, PureBuiltinFnValue},
+    logical_result::LogicalResultValue,
+    never::NeverValue,
+    primitive::PrimitiveValue,
+    react_element::ReactElementValue,
+    union::UnionValue,
+    unknown::UnknownValue,
     utils::UnionLike,
   },
 };
@@ -72,33 +72,33 @@ impl<'a> Factory<'a> {
     let null = allocator.alloc(LiteralValue::Null).into();
     let undefined = allocator.alloc(LiteralValue::Undefined).into();
 
-    let never = allocator.alloc(NeverEntity).into();
-    let immutable_unknown = allocator.alloc(UnknownEntity::new()).into();
-    let unknown_primitive = allocator.alloc(PrimitiveEntity::Mixed).into();
-    let unknown_string = allocator.alloc(PrimitiveEntity::String).into();
-    let unknown_number = allocator.alloc(PrimitiveEntity::Number).into();
-    let unknown_bigint = allocator.alloc(PrimitiveEntity::BigInt).into();
-    let unknown_boolean = allocator.alloc(PrimitiveEntity::Boolean).into();
-    let unknown_symbol = allocator.alloc(PrimitiveEntity::Symbol).into();
+    let never = allocator.alloc(NeverValue).into();
+    let immutable_unknown = allocator.alloc(UnknownValue::new()).into();
+    let unknown_primitive = allocator.alloc(PrimitiveValue::Mixed).into();
+    let unknown_string = allocator.alloc(PrimitiveValue::String).into();
+    let unknown_number = allocator.alloc(PrimitiveValue::Number).into();
+    let unknown_bigint = allocator.alloc(PrimitiveValue::BigInt).into();
+    let unknown_boolean = allocator.alloc(PrimitiveValue::Boolean).into();
+    let unknown_symbol = allocator.alloc(PrimitiveValue::Symbol).into();
 
-    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown())).into();
+    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown())).into();
 
     let pure_fn_returns_string =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_string)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_string)).into();
     let pure_fn_returns_number =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_number)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_number)).into();
     let pure_fn_returns_bigint =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_bigint)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_bigint)).into();
     let pure_fn_returns_boolean =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_boolean)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_boolean)).into();
     let pure_fn_returns_symbol =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.unknown_symbol)).into();
-    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnEntity::new(|f| f.null)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_symbol)).into();
+    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnValue::new(|f| f.null)).into();
     let pure_fn_returns_undefined =
-      allocator.alloc(PureBuiltinFnEntity::new(|f| f.undefined)).into();
+      allocator.alloc(PureBuiltinFnValue::new(|f| f.undefined)).into();
 
     let empty_arguments = allocator
-      .alloc(ArgumentsEntity {
+      .alloc(ArgumentsValue {
         consumed: Cell::new(false),
         arguments: allocator::Vec::new_in(allocator),
       })
@@ -171,8 +171,8 @@ impl<'a> Factory<'a> {
     object_id: ObjectId,
     prototype: ObjectPrototype<'a>,
     consumable: bool,
-  ) -> &'a mut ObjectEntity<'a> {
-    self.alloc(ObjectEntity {
+  ) -> &'a mut ObjectValue<'a> {
+    self.alloc(ObjectValue {
       consumable,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
@@ -187,11 +187,11 @@ impl<'a> Factory<'a> {
   }
 
   pub fn arguments(&self, arguments: allocator::Vec<'a, (bool, Entity<'a>)>) -> Entity<'a> {
-    self.alloc(ArgumentsEntity { consumed: Cell::new(false), arguments }).into()
+    self.alloc(ArgumentsValue { consumed: Cell::new(false), arguments }).into()
   }
 
-  pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayEntity<'a> {
-    self.alloc(ArrayEntity {
+  pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayValue<'a> {
+    self.alloc(ArrayValue {
       consumed: Cell::new(false),
       deps: RefCell::new(DepCollector::new(self.vec())),
       cf_scope,
@@ -207,7 +207,7 @@ impl<'a> Factory<'a> {
     implementation: F,
   ) -> Entity<'a> {
     self
-      .alloc(ImplementedBuiltinFnEntity {
+      .alloc(ImplementedBuiltinFnValue {
         #[cfg(feature = "flame")]
         name: _name,
         implementation,
@@ -273,7 +273,7 @@ impl<'a> Factory<'a> {
     operator: LogicalOperator,
   ) -> Entity<'a> {
     self
-      .alloc(LogicalResultEntity {
+      .alloc(LogicalResultValue {
         value: self.union((left, right)),
         is_coalesce: operator == LogicalOperator::Coalesce,
         result: match operator {
@@ -303,7 +303,7 @@ impl<'a> Factory<'a> {
       1 => Some(values.iter().next().unwrap()),
       _ => Some(
         self
-          .alloc(UnionEntity {
+          .alloc(UnionValue {
             values,
             consumed: Cell::new(false),
             phantom: std::marker::PhantomData,
@@ -351,7 +351,7 @@ impl<'a> Factory<'a> {
 
   pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
     self
-      .alloc(ReactElementEntity {
+      .alloc(ReactElementValue {
         consumed: Cell::new(false),
         tag,
         props,

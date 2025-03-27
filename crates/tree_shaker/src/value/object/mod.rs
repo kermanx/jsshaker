@@ -35,7 +35,7 @@ type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
 pub enum ObjectPrototype<'a> {
   ImplicitOrNull,
   Builtin(&'a BuiltinPrototype<'a>),
-  Custom(&'a ObjectEntity<'a>),
+  Custom(&'a ObjectValue<'a>),
   Unknown(Dep<'a>),
 }
 
@@ -54,7 +54,7 @@ define_index_type! {
   pub struct ObjectId = u32;
 }
 
-pub struct ObjectEntity<'a> {
+pub struct ObjectValue<'a> {
   /// A built-in object is usually non-consumable
   pub consumable: bool,
   pub consumed: Cell<bool>,
@@ -77,13 +77,13 @@ pub struct ObjectEntity<'a> {
   // TODO: symbol_keyed
 }
 
-impl Debug for ObjectEntity<'_> {
+impl Debug for ObjectValue<'_> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("ObjectEntity").finish()
+    f.debug_struct("ObjectValue").finish()
   }
 }
 
-impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
+impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     if !self.consumable {
       return;
@@ -248,7 +248,7 @@ impl<'a> ValueTrait<'a> for ObjectEntity<'a> {
   }
 }
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   fn consume_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
     if self.consumed_as_prototype.replace(true) {
       return;
@@ -305,8 +305,8 @@ impl<'a> Analyzer<'a> {
     &mut self,
     prototype: ObjectPrototype<'a>,
     mangling_group: Option<ObjectManglingGroupId<'a>>,
-  ) -> &'a mut ObjectEntity<'a> {
-    self.allocator.alloc(ObjectEntity {
+  ) -> &'a mut ObjectValue<'a> {
+    self.allocator.alloc(ObjectValue {
       consumable: true,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
@@ -324,7 +324,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_function_object(
     &mut self,
     mangle_node: Option<AstKind2<'a>>,
-  ) -> (&'a ObjectEntity<'a>, &'a ObjectEntity<'a>) {
+  ) -> (&'a ObjectValue<'a>, &'a ObjectValue<'a>) {
     let mangling_group = if let Some(mangle_node) = mangle_node {
       let (m1, m2) = *self
         .load_data::<Option<(ObjectManglingGroupId, ObjectManglingGroupId)>>(mangle_node)
@@ -364,7 +364,7 @@ impl<'a> Analyzer<'a> {
   pub fn use_mangable_plain_object(
     &mut self,
     dep_id: impl Into<DepAtom>,
-  ) -> &'a mut ObjectEntity<'a> {
+  ) -> &'a mut ObjectValue<'a> {
     let mangling_group = self
       .load_data::<Option<ObjectManglingGroupId>>(dep_id)
       .get_or_insert_with(|| self.new_object_mangling_group());

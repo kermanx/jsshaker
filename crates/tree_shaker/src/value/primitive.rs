@@ -1,11 +1,11 @@
 use super::{
   EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-  never::NeverEntity,
+  never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PrimitiveEntity {
+pub enum PrimitiveValue {
   // TODO: NumericString, NoneEmptyString, ...
   Mixed,
   String,
@@ -15,7 +15,7 @@ pub enum PrimitiveEntity {
   Symbol,
 }
 
-impl<'a> ValueTrait<'a> for PrimitiveEntity {
+impl<'a> ValueTrait<'a> for PrimitiveValue {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
@@ -28,8 +28,8 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    // TODO: PrimitiveEntity::String
-    if *self == PrimitiveEntity::Mixed || *self == PrimitiveEntity::String {
+    // TODO: PrimitiveValue::String
+    if *self == PrimitiveValue::Mixed || *self == PrimitiveValue::String {
       analyzer.factory.computed_unknown((self, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -52,7 +52,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if *self == PrimitiveEntity::String {
+    if *self == PrimitiveValue::String {
       (
         vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
         analyzer.dep((self, dep)),
@@ -104,7 +104,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    if *self == PrimitiveEntity::String {
+    if *self == PrimitiveValue::String {
       return (vec![], Some(analyzer.factory.unknown()), analyzer.dep((self, dep)));
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
@@ -112,7 +112,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
       self.consume(analyzer);
       consumed_object::iterate(analyzer, dep)
     } else {
-      NeverEntity.iterate(analyzer, dep)
+      NeverValue.iterate(analyzer, dep)
     }
   }
 
@@ -144,7 +144,7 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   }
 
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if matches!(self, PrimitiveEntity::Mixed | PrimitiveEntity::String | PrimitiveEntity::Number) {
+    if matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String | PrimitiveValue::Number) {
       analyzer.factory.unknown_string
     } else {
       analyzer.factory.string("")
@@ -152,25 +152,25 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   }
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     match self {
-      PrimitiveEntity::String => None,
+      PrimitiveValue::String => None,
       _ => Some(vec![]),
     }
   }
 
   fn test_typeof(&self) -> TypeofResult {
     match self {
-      PrimitiveEntity::String => TypeofResult::String,
-      PrimitiveEntity::Number => TypeofResult::Number,
-      PrimitiveEntity::BigInt => TypeofResult::BigInt,
-      PrimitiveEntity::Boolean => TypeofResult::Boolean,
-      PrimitiveEntity::Symbol => TypeofResult::Symbol,
-      PrimitiveEntity::Mixed => TypeofResult::_Unknown,
+      PrimitiveValue::String => TypeofResult::String,
+      PrimitiveValue::Number => TypeofResult::Number,
+      PrimitiveValue::BigInt => TypeofResult::BigInt,
+      PrimitiveValue::Boolean => TypeofResult::Boolean,
+      PrimitiveValue::Symbol => TypeofResult::Symbol,
+      PrimitiveValue::Mixed => TypeofResult::_Unknown,
     }
   }
 
   fn test_truthy(&self) -> Option<bool> {
     match self {
-      PrimitiveEntity::Symbol => Some(true),
+      PrimitiveValue::Symbol => Some(true),
       _ => None,
     }
   }
@@ -180,15 +180,15 @@ impl<'a> ValueTrait<'a> for PrimitiveEntity {
   }
 }
 
-impl<'a> PrimitiveEntity {
+impl<'a> PrimitiveValue {
   fn get_prototype(&self, analyzer: &mut Analyzer<'a>) -> &'a BuiltinPrototype<'a> {
     match self {
-      PrimitiveEntity::String => &analyzer.builtins.prototypes.string,
-      PrimitiveEntity::Number => &analyzer.builtins.prototypes.number,
-      PrimitiveEntity::BigInt => &analyzer.builtins.prototypes.bigint,
-      PrimitiveEntity::Boolean => &analyzer.builtins.prototypes.boolean,
-      PrimitiveEntity::Symbol => &analyzer.builtins.prototypes.symbol,
-      PrimitiveEntity::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
+      PrimitiveValue::String => &analyzer.builtins.prototypes.string,
+      PrimitiveValue::Number => &analyzer.builtins.prototypes.number,
+      PrimitiveValue::BigInt => &analyzer.builtins.prototypes.bigint,
+      PrimitiveValue::Boolean => &analyzer.builtins.prototypes.boolean,
+      PrimitiveValue::Symbol => &analyzer.builtins.prototypes.symbol,
+      PrimitiveValue::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
   }
 }

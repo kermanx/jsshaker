@@ -2,7 +2,7 @@ use std::mem;
 
 use oxc::allocator;
 
-use super::{ObjectEntity, get::GetPropertyContext};
+use super::{ObjectValue, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
   dep::Dep,
@@ -10,7 +10,7 @@ use crate::{
   value::{EnumeratedProperties, consumed_object},
 };
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   pub fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,

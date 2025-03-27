@@ -1,4 +1,4 @@
-use super::ObjectEntity;
+use super::ObjectValue;
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
@@ -7,7 +7,7 @@ use crate::{
   value::{LiteralValue, consumed_object},
 };
 
-impl<'a> ObjectEntity<'a> {
+impl<'a> ObjectValue<'a> {
   pub fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if self.consumed.get() {
       return consumed_object::delete_property(analyzer, dep, key);

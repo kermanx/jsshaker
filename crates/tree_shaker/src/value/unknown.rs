@@ -4,9 +4,9 @@ use super::{EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, co
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Default)]
-pub struct UnknownEntity<'a>(PhantomData<&'a ()>);
+pub struct UnknownValue<'a>(PhantomData<&'a ()>);
 
-impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
+impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -122,7 +122,7 @@ impl<'a> ValueTrait<'a> for UnknownEntity<'a> {
   }
 }
 
-impl UnknownEntity<'_> {
+impl UnknownValue<'_> {
   pub fn new() -> Self {
     Self::default()
   }

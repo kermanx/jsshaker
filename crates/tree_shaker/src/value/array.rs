@@ -17,7 +17,7 @@ use crate::{
   use_consumed_flag,
 };
 
-pub struct ArrayEntity<'a> {
+pub struct ArrayValue<'a> {
   pub consumed: Cell<bool>,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
@@ -26,9 +26,9 @@ pub struct ArrayEntity<'a> {
   pub rest: RefCell<allocator::Vec<'a, Entity<'a>>>,
 }
 
-impl fmt::Debug for ArrayEntity<'_> {
+impl fmt::Debug for ArrayValue<'_> {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("ArrayEntity")
+    f.debug_struct("ArrayValue")
       .field("consumed", &self.consumed.get())
       .field("deps", &self.deps.borrow())
       .field("elements", &self.elements.borrow())
@@ -37,7 +37,7 @@ impl fmt::Debug for ArrayEntity<'_> {
   }
 }
 
-impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
+impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -356,7 +356,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
   }
 }
 
-impl<'a> ArrayEntity<'a> {
+impl<'a> ArrayValue<'a> {
   pub fn push_element(&self, element: Entity<'a>) {
     if self.rest.borrow().is_empty() {
       self.elements.borrow_mut().push(element);
@@ -375,7 +375,7 @@ impl<'a> ArrayEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_empty_array(&mut self) -> &'a mut ArrayEntity<'a> {
+  pub fn new_empty_array(&mut self) -> &'a mut ArrayValue<'a> {
     self.factory.array(self.scoping.cf.current_id(), self.scoping.alloc_object_id())
   }
 }

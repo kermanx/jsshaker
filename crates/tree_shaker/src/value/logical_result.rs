@@ -2,13 +2,13 @@ use super::{EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResul
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone)]
-pub struct LogicalResultEntity<'a> {
+pub struct LogicalResultValue<'a> {
   pub value: Entity<'a>,
   pub is_coalesce: bool,
   pub result: Option<bool>,
 }
 
-impl<'a> ValueTrait<'a> for LogicalResultEntity<'a> {
+impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.value.consume(analyzer);
   }

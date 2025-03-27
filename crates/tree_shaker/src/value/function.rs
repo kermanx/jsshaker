@@ -3,7 +3,7 @@ use std::cell::Cell;
 use oxc::{allocator, span::GetSpan};
 
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
+  EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
   consumed_object,
 };
 use crate::{
@@ -15,17 +15,17 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct FunctionEntity<'a> {
+pub struct FunctionValue<'a> {
   body_consumed: Cell<bool>,
   pub callee: CalleeInfo<'a>,
   pub variable_scope_stack: allocator::Vec<'a, VariableScopeId>,
   pub finite_recursion: bool,
-  pub statics: &'a ObjectEntity<'a>,
+  pub statics: &'a ObjectValue<'a>,
   /// The `prototype` property. Not `__proto__`.
-  pub prototype: &'a ObjectEntity<'a>,
+  pub prototype: &'a ObjectValue<'a>,
 }
 
-impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
+impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.consume_body(analyzer);
     self.statics.consume(analyzer);
@@ -180,7 +180,7 @@ impl<'a> ValueTrait<'a> for FunctionEntity<'a> {
   }
 }
 
-impl<'a> FunctionEntity<'a> {
+impl<'a> FunctionValue<'a> {
   fn check_recursion(&self, analyzer: &Analyzer<'a>) -> bool {
     if !self.finite_recursion {
       let mut recursion_depth = 0usize;
@@ -300,9 +300,9 @@ impl<'a> FunctionEntity<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionEntity<'a> {
+  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
     let (statics, prototype) = self.new_function_object(Some(node.into()));
-    let function = self.factory.alloc(FunctionEntity {
+    let function = self.factory.alloc(FunctionValue {
       body_consumed: Cell::new(false),
       callee: self.new_callee_info(node),
       variable_scope_stack: allocator::Vec::from_iter_in(
