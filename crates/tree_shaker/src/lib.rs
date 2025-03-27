@@ -14,7 +14,6 @@ pub mod vfs;
 
 use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};
 
-use analyzer::Analyzer;
 use mangling::ManglerTransformer;
 use module::ModuleInfo;
 use oxc::{
@@ -27,10 +26,11 @@ use oxc::{
 use oxc_ast_visit::VisitMut;
 use rustc_hash::FxHashMap;
 use transformer::Transformer;
-use utils::{Diagnostics, ast};
-
-pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
+use utils::ast;
 use vfs::Vfs;
+
+pub use analyzer::Analyzer;
+pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 
 pub struct TreeShakeOptions<F: Vfs> {
   pub vfs: F,
@@ -41,7 +41,7 @@ pub struct TreeShakeOptions<F: Vfs> {
 
 pub struct TreeShakeReturn {
   pub codegen_return: FxHashMap<String, CodegenReturn>,
-  pub diagnostics: Diagnostics,
+  pub diagnostics: BTreeSet<String>,
 }
 
 pub fn tree_shake<F: Vfs + 'static>(

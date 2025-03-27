@@ -20,10 +20,6 @@ impl Found {
     matches!(self, Found::False)
   }
 
-  pub fn is_unknown(self) -> bool {
-    matches!(self, Found::Unknown)
-  }
-
   pub fn known(found: bool) -> Self {
     if found { Found::True } else { Found::False }
   }

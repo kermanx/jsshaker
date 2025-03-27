@@ -1,17 +1,13 @@
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{DepCollector, DepVec},
   entity::ObjectId,
 };
 use std::mem;
 
-use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveDepId};
+use super::cf_scope::CfScopeId;
 
 impl<'a> Analyzer<'a> {
-  pub fn find_first_different_cf_scope(&self, another: CfScopeId) -> usize {
-    self.scoping.cf.find_lca(another).0 + 1
-  }
-
   /// Returns (has_exhaustive, indeterminate, exec_deps)
   pub fn pre_mutate_object(
     &mut self,

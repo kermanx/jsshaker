@@ -8,11 +8,10 @@ use std::mem;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum MangleConstraint<'a> {
-  NonMangable(MangleAtom),
   Eq(MangleAtom, MangleAtom),
   Neq(MangleAtom, MangleAtom),
   Unique(UniquenessGroupId, MangleAtom),
-  Multiple(&'a allocator::Vec<'a, MangleConstraint<'a>>),
+  Multiple(&'a [MangleConstraint<'a>]),
 }
 
 impl<'a> MangleConstraint<'a> {
@@ -45,9 +44,6 @@ impl<'a> MangleConstraint<'a> {
 
   pub fn add_to_mangler(&self, mangler: &mut Mangler) {
     match self {
-      MangleConstraint::NonMangable(a) => {
-        mangler.mark_atom_non_mangable(*a);
-      }
       MangleConstraint::Eq(a, b) => {
         mangler.mark_equality(true, *a, *b);
       }

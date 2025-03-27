@@ -1,8 +1,8 @@
-use super::CfScopeKind;
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepAtom},
   entity::Entity,
+  scope::CfScopeKind,
   transformer::Transformer,
 };
 use rustc_hash::FxHashMap;

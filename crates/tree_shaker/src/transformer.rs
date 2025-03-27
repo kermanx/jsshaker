@@ -1,19 +1,15 @@
 use crate::{
-  TreeShakeConfig,
-  dep::{DepAtom, ReferredDeps},
-  folding::ConstantFolder,
-  mangling::Mangler,
-  scope::conditional::ConditionalDataMap,
-  utils::{DataPlaceholder, ExtraData},
+  TreeShakeConfig, analyzer::conditional::ConditionalDataMap, dep::ReferredDeps,
+  folding::ConstantFolder, mangling::Mangler, utils::ExtraData,
 };
 use oxc::{
   allocator::{Allocator, CloneIn},
   ast::{
     AstBuilder, NONE,
     ast::{
-      ArrayExpressionElement, AssignmentTarget, BinaryOperator, BindingIdentifier, BindingPattern,
-      BindingPatternKind, Expression, ForStatementLeft, FormalParameterKind, IdentifierReference,
-      LogicalOperator, NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
+      AssignmentTarget, BinaryOperator, BindingIdentifier, BindingPattern, BindingPatternKind,
+      Expression, ForStatementLeft, FormalParameterKind, IdentifierReference, LogicalOperator,
+      NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
       VariableDeclarationKind,
     },
   },
@@ -24,7 +20,6 @@ use rustc_hash::FxHashMap;
 use std::{
   cell::{Cell, RefCell},
   hash::{DefaultHasher, Hasher},
-  mem,
   rc::Rc,
 };
 
@@ -244,14 +239,6 @@ impl<'a> Transformer<'a> {
     self.ast_builder.expression_numeric_literal(span, 0.0f64, None, NumberBase::Decimal)
   }
 
-  pub fn build_unused_iterable(&self, span: Span, length: usize) -> Expression<'a> {
-    let mut elements = self.ast_builder.vec();
-    for _ in 0..length {
-      elements.push(ArrayExpressionElement::from(self.build_unused_expression(SPAN)));
-    }
-    self.ast_builder.expression_array(span, elements, None)
-  }
-
   pub fn build_undefined(&self, span: Span) -> Expression<'a> {
     self.ast_builder.expression_identifier(span, "undefined")
   }
@@ -371,17 +358,5 @@ impl<'a> Transformer<'a> {
       LogicalOperator::And,
       right,
     )
-  }
-}
-
-impl<'a> Transformer<'a> {
-  pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepAtom>) -> &'a D {
-    const { assert!(!std::mem::needs_drop::<D>(), "Cannot allocate Drop type in arena") };
-
-    let existing = self.data.get(&key.into());
-    match existing {
-      Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
-      None => self.allocator.alloc(D::default()),
-    }
   }
 }

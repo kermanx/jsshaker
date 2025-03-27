@@ -1,5 +1,4 @@
 use oxc_index::{Idx, IndexVec};
-use std::ops::RangeFrom;
 
 struct NodeInfo<I, T> {
   data: T,
@@ -61,25 +60,8 @@ impl<I: Idx, T> ScopeTree<I, T> {
     self.stack.iter().map(move |id| self.get(*id))
   }
 
-  pub fn iter_stack_range(
-    &self,
-    range: RangeFrom<usize>,
-  ) -> impl DoubleEndedIterator<Item = &T> + ExactSizeIterator<Item = &T> {
-    self.stack[range].iter().map(move |id| self.get(*id))
-  }
-
-  pub fn iter_all(&self) -> impl Iterator<Item = &T> {
-    self.nodes.iter().map(|node| &node.data)
-  }
-
   fn get_parent(&self, id: I) -> Option<I> {
     self.nodes.get(id).unwrap().parent
-  }
-
-  pub fn add_special(&mut self, data: T) -> I {
-    let id = I::from_usize(self.nodes.len());
-    self.nodes.push(NodeInfo { data, depth: 0, parent: None });
-    id
   }
 
   pub fn push(&mut self, data: T) -> I {

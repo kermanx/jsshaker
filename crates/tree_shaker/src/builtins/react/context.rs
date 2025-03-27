@@ -1,9 +1,8 @@
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{CustomDepTrait, Dep},
   entity::{Entity, EntityFactory, ObjectId, ObjectPrototype},
   init_object,
-  scope::exhaustive::ExhaustiveDepId,
 };
 use oxc_index::{IndexVec, define_index_type};
 use std::mem;

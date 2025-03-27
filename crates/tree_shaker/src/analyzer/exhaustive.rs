@@ -1,8 +1,7 @@
-use super::{VariableScopeId, cf_scope::ReferredState};
 use crate::{
   analyzer::Analyzer,
   entity::{Entity, ObjectId, ObjectPropertyId},
-  scope::CfScopeKind,
+  scope::{CfScopeKind, VariableScopeId, cf_scope::ReferredState},
 };
 use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
@@ -209,6 +208,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn has_exhaustive_scope_since(&self, target_depth: usize) -> bool {
-    self.scoping.cf.iter_stack_range(target_depth..).any(|scope| scope.kind.is_exhaustive())
+    self.scoping.cf.iter_stack().skip(target_depth).any(|scope| scope.kind.is_exhaustive())
   }
 }

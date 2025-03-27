@@ -1,7 +1,5 @@
 pub mod call_scope;
 pub mod cf_scope;
-pub mod conditional;
-pub mod exhaustive;
 // pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
@@ -29,7 +27,6 @@ pub struct Scoping<'a> {
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
   pub pure: usize,
 
-  pub object_scope_id: VariableScopeId,
   pub object_symbol_counter: usize,
 }
 
@@ -37,7 +34,6 @@ impl<'a> Scoping<'a> {
   pub fn new(factory: &EntityFactory<'a>) -> Self {
     let mut variable = ScopeTree::new();
     variable.push(VariableScope::new_with_this(factory.unknown()));
-    let object_scope_id = variable.add_special(VariableScope::new());
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), Some(false)));
     Scoping {
@@ -61,25 +57,8 @@ impl<'a> Scoping<'a> {
       cf,
       pure: 0,
 
-      object_scope_id,
       object_symbol_counter: 128,
     }
-  }
-
-  pub fn assert_final_state(&mut self) {
-    assert_eq!(self.call.len(), 1);
-    assert_eq!(self.variable.current_depth(), 0);
-    assert_eq!(self.cf.current_depth(), 1);
-    assert_eq!(self.pure, 0);
-
-    for scope in self.cf.iter_all() {
-      if let CfScopeKind::Exhaustive(data) = &scope.kind {
-        assert!(data.clean);
-      }
-    }
-
-    #[cfg(feature = "flame")]
-    self.call.pop().unwrap().scope_guard.end();
   }
 
   pub fn alloc_object_id(&mut self) -> ObjectId {

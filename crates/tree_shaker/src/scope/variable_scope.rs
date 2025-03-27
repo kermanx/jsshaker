@@ -1,6 +1,10 @@
-use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveDepId};
+use super::cf_scope::CfScopeId;
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, dep::LazyDep, entity::Entity, utils::ast::AstKind2,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  ast::DeclarationKind,
+  dep::LazyDep,
+  entity::Entity,
+  utils::ast::AstKind2,
 };
 use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
 use oxc_index::define_index_type;

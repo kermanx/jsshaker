@@ -1,13 +1,14 @@
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{
+    Analyzer,
+    exhaustive::{ExhaustiveData, ExhaustiveDepId},
+  },
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
 };
 use oxc::{ast::ast::LabeledStatement, span::Atom};
 use oxc_index::define_index_type;
 use std::mem;
-
-use super::exhaustive::{ExhaustiveData, ExhaustiveDepId};
 
 define_index_type! {
   pub struct CfScopeId = u32;
@@ -143,6 +144,10 @@ impl<'a> Analyzer<'a> {
     let result = runner(self);
     self.pop_cf_scope();
     result
+  }
+
+  pub fn find_first_different_cf_scope(&self, another: CfScopeId) -> usize {
+    self.scoping.cf.find_lca(another).0 + 1
   }
 
   pub fn get_exec_dep(&mut self, target_depth: usize) -> Dep<'a> {
