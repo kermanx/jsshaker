@@ -1,11 +1,7 @@
 use std::hash;
 
 use oxc::{
-  ast::{
-    AstKind,
-    ast::{ArrowFunctionExpression, Class, Function, PropertyKind},
-  },
-  semantic::ScopeId,
+  ast::ast::{ArrowFunctionExpression, Class, Function},
   span::{GetSpan, Span},
 };
 
