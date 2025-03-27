@@ -4,10 +4,11 @@ use oxc::ast::ast::PropertyKind;
 
 use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue};
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::{DepCollector, DepTrait},
-  entity::{Entity, EntityFactory, LiteralEntity},
+  entity::Entity,
   mangling::MangleConstraint,
+  value::LiteralValue,
 };
 
 impl<'a> ObjectEntity<'a> {
@@ -26,7 +27,7 @@ impl<'a> ObjectEntity<'a> {
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str, key_atom) => {
+          LiteralValue::String(key_str, key_atom) => {
             let mut string_keyed = self.string_keyed.borrow_mut();
             let existing = string_keyed.get_mut(key_str);
             let reused_property = definite
@@ -83,7 +84,7 @@ impl<'a> ObjectEntity<'a> {
               existing.unwrap().possible_values.push(property_val);
             }
           }
-          LiteralEntity::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }
@@ -112,7 +113,7 @@ impl<'a> ObjectEntity<'a> {
     self.unknown_keyed.borrow_mut().non_existent.push(deps);
   }
 
-  pub fn init_rest(&self, factory: &EntityFactory<'a>, property: ObjectPropertyValue<'a>) {
+  pub fn init_rest(&self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {
     assert_eq!(self.mangling_group, None);
     let mut rest = self.rest.borrow_mut();
     if let Some(rest) = &mut *rest {

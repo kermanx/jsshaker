@@ -2,16 +2,14 @@ use std::{cell::RefCell, mem};
 
 use super::{FoldingData, FoldingState};
 use crate::{
-  analyzer::Analyzer,
-  dep::CustomDepTrait,
-  entity::{Entity, LiteralEntity},
-  mangling::MangleAtom,
+  analyzer::Analyzer, dep::CustomDepTrait, entity::Entity, mangling::MangleAtom,
+  value::LiteralValue,
 };
 
 #[derive(Debug)]
 pub struct FoldableDep<'a> {
   pub data: &'a RefCell<FoldingData<'a>>,
-  pub literal: LiteralEntity<'a>,
+  pub literal: LiteralValue<'a>,
   pub value: Entity<'a>,
   pub mangle_atom: Option<MangleAtom>,
 }

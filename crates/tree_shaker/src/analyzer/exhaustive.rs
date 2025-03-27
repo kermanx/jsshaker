@@ -9,8 +9,9 @@ use rustc_hash::FxHashSet;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, ObjectId, ObjectPropertyId},
+  entity::Entity,
   scope::{CfScopeKind, VariableScopeId, cf_scope::ReferredState},
+  value::{ObjectId, ObjectPropertyId},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

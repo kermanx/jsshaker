@@ -2,8 +2,9 @@ use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
-  entity::{Entity, LiteralEntity, consumed_object},
+  entity::Entity,
   mangling::{MangleConstraint, ManglingDep},
+  value::{LiteralValue, consumed_object},
 };
 
 impl<'a> ObjectEntity<'a> {
@@ -38,7 +39,7 @@ impl<'a> ObjectEntity<'a> {
       let mut rest = self.rest.borrow_mut();
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str, key_atom) => {
+          LiteralValue::String(key_str, key_atom) => {
             if let Some(property) = string_keyed.get_mut(key_str) {
               property.delete(
                 indeterminate,
@@ -62,7 +63,7 @@ impl<'a> ObjectEntity<'a> {
               self.add_to_mangling_group(analyzer, key_atom.unwrap());
             }
           }
-          LiteralEntity::Symbol(_, _) => todo!(),
+          LiteralValue::Symbol(_, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

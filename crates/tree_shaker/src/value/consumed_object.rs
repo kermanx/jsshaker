@@ -1,5 +1,5 @@
-use super::{Entity, EnumeratedProperties, IteratedElements, Value};
-use crate::{analyzer::Analyzer, dep::Dep};
+use super::{EnumeratedProperties, IteratedElements, Value};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
   analyzer.refer_to_global();

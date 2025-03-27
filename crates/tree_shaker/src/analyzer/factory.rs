@@ -7,26 +7,28 @@ use oxc::allocator::{self, Allocator};
 use oxc::semantic::SymbolId;
 use oxc_syntax::operator::LogicalOperator;
 
-use super::{
-  Entity, LiteralEntity, ObjectEntity, ObjectId, ObjectProperty, ObjectPrototype, PrimitiveEntity,
-  PureBuiltinFnEntity, UnknownEntity,
-  arguments::ArgumentsEntity,
-  array::ArrayEntity,
-  builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity},
-  logical_result::LogicalResultEntity,
-  never::NeverEntity,
-  react_element::ReactElementEntity,
-  union::UnionEntity,
-  utils::UnionLike,
-};
 use crate::{
   TreeShakeConfig,
   dep::{CustomDepTrait, Dep, DepCollector, DepTrait, LazyDep, OnceDep},
+  entity::Entity,
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
   utils::F64WithEq,
+  value::{
+    LiteralValue, ObjectEntity, ObjectId, ObjectProperty, ObjectPrototype,
+    arguments::ArgumentsEntity,
+    array::ArrayEntity,
+    builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnEntity, PureBuiltinFnEntity},
+    logical_result::LogicalResultEntity,
+    never::NeverEntity,
+    primitive::PrimitiveEntity,
+    react_element::ReactElementEntity,
+    union::UnionEntity,
+    unknown::UnknownEntity,
+    utils::UnionLike,
+  },
 };
-pub struct EntityFactory<'a> {
+pub struct Factory<'a> {
   pub allocator: &'a Allocator,
   instance_id_counter: Cell<usize>,
 
@@ -62,13 +64,13 @@ pub struct EntityFactory<'a> {
   pub consumed_lazy_dep: LazyDep<'a>,
 }
 
-impl<'a> EntityFactory<'a> {
-  pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> EntityFactory<'a> {
-    let r#true = allocator.alloc(LiteralEntity::Boolean(true)).into();
-    let r#false = allocator.alloc(LiteralEntity::Boolean(false)).into();
-    let nan = allocator.alloc(LiteralEntity::NaN).into();
-    let null = allocator.alloc(LiteralEntity::Null).into();
-    let undefined = allocator.alloc(LiteralEntity::Undefined).into();
+impl<'a> Factory<'a> {
+  pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> Factory<'a> {
+    let r#true = allocator.alloc(LiteralValue::Boolean(true)).into();
+    let r#false = allocator.alloc(LiteralValue::Boolean(false)).into();
+    let nan = allocator.alloc(LiteralValue::NaN).into();
+    let null = allocator.alloc(LiteralValue::Null).into();
+    let undefined = allocator.alloc(LiteralValue::Undefined).into();
 
     let never = allocator.alloc(NeverEntity).into();
     let immutable_unknown = allocator.alloc(UnknownEntity::new()).into();
@@ -107,7 +109,7 @@ impl<'a> EntityFactory<'a> {
     let no_dep = Dep(allocator.alloc(()));
     let consumed_lazy_dep = LazyDep(allocator.alloc(RefCell::new(None)));
 
-    EntityFactory {
+    Factory {
       allocator,
       instance_id_counter: Cell::new(0),
 
@@ -234,18 +236,18 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, None)).into()
+    self.alloc(LiteralValue::String(value, None)).into()
   }
 
   pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.alloc(LiteralEntity::String(value, Some(atom))).into()
+    self.alloc(LiteralValue::String(value, Some(atom))).into()
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
-    self.alloc(LiteralEntity::Number(value.into(), str_rep)).into()
+    self.alloc(LiteralValue::Number(value.into(), str_rep)).into()
   }
   pub fn big_int(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::BigInt(value)).into()
+    self.alloc(LiteralValue::BigInt(value)).into()
   }
 
   pub fn boolean(&self, value: bool) -> Entity<'a> {
@@ -256,11 +258,11 @@ impl<'a> EntityFactory<'a> {
   }
 
   pub fn infinity(&self, positivie: bool) -> Entity<'a> {
-    self.alloc(LiteralEntity::Infinity(positivie)).into()
+    self.alloc(LiteralValue::Infinity(positivie)).into()
   }
 
   pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
-    self.alloc(LiteralEntity::Symbol(id, str_rep)).into()
+    self.alloc(LiteralValue::Symbol(id, str_rep)).into()
   }
 
   /// Only used when (maybe_left, maybe_right) == (true, true)
@@ -383,7 +385,7 @@ macro_rules! unknown_entity_ctors {
   };
 }
 
-impl<'a> EntityFactory<'a> {
+impl<'a> Factory<'a> {
   unknown_entity_ctors! {
     computed_unknown_primitive -> unknown_primitive,
     computed_unknown_boolean -> unknown_boolean,

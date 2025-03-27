@@ -16,13 +16,13 @@ pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyValue};
 use rustc_hash::FxHashSet;
 
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, TypeofResult, ValueTrait,
-  consumed_object,
+  EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
   builtins::BuiltinPrototype,
   dep::{CustomDepTrait, Dep, DepAtom, DepCollector},
+  entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
@@ -273,7 +273,7 @@ impl<'a> ObjectEntity<'a> {
   fn check_mangable(
     &self,
     analyzer: &mut Analyzer<'a>,
-    literals: &FxHashSet<LiteralEntity>,
+    literals: &FxHashSet<LiteralValue>,
   ) -> bool {
     if self.is_mangable() {
       if is_literal_mangable(literals) {

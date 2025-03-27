@@ -17,9 +17,10 @@ use oxc::{allocator, semantic::SymbolId};
 
 use super::Builtins;
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::Dep,
-  entity::{Entity, EntityFactory, LiteralEntity},
+  entity::Entity,
+  value::LiteralValue,
 };
 
 pub struct BuiltinPrototype<'a> {
@@ -35,7 +36,7 @@ impl fmt::Debug for BuiltinPrototype<'_> {
 }
 
 impl<'a> BuiltinPrototype<'a> {
-  pub fn new_in(factory: &EntityFactory<'a>) -> Self {
+  pub fn new_in(factory: &Factory<'a>) -> Self {
     Self {
       name: "",
       string_keyed: allocator::HashMap::new_in(factory.allocator),
@@ -64,10 +65,10 @@ impl<'a> BuiltinPrototype<'a> {
     self.symbol_keyed.get(&key).copied()
   }
 
-  pub fn get_literal_keyed(&self, key: LiteralEntity) -> Option<Entity<'a>> {
+  pub fn get_literal_keyed(&self, key: LiteralValue) -> Option<Entity<'a>> {
     match key {
-      LiteralEntity::String(key, _) => self.get_string_keyed(key),
-      LiteralEntity::Symbol(key, _) => self.get_symbol_keyed(key),
+      LiteralValue::String(key, _) => self.get_string_keyed(key),
+      LiteralValue::Symbol(key, _) => self.get_symbol_keyed(key),
       _ => unreachable!("Invalid property key"),
     }
   }
@@ -111,7 +112,7 @@ pub struct BuiltinPrototypes<'a> {
 }
 
 impl<'a> Builtins<'a> {
-  pub fn create_builtin_prototypes(factory: &EntityFactory<'a>) -> &'a BuiltinPrototypes<'a> {
+  pub fn create_builtin_prototypes(factory: &Factory<'a>) -> &'a BuiltinPrototypes<'a> {
     factory.alloc(BuiltinPrototypes {
       array: array::create_array_prototype(factory),
       bigint: bigint::create_bigint_prototype(factory),

@@ -5,7 +5,7 @@ use oxc::{
   },
 };
 
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::ObjectEntity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, value::ObjectEntity};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_attributes(

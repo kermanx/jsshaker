@@ -1,10 +1,7 @@
 use super::{BuiltinPrototype, object::create_object_prototype};
-use crate::{
-  entity::{EntityFactory, ObjectId},
-  init_prototype,
-};
+use crate::{analyzer::Factory, init_prototype, value::ObjectId};
 
-pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> BuiltinPrototype<'a> {
+pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep, 2, false).0;

@@ -1,7 +1,5 @@
-use super::{
-  Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
-};
-use crate::{analyzer::Analyzer, dep::Dep};
+use super::{EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone)]
 pub struct LogicalResultEntity<'a> {

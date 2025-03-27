@@ -3,10 +3,10 @@ use std::{cell::Cell, fmt::Debug};
 use rustc_hash::FxHashSet;
 
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectPrototype, TypeofResult,
-  ValueTrait, consumed_object, utils::UnionLike,
+  EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, ValueTrait,
+  consumed_object, utils::UnionLike,
 };
-use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
 #[derive(Debug)]
 pub struct UnionEntity<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
@@ -177,7 +177,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionEnti
     analyzer.factory.union(values)
   }
 
-  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralEntity<'a>>> {
+  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralValue<'a>>> {
     let mut iter = self.values.iter();
     let mut result = iter.next().unwrap().get_to_literals(analyzer)?;
     for entity in iter {

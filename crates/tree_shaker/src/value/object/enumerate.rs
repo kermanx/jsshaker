@@ -6,8 +6,8 @@ use super::{ObjectEntity, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
   dep::Dep,
-  entity::{EnumeratedProperties, consumed_object},
   scope::CfScopeKind,
+  value::{EnumeratedProperties, consumed_object},
 };
 
 impl<'a> ObjectEntity<'a> {

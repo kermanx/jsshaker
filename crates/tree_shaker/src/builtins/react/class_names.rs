@@ -1,10 +1,9 @@
 use crate::{
-  builtins::prototypes::BuiltinPrototypes,
-  entity::{Entity, EntityFactory, TypeofResult},
+  analyzer::Factory, builtins::prototypes::BuiltinPrototypes, entity::Entity, value::TypeofResult,
 };
 
 pub fn create_class_names_namespace<'a>(
-  factory: &'a EntityFactory<'a>,
+  factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   factory.implemented_builtin_fn("classnames::default", |analyzer, dep, _this, args| {

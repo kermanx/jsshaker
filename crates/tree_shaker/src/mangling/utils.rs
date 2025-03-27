@@ -1,7 +1,7 @@
 /// Adapted from https://github.com/oxc-project/oxc/blob/774babb7f2c9a36a12804d76c4c9b6b5684569bb/crates/oxc_mangler/src/lib.rs
 use rustc_hash::FxHashSet;
 
-use crate::entity::LiteralEntity;
+use crate::value::LiteralValue;
 
 const BASE54_CHARS: &[u8; 64] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ$_0123456789";
 
@@ -26,9 +26,9 @@ pub fn get_mangled_name(n: usize) -> String {
   ret
 }
 
-pub fn is_literal_mangable(literals: &FxHashSet<LiteralEntity<'_>>) -> bool {
+pub fn is_literal_mangable(literals: &FxHashSet<LiteralValue<'_>>) -> bool {
   for key_literal in literals {
-    if let LiteralEntity::String(_, key_atom) = key_literal {
+    if let LiteralValue::String(_, key_atom) = key_literal {
       if key_atom.is_none() {
         return false;
       }

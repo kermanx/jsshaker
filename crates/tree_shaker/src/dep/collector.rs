@@ -3,7 +3,7 @@ use std::mem;
 use oxc::allocator;
 
 use super::{Dep, DepTrait};
-use crate::{analyzer::Analyzer, entity::EntityFactory};
+use crate::analyzer::{Analyzer, Factory};
 
 #[derive(Debug)]
 pub struct DepCollector<'a, T: DepTrait<'a> + 'a = Dep<'a>> {
@@ -24,7 +24,7 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
     self.current.push(value);
   }
 
-  pub fn try_collect(&mut self, factory: &EntityFactory<'a>) -> Option<Dep<'a>> {
+  pub fn try_collect(&mut self, factory: &Factory<'a>) -> Option<Dep<'a>> {
     if self.current.is_empty() {
       self.node
     } else {
@@ -39,7 +39,7 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
     }
   }
 
-  pub fn collect(&mut self, factory: &EntityFactory<'a>) -> Dep<'a> {
+  pub fn collect(&mut self, factory: &Factory<'a>) -> Dep<'a> {
     self.try_collect(factory).unwrap_or(factory.no_dep)
   }
 

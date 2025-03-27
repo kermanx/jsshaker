@@ -1,9 +1,7 @@
 use std::marker::PhantomData;
 
-use super::{
-  Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-};
-use crate::{analyzer::Analyzer, dep::Dep};
+use super::{EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Default)]
 pub struct UnknownEntity<'a>(PhantomData<&'a ()>);

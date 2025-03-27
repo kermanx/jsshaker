@@ -2,8 +2,9 @@ use std::borrow::BorrowMut;
 
 use crate::{
   builtins::{Builtins, constants::OBJECT_CONSTRUCTOR_OBJECT_ID},
-  entity::{Entity, LiteralEntity, ObjectPropertyValue, ObjectPrototype, TypeofResult},
+  entity::Entity,
   init_namespace,
+  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
 };
 
 impl<'a> Builtins<'a> {
@@ -147,7 +148,7 @@ impl<'a> Builtins<'a> {
           if !definite {
             break 'trackable;
           }
-          let Some(LiteralEntity::String(key_str, _)) = key.get_literal(analyzer) else {
+          let Some(LiteralValue::String(key_str, _)) = key.get_literal(analyzer) else {
             break 'trackable;
           };
           match key_str {

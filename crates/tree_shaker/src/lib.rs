@@ -10,6 +10,7 @@ mod nodes;
 mod scope;
 mod transformer;
 mod utils;
+mod value;
 pub mod vfs;
 
 use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};

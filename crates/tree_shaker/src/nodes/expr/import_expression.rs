@@ -1,11 +1,8 @@
 use oxc::ast::ast::{Expression, ImportExpression};
 
 use crate::{
-  analyzer::Analyzer,
-  build_effect,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
-  utils::ast::AstKind2,
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+  value::LiteralValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -17,7 +14,7 @@ impl<'a> Analyzer<'a> {
     }
     let dep = self.dep((AstKind2::ImportExpression(node), deps));
 
-    if let Some(LiteralEntity::String(specifier, _m)) = specifier.get_literal(self) {
+    if let Some(LiteralValue::String(specifier, _m)) = specifier.get_literal(self) {
       if let Some(module_id) = self.resolve_and_import_module(specifier) {
         return self.factory.computed_unknown((module_id, dep));
       }

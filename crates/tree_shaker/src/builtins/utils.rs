@@ -2,7 +2,7 @@
 macro_rules! init_namespace {
   ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::entity::{ObjectProperty, ObjectPropertyValue};
+      use $crate::value::{ObjectProperty, ObjectPropertyValue};
       use $crate::dep::DepCollector;
       let mut string_keyed = $ns.string_keyed.borrow_mut();
       $(string_keyed.insert(
@@ -24,7 +24,7 @@ macro_rules! init_namespace {
 macro_rules! init_object {
   ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::entity::{ObjectProperty, ObjectPropertyValue};
+      use $crate::value::{ObjectProperty, ObjectPropertyValue};
       use $crate::dep::DepCollector;
       let mut string_keyed = $ns.string_keyed.borrow_mut();
       $(string_keyed.insert(

@@ -2,8 +2,8 @@ use std::borrow::BorrowMut;
 
 use crate::{
   builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
-  entity::{ObjectPropertyValue, ObjectPrototype},
   init_namespace,
+  value::{ObjectPropertyValue, ObjectPrototype},
 };
 
 impl Builtins<'_> {

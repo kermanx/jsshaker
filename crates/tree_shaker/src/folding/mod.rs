@@ -9,17 +9,18 @@ use rustc_hash::FxHashMap;
 use crate::{
   analyzer::Analyzer,
   dep::DepAtom,
-  entity::{Entity, LiteralEntity},
+  entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
   utils::ast::AstKind2,
+  value::LiteralValue,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum FoldingState<'a> {
   #[default]
   Initial,
-  Foldable(LiteralEntity<'a>),
+  Foldable(LiteralValue<'a>),
   UnFoldable,
 }
 
@@ -28,7 +29,7 @@ impl<'a> FoldingState<'a> {
     matches!(self, Self::Initial | Self::Foldable(_))
   }
 
-  pub fn get_foldable_literal(self) -> Option<LiteralEntity<'a>> {
+  pub fn get_foldable_literal(self) -> Option<LiteralValue<'a>> {
     match self {
       Self::Initial => None, // Change to `unreachable!()` later
       Self::Foldable(literal) => Some(literal),
@@ -50,7 +51,7 @@ pub struct ConstantFolder<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  fn get_foldable_literal(&mut self, value: Entity<'a>) -> Option<LiteralEntity<'a>> {
+  fn get_foldable_literal(&mut self, value: Entity<'a>) -> Option<LiteralValue<'a>> {
     if let Some(lit) = value.get_literal(self) {
       lit.can_build_expr(self).then_some(lit)
     } else {
@@ -110,7 +111,7 @@ impl<'a> Transformer<'a> {
     })
   }
 
-  pub fn get_folded_literal(&self, node: AstKind2<'a>) -> Option<LiteralEntity<'a>> {
+  pub fn get_folded_literal(&self, node: AstKind2<'a>) -> Option<LiteralValue<'a>> {
     self.folder.nodes.get(&node.into())?.borrow().state.get_foldable_literal()
   }
 }

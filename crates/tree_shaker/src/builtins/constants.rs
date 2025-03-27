@@ -1,6 +1,6 @@
 use std::mem;
 
-use crate::entity::ObjectId;
+use crate::value::ObjectId;
 
 // Builtin object ids
 pub const IMPORT_META_OBJECT_ID: ObjectId = unsafe { mem::transmute(1u32) };

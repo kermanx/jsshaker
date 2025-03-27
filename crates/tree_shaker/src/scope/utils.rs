@@ -4,7 +4,7 @@ use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{DepCollector, DepVec},
-  entity::ObjectId,
+  value::ObjectId,
 };
 
 impl<'a> Analyzer<'a> {

@@ -12,14 +12,11 @@ use prototypes::BuiltinPrototypes;
 use react::AnalyzerDataForReact;
 use rustc_hash::FxHashMap;
 
-use crate::{
-  TreeShakeConfig,
-  entity::{Entity, EntityFactory},
-};
+use crate::{TreeShakeConfig, analyzer::Factory, entity::Entity};
 
 pub struct Builtins<'a> {
   pub config: &'a TreeShakeConfig,
-  pub factory: &'a EntityFactory<'a>,
+  pub factory: &'a Factory<'a>,
 
   pub prototypes: &'a BuiltinPrototypes<'a>,
   pub globals: FxHashMap<&'static str, Entity<'a>>,
@@ -30,7 +27,7 @@ pub struct Builtins<'a> {
 }
 
 impl<'a> Builtins<'a> {
-  pub fn new(config: &'a TreeShakeConfig, factory: &'a EntityFactory<'a>) -> Self {
+  pub fn new(config: &'a TreeShakeConfig, factory: &'a Factory<'a>) -> Self {
     let prototypes = Self::create_builtin_prototypes(factory);
     let mut builtins = Self {
       config,

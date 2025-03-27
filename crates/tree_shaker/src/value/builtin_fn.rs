@@ -1,10 +1,14 @@
 use std::fmt::Debug;
 
 use super::{
-  Entity, EntityFactory, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype,
-  TypeofResult, ValueTrait, consumed_object, never::NeverEntity,
+  EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
+  consumed_object, never::NeverEntity,
 };
-use crate::{analyzer::Analyzer, dep::Dep};
+use crate::{
+  analyzer::{Analyzer, Factory},
+  dep::Dep,
+  entity::Entity,
+};
 
 trait BuiltinFnEntity<'a>: Debug {
   #[cfg(feature = "flame")]
@@ -232,7 +236,7 @@ impl<'a> Analyzer<'a> {
 
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnEntity<'a> {
-  return_value: fn(&EntityFactory<'a>) -> Entity<'a>,
+  return_value: fn(&Factory<'a>) -> Entity<'a>,
 }
 
 impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
@@ -256,7 +260,7 @@ impl<'a> BuiltinFnEntity<'a> for PureBuiltinFnEntity<'a> {
 }
 
 impl<'a> PureBuiltinFnEntity<'a> {
-  pub fn new(return_value: fn(&EntityFactory<'a>) -> Entity<'a>) -> Self {
+  pub fn new(return_value: fn(&Factory<'a>) -> Entity<'a>) -> Self {
     Self { return_value }
   }
 }

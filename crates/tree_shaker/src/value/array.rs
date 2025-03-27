@@ -6,12 +6,13 @@ use std::{
 use oxc::allocator;
 
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, LiteralEntity, ObjectId, TypeofResult,
-  ValueTrait, consumed_object,
+  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, TypeofResult, ValueTrait,
+  consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepCollector},
+  entity::Entity,
   scope::CfScopeId,
   use_consumed_flag,
 };
@@ -84,7 +85,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key, _) => {
+          LiteralValue::String(key, _) => {
             if let Ok(index) = key.parse::<usize>() {
               if let Some(element) = self.elements.borrow().get(index) {
                 result.push(*element);
@@ -105,7 +106,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
               result.push(analyzer.factory.unmatched_prototype_property);
             }
           }
-          LiteralEntity::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }
@@ -148,7 +149,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str, _) => {
+          LiteralValue::String(key_str, _) => {
             if let Ok(index) = key_str.parse::<usize>() {
               has_effect = true;
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {
@@ -187,7 +188,7 @@ impl<'a> ValueTrait<'a> for ArrayEntity<'a> {
               break 'known;
             }
           }
-          LiteralEntity::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(_key, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

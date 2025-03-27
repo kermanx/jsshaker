@@ -3,10 +3,10 @@ use std::cell::Cell;
 use oxc::allocator;
 
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
+  EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
   consumed_object,
 };
-use crate::{analyzer::Analyzer, dep::Dep, use_consumed_flag};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
 #[derive(Debug)]
 pub struct ArgumentsEntity<'a> {

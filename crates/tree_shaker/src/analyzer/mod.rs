@@ -1,11 +1,13 @@
 pub mod conditional;
 pub mod exhaustive;
+mod factory;
 mod operations;
 
 use std::{collections::BTreeSet, mem};
 
 use conditional::ConditionalDataMap;
 use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
+pub use factory::Factory;
 use oxc::{
   allocator::Allocator,
   span::{GetSpan, Span},
@@ -16,7 +18,6 @@ use crate::{
   TreeShakeConfig,
   builtins::Builtins,
   dep::ReferredDeps,
-  entity::EntityFactory,
   folding::ConstantFolder,
   mangling::Mangler,
   module::{ModuleId, Modules},
@@ -29,7 +30,7 @@ pub struct Analyzer<'a> {
   pub vfs: Box<dyn Vfs>,
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
-  pub factory: &'a EntityFactory<'a>,
+  pub factory: &'a Factory<'a>,
 
   pub modules: Modules<'a>,
   pub builtins: Builtins<'a>,
@@ -51,7 +52,7 @@ pub struct Analyzer<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_in(vfs: Box<dyn Vfs>, config: &'a TreeShakeConfig, allocator: &'a Allocator) -> Self {
-    let factory = &*allocator.alloc(EntityFactory::new(allocator, config));
+    let factory = &*allocator.alloc(Factory::new(allocator, config));
     Analyzer {
       vfs,
       config,

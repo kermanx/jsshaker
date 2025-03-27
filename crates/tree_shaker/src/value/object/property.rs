@@ -32,7 +32,7 @@ pub struct ObjectProperty<'a> {
   pub possible_values: allocator::Vec<'a, ObjectPropertyValue<'a>>,
   /// Why this property is non-existent
   pub non_existent: DepCollector<'a>,
-  /// The key entity. None if it is just LiteralEntity(key)
+  /// The key entity. None if it is just Literal(key)
   pub key: Option<Entity<'a>>,
   /// key_atom if this property's key is mangable
   pub mangling: Option<MangleAtom>,

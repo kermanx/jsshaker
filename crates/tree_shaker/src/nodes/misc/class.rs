@@ -14,10 +14,11 @@ use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   dep::Dep,
-  entity::{Entity, ObjectPrototype, ValueTrait},
+  entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
+  value::{ObjectPrototype, ValueTrait},
 };
 
 #[derive(Default)]

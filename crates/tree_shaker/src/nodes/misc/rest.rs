@@ -1,8 +1,4 @@
-use crate::{
-  analyzer::Analyzer,
-  dep::DepAtom,
-  entity::{Entity, ObjectPrototype},
-};
+use crate::{analyzer::Analyzer, dep::DepAtom, entity::Entity, value::ObjectPrototype};
 
 impl<'a> Analyzer<'a> {
   /// const { enumerated_1, enumerated_2, ...rest } = object;

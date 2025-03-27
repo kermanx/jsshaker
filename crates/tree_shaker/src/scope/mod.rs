@@ -15,11 +15,12 @@ use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
 
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::{Dep, DepAtom, DepTrait, DepVec},
-  entity::{Entity, EntityFactory, ObjectId},
+  entity::Entity,
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
+  value::ObjectId,
 };
 
 pub struct Scoping<'a> {
@@ -32,7 +33,7 @@ pub struct Scoping<'a> {
 }
 
 impl<'a> Scoping<'a> {
-  pub fn new(factory: &EntityFactory<'a>) -> Self {
+  pub fn new(factory: &Factory<'a>) -> Self {
     let mut variable = ScopeTree::new();
     variable.push(VariableScope::new_with_this(factory.unknown()));
     let mut cf = ScopeTree::new();

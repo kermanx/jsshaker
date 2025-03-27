@@ -1,7 +1,11 @@
 use std::hash;
 
 use oxc::{
-  ast::ast::{ArrowFunctionExpression, Class, Function},
+  ast::{
+    AstKind,
+    ast::{ArrowFunctionExpression, Class, Function, PropertyKind},
+  },
+  semantic::ScopeId,
   span::{GetSpan, Span},
 };
 
@@ -111,7 +115,7 @@ impl<'a> Analyzer<'a> {
   }
 
   /// Note: this is for flamegraph only. May not conform to the standard.
-  #[cfg(feature = "flame")]
+  #[allow(dead_code)]
   fn resolve_function_name(&self, scope_id: ScopeId) -> Option<&'a str> {
     let node_id = self.semantic().scoping().get_node_id(scope_id);
     let parent = self.semantic().nodes().parent_kind(node_id)?;

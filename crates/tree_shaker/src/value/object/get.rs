@@ -4,9 +4,10 @@ use super::ObjectEntity;
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
-  entity::{Entity, LiteralEntity, consumed_object, object::ObjectPrototype},
+  entity::Entity,
   mangling::MangleAtom,
   scope::CfScopeKind,
+  value::{LiteralValue, consumed_object, object::ObjectPrototype},
 };
 
 pub(crate) struct GetPropertyContext<'a> {
@@ -42,12 +43,12 @@ impl<'a> ObjectEntity<'a> {
       mangable = self.check_mangable(analyzer, &key_literals);
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str, key_atom) => {
+          LiteralValue::String(key_str, key_atom) => {
             if !self.get_string_keyed(analyzer, &mut context, key_str, key_atom) {
               check_rest = true;
             }
           }
-          LiteralEntity::Symbol(_, _) => todo!(),
+          LiteralValue::Symbol(_, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

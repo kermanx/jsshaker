@@ -3,12 +3,13 @@ use std::cell::Cell;
 use oxc::{allocator, span::GetSpan};
 
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult,
-  ValueTrait, consumed_object,
+  EnumeratedProperties, IteratedElements, ObjectEntity, ObjectPrototype, TypeofResult, ValueTrait,
+  consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
   dep::Dep,
+  entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
 };

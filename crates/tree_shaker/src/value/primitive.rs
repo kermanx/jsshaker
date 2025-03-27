@@ -1,8 +1,8 @@
 use super::{
-  Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
+  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
   never::NeverEntity,
 };
-use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep};
+use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PrimitiveEntity {

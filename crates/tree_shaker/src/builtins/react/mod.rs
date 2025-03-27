@@ -23,8 +23,10 @@ use super::{
   prototypes::BuiltinPrototypes,
 };
 use crate::{
-  entity::{Entity, EntityFactory, ObjectPropertyValue, ObjectPrototype},
+  analyzer::Factory,
+  entity::Entity,
   init_namespace,
+  value::{ObjectPropertyValue, ObjectPrototype},
 };
 
 #[derive(Debug, Default)]
@@ -36,7 +38,7 @@ pub struct AnalyzerDataForReact<'a> {
 }
 
 pub fn create_react_namespace<'a>(
-  factory: &'a EntityFactory<'a>,
+  factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   let namespace =
@@ -56,7 +58,7 @@ pub fn create_react_namespace<'a>(
 }
 
 pub fn create_react_jsx_runtime_namespace<'a>(
-  factory: &'a EntityFactory<'a>,
+  factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   let object = factory.builtin_object(

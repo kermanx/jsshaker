@@ -3,10 +3,11 @@ use std::mem;
 use oxc_index::{IndexVec, define_index_type};
 
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::{Analyzer, Factory, exhaustive::ExhaustiveDepId},
   dep::{CustomDepTrait, Dep},
-  entity::{Entity, EntityFactory, ObjectId, ObjectPrototype},
+  entity::Entity,
   init_object,
+  value::{ObjectId, ObjectPrototype},
 };
 
 #[derive(Debug)]
@@ -19,7 +20,7 @@ pub struct ReactContextData<'a> {
 }
 
 impl<'a> ReactContextData<'a> {
-  pub fn get_current(&self, factory: &'a EntityFactory<'a>) -> Entity<'a> {
+  pub fn get_current(&self, factory: &'a Factory<'a>) -> Entity<'a> {
     factory.computed(
       if self.consumed {
         factory.unknown()
@@ -38,7 +39,7 @@ define_index_type! {
 
 pub type ReactContexts<'a> = IndexVec<ContextId, ReactContextData<'a>>;
 
-pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
+pub fn create_react_create_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createContext", |analyzer, dep, _this, args| {
     let default_value = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
 
@@ -144,7 +145,7 @@ fn create_react_context_consumer_impl<'a>(
   )
 }
 
-pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
+pub fn create_react_use_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useContext", move |analyzer, dep, _this, args| {
     let context_object = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
     let context_id = context_object.get_property(

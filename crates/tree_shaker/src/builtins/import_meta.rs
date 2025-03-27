@@ -1,12 +1,14 @@
 use super::{Builtins, constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes};
 use crate::{
+  analyzer::Factory,
   dep::DepCollector,
-  entity::{Entity, EntityFactory, ObjectProperty, ObjectPropertyValue, ObjectPrototype},
+  entity::Entity,
+  value::{ObjectProperty, ObjectPropertyValue, ObjectPrototype},
 };
 
 impl<'a> Builtins<'a> {
   pub fn create_import_meta(
-    factory: &'a EntityFactory<'a>,
+    factory: &'a Factory<'a>,
     _prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
     let object =

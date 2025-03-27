@@ -1,6 +1,6 @@
 use super::BuiltinPrototype;
-use crate::entity::EntityFactory;
+use crate::analyzer::Factory;
 
-pub fn create_null_prototype<'a>(factory: &EntityFactory<'a>) -> BuiltinPrototype<'a> {
+pub fn create_null_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   BuiltinPrototype::new_in(factory).with_name("null")
 }

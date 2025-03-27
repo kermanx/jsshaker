@@ -6,11 +6,8 @@ use oxc::{
 use oxc_ecmascript::ToInt32;
 
 use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
+  value::LiteralValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -77,11 +74,11 @@ impl<'a> Analyzer<'a> {
         if let Some(literals) = argument.get_to_numeric(self).get_to_literals(self) {
           self.factory.union(allocator::Vec::from_iter_in(
             literals.into_iter().map(|lit| match lit {
-              LiteralEntity::Number(num, _) => {
+              LiteralValue::Number(num, _) => {
                 let num = !num.0.to_int_32();
                 self.factory.number(num as f64, None)
               }
-              LiteralEntity::NaN => self.factory.number(-1f64, None),
+              LiteralValue::NaN => self.factory.number(-1f64, None),
               _ => self.factory.unknown_primitive,
             }),
             self.allocator,

@@ -1,5 +1,5 @@
-use super::{Entity, ValueTrait};
-use crate::{analyzer::Analyzer, dep::Dep};
+use super::ValueTrait;
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NeverEntity;
@@ -81,10 +81,10 @@ impl<'a> ValueTrait<'a> for NeverEntity {
   fn get_to_literals(
     &'a self,
     _analyzer: &Analyzer<'a>,
-  ) -> Option<rustc_hash::FxHashSet<super::LiteralEntity<'a>>> {
+  ) -> Option<rustc_hash::FxHashSet<super::LiteralValue<'a>>> {
     Some(rustc_hash::FxHashSet::default())
   }
-  fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralEntity<'a>> {
+  fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralValue<'a>> {
     None
   }
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {

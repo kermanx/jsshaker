@@ -2,10 +2,11 @@ use super::{ObjectEntity, ObjectProperty, ObjectPropertyValue, ObjectPrototype};
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepCollector},
-  entity::{Entity, LiteralEntity, consumed_object},
+  entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
+  value::{LiteralValue, consumed_object},
 };
 
 pub struct PendingSetter<'a> {
@@ -54,7 +55,7 @@ impl<'a> ObjectEntity<'a> {
 
       for key_literal in key_literals {
         match key_literal {
-          LiteralEntity::String(key_str, key_atom) => {
+          LiteralValue::String(key_str, key_atom) => {
             if let Some(property) = string_keyed.get_mut(key_str) {
               let value = if mangable {
                 let prev_key = property.key.unwrap();
@@ -99,7 +100,7 @@ impl<'a> ObjectEntity<'a> {
               },
             );
           }
-          LiteralEntity::Symbol(_, _) => todo!(),
+          LiteralValue::Symbol(_, _) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

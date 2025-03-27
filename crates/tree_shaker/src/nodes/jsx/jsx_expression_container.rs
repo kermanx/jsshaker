@@ -5,11 +5,8 @@ use oxc::{
 };
 
 use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
+  value::LiteralValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -59,7 +56,7 @@ impl<'a> Transformer<'a> {
         if effect.is_none()
           && matches!(
             self.get_folded_literal(AstKind2::JsxExpressionContainer(node)).unwrap(),
-            LiteralEntity::String("", _)
+            LiteralValue::String("", _)
           )
         {
           self.ast_builder.jsx_expression_empty_expression(expression.span())

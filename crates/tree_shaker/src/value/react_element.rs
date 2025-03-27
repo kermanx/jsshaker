@@ -1,13 +1,12 @@
 use std::cell::{Cell, RefCell};
 
-use super::{
-  Entity, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-};
+use super::{EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object};
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
-  entity::ObjectPrototype,
+  entity::Entity,
   use_consumed_flag,
+  value::ObjectPrototype,
 };
 
 #[derive(Debug)]

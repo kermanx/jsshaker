@@ -3,8 +3,9 @@ use oxc_ecmascript::ToInt32;
 
 use crate::{
   analyzer::Analyzer,
-  entity::{Entity, LiteralEntity, TypeofResult, ValueTrait},
+  entity::Entity,
   mangling::MangleConstraint,
+  value::{LiteralValue, TypeofResult, ValueTrait},
 };
 
 impl<'a> Analyzer<'a> {
@@ -108,17 +109,17 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn op_lt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
-    fn literal_lt(lhs: &LiteralEntity, rhs: &LiteralEntity, eq: bool) -> Option<bool> {
+    fn literal_lt(lhs: &LiteralValue, rhs: &LiteralValue, eq: bool) -> Option<bool> {
       match (lhs, rhs) {
-        (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => {
+        (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) => {
           Some(if eq { l.0 <= r.0 } else { l.0 < r.0 })
         }
-        (LiteralEntity::String(l, _), LiteralEntity::String(r, _)) => {
+        (LiteralValue::String(l, _), LiteralValue::String(r, _)) => {
           Some(if eq { l <= r } else { l < r })
         }
-        (LiteralEntity::BigInt(_), LiteralEntity::BigInt(_))
-        | (LiteralEntity::BigInt(_), LiteralEntity::String(_, _))
-        | (LiteralEntity::String(_, _), LiteralEntity::BigInt(_)) => None,
+        (LiteralValue::BigInt(_), LiteralValue::BigInt(_))
+        | (LiteralValue::BigInt(_), LiteralValue::String(_, _))
+        | (LiteralValue::String(_, _), LiteralValue::BigInt(_)) => None,
         (lhs, rhs) => {
           let lhs = lhs.to_number();
           let rhs = rhs.to_number();
@@ -222,7 +223,7 @@ impl<'a> Analyzer<'a> {
       let rhs_str_lit = rhs_str.get_literal(self);
 
       match (lhs_str_lit, rhs_str_lit) {
-        (Some(LiteralEntity::String(l, _)), Some(LiteralEntity::String(r, _))) => {
+        (Some(LiteralValue::String(l, _)), Some(LiteralValue::String(r, _))) => {
           let val = l.to_string() + r;
           values.push(self.factory.string(self.allocator.alloc_str(&val)));
         }
@@ -249,8 +250,8 @@ impl<'a> Analyzer<'a> {
     self.factory.computed(
       if let (Some(l), Some(r)) = (lhs.get_literal(self), rhs.get_literal(self)) {
         match (l, r) {
-          (LiteralEntity::Number(l, _), LiteralEntity::Number(r, _)) => calc(l.0, r.0),
-          (LiteralEntity::NaN, _) | (_, LiteralEntity::NaN) => self.factory.nan,
+          (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) => calc(l.0, r.0),
+          (LiteralValue::NaN, _) | (_, LiteralValue::NaN) => self.factory.nan,
           _ => self.factory.unknown_primitive,
         }
       } else {
