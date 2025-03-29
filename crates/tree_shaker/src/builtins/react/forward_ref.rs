@@ -10,7 +10,7 @@ pub fn create_react_forward_ref_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a>
       "React::ForwardRefReturn",
       move |analyzer, dep, this, args| {
         let props = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
-        let r#ref = analyzer.factory.unknown();
+        let r#ref = analyzer.factory.unknown;
 
         renderer.call(
           analyzer,

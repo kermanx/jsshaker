@@ -218,7 +218,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     if !self.deps.borrow().is_empty() {
       return (
-        vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+        vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
         analyzer.dep((self, dep)),
       );
     }
@@ -300,7 +300,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
 
     if !self.deps.borrow().is_empty() {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.dep((self, dep)));
+      return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
     }
 
     (

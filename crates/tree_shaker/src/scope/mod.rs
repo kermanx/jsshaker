@@ -35,7 +35,7 @@ pub struct Scoping<'a> {
 impl<'a> Scoping<'a> {
   pub fn new(factory: &Factory<'a>) -> Self {
     let mut variable = ScopeTree::new();
-    variable.push(VariableScope::new_with_this(factory.unknown()));
+    variable.push(VariableScope::new_with_this(factory.unknown));
     let mut cf = ScopeTree::new();
     cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), Some(false)));
     Scoping {

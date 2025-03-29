@@ -23,7 +23,7 @@ impl<'a> ReactContextData<'a> {
   pub fn get_current(&self, factory: &'a Factory<'a>) -> Entity<'a> {
     factory.computed(
       if self.consumed {
-        factory.unknown()
+        factory.unknown
       } else {
         self.stack.last().copied().unwrap_or(self.default_value)
       },
@@ -125,7 +125,7 @@ fn create_react_context_provider_impl<'a>(
         analyzer.builtins.react_data.contexts[context_id].stack.pop();
       }
 
-      analyzer.factory.immutable_unknown
+      analyzer.factory.unknown
     },
   )
 }
@@ -140,7 +140,7 @@ fn create_react_context_consumer_impl<'a>(
       analyzer.consume(dep);
       analyzer.consume(context_id);
 
-      analyzer.factory.immutable_unknown
+      analyzer.factory.unknown
     },
   )
 }

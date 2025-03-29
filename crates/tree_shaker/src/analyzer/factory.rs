@@ -39,7 +39,7 @@ pub struct Factory<'a> {
   pub undefined: Entity<'a>,
 
   pub never: Entity<'a>,
-  pub immutable_unknown: Entity<'a>,
+  pub unknown: Entity<'a>,
 
   pub unknown_primitive: Entity<'a>,
   pub unknown_string: Entity<'a>,
@@ -81,7 +81,7 @@ impl<'a> Factory<'a> {
     let unknown_boolean = allocator.alloc(PrimitiveValue::Boolean).into();
     let unknown_symbol = allocator.alloc(PrimitiveValue::Symbol).into();
 
-    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown())).into();
+    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown)).into();
 
     let pure_fn_returns_string =
       allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_string)).into();
@@ -120,7 +120,7 @@ impl<'a> Factory<'a> {
       undefined,
 
       never,
-      immutable_unknown,
+      unknown: immutable_unknown,
 
       unknown_primitive,
       unknown_string,
@@ -337,12 +337,8 @@ impl<'a> Factory<'a> {
     self.computed(self.union(values), dep)
   }
 
-  pub fn unknown(&self) -> Entity<'a> {
-    self.immutable_unknown
-  }
-
   pub fn computed_unknown(&self, dep: impl DepTrait<'a> + 'a) -> Entity<'a> {
-    self.computed(self.immutable_unknown, dep)
+    self.computed(self.unknown, dep)
   }
 
   pub fn lazy_dep(&self, dep: Dep<'a>) -> LazyDep<'a> {

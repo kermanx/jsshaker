@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(AstKind2::ForOfStatement(node));
-      self.factory.immutable_unknown
+      self.factory.unknown
     } else {
       right
     };

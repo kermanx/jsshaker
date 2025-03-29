@@ -62,7 +62,7 @@ impl<'a> CallScope<'a> {
     let mut promise_error = None;
     if try_scope.may_throw {
       if self.is_generator {
-        let unknown = analyzer.factory.unknown();
+        let unknown = analyzer.factory.unknown;
         let parent_try_scope = analyzer.try_scope_mut();
         parent_try_scope.may_throw = true;
         if !try_scope.thrown_values.is_empty() {

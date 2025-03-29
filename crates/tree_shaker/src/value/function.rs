@@ -117,7 +117,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     self.call(
       analyzer,
       analyzer.factory.no_dep,
-      analyzer.factory.immutable_unknown,
+      analyzer.factory.unknown,
       analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
     )
   }
@@ -152,7 +152,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.immutable_unknown
+    analyzer.factory.unknown
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
@@ -237,7 +237,7 @@ impl<'a> FunctionValue<'a> {
         )
         // } else {
         //   analyzer.throw_builtin_error("Cannot invoke class constructor without 'new'");
-        //   analyzer.factory.unknown()
+        //   analyzer.factory.unknown
         // }
       }
       _ => unreachable!(),
@@ -287,8 +287,8 @@ impl<'a> FunctionValue<'a> {
       self.call_impl::<false>(
         analyzer,
         analyzer.factory.no_dep,
-        analyzer.factory.unknown(),
-        analyzer.factory.unknown(),
+        analyzer.factory.unknown,
+        analyzer.factory.unknown,
         true,
       )
     });

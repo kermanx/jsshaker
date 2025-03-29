@@ -4,7 +4,7 @@ use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_text(&mut self, _node: &'a JSXText<'a>) -> Entity<'a> {
-    self.factory.immutable_unknown
+    self.factory.unknown
   }
 }
 

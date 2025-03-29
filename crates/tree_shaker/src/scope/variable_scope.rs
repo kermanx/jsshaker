@@ -217,7 +217,7 @@ impl<'a> Analyzer<'a> {
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
             variable_ref.exhausted = Some(self.factory.lazy_dep(self.dep((dep, new_val, old_val))));
-            variable_ref.value = Some(self.factory.unknown());
+            variable_ref.value = Some(self.factory.unknown);
           } else {
             variable_ref.value = Some(self.factory.computed(
               if indeterminate {
@@ -254,7 +254,7 @@ impl<'a> Analyzer<'a> {
 
         let mut variable_ref = variable.borrow_mut();
         variable_ref.exhausted = Some(self.factory.consumed_lazy_dep);
-        variable_ref.value = Some(self.factory.unknown());
+        variable_ref.value = Some(self.factory.unknown);
       }
       true
     } else {
@@ -268,7 +268,7 @@ impl<'a> Analyzer<'a> {
       exhausted: Some(self.factory.consumed_lazy_dep),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.stack[cf_scope_depth],
-      value: Some(self.factory.unknown()),
+      value: Some(self.factory.unknown),
       decl_node: AstKind2::Environment,
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
@@ -335,7 +335,7 @@ impl<'a> Analyzer<'a> {
       }
     }
     self.mark_unresolved_reference(symbol);
-    Some(self.factory.unknown())
+    Some(self.factory.unknown)
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
@@ -384,6 +384,6 @@ impl<'a> Analyzer<'a> {
       }
     }
     self.throw_builtin_error("Unsupported reference to 'super'");
-    self.factory.unknown()
+    self.factory.unknown
   }
 }

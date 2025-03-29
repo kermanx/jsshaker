@@ -115,7 +115,7 @@ impl<'a> Analyzer<'a> {
     self.module_stack.push(module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
     let root_variable_scope =
-      self.scoping.variable.push(VariableScope::new_with_this(self.factory.unknown()));
+      self.scoping.variable.push(VariableScope::new_with_this(self.factory.unknown));
     self.scoping.call.push(CallScope::new_in(
       call_id,
       CalleeInfo {

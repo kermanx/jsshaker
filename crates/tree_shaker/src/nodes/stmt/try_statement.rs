@@ -15,7 +15,7 @@ impl<'a> Analyzer<'a> {
         // does not throw any value, so we should skip the `catch` block.
         // However, we can guarantee that all possible exceptions tracked.
         // For example, KeyboardInterrupt, which is not tracked, can be thrown.
-        try_scope.thrown_val(self).unwrap_or_else(|| self.factory.unknown()),
+        try_scope.thrown_val(self).unwrap_or(self.factory.unknown),
       );
       None
     } else {

@@ -236,7 +236,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       LiteralValue::Null => analyzer.factory.number(0.0, Some("0")),
       LiteralValue::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
-        analyzer.factory.unknown()
+        analyzer.factory.unknown
       }
       LiteralValue::Undefined => analyzer.factory.nan,
     }

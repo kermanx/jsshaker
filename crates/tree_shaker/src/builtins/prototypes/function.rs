@@ -28,9 +28,9 @@ pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<
     }),
     "bind" => factory.pure_fn_returns_unknown,
     "length" => factory.unknown_number,
-    "arguments" => factory.immutable_unknown,
-    "caller" => factory.immutable_unknown,
+    "arguments" => factory.unknown,
+    "caller" => factory.unknown,
     "name" => factory.unknown_string,
-    "prototype" => factory.immutable_unknown,
+    "prototype" => factory.unknown,
   })
 }

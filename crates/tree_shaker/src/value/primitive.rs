@@ -105,7 +105,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     if *self == PrimitiveValue::String {
-      return (vec![], Some(analyzer.factory.unknown()), analyzer.dep((self, dep)));
+      return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
     if analyzer.config.preserve_exceptions {
@@ -129,7 +129,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   }
 
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.unknown()
+    analyzer.factory.unknown
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -140,7 +140,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   }
 
   fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.unknown()
+    analyzer.factory.unknown
   }
 
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

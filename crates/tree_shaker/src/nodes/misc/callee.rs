@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
               self.factory.computed(object, dep),
             )
           }
-          Err(value) => (0, value, None, self.factory.immutable_unknown),
+          Err(value) => (0, value, None, self.factory.unknown),
         })
       }
     } else {

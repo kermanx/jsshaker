@@ -15,10 +15,10 @@ impl Builtins<'_> {
       ObjectPrototype::Builtin(&self.prototypes.function),
       false,
     );
-    object.init_rest(factory, ObjectPropertyValue::Field(factory.immutable_unknown, true));
+    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_namespace!(object, factory, {
-      "prototype" => factory.immutable_unknown,
+      "prototype" => factory.unknown,
       // "asyncIterator" => factory.string("__#asyncIterator__"),
       // "hasInstance" => factory.string("__#hasInstance__"),
       // "isConcatSpreadable" => factory.string("__#isConcatSpreadable__"),

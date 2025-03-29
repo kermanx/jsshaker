@@ -8,7 +8,7 @@ impl Builtins<'_> {
       "undefined" => factory.undefined,
       "Infinity" => factory.infinity(true),
       "NaN" => factory.nan,
-      "eval" => factory.immutable_unknown,
+      "eval" => factory.unknown,
     })
   }
 }

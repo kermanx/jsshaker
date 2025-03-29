@@ -98,7 +98,7 @@ impl<'a> Analyzer<'a> {
           let module_info = &self.modules.modules[resolved];
           match specifier {
             ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => {
-              module_info.default_export.unwrap_or(self.factory.unknown())
+              module_info.default_export.unwrap_or(self.factory.unknown)
             }
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => todo!(),
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
@@ -107,12 +107,12 @@ impl<'a> Analyzer<'a> {
               {
                 self.read_on_scope(scope, symbol).unwrap().unwrap()
               } else {
-                self.factory.unknown()
+                self.factory.unknown
               }
             }
           }
         } else {
-          self.builtins.factory.unknown()
+          self.builtins.factory.unknown
         };
         self.init_binding_identifier(specifier.local(), Some(value));
       }
@@ -160,7 +160,7 @@ impl<'a> Analyzer<'a> {
         //   let named_exports = &self.modules.modules[resolved].pending_named_exports;
         //   self.module_info_mut().pending_named_exports
         // } else {
-        //   let unknown = self.factory.unknown();
+        //   let unknown = self.factory.unknown;
         //   self.module_info_mut().pending_reexports.push(unknown);
         // }
       }

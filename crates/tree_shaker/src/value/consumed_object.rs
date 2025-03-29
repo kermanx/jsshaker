@@ -20,7 +20,7 @@ pub fn get_property<'a>(
     analyzer.may_throw();
     analyzer.consume((target, dep, key));
     analyzer.refer_to_global();
-    analyzer.factory.unknown()
+    analyzer.factory.unknown
   } else {
     analyzer.factory.computed_unknown((target, dep, key))
   }
@@ -47,12 +47,12 @@ pub fn enumerate_properties<'a>(
     analyzer.consume(dep);
     analyzer.refer_to_global();
     (
-      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
       analyzer.factory.no_dep,
     )
   } else {
     (
-      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown())],
+      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
       analyzer.dep((target, dep)),
     )
   }
@@ -79,7 +79,7 @@ pub fn call<'a>(
     analyzer.consume((target, dep, this, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
-    analyzer.factory.unknown()
+    analyzer.factory.unknown
   }
 }
 
@@ -96,7 +96,7 @@ pub fn construct<'a>(
     analyzer.consume((target, dep, args));
     analyzer.may_throw();
     analyzer.refer_to_global();
-    analyzer.factory.unknown()
+    analyzer.factory.unknown
   }
 }
 
@@ -109,7 +109,7 @@ pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
   analyzer.may_throw();
   analyzer.consume(dep);
   analyzer.refer_to_global();
-  analyzer.factory.unknown()
+  analyzer.factory.unknown
 }
 
 pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
@@ -117,9 +117,9 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElement
     analyzer.may_throw();
     analyzer.consume(dep);
     analyzer.refer_to_global();
-    (vec![], Some(analyzer.factory.unknown()), analyzer.factory.no_dep)
+    (vec![], Some(analyzer.factory.unknown), analyzer.factory.no_dep)
   } else {
-    (vec![], Some(analyzer.factory.unknown()), dep)
+    (vec![], Some(analyzer.factory.unknown), dep)
   }
 }
 
@@ -129,5 +129,5 @@ pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
 
 pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
-  analyzer.factory.unknown()
+  analyzer.factory.unknown
 }

@@ -86,7 +86,7 @@ impl<'a> Analyzer<'a> {
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
       });
-      self.factory.unknown()
+      self.factory.unknown
     } else {
       runner(self)
     }

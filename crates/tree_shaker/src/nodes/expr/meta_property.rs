@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     if meta == "import" && property == "meta" {
       self.builtins.import_meta
     } else {
-      self.factory.unknown()
+      self.factory.unknown
     }
   }
 }

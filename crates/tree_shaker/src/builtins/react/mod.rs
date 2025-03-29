@@ -43,7 +43,7 @@ pub fn create_react_namespace<'a>(
 ) -> Entity<'a> {
   let namespace =
     factory.builtin_object(REACT_NAMESPACE_OBJECT_ID, ObjectPrototype::ImplicitOrNull, false);
-  namespace.init_rest(factory, ObjectPropertyValue::Field(factory.immutable_unknown, true));
+  namespace.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(namespace, factory, {
     "forwardRef" => create_react_forward_ref_impl(factory),
@@ -66,7 +66,7 @@ pub fn create_react_jsx_runtime_namespace<'a>(
     ObjectPrototype::ImplicitOrNull,
     false,
   );
-  object.init_rest(factory, ObjectPropertyValue::Field(factory.immutable_unknown, true));
+  object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(object, factory, {
     "jsx" => create_react_jsx_impl(factory),

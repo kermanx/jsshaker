@@ -108,7 +108,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     self.call_impl(
       analyzer,
       analyzer.factory.no_dep,
-      analyzer.factory.immutable_unknown,
+      analyzer.factory.unknown,
       analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
     )
   }

@@ -26,8 +26,8 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
         r#ref.call(
           analyzer,
           analyzer.factory.no_dep,
-          analyzer.factory.unknown(),
-          analyzer.factory.unknown(),
+          analyzer.factory.unknown,
+          analyzer.factory.unknown,
         )
       });
     }

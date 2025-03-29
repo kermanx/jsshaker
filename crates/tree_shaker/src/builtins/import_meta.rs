@@ -15,10 +15,7 @@ impl<'a> Builtins<'a> {
       factory.builtin_object(IMPORT_META_OBJECT_ID, ObjectPrototype::ImplicitOrNull, true);
     object.init_rest(
       factory,
-      ObjectPropertyValue::Property(
-        Some(factory.immutable_unknown),
-        Some(factory.immutable_unknown),
-      ),
+      ObjectPropertyValue::Property(Some(factory.unknown), Some(factory.unknown)),
     );
 
     // import.meta.url

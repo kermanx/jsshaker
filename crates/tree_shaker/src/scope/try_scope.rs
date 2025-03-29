@@ -19,7 +19,7 @@ impl<'a> TryScope<'a> {
     // Always unknown here
     self.may_throw.then(|| {
       if self.thrown_values.is_empty() {
-        analyzer.factory.unknown()
+        analyzer.factory.unknown
       } else {
         analyzer.factory.computed_unknown(self.thrown_values)
       }
@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(message);
     }
 
-    self.explicit_throw_impl(self.factory.unknown());
+    self.explicit_throw_impl(self.factory.unknown);
 
     let try_scope = self.try_scope();
     self.exit_to(try_scope.cf_scope_depth);

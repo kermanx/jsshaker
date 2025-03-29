@@ -17,7 +17,7 @@ pub fn create_react_use_memo_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
     let span = (analyzer.current_module(), analyzer.current_span());
     if changed {
       let result =
-        calculate.call(analyzer, dep, analyzer.factory.unknown(), analyzer.factory.empty_arguments);
+        calculate.call(analyzer, dep, analyzer.factory.unknown, analyzer.factory.empty_arguments);
       analyzer.builtins.react_data.memos.insert(span, result);
       result
     } else {
