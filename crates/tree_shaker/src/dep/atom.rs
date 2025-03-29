@@ -14,7 +14,7 @@ pub struct DepAtom((usize, usize));
 
 impl Debug for DepAtom {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    self.span().fmt(f)
+    AstKind2::from(*self).fmt(f)
   }
 }
 

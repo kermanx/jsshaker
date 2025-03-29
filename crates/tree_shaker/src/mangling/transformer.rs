@@ -2,7 +2,7 @@ use oxc::ast::ast::{Expression, IdentifierName};
 use oxc_ast_visit::VisitMut;
 
 use super::MangleAtom;
-use crate::{dep::DepAtom, transformer::Transformer, utils::ast::AstKind2};
+use crate::{transformer::Transformer, utils::ast::AstKind2};
 
 pub struct ManglerTransformer<'a>(pub Transformer<'a>);
 
@@ -17,8 +17,7 @@ impl<'a> VisitMut<'a> for ManglerTransformer<'a> {
   }
 
   fn visit_expression(&mut self, node: &mut Expression<'a>) {
-    if let Some(folded) = self.0.build_folded_expr(DepAtom::from(AstKind2::Expression(node)).into())
-    {
+    if let Some(folded) = self.0.build_folded_expr(AstKind2::Expression(node)) {
       *node = folded;
     }
   }
