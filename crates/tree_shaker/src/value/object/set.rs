@@ -1,4 +1,4 @@
-use super::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue};
+use super::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepCollector},
@@ -6,7 +6,7 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
-  value::{LiteralValue, consumed_object},
+  value::consumed_object,
 };
 
 pub struct PendingSetter<'a> {
@@ -45,7 +45,7 @@ impl<'a> ObjectValue<'a> {
     let non_mangable_value = analyzer.factory.computed(value, key);
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
-      let mut string_keyed = self.string_keyed.borrow_mut();
+      let mut keyed = self.keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
 
       indeterminate |= key_literals.len() > 1;
@@ -54,65 +54,60 @@ impl<'a> ObjectValue<'a> {
       let value = if mangable { value } else { non_mangable_value };
 
       for key_literal in key_literals {
-        match key_literal {
-          LiteralValue::String(key_str, key_atom) => {
-            if let Some(property) = string_keyed.get_mut(key_str) {
-              let value = if mangable {
-                let prev_key = property.key.unwrap();
-                let prev_atom = property.mangling.unwrap();
-                analyzer.factory.mangable(
-                  value,
-                  (prev_key, key),
-                  MangleConstraint::Eq(prev_atom, key_atom.unwrap()),
-                )
-              } else {
-                value
-              };
-              property.set(analyzer, indeterminate, value, &mut setters);
-              if property.definite {
-                continue;
-              }
-            }
+        let (key_str, key_atom) = key_literal.into();
 
-            if let Some(rest) = &mut *rest {
-              rest.set(analyzer, true, value, &mut setters);
-              continue;
-            }
-
-            let found =
-              self.lookup_string_keyed_setters_on_proto(analyzer, key_str, key_atom, &mut setters);
-            if found.must_found() {
-              continue;
-            }
-
-            if mangable {
-              self.add_to_mangling_group(analyzer, key_atom.unwrap());
-            }
-            string_keyed.insert(
-              key_str,
-              ObjectProperty {
-                definite: !indeterminate && found.must_not_found(),
-                enumerable: true, /* TODO: Object.defineProperty */
-                possible_values: analyzer.factory.vec1(ObjectPropertyValue::Field(value, false)),
-                non_existent: DepCollector::new(analyzer.factory.vec()),
-                key: Some(key),
-                mangling: mangable.then(|| key_atom.unwrap()),
-              },
-            );
+        if let Some(property) = keyed.get_mut(&key_str) {
+          let value = if mangable {
+            let prev_key = property.key.unwrap();
+            let prev_atom = property.mangling.unwrap();
+            analyzer.factory.mangable(
+              value,
+              (prev_key, key),
+              MangleConstraint::Eq(prev_atom, key_atom.unwrap()),
+            )
+          } else {
+            value
+          };
+          property.set(analyzer, indeterminate, value, &mut setters);
+          if property.definite {
+            continue;
           }
-          LiteralValue::Symbol(_, _) => todo!(),
-          _ => unreachable!("Invalid property key"),
         }
+
+        if let Some(rest) = &mut *rest {
+          rest.set(analyzer, true, value, &mut setters);
+          continue;
+        }
+
+        let found = self.lookup_keyed_setters_on_proto(analyzer, key_str, key_atom, &mut setters);
+        if found.must_found() {
+          continue;
+        }
+
+        if mangable {
+          self.add_to_mangling_group(analyzer, key_atom.unwrap());
+        }
+        keyed.insert(
+          key_str,
+          ObjectProperty {
+            definite: !indeterminate && found.must_not_found(),
+            enumerable: true, /* TODO: Object.defineProperty */
+            possible_values: analyzer.factory.vec1(ObjectPropertyValue::Field(value, false)),
+            non_existent: DepCollector::new(analyzer.factory.vec()),
+            key: Some(key),
+            mangling: mangable.then(|| key_atom.unwrap()),
+          },
+        );
       }
     } else {
       self.disable_mangling(analyzer);
 
       indeterminate = true;
 
-      let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+      let mut unknown_keyed = self.unknown.borrow_mut();
       unknown_keyed.possible_values.push(ObjectPropertyValue::Field(non_mangable_value, false));
 
-      let mut string_keyed = self.string_keyed.borrow_mut();
+      let mut string_keyed = self.keyed.borrow_mut();
       for property in string_keyed.values_mut() {
         property.set(analyzer, true, non_mangable_value, &mut setters);
       }
@@ -145,7 +140,7 @@ impl<'a> ObjectValue<'a> {
   ) -> Found {
     let mut found = Found::False;
 
-    found += self.unknown_keyed.borrow_mut().lookup_setters(analyzer, setters);
+    found += self.unknown.borrow_mut().lookup_setters(analyzer, setters);
 
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}
@@ -166,10 +161,10 @@ impl<'a> ObjectValue<'a> {
     found
   }
 
-  fn lookup_string_keyed_setters_on_proto(
+  fn lookup_keyed_setters_on_proto(
     &self,
     analyzer: &mut Analyzer<'a>,
-    key_str: &str,
+    key_str: ObjectPropertyKey<'a>,
     mut key_atom: Option<MangleAtom>,
     setters: &mut Vec<PendingSetter<'a>>,
   ) -> Found {
@@ -177,7 +172,7 @@ impl<'a> ObjectValue<'a> {
       ObjectPrototype::ImplicitOrNull => Found::False,
       ObjectPrototype::Builtin(_) => Found::False, // FIXME: Setters on builtin prototypes
       ObjectPrototype::Custom(prototype) => {
-        let found1 = if let Some(property) = prototype.string_keyed.borrow_mut().get_mut(key_str) {
+        let found1 = if let Some(property) = prototype.keyed.borrow_mut().get_mut(&key_str) {
           if prototype.is_mangable() {
             if key_atom.is_none() {
               prototype.disable_mangling(analyzer);
@@ -194,8 +189,7 @@ impl<'a> ObjectValue<'a> {
           Found::False
         };
 
-        let found2 =
-          prototype.lookup_string_keyed_setters_on_proto(analyzer, key_str, key_atom, setters);
+        let found2 = prototype.lookup_keyed_setters_on_proto(analyzer, key_str, key_atom, setters);
 
         found1 + found2
       }
@@ -216,7 +210,7 @@ impl<'a> ObjectValue<'a> {
           prototype.disable_mangling(analyzer);
         }
 
-        for property in prototype.string_keyed.borrow_mut().values_mut() {
+        for property in prototype.keyed.borrow_mut().values_mut() {
           property.lookup_setters(analyzer, setters);
         }
 

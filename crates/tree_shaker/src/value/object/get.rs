@@ -1,13 +1,13 @@
 use oxc::allocator;
 
-use super::ObjectValue;
+use super::{ObjectPropertyKey, ObjectValue};
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
   entity::Entity,
   mangling::MangleAtom,
   scope::CfScopeKind,
-  value::{LiteralValue, consumed_object, object::ObjectPrototype},
+  value::{consumed_object, object::ObjectPrototype},
 };
 
 pub(crate) struct GetPropertyContext<'a> {
@@ -42,25 +42,15 @@ impl<'a> ObjectValue<'a> {
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       mangable = self.check_mangable(analyzer, &key_literals);
       for key_literal in key_literals {
-        match key_literal {
-          LiteralValue::String(key_str, key_atom) => {
-            if !self.get_string_keyed(analyzer, &mut context, key_str, key_atom) {
-              check_rest = true;
-            }
-          }
-          LiteralValue::Symbol(_, _) => todo!(),
-          _ => unreachable!("Invalid property key"),
+        let (key_str, key_atom) = key_literal.into();
+        if !self.get_keyed(analyzer, &mut context, key_str, key_atom) {
+          check_rest = true;
         }
       }
     } else {
       self.disable_mangling(analyzer);
 
       self.get_any_string_keyed(analyzer, &mut context);
-
-      // TODO: prototype? Use a config IMO
-      // Either:
-      // - Skip prototype
-      // - Return unknown and call all getters
 
       check_rest = true;
     }
@@ -100,11 +90,11 @@ impl<'a> ObjectValue<'a> {
     }
   }
 
-  fn get_string_keyed(
+  fn get_keyed(
     &self,
     analyzer: &mut Analyzer<'a>,
     context: &mut GetPropertyContext<'a>,
-    key_str: &str,
+    key_str: ObjectPropertyKey<'a>,
     mut key_atom: Option<MangleAtom>,
   ) -> bool {
     if self.is_mangable() {
@@ -115,8 +105,8 @@ impl<'a> ObjectValue<'a> {
       key_atom = None;
     }
 
-    let mut string_keyed = self.string_keyed.borrow_mut();
-    if let Some(property) = string_keyed.get_mut(key_str) {
+    let mut string_keyed = self.keyed.borrow_mut();
+    if let Some(property) = string_keyed.get_mut(&key_str) {
       property.get(analyzer, context, key_atom);
       if property.definite {
         return true;
@@ -126,7 +116,7 @@ impl<'a> ObjectValue<'a> {
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => false,
       ObjectPrototype::Builtin(prototype) => {
-        if let Some(value) = prototype.get_string_keyed(key_str) {
+        if let Some(value) = prototype.get_keyed(key_str) {
           context.values.push(if let Some(key_atom) = key_atom {
             analyzer.factory.computed(value, key_atom)
           } else {
@@ -138,14 +128,14 @@ impl<'a> ObjectValue<'a> {
         }
       }
       ObjectPrototype::Custom(prototype) => {
-        prototype.get_string_keyed(analyzer, context, key_str, key_atom)
+        prototype.get_keyed(analyzer, context, key_str, key_atom)
       }
       ObjectPrototype::Unknown(_unknown) => false,
     }
   }
 
   fn get_any_string_keyed(&self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
-    for property in self.string_keyed.borrow_mut().values_mut() {
+    for property in self.keyed.borrow_mut().values_mut() {
       property.get(analyzer, context, None);
     }
     match self.prototype.get() {
@@ -159,7 +149,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn get_unknown_keyed(&self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
-    let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+    let mut unknown_keyed = self.unknown.borrow_mut();
     unknown_keyed.get(analyzer, context, None);
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}

@@ -2,11 +2,11 @@
 macro_rules! init_namespace {
   ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::value::{ObjectProperty, ObjectPropertyValue};
+      use $crate::value::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
       use $crate::dep::DepCollector;
-      let mut string_keyed = $ns.string_keyed.borrow_mut();
-      $(string_keyed.insert(
-        $k,
+      let mut keyed = $ns.keyed.borrow_mut();
+      $(keyed.insert(
+        ObjectPropertyKey::String($k),
         ObjectProperty {
           definite: true,
           enumerable: false,
@@ -24,11 +24,11 @@ macro_rules! init_namespace {
 macro_rules! init_object {
   ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::value::{ObjectProperty, ObjectPropertyValue};
+      use $crate::value::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
       use $crate::dep::DepCollector;
-      let mut string_keyed = $ns.string_keyed.borrow_mut();
-      $(string_keyed.insert(
-        $k,
+      let mut keyed = $ns.keyed.borrow_mut();
+      $(keyed.insert(
+        ObjectPropertyKey::String($k),
         ObjectProperty {
           definite: true,
           enumerable: true,

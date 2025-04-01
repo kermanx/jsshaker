@@ -2,7 +2,7 @@ use std::mem;
 
 use oxc::allocator;
 
-use super::{ObjectValue, get::GetPropertyContext};
+use super::{ObjectPropertyKey, ObjectValue, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
   dep::Dep,
@@ -33,7 +33,7 @@ impl<'a> ObjectValue<'a> {
 
     {
       {
-        let mut unknown_keyed = self.unknown_keyed.borrow_mut();
+        let mut unknown_keyed = self.unknown.borrow_mut();
         unknown_keyed.get(analyzer, &mut context, None);
         if let Some(rest) = &mut *self.rest.borrow_mut() {
           rest.get(analyzer, &mut context, None);
@@ -53,12 +53,12 @@ impl<'a> ObjectValue<'a> {
     }
 
     {
-      let string_keyed = self.string_keyed.borrow();
+      let string_keyed = self.keyed.borrow();
       let keys = string_keyed.keys().cloned().collect::<Vec<_>>();
       mem::drop(string_keyed);
       let mangable = self.is_mangable();
       for key in keys {
-        let mut string_keyed = self.string_keyed.borrow_mut();
+        let mut string_keyed = self.keyed.borrow_mut();
         let property = string_keyed.get_mut(&key).unwrap();
 
         if !property.enumerable {
@@ -66,10 +66,14 @@ impl<'a> ObjectValue<'a> {
         }
 
         let definite = property.definite;
-        let key_entity = if mangable {
-          analyzer.factory.mangable_string(key, property.mangling.unwrap())
+        let key_entity = if let ObjectPropertyKey::String(key) = key {
+          if mangable {
+            analyzer.factory.mangable_string(key, property.mangling.unwrap())
+          } else {
+            analyzer.factory.string(key)
+          }
         } else {
-          analyzer.factory.string(key)
+          todo!()
         };
 
         property.get(analyzer, &mut context, None);

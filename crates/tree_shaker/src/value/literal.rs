@@ -9,8 +9,8 @@ use oxc_syntax::number::ToJsString;
 use rustc_hash::FxHashSet;
 
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-  never::NeverValue,
+  EnumeratedProperties, IteratedElements, ObjectPropertyKey, TypeofResult, ValueTrait,
+  consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -508,6 +508,16 @@ impl<'a> LiteralValue<'a> {
         (analyzer.factory.alloc(LiteralValue::String(value, Some(atom))).into(), Some(atom))
       }
       _ => (analyzer.factory.alloc(self).into(), None),
+    }
+  }
+}
+
+impl<'a> From<LiteralValue<'a>> for (ObjectPropertyKey<'a>, Option<MangleAtom>) {
+  fn from(val: LiteralValue<'a>) -> Self {
+    match val {
+      LiteralValue::String(s, m) => (ObjectPropertyKey::String(s), m),
+      LiteralValue::Symbol(s, _) => (ObjectPropertyKey::Symbol(s), None),
+      _ => unreachable!(),
     }
   }
 }

@@ -12,7 +12,7 @@ use std::{
 
 use oxc::allocator;
 use oxc_index::define_index_type;
-pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyValue};
+pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyKey, ObjectPropertyValue};
 use rustc_hash::FxHashSet;
 
 use super::{
@@ -69,10 +69,10 @@ pub struct ObjectValue<'a> {
   pub mangling_group: Option<ObjectManglingGroupId<'a>>,
 
   /// Properties keyed by known string
-  pub string_keyed: RefCell<allocator::HashMap<'a, &'a str, ObjectProperty<'a>>>,
+  pub keyed: RefCell<allocator::HashMap<'a, ObjectPropertyKey<'a>, ObjectProperty<'a>>>,
   /// Properties keyed by unknown value
-  pub unknown_keyed: RefCell<ObjectProperty<'a>>,
-  /// Properties keyed by unknown value, but not included in `string_keyed`
+  pub unknown: RefCell<ObjectProperty<'a>>,
+  /// Properties keyed by unknown value, but not included in `keyed`
   pub rest: RefCell<Option<ObjectProperty<'a>>>,
   // TODO: symbol_keyed
 }
@@ -93,8 +93,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
     self.consume_as_prototype(analyzer);
 
-    self.string_keyed.borrow_mut().clear();
-    self.unknown_keyed.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
+    self.keyed.borrow_mut().clear();
+    self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
 
     analyzer.mark_object_consumed(self.cf_scope, self.object_id);
   }
@@ -104,7 +104,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    self.unknown_keyed.borrow_mut().non_existent.push(dep);
+    self.unknown.borrow_mut().non_existent.push(dep);
   }
 
   fn get_property(
@@ -206,14 +206,20 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     if self.consumed.get()
       || self.rest.borrow().is_some()
-      || !self.unknown_keyed.borrow().possible_values.is_empty()
+      || !self.unknown.borrow().possible_values.is_empty()
     {
       return None;
     }
 
     let mut keys = Vec::new();
-    for (key, property) in self.string_keyed.borrow_mut().iter_mut() {
-      let key_entity = property.key.unwrap_or_else(|| analyzer.factory.string(key));
+    for (key, property) in self.keyed.borrow_mut().iter_mut() {
+      let key_entity = property.key.unwrap_or_else(|| {
+        if let ObjectPropertyKey::String(key) = key {
+          analyzer.factory.string(key)
+        } else {
+          todo!()
+        }
+      });
       let key_entity = if property.non_existent.is_empty() {
         key_entity
       } else {
@@ -259,10 +265,10 @@ impl<'a> ObjectValue<'a> {
     self.prototype.get().consume(analyzer);
 
     let mut suspended = analyzer.factory.vec();
-    for property in self.string_keyed.borrow().values() {
+    for property in self.keyed.borrow().values() {
       property.consume(analyzer, &mut suspended);
     }
-    self.unknown_keyed.borrow().consume(analyzer, &mut suspended);
+    self.unknown.borrow().consume(analyzer, &mut suspended);
     analyzer.consume(suspended);
   }
 
@@ -313,8 +319,8 @@ impl<'a> Analyzer<'a> {
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
       object_id: self.scoping.alloc_object_id(),
-      string_keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
-      unknown_keyed: RefCell::new(ObjectProperty::new_in(self.allocator)),
+      keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
+      unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
       rest: RefCell::new(None),
       prototype: Cell::new(prototype),
       mangling_group,
@@ -343,8 +349,8 @@ impl<'a> Analyzer<'a> {
       ObjectPrototype::Builtin(&self.builtins.prototypes.function),
       mangling_group.1,
     );
-    statics.string_keyed.borrow_mut().insert(
-      "prototype",
+    statics.keyed.borrow_mut().insert(
+      ObjectPropertyKey::String("prototype"),
       ObjectProperty {
         definite: true,
         enumerable: false,

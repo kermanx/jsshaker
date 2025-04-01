@@ -6,8 +6,8 @@ use std::{
 use oxc::allocator;
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, TypeofResult, ValueTrait,
-  consumed_object,
+  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, ObjectPropertyKey, TypeofResult,
+  ValueTrait, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -99,7 +99,8 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
                 || analyzer.factory.computed_unknown_number(&self.rest),
                 |length| analyzer.factory.number(length as f64, None),
               ));
-            } else if let Some(property) = analyzer.builtins.prototypes.array.get_string_keyed(key)
+            } else if let Some(property) =
+              analyzer.builtins.prototypes.array.get_keyed(ObjectPropertyKey::String(key))
             {
               result.push(property);
             } else {

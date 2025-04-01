@@ -1,4 +1,7 @@
-use oxc::allocator::{self, Allocator};
+use oxc::{
+  allocator::{self, Allocator},
+  semantic::SymbolId,
+};
 use oxc_index::define_index_type;
 
 use super::{get::GetPropertyContext, set::PendingSetter};
@@ -12,6 +15,12 @@ use crate::{
 
 define_index_type! {
   pub struct ObjectPropertyId = u32;
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ObjectPropertyKey<'a> {
+  String(&'a str),
+  Symbol(SymbolId),
 }
 
 #[derive(Debug, Clone, Copy)]

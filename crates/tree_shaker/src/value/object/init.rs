@@ -8,7 +8,6 @@ use crate::{
   dep::{DepCollector, DepTrait},
   entity::Entity,
   mangling::MangleConstraint,
-  value::LiteralValue,
 };
 
 impl<'a> ObjectValue<'a> {
@@ -26,66 +25,61 @@ impl<'a> ObjectValue<'a> {
 
       let definite = definite && key_literals.len() == 1;
       for key_literal in key_literals {
-        match key_literal {
-          LiteralValue::String(key_str, key_atom) => {
-            let mut string_keyed = self.string_keyed.borrow_mut();
-            let existing = string_keyed.get_mut(key_str);
-            let reused_property = definite
-              .then(|| {
-                existing.as_ref().and_then(|existing| {
-                  for property in existing.possible_values.iter() {
-                    if let ObjectPropertyValue::Property(getter, setter) = property {
-                      return Some((*getter, *setter));
-                    }
-                  }
-                  None
-                })
-              })
-              .flatten();
-            let constraint = if mangable {
-              if let Some(existing) = &existing {
-                let prev_atom = existing.mangling.unwrap();
-                Some(MangleConstraint::Eq(prev_atom, key_atom.unwrap()))
-              } else {
-                self.add_to_mangling_group(analyzer, key_atom.unwrap());
-                None
+        let (key_str, key_atom) = key_literal.into();
+        let mut keyed = self.keyed.borrow_mut();
+        let existing = keyed.get_mut(&key_str);
+        let reused_property = definite
+          .then(|| {
+            existing.as_ref().and_then(|existing| {
+              for property in existing.possible_values.iter() {
+                if let ObjectPropertyValue::Property(getter, setter) = property {
+                  return Some((*getter, *setter));
+                }
               }
-            } else {
               None
-            };
-            let value = if let Some(constraint) = constraint {
-              analyzer.factory.computed(value, constraint)
-            } else {
-              value
-            };
-            let property_val = match kind {
-              PropertyKind::Init => ObjectPropertyValue::Field(value, false),
-              PropertyKind::Get => ObjectPropertyValue::Property(
-                Some(value),
-                reused_property.and_then(|(_, setter)| setter),
-              ),
-              PropertyKind::Set => ObjectPropertyValue::Property(
-                reused_property.and_then(|(getter, _)| getter),
-                Some(value),
-              ),
-            };
-            let existing = string_keyed.get_mut(key_str);
-            if definite || existing.is_none() {
-              let property = ObjectProperty {
-                definite,
-                enumerable: true,
-                possible_values: analyzer.factory.vec1(property_val),
-                non_existent: DepCollector::new(analyzer.factory.vec()),
-                key: Some(key),
-                mangling: mangable.then(|| key_atom.unwrap()),
-              };
-              string_keyed.insert(key_str, property);
-            } else {
-              existing.unwrap().possible_values.push(property_val);
-            }
+            })
+          })
+          .flatten();
+        let constraint = if mangable {
+          if let Some(existing) = &existing {
+            let prev_atom = existing.mangling.unwrap();
+            Some(MangleConstraint::Eq(prev_atom, key_atom.unwrap()))
+          } else {
+            self.add_to_mangling_group(analyzer, key_atom.unwrap());
+            None
           }
-          LiteralValue::Symbol(_key, _) => todo!(),
-          _ => unreachable!("Invalid property key"),
+        } else {
+          None
+        };
+        let value = if let Some(constraint) = constraint {
+          analyzer.factory.computed(value, constraint)
+        } else {
+          value
+        };
+        let property_val = match kind {
+          PropertyKind::Init => ObjectPropertyValue::Field(value, false),
+          PropertyKind::Get => ObjectPropertyValue::Property(
+            Some(value),
+            reused_property.and_then(|(_, setter)| setter),
+          ),
+          PropertyKind::Set => ObjectPropertyValue::Property(
+            reused_property.and_then(|(getter, _)| getter),
+            Some(value),
+          ),
+        };
+        let existing = keyed.get_mut(&key_str);
+        if definite || existing.is_none() {
+          let property = ObjectProperty {
+            definite,
+            enumerable: true,
+            possible_values: analyzer.factory.vec1(property_val),
+            non_existent: DepCollector::new(analyzer.factory.vec()),
+            key: Some(key),
+            mangling: mangable.then(|| key_atom.unwrap()),
+          };
+          keyed.insert(key_str, property);
+        } else {
+          existing.unwrap().possible_values.push(property_val);
         }
       }
     } else {
@@ -96,7 +90,7 @@ impl<'a> ObjectValue<'a> {
         PropertyKind::Get => ObjectPropertyValue::Property(Some(value), None),
         PropertyKind::Set => ObjectPropertyValue::Property(None, Some(value)),
       };
-      self.unknown_keyed.borrow_mut().possible_values.push(property_val);
+      self.unknown.borrow_mut().possible_values.push(property_val);
     }
   }
 
@@ -110,7 +104,7 @@ impl<'a> ObjectValue<'a> {
     for (definite, key, value) in properties {
       self.init_property(analyzer, PropertyKind::Init, key, value, definite);
     }
-    self.unknown_keyed.borrow_mut().non_existent.push(deps);
+    self.unknown.borrow_mut().non_existent.push(deps);
   }
 
   pub fn init_rest(&self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {
