@@ -2,7 +2,6 @@ use oxc::{
   allocator::{self, Allocator},
   semantic::SymbolId,
 };
-use oxc_index::define_index_type;
 
 use super::{get::GetPropertyContext, set::PendingSetter};
 use crate::{
@@ -12,10 +11,6 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   utils::Found,
 };
-
-define_index_type! {
-  pub struct ObjectPropertyId = u32;
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ObjectPropertyKey<'a> {
@@ -33,6 +28,7 @@ pub enum ObjectPropertyValue<'a> {
 
 #[derive(Debug)]
 pub struct ObjectProperty<'a> {
+  pub consumed: bool,
   /// Does this property definitely exist
   pub definite: bool,
   /// Is this property enumerable
@@ -50,6 +46,7 @@ pub struct ObjectProperty<'a> {
 impl<'a> ObjectProperty<'a> {
   pub fn new_in(allocator: &'a Allocator) -> Self {
     Self {
+      consumed: false,
       definite: true,
       enumerable: true,
       possible_values: allocator::Vec::new_in(allocator),
@@ -57,6 +54,18 @@ impl<'a> ObjectProperty<'a> {
       key: None,
       mangling: None,
     }
+  }
+
+  pub(super) fn may_be_field(&self) -> bool {
+    if !self.definite {
+      return true;
+    }
+    for possible_value in &self.possible_values {
+      if matches!(possible_value, ObjectPropertyValue::Field(_, _)) {
+        return true;
+      }
+    }
+    false
   }
 
   pub(super) fn get(
@@ -78,7 +87,11 @@ impl<'a> ObjectProperty<'a> {
   fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => context.values.push(*value),
+        ObjectPropertyValue::Field(value, _) => context.values.push(if self.consumed {
+          analyzer.factory.computed_unknown(*value)
+        } else {
+          *value
+        }),
         ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(*getter),
         ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.undefined),
       }
@@ -96,11 +109,14 @@ impl<'a> ObjectProperty<'a> {
     let constraint = MangleConstraint::Eq(prev_atom, key_atom);
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => context.values.push(analyzer.factory.mangable(
-          *value,
-          (prev_key, context.key),
-          constraint,
-        )),
+        ObjectPropertyValue::Field(value, _) => {
+          let value = analyzer.factory.mangable(*value, (prev_key, context.key), constraint);
+          context.values.push(if self.consumed {
+            analyzer.factory.computed_unknown(value)
+          } else {
+            value
+          });
+        }
         ObjectPropertyValue::Property(Some(getter), _) => context
           .getters
           .push(analyzer.factory.mangable(*getter, (prev_key, context.key), constraint)),
@@ -136,17 +152,11 @@ impl<'a> ObjectProperty<'a> {
     if writable {
       if !indeterminate {
         // Remove all writable fields
-        self.possible_values = allocator::Vec::from_iter_in(
-          self
-            .possible_values
-            .iter()
-            .filter(|possible_value| {
-              !matches!(possible_value, ObjectPropertyValue::Field(_, false))
-            })
-            .cloned(),
-          analyzer.allocator,
-        );
+        self
+          .possible_values
+          .retain(|possible_value| !matches!(possible_value, ObjectPropertyValue::Field(_, false)));
         // This property must exist now
+        self.definite = true;
         self.non_existent.force_clear();
       }
 

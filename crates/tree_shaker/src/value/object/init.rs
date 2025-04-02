@@ -70,6 +70,7 @@ impl<'a> ObjectValue<'a> {
         let existing = keyed.get_mut(&key_str);
         if definite || existing.is_none() {
           let property = ObjectProperty {
+            consumed: false,
             definite,
             enumerable: true,
             possible_values: analyzer.factory.vec1(property_val),
@@ -114,6 +115,7 @@ impl<'a> ObjectValue<'a> {
       rest.possible_values.push(property);
     } else {
       *rest = Some(ObjectProperty {
+        consumed: false,
         definite: false,
         enumerable: true,
         possible_values: factory.vec1(property),

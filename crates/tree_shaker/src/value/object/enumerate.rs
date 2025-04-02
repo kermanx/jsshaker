@@ -4,7 +4,7 @@ use oxc::allocator;
 
 use super::{ObjectPropertyKey, ObjectValue, get::GetPropertyContext};
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::Dep,
   scope::CfScopeKind,
   value::{EnumeratedProperties, consumed_object},
@@ -20,7 +20,6 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
     analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), None);
 
     let mut result = vec![];
@@ -96,6 +95,8 @@ impl<'a> ObjectValue<'a> {
     }
 
     analyzer.pop_cf_scope();
+
+    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
     (result, analyzer.dep((dep, context.extra_deps)))
   }

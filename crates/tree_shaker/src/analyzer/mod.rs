@@ -40,7 +40,7 @@ pub struct Analyzer<'a> {
   pub scoping: Scoping<'a>,
 
   pub data: ExtraData<'a>,
-  pub exhaustive_callbacks: FxHashMap<ExhaustiveDepId, FxHashSet<ExhaustiveCallback<'a>>>,
+  pub exhaustive_callbacks: FxHashMap<ExhaustiveDepId<'a>, FxHashSet<ExhaustiveCallback<'a>>>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   // pub loop_data: LoopDataMap<'a>,

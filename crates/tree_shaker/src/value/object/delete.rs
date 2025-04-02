@@ -13,27 +13,25 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let (has_exhaustive, indeterminate, exec_deps) =
-      analyzer.pre_mutate_object(self.cf_scope, self.object_id);
+    let (_target_depth, is_exhaustive, indeterminate, deps) = self.prepare_mutation(analyzer, dep);
 
-    if has_exhaustive {
+    if is_exhaustive {
       self.consume(analyzer);
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let dep = analyzer.dep((exec_deps, dep));
-
+    let deps = analyzer.dep(deps);
     {
       let mut unknown_keyed = self.unknown.borrow_mut();
       if !unknown_keyed.possible_values.is_empty() {
-        unknown_keyed.delete(true, analyzer.dep((dep, key)));
+        unknown_keyed.delete(true, analyzer.dep((deps, key)));
       }
     }
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let indeterminate = indeterminate || key_literals.len() > 1;
       let mangable = self.check_mangable(analyzer, &key_literals);
-      let dep = if mangable { dep } else { analyzer.dep((dep, key)) };
+      let deps = if mangable { deps } else { analyzer.dep((deps, key)) };
 
       let mut string_keyed = self.keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
@@ -46,18 +44,18 @@ impl<'a> ObjectValue<'a> {
               let prev_key = property.key.unwrap();
               let prev_atom = property.mangling.unwrap();
               analyzer.dep((
-                dep,
+                deps,
                 ManglingDep {
                   deps: (prev_key, key),
                   constraint: MangleConstraint::Eq(prev_atom, key_atom.unwrap()),
                 },
               ))
             } else {
-              dep
+              deps
             },
           );
         } else if let Some(rest) = &mut *rest {
-          rest.delete(true, analyzer.dep((dep, key)));
+          rest.delete(true, analyzer.dep((deps, key)));
         } else if mangable {
           self.add_to_mangling_group(analyzer, key_atom.unwrap());
         }
@@ -65,11 +63,11 @@ impl<'a> ObjectValue<'a> {
     } else {
       self.disable_mangling(analyzer);
 
-      let dep = analyzer.dep((dep, key));
+      let deps = analyzer.dep((deps, key));
 
       let mut string_keyed = self.keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.delete(true, dep);
+        property.delete(true, deps);
       }
     }
   }

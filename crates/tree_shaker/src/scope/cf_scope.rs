@@ -4,10 +4,7 @@ use oxc::{ast::ast::LabeledStatement, span::Atom};
 use oxc_index::define_index_type;
 
 use crate::{
-  analyzer::{
-    Analyzer,
-    exhaustive::{ExhaustiveData, ExhaustiveDepId},
-  },
+  analyzer::{Analyzer, exhaustive::ExhaustiveData},
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
 };
@@ -28,7 +25,7 @@ pub enum CfScopeKind<'a> {
 
   Dependent,
   Indeterminate,
-  Exhaustive(ExhaustiveData),
+  Exhaustive(ExhaustiveData<'a>),
   ExitBlocker(Option<usize>),
 }
 
@@ -101,25 +98,14 @@ impl<'a> CfScope<'a> {
     self.exited.is_none()
   }
 
-  pub fn exhaustive_data_mut(&mut self) -> Option<&mut ExhaustiveData> {
+  pub fn is_exhaustive(&self) -> bool {
+    matches!(self.kind, CfScopeKind::Exhaustive(_))
+  }
+
+  pub fn exhaustive_data_mut(&mut self) -> Option<&mut ExhaustiveData<'a>> {
     match &mut self.kind {
       CfScopeKind::Exhaustive(data) => Some(data),
       _ => None,
-    }
-  }
-
-  pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId) -> bool {
-    if let Some(data) = self.exhaustive_data_mut() {
-      if data.clean {
-        if let Some(temp_deps) = &data.temp_deps {
-          if temp_deps.contains(&id) {
-            data.clean = false;
-          }
-        }
-      }
-      true
-    } else {
-      false
     }
   }
 

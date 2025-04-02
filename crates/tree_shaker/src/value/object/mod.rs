@@ -12,16 +12,16 @@ use std::{
 
 use oxc::allocator;
 use oxc_index::define_index_type;
-pub use property::{ObjectProperty, ObjectPropertyId, ObjectPropertyKey, ObjectPropertyValue};
+pub use property::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
 use rustc_hash::FxHashSet;
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait, consumed_object,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   builtins::BuiltinPrototype,
-  dep::{CustomDepTrait, Dep, DepAtom, DepCollector},
+  dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
@@ -39,7 +39,7 @@ pub enum ObjectPrototype<'a> {
   Unknown(Dep<'a>),
 }
 
-impl<'a> CustomDepTrait<'a> for ObjectPrototype<'a> {
+impl<'a> ObjectPrototype<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       ObjectPrototype::ImplicitOrNull => {}
@@ -96,7 +96,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.keyed.borrow_mut().clear();
     self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
 
-    analyzer.mark_object_consumed(self.cf_scope, self.object_id);
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -105,6 +106,9 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     }
 
     self.unknown.borrow_mut().non_existent.push(dep);
+
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
   }
 
   fn get_property(
@@ -352,6 +356,7 @@ impl<'a> Analyzer<'a> {
     statics.keyed.borrow_mut().insert(
       ObjectPropertyKey::String("prototype"),
       ObjectProperty {
+        consumed: false,
         definite: true,
         enumerable: false,
         possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),

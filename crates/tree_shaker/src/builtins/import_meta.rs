@@ -22,6 +22,7 @@ impl<'a> Builtins<'a> {
     object.keyed.borrow_mut().insert(
       ObjectPropertyKey::String("url"),
       ObjectProperty {
+        consumed: false,
         definite: true,
         enumerable: true,
         possible_values: factory.vec1(ObjectPropertyValue::Property(

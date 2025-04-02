@@ -165,7 +165,7 @@ impl<'a> Analyzer<'a> {
           None
         }
       } else {
-        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
+        let target_cf_scope = variable_ref.cf_scope;
         drop(variable_ref);
         self.mark_exhaustive_read(ExhaustiveDepId::Variable(id, symbol), target_cf_scope);
         value

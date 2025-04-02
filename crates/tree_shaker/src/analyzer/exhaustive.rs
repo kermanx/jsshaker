@@ -10,22 +10,40 @@ use rustc_hash::FxHashSet;
 use crate::{
   analyzer::Analyzer,
   entity::Entity,
-  scope::{CfScopeKind, VariableScopeId, cf_scope::ReferredState},
-  value::{ObjectId, ObjectPropertyId},
+  scope::{CfScopeId, CfScopeKind, VariableScopeId, cf_scope::ReferredState},
+  value::{ObjectId, ObjectPropertyKey},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExhaustiveDepId {
+pub enum ExhaustiveDepId<'a> {
   Variable(VariableScopeId, SymbolId),
-  Object(ObjectId),
-  ObjectProperty(ObjectId, ObjectPropertyId),
+  ObjectAll(ObjectId),
+  ObjectField(ObjectId, ObjectPropertyKey<'a>),
+  __Object(ObjectId),
+}
+
+impl<'a> ExhaustiveDepId<'a> {
+  fn object_read_extra(self) -> Option<ExhaustiveDepId<'a>> {
+    match self {
+      ExhaustiveDepId::ObjectField(id, _) => Some(ExhaustiveDepId::__Object(id)),
+      _ => None,
+    }
+  }
+
+  fn object_write_extra(self) -> Option<ExhaustiveDepId<'a>> {
+    match self {
+      ExhaustiveDepId::ObjectAll(id) => Some(ExhaustiveDepId::__Object(id)),
+      ExhaustiveDepId::ObjectField(id, _) => Some(ExhaustiveDepId::ObjectAll(id)),
+      _ => None,
+    }
+  }
 }
 
 #[derive(Debug)]
-pub struct ExhaustiveData {
+pub struct ExhaustiveData<'a> {
   pub clean: bool,
-  pub temp_deps: Option<FxHashSet<ExhaustiveDepId>>,
-  pub register_deps: Option<FxHashSet<ExhaustiveDepId>>,
+  pub temp_deps: Option<FxHashSet<ExhaustiveDepId<'a>>>,
+  pub register_deps: Option<FxHashSet<ExhaustiveDepId<'a>>>,
 }
 
 #[derive(Clone)]
@@ -125,7 +143,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     drain: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<ExhaustiveDepId>,
+    deps: FxHashSet<ExhaustiveDepId<'a>>,
   ) {
     for id in deps {
       self
@@ -136,20 +154,23 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId, target: usize) {
+  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId<'a>, target: CfScopeId) {
+    let target_depth = self.find_first_different_cf_scope(target);
     let mut registered = false;
-    for depth in (target..self.scoping.cf.stack.len()).rev() {
+    for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if let Some(data) = scope.exhaustive_data_mut() {
         if data.clean {
           if let Some(temp_deps) = data.temp_deps.as_mut() {
             temp_deps.insert(id);
+            id.object_read_extra().map(|id| temp_deps.insert(id));
           }
         }
         if !registered {
           if let Some(register_deps) = data.register_deps.as_mut() {
             registered = true;
             register_deps.insert(id);
+            id.object_read_extra().map(|id| register_deps.insert(id));
           }
         }
       }
@@ -169,6 +190,10 @@ impl<'a> Analyzer<'a> {
           if let Some(temp_deps) = &data.temp_deps {
             if temp_deps.contains(&id) {
               data.clean = false;
+            } else if let Some(id) = id.object_write_extra() {
+              if temp_deps.contains(&id) {
+                data.clean = false;
+              }
             }
             need_mark = false;
           }
@@ -178,17 +203,19 @@ impl<'a> Analyzer<'a> {
     (exhaustive, indeterminate)
   }
 
-  pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId) -> bool {
-    if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
-      if runners.is_empty() {
-        false
-      } else {
-        self.pending_deps.extend(runners.drain());
-        true
+  pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId<'a>) -> bool {
+    let mut found = false;
+    let mut do_request = |id: ExhaustiveDepId<'a>| {
+      if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
+        if !runners.is_empty() {
+          self.pending_deps.extend(runners.drain());
+          found = true;
+        }
       }
-    } else {
-      false
-    }
+    };
+    do_request(id);
+    id.object_write_extra().map(do_request);
+    found
   }
 
   pub fn call_exhaustive_callbacks(&mut self) -> bool {

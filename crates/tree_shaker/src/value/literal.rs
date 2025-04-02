@@ -512,12 +512,24 @@ impl<'a> LiteralValue<'a> {
   }
 }
 
-impl<'a> From<LiteralValue<'a>> for (ObjectPropertyKey<'a>, Option<MangleAtom>) {
+impl<'a> From<LiteralValue<'a>> for ObjectPropertyKey<'a> {
   fn from(val: LiteralValue<'a>) -> Self {
     match val {
-      LiteralValue::String(s, m) => (ObjectPropertyKey::String(s), m),
-      LiteralValue::Symbol(s, _) => (ObjectPropertyKey::Symbol(s), None),
+      LiteralValue::String(s, _) => ObjectPropertyKey::String(s),
+      LiteralValue::Symbol(s, _) => ObjectPropertyKey::Symbol(s),
       _ => unreachable!(),
     }
+  }
+}
+
+impl<'a> From<LiteralValue<'a>> for (ObjectPropertyKey<'a>, Option<MangleAtom>) {
+  fn from(val: LiteralValue<'a>) -> Self {
+    (
+      val.into(),
+      match val {
+        LiteralValue::String(_, m) => m,
+        _ => None,
+      },
+    )
   }
 }

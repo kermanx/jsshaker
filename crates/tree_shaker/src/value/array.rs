@@ -10,8 +10,8 @@ use super::{
   ValueTrait, consumed_object,
 };
 use crate::{
-  analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep, DepCollector},
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  dep::{CustomDepTrait, Dep, DepCollector, DepVec},
   entity::Entity,
   scope::CfScopeId,
   use_consumed_flag,
@@ -41,11 +41,12 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    analyzer.mark_object_consumed(self.cf_scope, self.object_id);
-
     self.deps.borrow().consume_all(analyzer);
     self.elements.borrow().consume(analyzer);
     self.rest.borrow().consume(analyzer);
+
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -53,9 +54,9 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    let (has_exhaustive, _, exec_deps) = analyzer.pre_mutate_object(self.cf_scope, self.object_id);
+    let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
-    if has_exhaustive {
+    if is_exhaustive {
       self.consume(analyzer);
       return consumed_object::unknown_mutate(analyzer, dep);
     }
@@ -73,7 +74,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
 
-    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return analyzer.factory.computed_unknown((self, dep, key));
@@ -128,10 +129,9 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let (has_exhaustive, indeterminate, exec_deps) =
-      analyzer.pre_mutate_object(self.cf_scope, self.object_id);
+    let (is_exhaustive, indeterminate, exec_deps) = self.prepare_mutation(analyzer, dep);
 
-    if has_exhaustive {
+    if is_exhaustive {
       self.consume(analyzer);
       return consumed_object::set_property(analyzer, dep, key, value);
     }
@@ -195,14 +195,13 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       }
       if has_effect {
         let mut deps = self.deps.borrow_mut();
-        deps.push(analyzer.dep((exec_deps, dep)));
+        deps.push(analyzer.dep(exec_deps));
       }
       return;
     }
 
     // Unknown
     let mut deps = self.deps.borrow_mut();
-    deps.push(dep);
     deps.push(analyzer.dep((exec_deps, key, value)));
   }
 
@@ -215,7 +214,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return (
@@ -251,15 +250,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let (has_exhaustive, _, exec_deps) = analyzer.pre_mutate_object(self.cf_scope, self.object_id);
+    let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
-    if has_exhaustive {
+    if is_exhaustive {
       self.consume(analyzer);
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
     let mut deps = self.deps.borrow_mut();
-    deps.push(dep);
     deps.push(analyzer.dep((exec_deps, key)));
   }
 
@@ -298,7 +296,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::iterate(analyzer, dep);
     }
 
-    analyzer.mark_object_property_exhaustive_read(self.cf_scope, self.object_id);
+    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
@@ -372,6 +370,31 @@ impl<'a> ArrayValue<'a> {
 
   pub fn get_length(&self) -> Option<usize> {
     if self.rest.borrow().is_empty() { Some(self.elements.borrow().len()) } else { None }
+  }
+
+  fn prepare_mutation(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Dep<'a>,
+  ) -> (bool, bool, DepVec<'a>) {
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+
+    let mut is_exhaustive = false;
+    let mut indeterminate = false;
+    let mut exec_deps = analyzer.factory.vec1(dep);
+    for depth in target_depth..analyzer.scoping.cf.stack.len() {
+      let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
+      is_exhaustive |= scope.is_exhaustive();
+      indeterminate |= scope.is_indeterminate();
+      if let Some(dep) = scope.deps.try_collect(analyzer.factory) {
+        exec_deps.push(dep);
+      }
+    }
+
+    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(self.object_id));
+
+    (is_exhaustive, indeterminate, exec_deps)
   }
 }
 

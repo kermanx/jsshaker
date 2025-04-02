@@ -1,7 +1,7 @@
 use super::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
-  analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep, DepCollector},
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  dep::{Dep, DepCollector, DepVec},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
@@ -27,13 +27,10 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let (has_exhaustive, mut indeterminate, exec_deps) =
-      analyzer.pre_mutate_object(self.cf_scope, self.object_id);
-
-    if has_exhaustive {
-      self.consume(analyzer);
-      return consumed_object::set_property(analyzer, dep, key, value);
-    }
+    let (target_depth, is_exhaustive, mut indeterminate, deps) =
+      self.prepare_mutation(analyzer, dep);
+    let value = analyzer.factory.computed(value, deps);
+    let non_mangable_value = analyzer.factory.computed(value, key);
 
     let mut setters = vec![];
 
@@ -41,10 +38,14 @@ impl<'a> ObjectValue<'a> {
       indeterminate = true;
     }
 
-    let value = analyzer.factory.computed(value, (exec_deps, dep));
-    let non_mangable_value = analyzer.factory.computed(value, key);
-
     if let Some(key_literals) = key.get_to_literals(analyzer) {
+      for &key_literal in &key_literals {
+        analyzer.mark_exhaustive_write(
+          ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
+          target_depth,
+        );
+      }
+
       let mut keyed = self.keyed.borrow_mut();
       let mut rest = self.rest.borrow_mut();
 
@@ -55,7 +56,6 @@ impl<'a> ObjectValue<'a> {
 
       for key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
-
         if let Some(property) = keyed.get_mut(&key_str) {
           let value = if mangable {
             let prev_key = property.key.unwrap();
@@ -69,9 +69,18 @@ impl<'a> ObjectValue<'a> {
             value
           };
           property.set(analyzer, indeterminate, value, &mut setters);
+          let was_consumed = property.consumed;
+          property.consumed |= is_exhaustive;
+          if !was_consumed {
+            analyzer
+              .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
+          }
           if property.definite {
             continue;
           }
+        } else {
+          analyzer
+            .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
         }
 
         if let Some(rest) = &mut *rest {
@@ -90,6 +99,7 @@ impl<'a> ObjectValue<'a> {
         keyed.insert(
           key_str,
           ObjectProperty {
+            consumed: is_exhaustive,
             definite: !indeterminate && found.must_not_found(),
             enumerable: true, /* TODO: Object.defineProperty */
             possible_values: analyzer.factory.vec1(ObjectPropertyValue::Field(value, false)),
@@ -100,6 +110,11 @@ impl<'a> ObjectValue<'a> {
         );
       }
     } else {
+      if is_exhaustive {
+        analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+      }
+      analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(self.object_id));
+
       self.disable_mangling(analyzer);
 
       indeterminate = true;
@@ -110,6 +125,7 @@ impl<'a> ObjectValue<'a> {
       let mut string_keyed = self.keyed.borrow_mut();
       for property in string_keyed.values_mut() {
         property.set(analyzer, true, non_mangable_value, &mut setters);
+        property.consumed |= is_exhaustive;
       }
 
       if let Some(rest) = &mut *self.rest.borrow_mut() {
@@ -218,5 +234,25 @@ impl<'a> ObjectValue<'a> {
       }
       ObjectPrototype::Unknown(_dep) => {}
     }
+  }
+
+  pub(super) fn prepare_mutation(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Dep<'a>,
+  ) -> (usize, bool, bool, DepVec<'a>) {
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    let mut exhaustive = false;
+    let mut indeterminate = false;
+    let mut deps = analyzer.factory.vec1(dep);
+    for depth in target_depth..analyzer.scoping.cf.stack.len() {
+      let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
+      exhaustive |= scope.is_exhaustive();
+      indeterminate |= scope.is_indeterminate();
+      if let Some(dep) = scope.deps.try_collect(analyzer.factory) {
+        deps.push(dep);
+      }
+    }
+    (target_depth, exhaustive, indeterminate, deps)
   }
 }
