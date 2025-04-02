@@ -1,12 +1,13 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{allocator, ast::ast::IdentifierReference};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_identifier_reference_read(
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    let reference = self.semantic().symbols().get_reference(node.reference_id());
+    let reference = self.semantic().scoping().get_reference(node.reference_id());
     let symbol = reference.symbol_id();
 
     let dep = AstKind2::IdentifierReference(node);
@@ -18,13 +19,13 @@ impl<'a> Analyzer<'a> {
       } else {
         // TDZ
         self.consume(dep);
-        self.factory.unknown()
+        self.factory.unknown
       }
     } else if node.name == "arguments" {
       // The `arguments` object
       let arguments_consumed = self.consume_arguments();
       self.call_scope_mut().need_consume_arguments = !arguments_consumed;
-      self.factory.unknown()
+      self.factory.unknown
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()) {
       // Known global
       *global
@@ -38,7 +39,7 @@ impl<'a> Analyzer<'a> {
           self.refer_to_global();
           self.may_throw();
         }
-        self.factory.unknown()
+        self.factory.unknown
       }
     }
   }
@@ -51,7 +52,7 @@ impl<'a> Analyzer<'a> {
     let dep = AstKind2::IdentifierReference(node);
     let value = self.factory.computed(value, dep);
 
-    let reference = self.semantic().symbols().get_reference(node.reference_id());
+    let reference = self.semantic().scoping().get_reference(node.reference_id());
     assert!(reference.is_write());
     let symbol = reference.symbol_id();
 
@@ -94,7 +95,7 @@ impl<'a> Transformer<'a> {
     if need_val || self.is_referred(AstKind2::IdentifierReference(node)) {
       let IdentifierReference { span, name, .. } = node;
 
-      let reference = self.semantic.symbols().get_reference(node.reference_id());
+      let reference = self.semantic.scoping().get_reference(node.reference_id());
       if let Some(symbol) = reference.symbol_id() {
         self.update_var_decl_state(symbol, false);
       }

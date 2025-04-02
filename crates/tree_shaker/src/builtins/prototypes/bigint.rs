@@ -1,7 +1,6 @@
-use crate::entity::EntityFactory;
+use super::{BuiltinPrototype, object::create_object_prototype};
+use crate::analyzer::Factory;
 
-use super::{object::create_object_prototype, Prototype};
-
-pub fn create_bigint_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
+pub fn create_bigint_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   create_object_prototype(factory).with_name("BigInt")
 }

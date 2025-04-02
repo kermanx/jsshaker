@@ -1,9 +1,11 @@
-use crate::{
-  builtins::{constants::OBJECT_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::{Entity, LiteralEntity, ObjectPropertyValue, ObjectPrototype, TypeofResult},
-  init_namespace,
-};
 use std::borrow::BorrowMut;
+
+use crate::{
+  builtins::{Builtins, constants::OBJECT_CONSTRUCTOR_OBJECT_ID},
+  entity::Entity,
+  init_namespace,
+  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
+};
 
 impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {
@@ -14,10 +16,10 @@ impl<'a> Builtins<'a> {
       ObjectPrototype::Builtin(&self.prototypes.function),
       false,
     );
-    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
+    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
-    init_namespace!(object, {
-      "prototype" => factory.immutable_unknown,
+    init_namespace!(object, factory, {
+      "prototype" => factory.unknown,
       "assign" => self.create_object_assign_impl(),
       "keys" => self.create_object_keys_impl(),
       "values" => self.create_object_values_impl(),
@@ -26,7 +28,7 @@ impl<'a> Builtins<'a> {
       "defineProperty" => self.create_object_define_property_impl(),
     });
 
-    self.globals.borrow_mut().insert("Object", object);
+    self.globals.borrow_mut().insert("Object", object.into());
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
@@ -76,7 +78,7 @@ impl<'a> Builtins<'a> {
         }
       }
 
-      analyzer.factory.computed(array, deps)
+      analyzer.factory.computed(array.into(), deps)
     })
   }
 
@@ -91,7 +93,7 @@ impl<'a> Builtins<'a> {
         array.init_rest(value);
       }
 
-      analyzer.factory.computed(array, deps)
+      analyzer.factory.computed(array.into(), deps)
     })
   }
 
@@ -106,10 +108,10 @@ impl<'a> Builtins<'a> {
         let entry = analyzer.new_empty_array();
         entry.push_element(key.get_to_string(analyzer));
         entry.push_element(value);
-        array.init_rest(entry);
+        array.init_rest(entry.into());
       }
 
-      analyzer.factory.computed(array, deps)
+      analyzer.factory.computed(array.into(), deps)
     })
   }
 
@@ -146,7 +148,7 @@ impl<'a> Builtins<'a> {
           if !definite {
             break 'trackable;
           }
-          let Some(LiteralEntity::String(key_str, _)) = key.get_literal(analyzer) else {
+          let Some(LiteralValue::String(key_str, _)) = key.get_literal(analyzer) else {
             break 'trackable;
           };
           match key_str {
@@ -164,12 +166,16 @@ impl<'a> Builtins<'a> {
             _ => {}
           }
         }
-        object.set_property(analyzer, descriptor.get_destructable(analyzer, dep), key, value);
+        object.set_property(
+          analyzer,
+          analyzer.factory.dep((dep, descriptor.shallow_dep())),
+          key,
+          value,
+        );
         return object;
       }
 
-      let dep = analyzer.factory.consumable((dep, key, descriptor));
-      object.unknown_mutate(analyzer, dep);
+      object.unknown_mutate(analyzer, (dep, key, descriptor));
       object
     })
   }

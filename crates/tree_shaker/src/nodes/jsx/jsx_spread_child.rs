@@ -1,12 +1,13 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXSpreadChild},
 };
 
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_spread_child(&mut self, _node: &'a JSXSpreadChild<'a>) -> Entity<'a> {
-    self.factory.immutable_unknown
+    self.factory.unknown
   }
 }
 

@@ -1,14 +1,15 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXChild},
 };
 
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_children(&mut self, node: &'a allocator::Vec<'a, JSXChild<'a>>) -> Entity<'a> {
-    let values: Vec<_> = node
-      .iter()
-      .map(|child| match child {
+    let mut values = self.factory.vec();
+    for child in node {
+      values.push(match child {
         JSXChild::Text(node) => self.exec_jsx_text(node),
         JSXChild::Element(node) => self.exec_jsx_element(node),
         JSXChild::Fragment(node) => self.exec_jsx_fragment(node),
@@ -16,9 +17,9 @@ impl<'a> Analyzer<'a> {
           self.exec_jsx_expression_container_as_jsx_child(node)
         }
         JSXChild::Spread(node) => self.exec_jsx_spread_child(node),
-      })
-      .collect();
-    self.factory.computed_unknown(self.consumable(values))
+      });
+    }
+    self.factory.computed_unknown(values)
   }
 }
 

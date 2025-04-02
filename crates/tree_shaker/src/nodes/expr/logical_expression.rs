@@ -1,7 +1,8 @@
+use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
+
 use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, LogicalExpression, LogicalOperator};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {

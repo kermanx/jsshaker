@@ -1,6 +1,6 @@
 use crate::{builtins::Builtins, init_map};
 
-impl<'a> Builtins<'a> {
+impl Builtins<'_> {
   pub fn init_global_constants(&mut self) {
     let factory = self.factory;
 
@@ -8,7 +8,7 @@ impl<'a> Builtins<'a> {
       "undefined" => factory.undefined,
       "Infinity" => factory.infinity(true),
       "NaN" => factory.nan,
-      "eval" => factory.immutable_unknown,
+      "eval" => factory.unknown,
     })
   }
 }

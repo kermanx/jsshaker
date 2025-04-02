@@ -1,24 +1,26 @@
+use std::mem;
+
+use oxc::allocator::{self, Allocator};
+
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
 use crate::utils::get_two_mut_from_vec;
-use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
-use std::mem;
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum MangleConstraint {
-  NonMangable(MangleAtom),
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MangleConstraint<'a> {
   Eq(MangleAtom, MangleAtom),
   Neq(MangleAtom, MangleAtom),
   Unique(UniquenessGroupId, MangleAtom),
-  Multiple(Vec<MangleConstraint>),
+  Multiple(&'a [MangleConstraint<'a>]),
 }
 
-impl MangleConstraint {
+impl<'a> MangleConstraint<'a> {
   pub fn equality(
     eq: bool,
     a: Option<MangleAtom>,
     b: Option<MangleAtom>,
-  ) -> Option<MangleConstraint> {
+  ) -> Option<MangleConstraint<'a>> {
     if let (Some(a), Some(b)) = (a, b) {
       Some(if eq { MangleConstraint::Eq(a, b) } else { MangleConstraint::Neq(a, b) })
     } else {
@@ -26,22 +28,23 @@ impl MangleConstraint {
     }
   }
 
-  pub fn negate_equality(self) -> Self {
+  pub fn negate_equality(self, allocator: &'a Allocator) -> Self {
     match self {
       MangleConstraint::Eq(a, b) => MangleConstraint::Neq(a, b),
       MangleConstraint::Neq(a, b) => MangleConstraint::Eq(a, b),
-      MangleConstraint::Multiple(c) => {
-        MangleConstraint::Multiple(c.into_iter().map(Self::negate_equality).collect())
-      }
+      MangleConstraint::Multiple(c) => MangleConstraint::Multiple({
+        let mut negated = allocator::Vec::new_in(allocator);
+        for constraint in c {
+          negated.push(constraint.negate_equality(allocator));
+        }
+        allocator.alloc(negated)
+      }),
       _ => unreachable!(),
     }
   }
 
   pub fn add_to_mangler(&self, mangler: &mut Mangler) {
     match self {
-      MangleConstraint::NonMangable(a) => {
-        mangler.mark_atom_non_mangable(*a);
-      }
       MangleConstraint::Eq(a, b) => {
         mangler.mark_equality(true, *a, *b);
       }
@@ -52,7 +55,7 @@ impl MangleConstraint {
         mangler.add_to_uniqueness_group(*g, *a);
       }
       MangleConstraint::Multiple(cs) => {
-        for constraint in cs {
+        for constraint in *cs {
           constraint.add_to_mangler(mangler);
         }
       }
@@ -60,7 +63,7 @@ impl MangleConstraint {
   }
 }
 
-impl<'a> ConsumableTrait<'a> for &'a MangleConstraint {
+impl<'a> CustomDepTrait<'a> for MangleConstraint<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     self.add_to_mangler(&mut analyzer.mangler);
   }
@@ -75,6 +78,13 @@ impl<'a> Mangler<'a> {
     let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
 
     match get_two_mut_from_vec(atoms, a, b) {
+      (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
+        if eq {
+          *x = AtomState::Preserved;
+        }
+        // If neq, do nothing because currently the preserved strings are builtin strings
+        // which is long enough to not conflict with mangled strings.
+      }
       (AtomState::Constant(a), AtomState::Constant(b)) => assert_eq!(a, b),
       (AtomState::Constant(a), _) => {
         let s = *a;
@@ -172,6 +182,9 @@ impl<'a> Mangler<'a> {
       }
       AtomState::NonMangable => {
         self.mark_uniqueness_group_non_mangable(group);
+      }
+      AtomState::Preserved => {
+        // Do nothing, explained above
       }
     }
   }

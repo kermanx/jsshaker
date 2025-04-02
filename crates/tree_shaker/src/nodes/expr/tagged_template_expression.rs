@@ -1,13 +1,13 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, dep::DepId, entity::Entity,
-  transformer::Transformer,
-};
 use oxc::{
   ast::{
-    ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
     NONE,
+    ast::{Expression, TaggedTemplateExpression, TemplateLiteral},
   },
   span::GetSpan,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 impl<'a> Analyzer<'a> {
@@ -20,17 +20,17 @@ impl<'a> Analyzer<'a> {
       Err(v) => return v,
     };
 
-    let mut arguments = vec![(false, self.factory.unknown())];
+    let mut arguments = self.factory.vec1((false, self.factory.unknown));
 
     for expr in &node.quasi.expressions {
       let value = self.exec_expression(expr);
-      let dep = DepId::from(AstKind2::ExpressionInTaggedTemplate(expr));
+      let dep = AstKind2::ExpressionInTaggedTemplate(expr);
       arguments.push((false, self.factory.computed(value, dep)));
     }
 
     let value = tag.call(
       self,
-      self.consumable(AstKind2::TaggedTemplateExpression(node)),
+      AstKind2::TaggedTemplateExpression(node),
       this,
       self.factory.arguments(arguments),
     );

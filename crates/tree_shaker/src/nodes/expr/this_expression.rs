@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, ThisExpression};
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_this_expression(&mut self, _node: &'a ThisExpression) -> Entity<'a> {
@@ -13,10 +14,6 @@ impl<'a> Transformer<'a> {
     node: &'a ThisExpression,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    if need_val {
-      Some(self.ast_builder.expression_this(node.span))
-    } else {
-      None
-    }
+    if need_val { Some(self.ast_builder.expression_this(node.span)) } else { None }
   }
 }

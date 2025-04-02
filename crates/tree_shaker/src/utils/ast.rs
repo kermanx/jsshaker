@@ -1,22 +1,52 @@
-use crate::{analyzer::Analyzer, consumable::ConsumableTrait};
+use std::fmt::{self, Debug};
+
 use oxc::{
   allocator::Vec,
   ast::ast::*,
   span::{GetSpan, SPAN},
 };
-use std::fmt::{self, Debug};
+
+use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
 pub type Arguments<'a> = Vec<'a, Argument<'a>>;
 
-#[allow(dead_code)]
-#[derive(Clone, Copy)]
-pub enum AstKind2<'a> {
-  // Special
-  Environment,
-  Index(usize),
+macro_rules! ast_kind_2 {
+  ($($x:ident($t:ty)),+ $(,)?) => {
+    #[allow(dead_code)]
+    #[derive(Clone, Copy)]
+    pub enum AstKind2<'a> {
+      Environment,
+      Index(usize),
+      $( $x($t), )+
+    }
 
-  BooleanLiteral(&'a BooleanLiteral),
-  NullLiteral(&'a NullLiteral),
+    impl GetSpan for AstKind2<'_> {
+      fn span(&self) -> Span {
+        match self {
+          AstKind2::Environment | AstKind2::Index(_) => SPAN,
+          $( AstKind2::$x(node) => node.span(), )+
+        }
+      }
+    }
+
+    impl fmt::Debug for AstKind2<'_> {
+      fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+          AstKind2::Environment => write!(f, "Environment"),
+          AstKind2::Index(index) => write!(f, "Index({})", index),
+          $(AstKind2::$x(node) => {
+            // Example: "IdentifierName(111-222)"
+            let span = node.span();
+            let name = stringify!($x);
+            write!(f, "{}({}-{})", name, span.start, span.end)
+          })+
+        }
+      }
+    }
+  };
+}
+
+ast_kind_2! {
   NumericLiteral(&'a NumericLiteral<'a>),
   BigIntLiteral(&'a BigIntLiteral<'a>),
   RegExpLiteral(&'a RegExpLiteral<'a>),
@@ -119,11 +149,13 @@ pub enum AstKind2<'a> {
 
   // extras
   Expression(&'a Expression<'a>),
+  SwitchCaseTest(&'a SwitchCase<'a>),
   AssignmentTargetProperty(&'a AssignmentTargetProperty<'a>),
   AssignmentTargetPropertyIdentifier(&'a AssignmentTargetPropertyIdentifier<'a>),
   AssignmentTargetRest(&'a AssignmentTargetRest<'a>),
   BindingProperty(&'a BindingProperty<'a>),
   Callee(&'a Expression<'a>),
+  ClassConstructor(&'a Class<'a>),
   ExpressionInTaggedTemplate(&'a Expression<'a>),
   LogicalExpressionLeft(&'a LogicalExpression<'a>),
   LogicalAssignmentExpressionLeft(&'a AssignmentExpression<'a>),
@@ -131,133 +163,7 @@ pub enum AstKind2<'a> {
   JSXAttributeName(&'a JSXAttributeName<'a>),
 }
 
-impl<'a> GetSpan for AstKind2<'a> {
-  fn span(&self) -> Span {
-    match self {
-      AstKind2::Environment | AstKind2::Index(_) => SPAN,
-      AstKind2::BooleanLiteral(node) => node.span(),
-      AstKind2::NullLiteral(node) => node.span(),
-      AstKind2::NumericLiteral(node) => node.span(),
-      AstKind2::BigIntLiteral(node) => node.span(),
-      AstKind2::RegExpLiteral(node) => node.span(),
-      AstKind2::StringLiteral(node) => node.span(),
-      AstKind2::Program(node) => node.span(),
-      AstKind2::IdentifierName(node) => node.span(),
-      AstKind2::IdentifierReference(node) => node.span(),
-      AstKind2::BindingIdentifier(node) => node.span(),
-      AstKind2::LabelIdentifier(node) => node.span(),
-      AstKind2::ThisExpression(node) => node.span(),
-      AstKind2::ArrayExpression(node) => node.span(),
-      AstKind2::ArrayExpressionElement(node) => node.span(),
-      AstKind2::Elision(node) => node.span(),
-      AstKind2::ObjectExpression(node) => node.span(),
-      AstKind2::ObjectProperty(node) => node.span(),
-      AstKind2::PropertyKey(node) => node.span(),
-      AstKind2::TemplateLiteral(node) => node.span(),
-      AstKind2::TaggedTemplateExpression(node) => node.span(),
-      AstKind2::MemberExpression(node) => node.span(),
-      AstKind2::CallExpression(node) => node.span(),
-      AstKind2::NewExpression(node) => node.span(),
-      AstKind2::MetaProperty(node) => node.span(),
-      AstKind2::SpreadElement(node) => node.span(),
-      AstKind2::Argument(node) => node.span(),
-      AstKind2::UpdateExpression(node) => node.span(),
-      AstKind2::UnaryExpression(node) => node.span(),
-      AstKind2::BinaryExpression(node) => node.span(),
-      AstKind2::PrivateInExpression(node) => node.span(),
-      AstKind2::LogicalExpression(node) => node.span(),
-      AstKind2::ConditionalExpression(node) => node.span(),
-      AstKind2::AssignmentExpression(node) => node.span(),
-      AstKind2::AssignmentTarget(node) => node.span(),
-      AstKind2::SimpleAssignmentTarget(node) => node.span(),
-      AstKind2::AssignmentTargetPattern(node) => node.span(),
-      AstKind2::ArrayAssignmentTarget(node) => node.span(),
-      AstKind2::ObjectAssignmentTarget(node) => node.span(),
-      AstKind2::AssignmentTargetWithDefault(node) => node.span(),
-      AstKind2::SequenceExpression(node) => node.span(),
-      AstKind2::Super(node) => node.span(),
-      AstKind2::AwaitExpression(node) => node.span(),
-      AstKind2::ChainExpression(node) => node.span(),
-      AstKind2::ParenthesizedExpression(node) => node.span(),
-      AstKind2::Directive(node) => node.span(),
-      AstKind2::Hashbang(node) => node.span(),
-      AstKind2::BlockStatement(node) => node.span(),
-      AstKind2::VariableDeclaration(node) => node.span(),
-      AstKind2::VariableDeclarator(node) => node.span(),
-      AstKind2::EmptyStatement(node) => node.span(),
-      AstKind2::ExpressionStatement(node) => node.span(),
-      AstKind2::IfStatement(node) => node.span(),
-      AstKind2::DoWhileStatement(node) => node.span(),
-      AstKind2::WhileStatement(node) => node.span(),
-      AstKind2::ForStatement(node) => node.span(),
-      AstKind2::ForStatementInit(node) => node.span(),
-      AstKind2::ForInStatement(node) => node.span(),
-      AstKind2::ForOfStatement(node) => node.span(),
-      AstKind2::ContinueStatement(node) => node.span(),
-      AstKind2::BreakStatement(node) => node.span(),
-      AstKind2::ReturnStatement(node) => node.span(),
-      AstKind2::WithStatement(node) => node.span(),
-      AstKind2::SwitchStatement(node) => node.span(),
-      AstKind2::SwitchCase(node) => node.span(),
-      AstKind2::LabeledStatement(node) => node.span(),
-      AstKind2::ThrowStatement(node) => node.span(),
-      AstKind2::TryStatement(node) => node.span(),
-      AstKind2::FinallyClause(node) => node.span(),
-      AstKind2::CatchClause(node) => node.span(),
-      AstKind2::CatchParameter(node) => node.span(),
-      AstKind2::DebuggerStatement(node) => node.span(),
-      AstKind2::AssignmentPattern(node) => node.span(),
-      AstKind2::ObjectPattern(node) => node.span(),
-      AstKind2::ArrayPattern(node) => node.span(),
-      AstKind2::BindingRestElement(node) => node.span(),
-      AstKind2::Function(node) => node.span(),
-      AstKind2::FormalParameters(node) => node.span(),
-      AstKind2::FormalParameter(node) => node.span(),
-      AstKind2::FunctionBody(node) => node.span(),
-      AstKind2::ArrowFunctionExpression(node) => node.span(),
-      AstKind2::YieldExpression(node) => node.span(),
-      AstKind2::Class(node) => node.span(),
-      AstKind2::ClassHeritage(node) => node.span(),
-      AstKind2::ClassBody(node) => node.span(),
-      AstKind2::MethodDefinition(node) => node.span(),
-      AstKind2::PropertyDefinition(node) => node.span(),
-      AstKind2::PrivateIdentifier(node) => node.span(),
-      AstKind2::StaticBlock(node) => node.span(),
-      AstKind2::ModuleDeclaration(node) => node.span(),
-      AstKind2::ImportExpression(node) => node.span(),
-      AstKind2::ImportDeclaration(node) => node.span(),
-      AstKind2::ImportSpecifier(node) => node.span(),
-      AstKind2::ImportDefaultSpecifier(node) => node.span(),
-      AstKind2::ImportNamespaceSpecifier(node) => node.span(),
-      AstKind2::ExportNamedDeclaration(node) => node.span(),
-      AstKind2::ExportDefaultDeclaration(node) => node.span(),
-      AstKind2::ExportAllDeclaration(node) => node.span(),
-      AstKind2::ExportSpecifier(node) => node.span(),
-      AstKind2::JSXAttributeItem(node) => node.span(),
-      AstKind2::JSXMemberExpression(node) => node.span(),
-      AstKind2::JsxExpressionContainer(node) => node.span(),
-      AstKind2::Expression(node) => node.span(),
-      AstKind2::AssignmentTargetProperty(node) => node.span(),
-      AstKind2::AssignmentTargetPropertyIdentifier(node) => node.span(),
-      AstKind2::AssignmentTargetRest(node) => node.span(),
-      AstKind2::BindingProperty(node) => node.span(),
-      AstKind2::Callee(node) => node.span(),
-      AstKind2::ExpressionInTaggedTemplate(node) => node.span(),
-      AstKind2::LogicalExpressionLeft(node) => node.span(),
-      AstKind2::LogicalAssignmentExpressionLeft(node) => node.span(),
-      AstKind2::JSXOpeningElement(node) => node.span(),
-      AstKind2::JSXAttributeName(node) => node.span(),
-    }
-  }
-}
-
-impl<'a> fmt::Debug for AstKind2<'a> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    self.span().fmt(f)
-  }
-}
-
-impl<'a> ConsumableTrait<'a> for AstKind2<'a> {
+impl<'a> CustomDepTrait<'a> for AstKind2<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.refer_dep(*self);
   }

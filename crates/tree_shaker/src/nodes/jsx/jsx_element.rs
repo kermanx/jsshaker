@@ -1,11 +1,12 @@
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::{
-    ast::{Expression, JSXClosingElement, JSXElement, JSXOpeningElement, PropertyKind},
     NONE,
+    ast::{Expression, JSXClosingElement, JSXElement, JSXOpeningElement, PropertyKind},
   },
 };
+
+use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_element(&mut self, node: &'a JSXElement<'a>) -> Entity<'a> {
@@ -16,7 +17,7 @@ impl<'a> Analyzer<'a> {
       self.factory.mangable_string("children", self.mangler.new_constant_atom("children"))
     });
     attributes.init_property(self, PropertyKind::Init, key_children, children, true);
-    self.factory.react_element(tag, attributes)
+    self.factory.react_element(tag, attributes.into())
   }
 }
 

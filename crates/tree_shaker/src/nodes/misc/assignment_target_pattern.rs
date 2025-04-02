@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{ArrayAssignmentTarget, AssignmentTargetPattern, ObjectAssignmentTarget};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_pattern_write(
@@ -11,7 +12,7 @@ impl<'a> Analyzer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let (element_values, rest_value, dep) = value.destruct_as_array(
           self,
-          self.consumable(AstKind2::ArrayAssignmentTarget(node)),
+          AstKind2::ArrayAssignmentTarget(node),
           node.elements.len(),
           node.rest.is_some(),
         );
@@ -28,7 +29,7 @@ impl<'a> Analyzer<'a> {
         self.pop_cf_scope();
       }
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
-        self.push_dependent_cf_scope(value.get_destructable(self, self.factory.empty_consumable));
+        self.push_dependent_cf_scope(value.shallow_dep());
 
         let is_nullish = value.test_nullish();
         if is_nullish != Some(false) {

@@ -1,14 +1,12 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
-};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXExpression, JSXExpressionContainer},
   span::GetSpan,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
+  value::LiteralValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -58,17 +56,17 @@ impl<'a> Transformer<'a> {
         if effect.is_none()
           && matches!(
             self.get_folded_literal(AstKind2::JsxExpressionContainer(node)).unwrap(),
-            LiteralEntity::String("", _)
+            LiteralValue::String("", _)
           )
         {
-          self.ast_builder.jsx_expression_jsx_empty_expression(expression.span())
+          self.ast_builder.jsx_expression_empty_expression(expression.span())
         } else {
           JSXExpression::from(build_effect!(self.ast_builder, expression.span(), effect; literal))
         }
       } else {
         match expression {
           JSXExpression::EmptyExpression(node) => {
-            self.ast_builder.jsx_expression_jsx_empty_expression(node.span)
+            self.ast_builder.jsx_expression_empty_expression(node.span)
           }
           node => {
             JSXExpression::from(self.transform_expression(node.to_expression(), true).unwrap())

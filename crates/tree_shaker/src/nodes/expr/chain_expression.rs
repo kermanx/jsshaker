@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::{
   ast::{ChainElement, ChainExpression, Expression},
   match_member_expression,
 };
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_chain_expression(&mut self, node: &'a ChainExpression<'a>) -> Entity<'a> {

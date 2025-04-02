@@ -1,10 +1,11 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{
     AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
   },
   span::{GetSpan, SPAN},
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 #[derive(Debug, Default)]
 struct IdentifierData {
@@ -18,7 +19,7 @@ impl<'a> Analyzer<'a> {
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
   ) -> Entity<'a> {
-    let dep = self.consumable(AstKind2::AssignmentTargetProperty(node));
+    let dep = AstKind2::AssignmentTargetProperty(node);
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.factory.string(node.binding.name.as_str());
@@ -78,7 +79,7 @@ impl<'a> Transformer<'a> {
         if need_binding && binding.is_none() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
-            self.ast_builder.property_key_identifier_name(binding_span, binding_name),
+            self.ast_builder.property_key_static_identifier(binding_span, binding_name),
             if let Some(init) = init {
               self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
                 *span,

@@ -1,27 +1,29 @@
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait},
-  entity::{Entity, EntityFactory, ObjectPrototype},
-  init_object,
-};
-use oxc::semantic::SymbolId;
-use oxc_index::{define_index_type, IndexVec};
 use std::mem;
+
+use oxc_index::{IndexVec, define_index_type};
+
+use crate::{
+  analyzer::{Analyzer, Factory, exhaustive::ExhaustiveDepId},
+  dep::{CustomDepTrait, Dep},
+  entity::Entity,
+  init_object,
+  value::{ObjectId, ObjectPrototype},
+};
 
 #[derive(Debug)]
 pub struct ReactContextData<'a> {
-  object_id: SymbolId,
+  object_id: ObjectId,
   consumed: bool,
   default_value: Entity<'a>,
   stack: Vec<Entity<'a>>,
-  dep: Consumable<'a>,
+  dep: Dep<'a>,
 }
 
 impl<'a> ReactContextData<'a> {
-  pub fn get_current(&self, factory: &'a EntityFactory<'a>) -> Entity<'a> {
+  pub fn get_current(&self, factory: &'a Factory<'a>) -> Entity<'a> {
     factory.computed(
       if self.consumed {
-        factory.unknown()
+        factory.unknown
       } else {
         self.stack.last().copied().unwrap_or(self.default_value)
       },
@@ -37,10 +39,9 @@ define_index_type! {
 
 pub type ReactContexts<'a> = IndexVec<ContextId, ReactContextData<'a>>;
 
-pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
+pub fn create_react_create_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createContext", |analyzer, dep, _this, args| {
-    let default_value =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+    let default_value = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
 
     let context = analyzer
       .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None);
@@ -53,27 +54,29 @@ pub fn create_react_create_context_impl<'a>(factory: &'a EntityFactory<'a>) -> E
       dep,
     });
 
-    init_object!(context, {
+    init_object!(context, factory, {
       "__#internal__consumed_hook" => analyzer.factory.computed_unknown(context_id),
       "__#internal__context_id" => analyzer.serialize_internal_id(context_id),
       "Provider" => create_react_context_provider_impl(analyzer, context_id),
       "Consumer" => create_react_context_consumer_impl(analyzer, context_id),
     });
 
-    context
+    context.into()
   })
 }
 
-impl<'a> ConsumableTrait<'a> for ContextId {
+impl<'a> CustomDepTrait<'a> for ContextId {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = &mut analyzer.builtins.react_data.contexts[*self];
     data.consumed = true;
     let default_value = data.default_value;
-    let stack = mem::take(&mut data.stack);
     let dep = data.dep;
+    let stack = mem::take(&mut data.stack);
     analyzer.consume(default_value);
-    analyzer.consume(stack);
     analyzer.consume(dep);
+    for value in stack {
+      analyzer.consume(value);
+    }
   }
 }
 
@@ -97,8 +100,8 @@ fn create_react_context_provider_impl<'a>(
         let object_id = data.object_id;
         let dep = data.dep;
 
-        let should_consume = analyzer
-          .request_exhaustive_callbacks(true, (analyzer.scoping.object_scope_id, object_id));
+        let should_consume =
+          analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(object_id));
 
         if should_consume {
           analyzer.consume(context_id);
@@ -122,7 +125,7 @@ fn create_react_context_provider_impl<'a>(
         analyzer.builtins.react_data.contexts[context_id].stack.pop();
       }
 
-      analyzer.factory.immutable_unknown
+      analyzer.factory.unknown
     },
   )
 }
@@ -137,18 +140,17 @@ fn create_react_context_consumer_impl<'a>(
       analyzer.consume(dep);
       analyzer.consume(context_id);
 
-      analyzer.factory.immutable_unknown
+      analyzer.factory.unknown
     },
   )
 }
 
-pub fn create_react_use_context_impl<'a>(factory: &'a EntityFactory<'a>) -> Entity<'a> {
+pub fn create_react_use_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useContext", move |analyzer, dep, _this, args| {
-    let context_object =
-      args.destruct_as_array(analyzer, analyzer.factory.empty_consumable, 1, false).0[0];
+    let context_object = args.destruct_as_array(analyzer, analyzer.factory.no_dep, 1, false).0[0];
     let context_id = context_object.get_property(
       analyzer,
-      analyzer.factory.empty_consumable,
+      analyzer.factory.no_dep,
       analyzer.factory.string("__#internal__context_id"),
     );
     if let Some(id) = analyzer.parse_internal_symbol_id::<ContextId>(context_id) {

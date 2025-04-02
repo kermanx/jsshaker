@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::ObjectEntity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{
@@ -6,24 +5,26 @@ use oxc::{
   },
 };
 
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, value::ObjectValue};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_attributes(
     &mut self,
     node: &'a JSXOpeningElement<'a>,
-  ) -> &'a mut ObjectEntity<'a> {
+  ) -> &'a mut ObjectValue<'a> {
     let object = self.use_mangable_plain_object(AstKind2::JSXOpeningElement(node));
 
     for attr in &node.attributes {
-      let dep_id = AstKind2::JSXAttributeItem(attr);
+      let dep = AstKind2::JSXAttributeItem(attr);
       match attr {
         JSXAttributeItem::Attribute(node) => {
           let key = self.exec_jsx_attribute_name(&node.name);
-          let value = self.factory.computed(self.exec_jsx_attribute_value(&node.value), dep_id);
+          let value = self.factory.computed(self.exec_jsx_attribute_value(&node.value), dep);
           object.init_property(self, PropertyKind::Init, key, value, true);
         }
         JSXAttributeItem::SpreadAttribute(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, self.consumable(dep_id), argument);
+          object.init_spread(self, dep, argument);
         }
       }
     }
@@ -70,7 +71,7 @@ impl<'a> Transformer<'a> {
           let JSXAttribute { span, name, value } = node.as_ref();
 
           if let Some(value) = self.transform_jsx_attribute_value_as_item(value, is_referred) {
-            transformed.push(self.ast_builder.jsx_attribute_item_jsx_attribute(
+            transformed.push(self.ast_builder.jsx_attribute_item_attribute(
               *span,
               self.transform_jsx_attribute_name_need_val(name),
               Some(value),
@@ -81,7 +82,7 @@ impl<'a> Transformer<'a> {
           let JSXSpreadAttribute { span, argument } = node.as_ref();
 
           if is_referred {
-            transformed.push(self.ast_builder.jsx_attribute_item_jsx_spread_attribute(
+            transformed.push(self.ast_builder.jsx_attribute_item_spread_attribute(
               *span,
               self.transform_expression(argument, true).unwrap(),
             ))

@@ -1,17 +1,16 @@
 use crate::{
-  builtins::prototypes::BuiltinPrototypes,
-  entity::{Entity, EntityFactory, TypeofResult},
+  analyzer::Factory, builtins::prototypes::BuiltinPrototypes, entity::Entity, value::TypeofResult,
 };
 
 pub fn create_class_names_namespace<'a>(
-  factory: &'a EntityFactory<'a>,
+  factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
   factory.implemented_builtin_fn("classnames::default", |analyzer, dep, _this, args| {
     let (class_names, rest, iterate_dep) = args.iterate(analyzer, dep);
 
-    let mut deps_1 = vec![];
-    let mut deps_2 = vec![iterate_dep];
+    let mut deps_1 = factory.vec();
+    let mut deps_2 = factory.vec1(iterate_dep);
     for class_name in class_names {
       if TypeofResult::Object.contains(class_name.test_typeof()) {
         // This may be an array. However, this makes no difference in this logic.
@@ -28,6 +27,6 @@ pub fn create_class_names_namespace<'a>(
       }
     }
 
-    analyzer.factory.computed_unknown_string(analyzer.consumable((deps_1, deps_2, rest)))
+    analyzer.factory.computed_unknown_string((deps_1, deps_2, rest))
   })
 }

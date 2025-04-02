@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForOfStatement, Statement},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
@@ -10,22 +11,20 @@ impl<'a> Analyzer<'a> {
     let right = if node.r#await {
       right.consume(self);
       self.refer_dep(AstKind2::ForOfStatement(node));
-      self.factory.immutable_unknown
+      self.factory.unknown
     } else {
       right
     };
 
     self.declare_for_statement_left(&node.left);
 
-    let Some(iterated) =
-      right.iterate_result_union(self, self.consumable(AstKind2::ForOfStatement(node)))
-    else {
+    let Some(iterated) = right.iterate_result_union(self, AstKind2::ForOfStatement(node)) else {
       return;
     };
 
-    let dep = self.consumable((AstKind2::ForOfStatement(node), right));
+    let dep = self.dep((AstKind2::ForOfStatement(node), right));
 
-    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, vec![dep], Some(false));
+    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
     self.exec_loop(move |analyzer| {
       analyzer.declare_for_statement_left(&node.left);
       analyzer.init_for_statement_left(&node.left, iterated);

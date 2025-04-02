@@ -1,15 +1,14 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, LiteralEntity},
-  transformer::Transformer,
-};
 use oxc::{
+  allocator,
   ast::ast::{Expression, UnaryExpression, UnaryOperator},
   span::SPAN,
 };
 use oxc_ecmascript::ToInt32;
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
+  value::LiteralValue,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_unary_expression(&mut self, node: &'a UnaryExpression) -> Entity<'a> {
@@ -20,7 +19,7 @@ impl<'a> Analyzer<'a> {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let key = self.factory.string(&node.property.name);
-          object.delete_property(self, self.consumable(dep), key)
+          object.delete_property(self, dep, key)
         }
         Expression::PrivateFieldExpression(node) => {
           self.add_diagnostic("SyntaxError: private fields can't be deleted");
@@ -30,7 +29,7 @@ impl<'a> Analyzer<'a> {
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
           let key = self.exec_expression(&node.expression).get_to_property_key(self);
-          object.delete_property(self, self.consumable(dep), key)
+          object.delete_property(self, dep, key)
         }
         Expression::Identifier(_node) => {
           self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");
@@ -73,19 +72,17 @@ impl<'a> Analyzer<'a> {
       ),
       UnaryOperator::BitwiseNot => self.factory.computed(
         if let Some(literals) = argument.get_to_numeric(self).get_to_literals(self) {
-          self.factory.union(
-            literals
-              .into_iter()
-              .map(|lit| match lit {
-                LiteralEntity::Number(num, _) => {
-                  let num = !num.0.to_int_32();
-                  self.factory.number(num as f64, None)
-                }
-                LiteralEntity::NaN => self.factory.number(-1f64, None),
-                _ => self.factory.unknown_primitive,
-              })
-              .collect::<Vec<_>>(),
-          )
+          self.factory.union(allocator::Vec::from_iter_in(
+            literals.into_iter().map(|lit| match lit {
+              LiteralValue::Number(num, _) => {
+                let num = !num.0.to_int_32();
+                self.factory.number(num as f64, None)
+              }
+              LiteralValue::NaN => self.factory.number(-1f64, None),
+              _ => self.factory.unknown_primitive,
+            }),
+            self.allocator,
+          ))
         } else {
           self.factory.computed_unknown_primitive(argument)
         },

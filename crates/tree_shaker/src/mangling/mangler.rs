@@ -1,7 +1,8 @@
-use super::{utils::get_mangled_name, MangleAtom};
 use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
 use rustc_hash::FxHashSet;
+
+use super::{MangleAtom, utils::get_mangled_name};
 
 oxc_index::define_index_type! {
   pub struct IdentityGroupId = u32;
@@ -18,6 +19,7 @@ pub enum AtomState<'a> {
   Constrained(Option<IdentityGroupId>, FxHashSet<UniquenessGroupId>),
   Constant(&'a str),
   NonMangable,
+  Preserved,
 }
 
 pub struct Mangler<'a> {
@@ -26,6 +28,7 @@ pub struct Mangler<'a> {
   pub allocator: &'a Allocator,
 
   pub atoms: IndexVec<MangleAtom, AtomState<'a>>,
+  pub builtin_atom: MangleAtom,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
@@ -35,10 +38,13 @@ pub struct Mangler<'a> {
 
 impl<'a> Mangler<'a> {
   pub fn new(enabled: bool, allocator: &'a Allocator) -> Self {
+    let mut atoms = IndexVec::new();
+    let builtin_atom = atoms.push(AtomState::Preserved);
     Self {
       enabled,
       allocator,
-      atoms: IndexVec::new(),
+      atoms,
+      builtin_atom,
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
     }
@@ -70,13 +76,14 @@ impl<'a> Mangler<'a> {
           for &index in uniqueness_groups {
             self.uniqueness_groups[index].1 = n + 1;
           }
-          self.allocator.alloc(name)
+          self.allocator.alloc_str(&name)
         };
         self.atoms[atom] = AtomState::Constant(resolved);
         Some(resolved)
       }
       AtomState::Constant(name) => Some(*name),
       AtomState::NonMangable => None,
+      AtomState::Preserved => None,
     }
   }
 
@@ -96,13 +103,14 @@ impl<'a> Mangler<'a> {
           }
           AtomState::Constant(s) => return *s,
           AtomState::NonMangable => unreachable!(),
+          AtomState::Preserved => {}
         }
       }
       let name = get_mangled_name(n);
       for index in related_uniq_groups {
         uniqueness_groups[index].1 = n + 1;
       }
-      self.allocator.alloc(name)
+      self.allocator.alloc_str(&name)
     })
   }
 }

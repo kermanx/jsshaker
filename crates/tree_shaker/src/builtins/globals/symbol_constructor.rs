@@ -1,11 +1,12 @@
-use crate::{
-  builtins::{constants::SYMBOL_CONSTRUCTOR_OBJECT_ID, Builtins},
-  entity::{ObjectPropertyValue, ObjectPrototype},
-  init_namespace,
-};
 use std::borrow::BorrowMut;
 
-impl<'a> Builtins<'a> {
+use crate::{
+  builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
+  init_namespace,
+  value::{ObjectPropertyValue, ObjectPrototype},
+};
+
+impl Builtins<'_> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 
@@ -14,10 +15,10 @@ impl<'a> Builtins<'a> {
       ObjectPrototype::Builtin(&self.prototypes.function),
       false,
     );
-    object.init_rest(ObjectPropertyValue::Field(factory.immutable_unknown, true));
+    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
-    init_namespace!(object, {
-      "prototype" => factory.immutable_unknown,
+    init_namespace!(object, factory, {
+      "prototype" => factory.unknown,
       // "asyncIterator" => factory.string("__#asyncIterator__"),
       // "hasInstance" => factory.string("__#hasInstance__"),
       // "isConcatSpreadable" => factory.string("__#isConcatSpreadable__"),
@@ -34,6 +35,6 @@ impl<'a> Builtins<'a> {
       // "toString" => factory.string("__#toString__"),
     });
 
-    self.globals.borrow_mut().insert("Symbol", object);
+    self.globals.borrow_mut().insert("Symbol", object.into());
   }
 }

@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{Expression, SequenceExpression},
   span::SPAN,
 };
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_sequence_expression(&mut self, node: &'a SequenceExpression<'a>) -> Entity<'a> {

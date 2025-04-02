@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{ChainElement, Expression, MemberExpression},
@@ -6,6 +5,8 @@ use oxc::{
   },
   span::{GetSpan, SPAN},
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 /// Returns Some((node, same_chain))
 fn unwrap_to_member_expression<'a>(
@@ -32,6 +33,10 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a Expression<'a>,
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>, Entity<'a>), Entity<'a>> {
+    if matches!(node, Expression::Super(_)) {
+      return Ok((0, self.get_super(), None, self.get_this()));
+    }
+
     let dep = AstKind2::Callee(node);
     if let Some((member_expr, same_chain)) = unwrap_to_member_expression(node) {
       if same_chain {
@@ -50,7 +55,7 @@ impl<'a> Analyzer<'a> {
               self.factory.computed(object, dep),
             )
           }
-          Err(value) => (0, value, None, self.factory.immutable_unknown),
+          Err(value) => (0, value, None, self.factory.unknown),
         })
       }
     } else {

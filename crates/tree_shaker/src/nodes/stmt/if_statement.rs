@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{IfStatement, Statement},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
@@ -68,7 +69,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let acc_dep = Some(self.consumable((acc_dep_1, acc_dep_2)));
+    let acc_dep = Some(self.dep((acc_dep_1, acc_dep_2)));
     if both_exit {
       if let Some(acc_dep) =
         self.exit_to_impl(exit_target_inner, self.scoping.cf.stack.len(), true, acc_dep)

@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 use oxc::ast::ast::{ContinueStatement, Statement};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_continue_statement(&mut self, node: &'a ContinueStatement<'a>) {

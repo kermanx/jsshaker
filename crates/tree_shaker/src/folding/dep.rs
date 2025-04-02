@@ -1,23 +1,20 @@
 use std::{cell::RefCell, mem};
 
-use crate::{
-  analyzer::Analyzer,
-  consumable::ConsumableTrait,
-  entity::{Entity, LiteralEntity},
-  mangling::MangleAtom,
-};
-
 use super::{FoldingData, FoldingState};
+use crate::{
+  analyzer::Analyzer, dep::CustomDepTrait, entity::Entity, mangling::MangleAtom,
+  value::LiteralValue,
+};
 
 #[derive(Debug)]
 pub struct FoldableDep<'a> {
   pub data: &'a RefCell<FoldingData<'a>>,
-  pub literal: LiteralEntity<'a>,
+  pub literal: LiteralValue<'a>,
   pub value: Entity<'a>,
   pub mangle_atom: Option<MangleAtom>,
 }
 
-impl<'a> ConsumableTrait<'a> for FoldableDep<'a> {
+impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let mut data = self.data.borrow_mut();
 
@@ -45,12 +42,12 @@ impl<'a> ConsumableTrait<'a> for FoldableDep<'a> {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct UnFoldableDep<'a> {
   pub data: &'a RefCell<FoldingData<'a>>,
 }
 
-impl<'a> ConsumableTrait<'a> for UnFoldableDep<'a> {
+impl<'a> CustomDepTrait<'a> for UnFoldableDep<'a> {
   fn consume(&self, _analyzer: &mut Analyzer<'a>) {
     let mut data = self.data.borrow_mut();
     data.state = FoldingState::UnFoldable;

@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, transformer::Transformer, utils::StatementVecData};
 use oxc::{
   allocator::Vec,
   ast::{ast::Statement, match_declaration, match_module_declaration},
 };
+
+use crate::{analyzer::Analyzer, transformer::Transformer, utils::StatementVecData};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_statement_vec(

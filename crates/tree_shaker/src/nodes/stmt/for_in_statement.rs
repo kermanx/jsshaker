@@ -1,21 +1,21 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 use oxc::{
   ast::ast::{ForInStatement, Statement},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
     let right = self.exec_expression(&node.right);
 
     if let Some(keys) = right.get_own_keys(self) {
-      let dep =
-        right.get_destructable(self, self.factory.consumable(AstKind2::ForInStatement(node)));
-      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, vec![dep], Some(false));
+      let dep = self.factory.dep((right.shallow_dep(), AstKind2::ForInStatement(node)));
+      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       for (definite, key) in keys {
         self.push_cf_scope_with_deps(
           CfScopeKind::LoopContinue,
-          vec![self.factory.always_mangable_dep(key)],
+          self.factory.vec1(self.factory.always_mangable_dep(key)),
           if definite { Some(false) } else { None },
         );
         self.push_variable_scope();
@@ -34,10 +34,10 @@ impl<'a> Analyzer<'a> {
       }
       self.pop_cf_scope();
     } else {
-      let dep = self.consumable((AstKind2::ForInStatement(node), right));
-      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, vec![dep], Some(false));
+      let dep = self.dep((AstKind2::ForInStatement(node), right));
+      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       self.exec_loop(move |analyzer| {
-        analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, vec![], None);
+        analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, analyzer.factory.vec(), None);
         analyzer.push_variable_scope();
 
         analyzer.declare_for_statement_left(&node.left);

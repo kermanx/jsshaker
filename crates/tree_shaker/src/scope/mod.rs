@@ -1,30 +1,27 @@
 pub mod call_scope;
 pub mod cf_scope;
-pub mod conditional;
-pub mod exhaustive;
-pub mod r#loop;
+// pub mod r#loop;
 mod scope_tree;
 pub mod try_scope;
-mod utils;
+// mod utils;
 pub mod variable_scope;
 
-use crate::{
-  analyzer::Analyzer,
-  consumable::{Consumable, ConsumableTrait, ConsumableVec},
-  dep::DepId,
-  entity::{Entity, EntityFactory},
-  module::ModuleId,
-  utils::{CalleeInfo, CalleeNode},
-};
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
-use oxc::semantic::SymbolId;
-use oxc_index::Idx;
 use scope_tree::ScopeTree;
 use try_scope::TryScope;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
+
+use crate::{
+  analyzer::{Analyzer, Factory},
+  dep::{Dep, DepAtom, DepTrait, DepVec},
+  entity::Entity,
+  module::ModuleId,
+  utils::{CalleeInfo, CalleeNode},
+  value::ObjectId,
+};
 
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
@@ -32,20 +29,18 @@ pub struct Scoping<'a> {
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
   pub pure: usize,
 
-  pub object_scope_id: VariableScopeId,
   pub object_symbol_counter: usize,
 }
 
 impl<'a> Scoping<'a> {
-  pub fn new(factory: &EntityFactory<'a>) -> Self {
+  pub fn new(factory: &Factory<'a>) -> Self {
     let mut variable = ScopeTree::new();
-    variable.push(VariableScope::new_with_this(factory.unknown()));
-    let object_scope_id = variable.add_special(VariableScope::new());
+    variable.push(VariableScope::new_with_this(factory.unknown));
     let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Root, vec![], Some(false)));
+    cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), Some(false)));
     Scoping {
-      call: vec![CallScope::new(
-        DepId::from_counter(),
+      call: vec![CallScope::new_in(
+        DepAtom::from_counter(),
         CalleeInfo {
           module_id: ModuleId::from(0),
           node: CalleeNode::Root,
@@ -58,35 +53,19 @@ impl<'a> Scoping<'a> {
         VariableScopeId::from(0),
         false,
         false,
+        factory.allocator,
       )],
       variable,
       cf,
       pure: 0,
 
-      object_scope_id,
       object_symbol_counter: 128,
     }
   }
 
-  pub fn assert_final_state(&mut self) {
-    assert_eq!(self.call.len(), 1);
-    assert_eq!(self.variable.current_depth(), 0);
-    assert_eq!(self.cf.current_depth(), 1);
-    assert_eq!(self.pure, 0);
-
-    for scope in self.cf.iter_all() {
-      if let CfScopeKind::Exhaustive(data) = &scope.kind {
-        assert!(data.clean);
-      }
-    }
-
-    #[cfg(feature = "flame")]
-    self.call.pop().unwrap().scope_guard.end();
-  }
-
-  pub fn alloc_object_id(&mut self) -> SymbolId {
+  pub fn alloc_object_id(&mut self) -> ObjectId {
     self.object_symbol_counter += 1;
-    SymbolId::from_usize(self.object_symbol_counter)
+    ObjectId::from_usize(self.object_symbol_counter)
   }
 }
 
@@ -143,13 +122,13 @@ impl<'a> Analyzer<'a> {
   pub fn push_call_scope(
     &mut self,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     variable_scope_stack: Vec<VariableScopeId>,
     is_async: bool,
     is_generator: bool,
     consume: bool,
   ) {
-    let dep_id = DepId::from_counter();
+    let dep_id = DepAtom::from_counter();
     if consume {
       self.refer_dep(dep_id);
     }
@@ -159,11 +138,11 @@ impl<'a> Analyzer<'a> {
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function,
-      vec![call_dep, self.consumable(dep_id)],
+      self.factory.vec1(self.dep((call_dep, dep_id))),
       Some(false),
     );
 
-    self.scoping.call.push(CallScope::new(
+    self.scoping.call.push(CallScope::new_in(
       dep_id,
       callee,
       old_variable_scope_stack,
@@ -171,6 +150,7 @@ impl<'a> Analyzer<'a> {
       body_variable_scope,
       is_async,
       is_generator,
+      self.allocator,
     ));
   }
 
@@ -193,13 +173,13 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, exited: Option<bool>) -> usize {
-    self.push_cf_scope_with_deps(kind, vec![], exited)
+    self.push_cf_scope_with_deps(kind, self.factory.vec(), exited)
   }
 
   pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind<'a>,
-    deps: ConsumableVec<'a>,
+    deps: DepVec<'a>,
     exited: Option<bool>,
   ) -> usize {
     self.scoping.cf.push(CfScope::new(kind, deps, exited));
@@ -210,27 +190,27 @@ impl<'a> Analyzer<'a> {
     self.push_cf_scope(CfScopeKind::Indeterminate, None);
   }
 
-  pub fn push_dependent_cf_scope(&mut self, dep: impl ConsumableTrait<'a> + 'a) {
-    self.push_cf_scope_with_deps(CfScopeKind::Dependent, vec![self.consumable(dep)], Some(false));
+  pub fn push_dependent_cf_scope(&mut self, dep: impl DepTrait<'a> + 'a) {
+    self.push_cf_scope_with_deps(
+      CfScopeKind::Dependent,
+      self.factory.vec1(dep.uniform(self.allocator)),
+      Some(false),
+    );
   }
 
   pub fn pop_cf_scope(&mut self) -> CfScopeId {
     self.scoping.cf.pop()
   }
 
-  pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Consumable<'a>> {
-    let mut exec_deps = vec![];
+  pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Dep<'a>> {
+    let mut exec_deps = self.factory.vec();
     for _ in 0..count {
       let id = self.scoping.cf.stack.pop().unwrap();
       if let Some(dep) = self.scoping.cf.get_mut(id).deps.try_collect(self.factory) {
         exec_deps.push(dep);
       }
     }
-    if exec_deps.is_empty() {
-      None
-    } else {
-      Some(self.consumable(exec_deps))
-    }
+    if exec_deps.is_empty() { None } else { Some(self.dep(exec_deps)) }
   }
 
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
@@ -241,7 +221,8 @@ impl<'a> Analyzer<'a> {
   pub fn push_try_scope(&mut self) {
     self.push_indeterminate_cf_scope();
     let cf_scope_depth = self.scoping.cf.current_depth();
-    self.call_scope_mut().try_scopes.push(TryScope::new(cf_scope_depth));
+    let try_scope = TryScope::new_in(cf_scope_depth, self.allocator);
+    self.call_scope_mut().try_scopes.push(try_scope);
   }
 
   pub fn pop_try_scope(&mut self) -> TryScope<'a> {

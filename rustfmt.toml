@@ -5,3 +5,6 @@ use_small_heuristics = "Max"
 
 # Use field initialize shorthand if possible
 use_field_init_shorthand = true
+
+# Only available in unstable
+# group_imports = "StdExternalCrate"

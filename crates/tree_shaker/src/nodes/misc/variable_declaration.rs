@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{VariableDeclaration, VariableDeclarationKind},
 };
+
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declaration(

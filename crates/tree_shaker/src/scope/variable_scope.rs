@@ -1,12 +1,17 @@
-use super::{cf_scope::CfScopeId, exhaustive::ExhaustiveCallback};
+use std::{cell::RefCell, fmt};
+
+use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
+use oxc_index::define_index_type;
+use rustc_hash::FxHashMap;
+
+use super::cf_scope::CfScopeId;
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, consumable::LazyConsumable, entity::Entity,
+  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  ast::DeclarationKind,
+  dep::LazyDep,
+  entity::Entity,
   utils::ast::AstKind2,
 };
-use oxc::semantic::SymbolId;
-use oxc_index::define_index_type;
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::{cell::RefCell, fmt};
 
 define_index_type! {
   pub struct VariableScopeId = u32;
@@ -16,7 +21,7 @@ define_index_type! {
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
-  pub exhausted: Option<LazyConsumable<'a>>,
+  pub exhausted: Option<LazyDep<'a>>,
   pub value: Option<Entity<'a>>,
   pub decl_node: AstKind2<'a>,
 }
@@ -26,7 +31,7 @@ pub struct VariableScope<'a> {
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
-  pub exhaustive_callbacks: FxHashMap<SymbolId, FxHashSet<ExhaustiveCallback<'a>>>,
+  pub super_class: Option<Entity<'a>>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -103,7 +108,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.request_exhaustive_callbacks(false, (id, symbol));
+        self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
       }
     }
   }
@@ -117,21 +122,20 @@ impl<'a> Analyzer<'a> {
   ) {
     let variable = self.scoping.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
 
-    let variable_ref = variable.borrow();
-    if variable_ref.kind.is_redeclarable() {
+    let mut variable = variable.borrow_mut();
+    if variable.kind.is_redeclarable() {
       if let Some(value) = value {
-        drop(variable_ref);
+        drop(variable);
         self.write_on_scope(id, symbol, self.factory.computed(value, init_node));
       } else {
         // Do nothing
       }
-    } else if let Some(deps) = variable_ref.exhausted {
-      deps.push(self, self.consumable((init_node, value)));
+    } else if let Some(deps) = variable.exhausted {
+      deps.push(self, self.dep((init_node, value)));
     } else {
-      drop(variable_ref);
-      variable.borrow_mut().value =
+      variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
-      self.request_exhaustive_callbacks(false, (id, symbol));
+      self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
     }
   }
 
@@ -161,9 +165,9 @@ impl<'a> Analyzer<'a> {
           None
         }
       } else {
-        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
+        let target_cf_scope = variable_ref.cf_scope;
         drop(variable_ref);
-        self.mark_exhaustive_read((id, symbol), target_cf_scope);
+        self.mark_exhaustive_read(ExhaustiveDepId::Variable(id, symbol), target_cf_scope);
         value
       };
 
@@ -194,27 +198,26 @@ impl<'a> Analyzer<'a> {
         let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_node);
 
         if let Some(deps) = variable_ref.exhausted {
-          deps.push(self, self.consumable((dep, new_val)));
+          deps.push(self, self.dep((dep, new_val)));
         } else {
           let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
-            self.mark_exhaustive_write((id, symbol), target_cf_scope)
+            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           } else if !variable_ref.kind.is_redeclarable() {
             // TDZ write
             self.handle_tdz(target_cf_scope);
             (true, false)
           } else {
             // Write uninitialized `var`
-            self.mark_exhaustive_write((id, symbol), target_cf_scope)
+            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           };
           drop(variable_ref);
 
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
-            variable_ref.exhausted =
-              Some(self.factory.new_lazy_consumable(self.consumable((dep, new_val, old_val))));
-            variable_ref.value = Some(self.factory.unknown());
+            variable_ref.exhausted = Some(self.factory.lazy_dep(self.dep((dep, new_val, old_val))));
+            variable_ref.value = Some(self.factory.unknown);
           } else {
             variable_ref.value = Some(self.factory.computed(
               if indeterminate {
@@ -222,12 +225,12 @@ impl<'a> Analyzer<'a> {
               } else {
                 new_val
               },
-              self.consumable(dep),
+              dep,
             ));
           };
           drop(variable_ref);
 
-          self.request_exhaustive_callbacks(should_consume, (id, symbol));
+          self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
         }
       }
       true
@@ -250,8 +253,8 @@ impl<'a> Analyzer<'a> {
         drop(variable_ref);
 
         let mut variable_ref = variable.borrow_mut();
-        variable_ref.exhausted = Some(self.factory.consumed_lazy_consumable);
-        variable_ref.value = Some(self.factory.unknown());
+        variable_ref.exhausted = Some(self.factory.consumed_lazy_dep);
+        variable_ref.value = Some(self.factory.unknown);
       }
       true
     } else {
@@ -262,10 +265,10 @@ impl<'a> Analyzer<'a> {
   fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = self.allocator.alloc(RefCell::new(Variable {
-      exhausted: Some(self.factory.consumed_lazy_consumable),
+      exhausted: Some(self.factory.consumed_lazy_dep),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.stack[cf_scope_depth],
-      value: Some(self.factory.unknown()),
+      value: Some(self.factory.unknown),
       decl_node: AstKind2::Environment,
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
@@ -302,7 +305,7 @@ impl<'a> Analyzer<'a> {
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if exporting {
-      let name = self.semantic().symbols().get_name(symbol).into();
+      let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
       self.module_info_mut().named_exports.insert(name, (variable_scope, symbol));
     }
 
@@ -332,7 +335,7 @@ impl<'a> Analyzer<'a> {
       }
     }
     self.mark_unresolved_reference(symbol);
-    Some(self.factory.unknown())
+    Some(self.factory.unknown)
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
@@ -347,7 +350,7 @@ impl<'a> Analyzer<'a> {
   }
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
-    if self.semantic().symbols().get_flags(symbol).is_function_scoped_declaration() {
+    if self.semantic().scoping().symbol_flags(symbol).is_function_scoped_declaration() {
       self.mark_untracked_on_scope(symbol);
     } else {
       self.throw_builtin_error("Unresolved identifier reference");
@@ -371,5 +374,16 @@ impl<'a> Analyzer<'a> {
       }
     }
     unreachable!()
+  }
+
+  pub fn get_super(&mut self) -> Entity<'a> {
+    for depth in (0..self.scoping.variable.stack.len()).rev() {
+      let scope = self.scoping.variable.get_from_depth(depth);
+      if let Some(super_class) = scope.super_class {
+        return super_class;
+      }
+    }
+    self.throw_builtin_error("Unsupported reference to 'super'");
+    self.factory.unknown
   }
 }

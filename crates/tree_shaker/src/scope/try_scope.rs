@@ -1,25 +1,27 @@
+use oxc::allocator::{self, Allocator};
+
 use crate::{analyzer::Analyzer, entity::Entity};
 
 #[derive(Debug)]
 pub struct TryScope<'a> {
   pub may_throw: bool,
-  pub thrown_values: Vec<Entity<'a>>,
+  pub thrown_values: allocator::Vec<'a, Entity<'a>>,
   /// Here we use index in current stack instead of ScopeId
   pub cf_scope_depth: usize,
 }
 
 impl<'a> TryScope<'a> {
-  pub fn new(cf_scope_depth: usize) -> Self {
-    TryScope { may_throw: false, thrown_values: Vec::new(), cf_scope_depth }
+  pub fn new_in(cf_scope_depth: usize, allocator: &'a Allocator) -> Self {
+    TryScope { may_throw: false, thrown_values: allocator::Vec::new_in(allocator), cf_scope_depth }
   }
 
   pub fn thrown_val(self, analyzer: &Analyzer<'a>) -> Option<Entity<'a>> {
     // Always unknown here
     self.may_throw.then(|| {
       if self.thrown_values.is_empty() {
-        analyzer.factory.unknown()
+        analyzer.factory.unknown
       } else {
-        analyzer.factory.computed_unknown(analyzer.consumable(self.thrown_values))
+        analyzer.factory.computed_unknown(self.thrown_values)
       }
     })
   }
@@ -48,17 +50,17 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(message);
     }
 
-    self.explicit_throw_impl(self.factory.unknown());
+    self.explicit_throw_impl(self.factory.unknown);
 
     let try_scope = self.try_scope();
     self.exit_to(try_scope.cf_scope_depth);
   }
 
-  pub fn forward_throw(&mut self, values: Vec<Entity<'a>>) {
+  pub fn forward_throw(&mut self, values: allocator::Vec<'a, Entity<'a>>) {
     if values.is_empty() {
       self.may_throw();
     } else {
-      let thrown_val = self.factory.computed_unknown(self.consumable(values));
+      let thrown_val = self.factory.computed_unknown(values);
       self.explicit_throw_impl(thrown_val);
 
       let try_scope = self.try_scope();

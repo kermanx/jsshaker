@@ -1,14 +1,15 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{ArrayExpression, ArrayExpressionElement, Expression, SpreadElement},
   span::GetSpan,
 };
 
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Entity<'a> {
     let array = self.new_empty_array();
 
-    let mut rest = vec![];
+    let mut rest = self.factory.vec();
 
     for element in &node.elements {
       match element {
@@ -25,7 +26,7 @@ impl<'a> Analyzer<'a> {
           }
         }
         _ => {
-          let dep = self.consumable(AstKind2::ArrayExpressionElement(element));
+          let dep = AstKind2::ArrayExpressionElement(element);
           let value = self.exec_expression(element.to_expression());
           let element = self.factory.computed(value, dep);
           if rest.is_empty() {
@@ -41,7 +42,7 @@ impl<'a> Analyzer<'a> {
       array.init_rest(self.factory.union(rest));
     }
 
-    array
+    array.into()
   }
 }
 

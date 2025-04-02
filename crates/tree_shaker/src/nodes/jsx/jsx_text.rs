@@ -1,9 +1,10 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, JSXChild, JSXText};
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_text(&mut self, _node: &'a JSXText<'a>) -> Entity<'a> {
-    self.factory.immutable_unknown
+    self.factory.unknown
   }
 }
 
@@ -13,8 +14,8 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_jsx_text_need_val(&self, node: &'a JSXText<'a>) -> JSXChild<'a> {
-    let JSXText { span, value } = node;
+    let JSXText { span, value, raw } = node;
 
-    self.ast_builder.jsx_child_jsx_text(*span, value)
+    self.ast_builder.jsx_child_text(*span, value, *raw)
   }
 }

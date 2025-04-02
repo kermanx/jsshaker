@@ -1,14 +1,15 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   allocator,
   ast::ast::{Expression, JSXMemberExpression},
 };
 
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_member_expression(&mut self, node: &'a JSXMemberExpression<'a>) -> Entity<'a> {
     let object = self.exec_jsx_member_expression_object(&node.object);
     let key = self.factory.string(&node.property.name);
-    object.get_property(self, self.consumable(AstKind2::JSXMemberExpression(node)), key)
+    object.get_property(self, AstKind2::JSXMemberExpression(node), key)
   }
 }
 
@@ -26,7 +27,7 @@ impl<'a> Transformer<'a> {
       Some(Expression::from(self.ast_builder.member_expression_static(
         *span,
         object,
-        self.ast_builder.identifier_name(property.span, property.name.clone()),
+        self.ast_builder.identifier_name(property.span, property.name),
         false,
       )))
     } else {

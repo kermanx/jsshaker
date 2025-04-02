@@ -1,17 +1,18 @@
-use crate::{
-  ast::{Arguments, AstKind2},
-  entity::Entity,
-  transformer::Transformer,
-  Analyzer,
-};
 use oxc::{
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
 
+use crate::{
+  Analyzer,
+  ast::{Arguments, AstKind2},
+  entity::Entity,
+  transformer::Transformer,
+};
+
 impl<'a> Analyzer<'a> {
   pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
-    let mut arguments = vec![];
+    let mut arguments = self.factory.vec();
     for argument in node {
       let (spread, val) = match argument {
         Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),

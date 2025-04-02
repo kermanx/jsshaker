@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 use oxc::{allocator, ast::ast::StaticBlock};
+
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_static_block(&mut self, node: &'a StaticBlock<'a>) {

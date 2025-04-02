@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{ast::ast::PropertyKey, span::GetSpan};
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {

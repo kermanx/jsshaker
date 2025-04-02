@@ -1,43 +1,36 @@
+use oxc::ast::{
+  NONE,
+  ast::{ArrowFunctionExpression, Expression},
+};
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  consumable::Consumable,
+  dep::Dep,
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
 };
-use oxc::ast::{
-  ast::{ArrowFunctionExpression, Expression},
-  NONE,
-};
-use std::rc::Rc;
 
 impl<'a> Analyzer<'a> {
   pub fn exec_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    self.new_function(CalleeNode::ArrowFunctionExpression(node))
+    self.new_function(CalleeNode::ArrowFunctionExpression(node)).into()
   }
 
   pub fn call_arrow_function_expression(
     &mut self,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
-    variable_scopes: Rc<Vec<VariableScopeId>>,
+    variable_scopes: &'a [VariableScopeId],
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    self.push_call_scope(
-      callee,
-      call_dep,
-      variable_scopes.as_ref().clone(),
-      node.r#async,
-      false,
-      consume,
-    );
+    self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), node.r#async, false, consume);
 
     self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
     if node.expression {

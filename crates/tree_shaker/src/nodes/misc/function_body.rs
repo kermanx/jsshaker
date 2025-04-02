@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 use oxc::{
   ast::ast::{ExpressionStatement, FunctionBody, Statement},
   semantic::ScopeId,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, utils::StatementVecData};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function_body(&mut self, node: &'a FunctionBody<'a>) {
@@ -13,7 +14,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
     if let [Statement::ExpressionStatement(expr)] = node.statements.as_slice() {
-      let dep = self.consumable(AstKind2::FunctionBody(node));
+      let dep = AstKind2::FunctionBody(node);
       let value = self.exec_expression(&expr.expression);
       let value = self.factory.computed(value, dep);
       let call_scope = self.call_scope_mut();

@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::ast::ast::{Expression, YieldExpression};
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_yield_expression(&mut self, node: &'a YieldExpression<'a>) -> Entity<'a> {
@@ -9,7 +10,7 @@ impl<'a> Analyzer<'a> {
       let argument = self.exec_expression(argument);
       argument.consume(self);
     }
-    self.factory.unknown()
+    self.factory.unknown
   }
 }
 

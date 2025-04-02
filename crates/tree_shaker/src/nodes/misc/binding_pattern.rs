@@ -1,19 +1,19 @@
-use crate::{
-  ast::{AstKind2, DeclarationKind},
-  dep::DepId,
-  entity::Entity,
-  transformer::Transformer,
-  Analyzer,
-};
 use oxc::{
   ast::{
+    NONE,
     ast::{
       ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
       ObjectPattern,
     },
-    NONE,
   },
   span::GetSpan,
+};
+
+use crate::{
+  Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  entity::Entity,
+  transformer::Transformer,
 };
 
 #[derive(Debug, Default)]
@@ -67,7 +67,7 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.throw_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown()
+          self.factory.unknown
         });
 
         let is_nullish = init.test_nullish();
@@ -84,7 +84,7 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          let dep = self.consumable(DepId::from(AstKind2::BindingProperty(property)));
+          let dep = AstKind2::BindingProperty(property);
 
           self.push_dependent_cf_scope(init);
           let key = self.exec_property_key(&property.key);
@@ -103,12 +103,12 @@ impl<'a> Analyzer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.throw_builtin_error("Missing initializer in destructuring declaration");
-          self.factory.unknown()
+          self.factory.unknown
         });
 
         let (element_values, rest_value, dep) = init.destruct_as_array(
           self,
-          self.consumable(AstKind2::ArrayPattern(node)),
+          AstKind2::ArrayPattern(node),
           node.elements.len(),
           node.rest.is_some(),
         );
@@ -184,9 +184,7 @@ impl<'a> Transformer<'a> {
 
           let transformed_key = self.transform_property_key(key, need_property);
           let shorthand = *shorthand
-            && transformed_key
-              .as_ref()
-              .map_or(true, |transformed| transformed.name() == key.name());
+            && transformed_key.as_ref().is_none_or(|transformed| transformed.name() == key.name());
           if shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
             if self.transform_binding_pattern(value, false).is_some()
               || need_property

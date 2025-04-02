@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{CatchClause, CatchParameter},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_catch_clause(&mut self, node: &'a CatchClause<'a>, value: Entity<'a>) {

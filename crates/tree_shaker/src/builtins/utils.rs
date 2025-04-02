@@ -1,16 +1,18 @@
 #[macro_export]
 macro_rules! init_namespace {
-  ($ns:expr, { $($k:expr => $v:expr,)* }) => {
+  ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::entity::{ObjectProperty, ObjectPropertyValue};
-      let mut string_keyed = $ns.string_keyed.borrow_mut();
-      $(string_keyed.insert(
-        $k,
+      use $crate::value::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
+      use $crate::dep::DepCollector;
+      let mut keyed = $ns.keyed.borrow_mut();
+      $(keyed.insert(
+        ObjectPropertyKey::String($k),
         ObjectProperty {
+          consumed: false,
           definite: true,
           enumerable: false,
-          possible_values: vec![ObjectPropertyValue::Field($v, true)],
-          non_existent: Default::default(),
+          possible_values:  $factory.vec1(ObjectPropertyValue::Field($v, true)),
+          non_existent: DepCollector::new($factory.vec()),
           key: None,
           mangling: None,
         },
@@ -21,17 +23,19 @@ macro_rules! init_namespace {
 
 #[macro_export]
 macro_rules! init_object {
-  ($ns:expr, { $($k:expr => $v:expr,)* }) => {
+  ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
-      use $crate::entity::{ObjectProperty, ObjectPropertyValue};
-      let mut string_keyed = $ns.string_keyed.borrow_mut();
-      $(string_keyed.insert(
-        $k,
+      use $crate::value::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
+      use $crate::dep::DepCollector;
+      let mut keyed = $ns.keyed.borrow_mut();
+      $(keyed.insert(
+        ObjectPropertyKey::String($k),
         ObjectProperty {
+          consumed: false,
           definite: true,
           enumerable: true,
-          possible_values: vec![ObjectPropertyValue::Field($v, false)],
-          non_existent: Default::default(),
+          possible_values: $factory.vec1(ObjectPropertyValue::Field($v, false)),
+          non_existent: DepCollector::new($factory.vec()),
           key: None,
           mangling: None,
         },

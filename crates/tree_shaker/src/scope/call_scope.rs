@@ -1,11 +1,17 @@
-use super::{try_scope::TryScope, variable_scope::VariableScopeId};
-use crate::{
-  analyzer::Analyzer, consumable::ConsumableTrait, dep::DepId, entity::Entity, utils::CalleeInfo,
-};
 use std::mem;
 
+use oxc::allocator::{self, Allocator};
+
+use super::{try_scope::TryScope, variable_scope::VariableScopeId};
+use crate::{
+  analyzer::Analyzer,
+  dep::{DepAtom, DepTrait},
+  entity::Entity,
+  utils::CalleeInfo,
+};
+
 pub struct CallScope<'a> {
-  pub call_id: DepId,
+  pub call_id: DepAtom,
   pub callee: CalleeInfo<'a>,
   pub old_variable_scope_stack: Vec<VariableScopeId>,
   pub cf_scope_depth: usize,
@@ -21,14 +27,15 @@ pub struct CallScope<'a> {
 }
 
 impl<'a> CallScope<'a> {
-  pub fn new(
-    call_id: DepId,
+  pub fn new_in(
+    call_id: DepAtom,
     callee: CalleeInfo<'a>,
     old_variable_scope_stack: Vec<VariableScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: VariableScopeId,
     is_async: bool,
     is_generator: bool,
+    allocator: &'a Allocator,
   ) -> Self {
     CallScope {
       call_id,
@@ -39,7 +46,7 @@ impl<'a> CallScope<'a> {
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      try_scopes: vec![TryScope::new(cf_scope_depth)],
+      try_scopes: vec![TryScope::new_in(cf_scope_depth, allocator)],
       need_consume_arguments: false,
 
       #[cfg(feature = "flame")]
@@ -55,15 +62,13 @@ impl<'a> CallScope<'a> {
     let mut promise_error = None;
     if try_scope.may_throw {
       if self.is_generator {
-        let unknown = analyzer.factory.unknown();
+        let unknown = analyzer.factory.unknown;
         let parent_try_scope = analyzer.try_scope_mut();
         parent_try_scope.may_throw = true;
         if !try_scope.thrown_values.is_empty() {
           parent_try_scope.thrown_values.push(unknown);
         }
-        for value in try_scope.thrown_values {
-          value.consume(analyzer);
-        }
+        analyzer.consume(try_scope.thrown_values);
       } else if self.is_async {
         promise_error = Some(try_scope.thrown_values);
       } else {
@@ -74,14 +79,14 @@ impl<'a> CallScope<'a> {
     let value = if self.returned_values.is_empty() {
       analyzer.factory.undefined
     } else {
-      analyzer.factory.union(self.returned_values)
+      analyzer.factory.union(allocator::Vec::from_iter_in(
+        self.returned_values.iter().copied(),
+        analyzer.allocator,
+      ))
     };
 
-    let value = if self.is_async {
-      analyzer.factory.computed_unknown(analyzer.consumable((value, promise_error)))
-    } else {
-      value
-    };
+    let value =
+      if self.is_async { analyzer.factory.computed_unknown((value, promise_error)) } else { value };
 
     #[cfg(feature = "flame")]
     self.scope_guard.end();
@@ -91,10 +96,10 @@ impl<'a> CallScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn return_value(&mut self, value: Entity<'a>, dep: impl ConsumableTrait<'a> + 'a) {
+  pub fn return_value(&mut self, value: Entity<'a>, dep: impl DepTrait<'a> + 'a) {
     let call_scope = self.call_scope();
     let exec_dep = self.get_exec_dep(call_scope.cf_scope_depth);
-    let value = self.factory.computed(value, self.consumable((exec_dep, dep)));
+    let value = self.factory.computed(value, (exec_dep, dep));
 
     let call_scope = self.call_scope_mut();
     call_scope.returned_values.push(value);

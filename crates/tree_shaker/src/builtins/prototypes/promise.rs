@@ -1,10 +1,10 @@
-use super::{object::create_object_prototype, Prototype};
-use crate::{entity::EntityFactory, init_prototype};
+use super::{BuiltinPrototype, object::create_object_prototype};
+use crate::{analyzer::Factory, init_prototype};
 
-pub fn create_promise_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
+pub fn create_promise_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Promise", create_object_prototype(factory), {
-    "finally" => factory.immutable_unknown,
-    "then" => factory.immutable_unknown,
-    "catch" => factory.immutable_unknown,
+    "finally" => factory.unknown,
+    "then" => factory.unknown,
+    "catch" => factory.unknown,
   })
 }

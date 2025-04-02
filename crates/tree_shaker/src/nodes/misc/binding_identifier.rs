@@ -1,10 +1,11 @@
+use oxc::ast::ast::BindingIdentifier;
+
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
   entity::Entity,
   transformer::Transformer,
 };
-use oxc::ast::ast::BindingIdentifier;
 
 impl<'a> Analyzer<'a> {
   pub fn declare_binding_identifier(

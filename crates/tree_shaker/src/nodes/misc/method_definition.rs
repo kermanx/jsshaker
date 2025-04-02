@@ -1,11 +1,12 @@
-use crate::transformer::Transformer;
 use oxc::ast::{
+  NONE,
   ast::{
     BindingPatternKind, ClassElement, Function, MethodDefinition, MethodDefinitionKind,
     PropertyDefinitionType,
   },
-  NONE,
 };
+
+use crate::transformer::Transformer;
 
 impl<'a> Transformer<'a> {
   pub fn transform_method_definition(
@@ -27,7 +28,11 @@ impl<'a> Transformer<'a> {
     } = node;
 
     if let Some(mut transformed_value) = self.transform_function(value, false) {
-      let key = self.transform_property_key(key, true).unwrap();
+      let key = if node.kind.is_constructor() {
+        self.clone_node(key)
+      } else {
+        self.transform_property_key(key, true).unwrap()
+      };
 
       if *kind == MethodDefinitionKind::Set {
         self.patch_method_definition_params(value, &mut transformed_value);
@@ -48,7 +53,7 @@ impl<'a> Transformer<'a> {
       ))
     } else {
       let key = self.transform_property_key(key, false);
-      return key.map(|key| {
+      key.map(|key| {
         self.ast_builder.class_element_property_definition(
           *span,
           PropertyDefinitionType::PropertyDefinition,
@@ -65,7 +70,7 @@ impl<'a> Transformer<'a> {
           NONE,
           None,
         )
-      });
+      })
     }
   }
 

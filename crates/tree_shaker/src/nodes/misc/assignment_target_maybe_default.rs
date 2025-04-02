@@ -1,8 +1,9 @@
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::ast::{AssignmentTargetMaybeDefault, AssignmentTargetWithDefault},
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
 #[derive(Debug, Default)]
 pub struct WithDefaultData {

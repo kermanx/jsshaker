@@ -1,4 +1,3 @@
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 use oxc::{
   ast::{
     ast::{AssignmentTarget, Expression},
@@ -6,6 +5,8 @@ use oxc::{
   },
   span::GetSpan,
 };
+
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_read(

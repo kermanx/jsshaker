@@ -24,14 +24,15 @@ mod unary_expression;
 mod update_expression;
 mod yield_expression;
 
-use crate::{
-  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
-};
 use oxc::{
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
 use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
+
+use crate::{
+  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
@@ -76,7 +77,8 @@ impl<'a> Analyzer<'a> {
       Expression::JSXElement(node) => self.exec_jsx_element(node),
       Expression::JSXFragment(node) => self.exec_jsx_fragment(node),
 
-      Expression::TSAsExpression(_)
+      Expression::V8IntrinsicExpression(_)
+      | Expression::TSAsExpression(_)
       | Expression::TSInstantiationExpression(_)
       | Expression::TSTypeAssertion(_)
       | Expression::TSNonNullExpression(_)
@@ -153,7 +155,8 @@ impl<'a> Transformer<'a> {
       Expression::JSXElement(node) => self.transform_jsx_element(node, need_val),
       Expression::JSXFragment(node) => self.transform_jsx_fragment(node, need_val),
 
-      Expression::TSAsExpression(_)
+      Expression::V8IntrinsicExpression(_)
+      | Expression::TSAsExpression(_)
       | Expression::TSInstantiationExpression(_)
       | Expression::TSTypeAssertion(_)
       | Expression::TSNonNullExpression(_)

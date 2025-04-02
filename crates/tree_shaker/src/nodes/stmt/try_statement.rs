@@ -1,5 +1,6 @@
-use crate::{analyzer::Analyzer, transformer::Transformer};
 use oxc::ast::ast::{Statement, TryStatement};
+
+use crate::{analyzer::Analyzer, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
@@ -14,11 +15,11 @@ impl<'a> Analyzer<'a> {
         // does not throw any value, so we should skip the `catch` block.
         // However, we can guarantee that all possible exceptions tracked.
         // For example, KeyboardInterrupt, which is not tracked, can be thrown.
-        try_scope.thrown_val(self).unwrap_or_else(|| self.factory.unknown()),
+        try_scope.thrown_val(self).unwrap_or(self.factory.unknown),
       );
       None
     } else {
-      try_scope.may_throw.then(|| try_scope.thrown_values.clone())
+      try_scope.may_throw.then_some(try_scope.thrown_values)
     };
 
     if let Some(finalizer) = &node.finalizer {
@@ -27,7 +28,7 @@ impl<'a> Analyzer<'a> {
 
     if !self.cf_scope().must_exited() {
       if let Some(uncaught) = uncaught {
-        self.forward_throw(uncaught.clone());
+        self.forward_throw(uncaught);
       }
     }
   }

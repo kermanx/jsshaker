@@ -1,12 +1,13 @@
-use crate::{
-  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
-};
 use oxc::{
   ast::{
-    ast::{CallExpression, Expression},
     NONE,
+    ast::{CallExpression, Expression},
   },
   span::SPAN,
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 impl<'a> Analyzer<'a> {
@@ -52,7 +53,7 @@ impl<'a> Analyzer<'a> {
 
     let args = self.exec_arguments(&node.arguments);
 
-    let ret_val = callee.call(self, self.consumable(dep_id), this, args);
+    let ret_val = callee.call(self, dep_id, this, args);
 
     Ok((scope_count, ret_val, undefined))
   }

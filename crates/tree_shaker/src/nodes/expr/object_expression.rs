@@ -1,16 +1,13 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::AstKind2,
-  build_effect,
-  entity::{Entity, EntityTrait},
-  transformer::Transformer,
-};
 use oxc::{
   ast::ast::{
     Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKey, PropertyKind,
     SpreadElement,
   },
   span::{GetSpan, SPAN},
+};
+
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
 
 impl<'a> Analyzer<'a> {
@@ -38,16 +35,16 @@ impl<'a> Analyzer<'a> {
         }
         ObjectPropertyKind::SpreadProperty(node) => {
           let argument = self.exec_expression(&node.argument);
-          object.init_spread(self, self.consumable(AstKind2::SpreadElement(node)), argument);
+          object.init_spread(self, AstKind2::SpreadElement(node), argument);
         }
       }
     }
 
+    let object = Entity::from(object);
     if has_proto {
       // Deoptimize the object
-      object.consume(self);
+      self.consume(object);
     }
-
     object
   }
 }
@@ -117,7 +114,7 @@ impl<'a> Transformer<'a> {
             let argument = self.transform_expression(argument, referred);
 
             if let Some(argument) = argument {
-              self.ast_builder.object_property_kind_spread_element(
+              self.ast_builder.object_property_kind_spread_property(
                 *span,
                 if referred {
                   argument

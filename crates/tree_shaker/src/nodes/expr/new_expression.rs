@@ -1,7 +1,8 @@
+use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
+
 use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
 };
-use oxc::ast::ast::{Expression, NewExpression, TSTypeParameterInstantiation};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
@@ -14,7 +15,7 @@ impl<'a> Analyzer<'a> {
     let arguments = self.exec_arguments(&node.arguments);
 
     self.scoping.pure += pure;
-    let value = callee.construct(self, self.consumable(AstKind2::NewExpression(node)), arguments);
+    let value = callee.construct(self, AstKind2::NewExpression(node), arguments);
     self.scoping.pure -= pure;
 
     value

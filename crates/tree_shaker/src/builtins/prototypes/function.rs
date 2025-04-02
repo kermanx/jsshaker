@@ -1,12 +1,7 @@
-use super::{object::create_object_prototype, Prototype};
-use crate::{
-  entity::{Entity, EntityFactory},
-  init_prototype,
-};
-use oxc::semantic::SymbolId;
-use oxc_index::Idx;
+use super::{BuiltinPrototype, object::create_object_prototype};
+use crate::{analyzer::Factory, init_prototype, value::ObjectId};
 
-pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'a> {
+pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
       let mut args = args.destruct_as_array(analyzer, dep, 2, false).0;
@@ -14,13 +9,13 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
         let arg = args.pop().unwrap();
         let cf_scope = analyzer.scoping.cf.current_id();
         // This can be any value
-        let arguments_object_id = SymbolId::from_usize(0);
+        let arguments_object_id = ObjectId::from_usize(0);
         match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id),
+          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id).into(),
           Some(false) => arg,
           None => analyzer.factory.union((
             arg,
-            analyzer.factory.array(cf_scope, arguments_object_id) as Entity<'a>,
+            analyzer.factory.array(cf_scope, arguments_object_id).into(),
           )),
         }
       };
@@ -33,9 +28,9 @@ pub fn create_function_prototype<'a>(factory: &EntityFactory<'a>) -> Prototype<'
     }),
     "bind" => factory.pure_fn_returns_unknown,
     "length" => factory.unknown_number,
-    "arguments" => factory.immutable_unknown,
-    "caller" => factory.immutable_unknown,
+    "arguments" => factory.unknown,
+    "caller" => factory.unknown,
     "name" => factory.unknown_string,
-    "prototype" => factory.immutable_unknown,
+    "prototype" => factory.unknown,
   })
 }

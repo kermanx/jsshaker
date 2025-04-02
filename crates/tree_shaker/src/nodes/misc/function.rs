@@ -1,23 +1,23 @@
-use crate::{
-  analyzer::Analyzer,
-  ast::{AstKind2, DeclarationKind},
-  consumable::Consumable,
-  entity::Entity,
-  scope::VariableScopeId,
-  transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-};
 use oxc::{
   allocator,
   ast::ast::{
     Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
   },
 };
-use std::rc::Rc;
+
+use crate::{
+  analyzer::Analyzer,
+  ast::{AstKind2, DeclarationKind},
+  dep::Dep,
+  entity::Entity,
+  scope::VariableScopeId,
+  transformer::Transformer,
+  utils::{CalleeInfo, CalleeNode},
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
-    self.new_function(CalleeNode::Function(node))
+    self.new_function(CalleeNode::Function(node)).into()
   }
 
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
@@ -37,9 +37,9 @@ impl<'a> Analyzer<'a> {
     &mut self,
     fn_entity: Entity<'a>,
     callee: CalleeInfo<'a>,
-    call_dep: Consumable<'a>,
+    call_dep: Dep<'a>,
     node: &'a Function<'a>,
-    variable_scopes: Rc<Vec<VariableScopeId>>,
+    variable_scopes: &'a [VariableScopeId],
     this: Entity<'a>,
     args: Entity<'a>,
     consume: bool,
@@ -49,7 +49,7 @@ impl<'a> Analyzer<'a> {
         analyzer.push_call_scope(
           callee,
           call_dep,
-          variable_scopes.as_ref().clone(),
+          variable_scopes.to_vec(),
           node.r#async,
           node.generator,
           consume,
@@ -86,7 +86,7 @@ impl<'a> Analyzer<'a> {
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
       });
-      self.factory.unknown()
+      self.factory.unknown
     } else {
       runner(self)
     }

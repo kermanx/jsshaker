@@ -1,9 +1,10 @@
-use crate::{ast::DeclarationKind, transformer::Transformer, Analyzer};
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
   ImportSpecifier, ModuleDeclaration, ModuleExportName,
 };
+
+use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
@@ -26,7 +27,7 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
-              let reference = self.semantic().symbols().get_reference(node.reference_id());
+              let reference = self.semantic().scoping().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
                 let scope = self.scoping.variable.current_id();
                 self
@@ -90,14 +91,14 @@ impl<'a> Analyzer<'a> {
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
               let key = self.factory.string(node.imported.name().as_str());
-              known.namespace.get_property(self, self.factory.empty_consumable, key)
+              known.namespace.get_property(self, self.factory.no_dep, key)
             }
           }
         } else if let Some(resolved) = resolved {
           let module_info = &self.modules.modules[resolved];
           match specifier {
             ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => {
-              module_info.default_export.unwrap_or(self.factory.unknown())
+              module_info.default_export.unwrap_or(self.factory.unknown)
             }
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => todo!(),
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
@@ -106,12 +107,12 @@ impl<'a> Analyzer<'a> {
               {
                 self.read_on_scope(scope, symbol).unwrap().unwrap()
               } else {
-                self.factory.unknown()
+                self.factory.unknown
               }
             }
           }
         } else {
-          self.builtins.factory.unknown()
+          self.builtins.factory.unknown
         };
         self.init_binding_identifier(specifier.local(), Some(value));
       }
@@ -159,7 +160,7 @@ impl<'a> Analyzer<'a> {
         //   let named_exports = &self.modules.modules[resolved].pending_named_exports;
         //   self.module_info_mut().pending_named_exports
         // } else {
-        //   let unknown = self.factory.unknown();
+        //   let unknown = self.factory.unknown;
         //   self.module_info_mut().pending_reexports.push(unknown);
         // }
       }
@@ -280,8 +281,8 @@ impl<'a> Transformer<'a> {
         };
         Some(self.ast_builder.module_declaration_export_default_declaration(
           *span,
-          declaration,
           exported.clone(),
+          declaration,
         ))
       }
       ModuleDeclaration::ExportAllDeclaration(node) => {
