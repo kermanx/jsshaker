@@ -8,7 +8,7 @@ use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   ast::DeclarationKind,
-  dep::LazyDep,
+  dep::{Dep, LazyDep},
   entity::Entity,
   utils::ast::AstKind2,
 };
@@ -21,7 +21,7 @@ define_index_type! {
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
-  pub exhausted: Option<LazyDep<'a>>,
+  pub exhausted: Option<LazyDep<'a, Dep<'a>>>,
   pub value: Option<Entity<'a>>,
   pub decl_node: AstKind2<'a>,
 }
@@ -216,7 +216,8 @@ impl<'a> Analyzer<'a> {
 
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
-            variable_ref.exhausted = Some(self.factory.lazy_dep(self.dep((dep, new_val, old_val))));
+            variable_ref.exhausted =
+              Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
             variable_ref.value = Some(self.factory.unknown);
           } else {
             variable_ref.value = Some(self.factory.computed(

@@ -67,10 +67,7 @@ impl<'a> ObjectValue<'a> {
           } else {
             value
           };
-          property.set(analyzer, indeterminate, value, &mut setters);
-          let was_consumed = property.consumed;
-          property.consumed |= is_exhaustive;
-          if !was_consumed {
+          if property.set(analyzer, is_exhaustive, indeterminate, value, &mut setters) {
             analyzer
               .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
           }
@@ -83,7 +80,7 @@ impl<'a> ObjectValue<'a> {
         }
 
         if let Some(rest) = &self.rest {
-          rest.borrow_mut().set(analyzer, true, value, &mut setters);
+          rest.borrow_mut().set(analyzer, false, true, value, &mut setters);
           continue;
         }
 
@@ -98,10 +95,13 @@ impl<'a> ObjectValue<'a> {
         keyed.insert(
           key_str,
           ObjectProperty {
-            consumed: is_exhaustive,
             definite: !indeterminate && found.must_not_found(),
             enumerable: true, /* TODO: Object.defineProperty */
-            possible_values: analyzer.factory.vec1(ObjectPropertyValue::Field(value, false)),
+            possible_values: analyzer.factory.vec1(if is_exhaustive {
+              ObjectPropertyValue::new_consumed(analyzer, analyzer.factory.vec1(value))
+            } else {
+              ObjectPropertyValue::Field(value, false)
+            }),
             non_existent: DepCollector::new(analyzer.factory.vec()),
             key: Some(key),
             mangling: mangable.then(|| key_atom.unwrap()),
@@ -123,12 +123,11 @@ impl<'a> ObjectValue<'a> {
 
       let mut string_keyed = self.keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.set(analyzer, true, non_mangable_value, &mut setters);
-        property.consumed |= is_exhaustive;
+        property.lookup_setters(analyzer, &mut setters);
       }
 
       if let Some(rest) = &self.rest {
-        rest.borrow_mut().set(analyzer, true, non_mangable_value, &mut setters);
+        rest.borrow_mut().lookup_setters(analyzer, &mut setters);
       }
 
       self.lookup_any_string_keyed_setters_on_proto(analyzer, &mut setters);

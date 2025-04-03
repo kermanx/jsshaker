@@ -1,19 +1,21 @@
 use std::cell::RefCell;
 
-use super::{CustomDepTrait, Dep, DepVec};
+use oxc::allocator;
+
+use super::{CustomDepTrait, DepTrait};
 use crate::analyzer::Analyzer;
 
 #[derive(Debug, Clone, Copy)]
-pub struct LazyDep<'a>(pub &'a RefCell<Option<DepVec<'a>>>);
+pub struct LazyDep<'a, T: DepTrait<'a> + 'a>(pub &'a RefCell<Option<allocator::Vec<'a, T>>>);
 
-impl<'a> CustomDepTrait<'a> for LazyDep<'a> {
+impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for LazyDep<'a, T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.0.take().consume(analyzer);
+    analyzer.consume(self.0.take());
   }
 }
 
-impl<'a> LazyDep<'a> {
-  pub fn push(&self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
+impl<'a, T: DepTrait<'a> + 'a> LazyDep<'a, T> {
+  pub fn push(&self, analyzer: &mut Analyzer<'a>, dep: T) {
     let mut deps_ref = self.0.borrow_mut();
     if let Some(deps) = deps_ref.as_mut() {
       deps.push(dep);

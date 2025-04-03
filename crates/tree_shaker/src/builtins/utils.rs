@@ -8,7 +8,6 @@ macro_rules! init_namespace {
       $(keyed.insert(
         ObjectPropertyKey::String($k),
         ObjectProperty {
-          consumed: false,
           definite: true,
           enumerable: false,
           possible_values:  $factory.vec1(ObjectPropertyValue::Field($v, true)),
@@ -31,7 +30,6 @@ macro_rules! init_object {
       $(keyed.insert(
         ObjectPropertyKey::String($k),
         ObjectProperty {
-          consumed: false,
           definite: true,
           enumerable: true,
           possible_values: $factory.vec1(ObjectPropertyValue::Field($v, false)),

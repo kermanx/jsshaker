@@ -61,7 +61,7 @@ pub struct Factory<'a> {
   pub unmatched_prototype_property: Entity<'a>,
 
   pub no_dep: Dep<'a>,
-  pub consumed_lazy_dep: LazyDep<'a>,
+  pub consumed_lazy_dep: LazyDep<'a, Dep<'a>>,
 }
 
 impl<'a> Factory<'a> {
@@ -341,8 +341,8 @@ impl<'a> Factory<'a> {
     self.computed(self.unknown, dep)
   }
 
-  pub fn lazy_dep(&self, dep: Dep<'a>) -> LazyDep<'a> {
-    LazyDep(self.alloc(RefCell::new(Some(self.vec1(dep)))))
+  pub fn lazy_dep<T: DepTrait<'a> + 'a>(&self, deps: allocator::Vec<'a, T>) -> LazyDep<'a, T> {
+    LazyDep(self.alloc(RefCell::new(Some(deps))))
   }
 
   pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {

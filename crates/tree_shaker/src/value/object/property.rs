@@ -6,7 +6,7 @@ use oxc::{
 use super::{get::GetPropertyContext, set::PendingSetter};
 use crate::{
   analyzer::Analyzer,
-  dep::{Dep, DepCollector},
+  dep::{Dep, DepCollector, LazyDep},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   utils::Found,
@@ -20,15 +20,22 @@ pub enum ObjectPropertyKey<'a> {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPropertyValue<'a> {
+  Consumed(Entity<'a>, LazyDep<'a, Entity<'a>>),
   /// (value, readonly)
   Field(Entity<'a>, bool),
   /// (getter, setter)
   Property(Option<Entity<'a>>, Option<Entity<'a>>),
 }
 
+impl<'a> ObjectPropertyValue<'a> {
+  pub fn new_consumed(analyzer: &Analyzer<'a>, deps: allocator::Vec<'a, Entity<'a>>) -> Self {
+    let deps = analyzer.factory.lazy_dep(deps);
+    Self::Consumed(analyzer.factory.computed_unknown(deps), deps)
+  }
+}
+
 #[derive(Debug)]
 pub struct ObjectProperty<'a> {
-  pub consumed: bool,
   /// Does this property definitely exist
   pub definite: bool,
   /// Is this property enumerable
@@ -46,7 +53,6 @@ pub struct ObjectProperty<'a> {
 impl<'a> ObjectProperty<'a> {
   pub fn new_in(allocator: &'a Allocator) -> Self {
     Self {
-      consumed: false,
       definite: true,
       enumerable: true,
       possible_values: allocator::Vec::new_in(allocator),
@@ -56,16 +62,15 @@ impl<'a> ObjectProperty<'a> {
     }
   }
 
-  pub(super) fn may_be_field(&self) -> bool {
-    if !self.definite {
-      return true;
-    }
+  pub(super) fn may_be_unconsumed_field(&self) -> bool {
     for possible_value in &self.possible_values {
-      if matches!(possible_value, ObjectPropertyValue::Field(_, _)) {
-        return true;
+      match possible_value {
+        ObjectPropertyValue::Consumed(_, _) => return false,
+        ObjectPropertyValue::Field(_, false) => return true,
+        _ => {}
       }
     }
-    false
+    !self.definite
   }
 
   pub(super) fn get(
@@ -87,11 +92,9 @@ impl<'a> ObjectProperty<'a> {
   fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => context.values.push(if self.consumed {
-          analyzer.factory.computed_unknown(*value)
-        } else {
-          *value
-        }),
+        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
+          context.values.push(*value)
+        }
         ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(*getter),
         ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.undefined),
       }
@@ -109,14 +112,9 @@ impl<'a> ObjectProperty<'a> {
     let constraint = MangleConstraint::Eq(prev_atom, key_atom);
     for possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => {
-          let value = analyzer.factory.mangable(*value, (prev_key, context.key), constraint);
-          context.values.push(if self.consumed {
-            analyzer.factory.computed_unknown(value)
-          } else {
-            value
-          });
-        }
+        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => context
+          .values
+          .push(analyzer.factory.mangable(*value, (prev_key, context.key), constraint)),
         ObjectPropertyValue::Property(Some(getter), _) => context
           .getters
           .push(analyzer.factory.mangable(*getter, (prev_key, context.key), constraint)),
@@ -131,37 +129,63 @@ impl<'a> ObjectProperty<'a> {
 
   pub fn set(
     &mut self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
+    is_exhaustive: bool,
     indeterminate: bool,
     value: Entity<'a>,
     setters: &mut Vec<PendingSetter<'a>>,
-  ) {
+  ) -> bool {
     let mut writable = false;
+    let mut was_consumed = None;
+    let mut field_values = vec![value];
     for possible_value in &self.possible_values {
       match *possible_value {
-        ObjectPropertyValue::Field(_, readonly) if !readonly => writable = true,
+        ObjectPropertyValue::Consumed(_, deps) => {
+          was_consumed = Some(deps);
+        }
+        ObjectPropertyValue::Field(value, readonly) => {
+          writable |= !readonly;
+          field_values.push(value);
+        }
         ObjectPropertyValue::Property(_, Some(setter)) => setters.push(PendingSetter {
-          indeterminate: self.possible_values.len() > 1,
+          indeterminate: self.possible_values.len() > 1 || !self.definite,
           dep: self.non_existent.collect(analyzer.factory),
           setter,
         }),
-        _ => {}
+        ObjectPropertyValue::Property(_, None) => {}
       }
     }
 
     if writable {
-      if !indeterminate {
+      if !indeterminate || is_exhaustive {
         // Remove all writable fields
         self
           .possible_values
           .retain(|possible_value| !matches!(possible_value, ObjectPropertyValue::Field(_, false)));
+      }
+
+      if !indeterminate {
         // This property must exist now
         self.definite = true;
         self.non_existent.force_clear();
       }
-
-      self.possible_values.push(ObjectPropertyValue::Field(value, false));
+      if is_exhaustive {
+        if let Some(was_consumed) = was_consumed {
+          for field_value in field_values {
+            was_consumed.push(analyzer, field_value);
+          }
+        } else {
+          self.possible_values.push(ObjectPropertyValue::new_consumed(
+            analyzer,
+            allocator::Vec::from_iter_in(field_values, analyzer.allocator),
+          ));
+        }
+      } else {
+        self.possible_values.push(ObjectPropertyValue::Field(value, false));
+      }
     }
+
+    writable && was_consumed.is_none()
   }
 
   pub fn lookup_setters(
@@ -202,7 +226,9 @@ impl<'a> ObjectProperty<'a> {
   ) {
     for &possible_value in &self.possible_values {
       match possible_value {
-        ObjectPropertyValue::Field(value, _) => suspended.push(value),
+        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
+          suspended.push(value)
+        }
         ObjectPropertyValue::Property(getter, setter) => {
           if let Some(getter) = getter {
             suspended.push(getter);

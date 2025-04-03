@@ -231,6 +231,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
         let mut deps = analyzer.factory.vec();
         for value in &property.possible_values {
           deps.push(match value {
+            ObjectPropertyValue::Consumed(value, _) => *value,
             ObjectPropertyValue::Field(value, _) => *value,
             ObjectPropertyValue::Property(Some(getter), _) => *getter,
             ObjectPropertyValue::Property(None, _) => analyzer.factory.undefined,
@@ -354,7 +355,6 @@ impl<'a> Analyzer<'a> {
     statics.keyed.borrow_mut().insert(
       ObjectPropertyKey::String("prototype"),
       ObjectProperty {
-        consumed: false,
         definite: true,
         enumerable: false,
         possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),

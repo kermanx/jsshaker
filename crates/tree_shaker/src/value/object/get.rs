@@ -118,8 +118,8 @@ impl<'a> ObjectValue<'a> {
 
     let mut string_keyed = self.keyed.borrow_mut();
     if let Some(property) = string_keyed.get_mut(&key) {
-      if !property.consumed && property.may_be_field() {
-        if let Some(exhaustive_deps) = exhaustive_deps {
+      if let Some(exhaustive_deps) = exhaustive_deps {
+        if property.may_be_unconsumed_field() {
           exhaustive_deps.push(key);
         }
       }
