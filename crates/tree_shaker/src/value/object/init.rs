@@ -1,6 +1,6 @@
 #![allow(clippy::unnecessary_unwrap)]
 
-use oxc::ast::ast::PropertyKind;
+use oxc::{allocator, ast::ast::PropertyKind};
 
 use super::{ObjectProperty, ObjectPropertyValue, ObjectValue};
 use crate::{
@@ -108,21 +108,24 @@ impl<'a> ObjectValue<'a> {
     self.unknown.borrow_mut().non_existent.push(deps);
   }
 
-  pub fn init_rest(&self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {
+  pub fn init_rest(&mut self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {
     assert_eq!(self.mangling_group, None);
-    let mut rest = self.rest.borrow_mut();
-    if let Some(rest) = &mut *rest {
-      rest.possible_values.push(property);
+    if let Some(rest) = &self.rest {
+      rest.borrow_mut().possible_values.push(property);
     } else {
-      *rest = Some(ObjectProperty {
-        consumed: false,
-        definite: false,
-        enumerable: true,
-        possible_values: factory.vec1(property),
-        non_existent: DepCollector::new(factory.vec()),
-        key: None,
-        mangling: None,
-      });
+      self.rest = Some(allocator::Box::new_in(
+        ObjectProperty {
+          consumed: false,
+          definite: false,
+          enumerable: true,
+          possible_values: factory.vec1(property),
+          non_existent: DepCollector::new(factory.vec()),
+          key: None,
+          mangling: None,
+        }
+        .into(),
+        factory.allocator,
+      ));
     }
   }
 }

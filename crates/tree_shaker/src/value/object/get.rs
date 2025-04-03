@@ -55,9 +55,8 @@ impl<'a> ObjectValue<'a> {
     }
 
     if check_rest {
-      let mut rest = self.rest.borrow_mut();
-      if let Some(rest) = &mut *rest {
-        rest.get(analyzer, &mut context, None);
+      if let Some(rest) = &self.rest {
+        rest.borrow_mut().get(analyzer, &mut context, None);
         exhaustive_deps = None;
       } else {
         context.values.push(analyzer.factory.undefined);

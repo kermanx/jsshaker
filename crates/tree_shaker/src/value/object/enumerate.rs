@@ -34,8 +34,8 @@ impl<'a> ObjectValue<'a> {
       {
         let mut unknown_keyed = self.unknown.borrow_mut();
         unknown_keyed.get(analyzer, &mut context, None);
-        if let Some(rest) = &mut *self.rest.borrow_mut() {
-          rest.get(analyzer, &mut context, None);
+        if let Some(rest) = &self.rest {
+          rest.borrow_mut().get(analyzer, &mut context, None);
         }
       }
 

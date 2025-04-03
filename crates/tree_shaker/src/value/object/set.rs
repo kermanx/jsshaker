@@ -47,7 +47,6 @@ impl<'a> ObjectValue<'a> {
       }
 
       let mut keyed = self.keyed.borrow_mut();
-      let mut rest = self.rest.borrow_mut();
 
       indeterminate |= key_literals.len() > 1;
 
@@ -83,8 +82,8 @@ impl<'a> ObjectValue<'a> {
             .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
         }
 
-        if let Some(rest) = &mut *rest {
-          rest.set(analyzer, true, value, &mut setters);
+        if let Some(rest) = &self.rest {
+          rest.borrow_mut().set(analyzer, true, value, &mut setters);
           continue;
         }
 
@@ -128,8 +127,8 @@ impl<'a> ObjectValue<'a> {
         property.consumed |= is_exhaustive;
       }
 
-      if let Some(rest) = &mut *self.rest.borrow_mut() {
-        rest.set(analyzer, true, non_mangable_value, &mut setters);
+      if let Some(rest) = &self.rest {
+        rest.borrow_mut().set(analyzer, true, non_mangable_value, &mut setters);
       }
 
       self.lookup_any_string_keyed_setters_on_proto(analyzer, &mut setters);

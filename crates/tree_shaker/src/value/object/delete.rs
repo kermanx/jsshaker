@@ -34,7 +34,6 @@ impl<'a> ObjectValue<'a> {
       let deps = if mangable { deps } else { analyzer.dep((deps, key)) };
 
       let mut string_keyed = self.keyed.borrow_mut();
-      let mut rest = self.rest.borrow_mut();
       for key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
         if let Some(property) = string_keyed.get_mut(&key_str) {
@@ -54,8 +53,8 @@ impl<'a> ObjectValue<'a> {
               deps
             },
           );
-        } else if let Some(rest) = &mut *rest {
-          rest.delete(true, analyzer.dep((deps, key)));
+        } else if let Some(rest) = &self.rest {
+          rest.borrow_mut().delete(true, analyzer.dep((deps, key)));
         } else if mangable {
           self.add_to_mangling_group(analyzer, key_atom.unwrap());
         }

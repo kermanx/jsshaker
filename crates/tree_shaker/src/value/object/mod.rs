@@ -59,7 +59,6 @@ pub struct ObjectValue<'a> {
   pub consumable: bool,
   pub consumed: Cell<bool>,
   pub consumed_as_prototype: Cell<bool>,
-  // deps: RefCell<DepCollector<'a>>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
   pub object_id: ObjectId,
@@ -73,8 +72,7 @@ pub struct ObjectValue<'a> {
   /// Properties keyed by unknown value
   pub unknown: RefCell<ObjectProperty<'a>>,
   /// Properties keyed by unknown value, but not included in `keyed`
-  pub rest: RefCell<Option<ObjectProperty<'a>>>,
-  // TODO: symbol_keyed
+  pub rest: Option<allocator::Box<'a, RefCell<ObjectProperty<'a>>>>,
 }
 
 impl Debug for ObjectValue<'_> {
@@ -209,7 +207,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     if self.consumed.get()
-      || self.rest.borrow().is_some()
+      || self.rest.is_some()
       || !self.unknown.borrow().possible_values.is_empty()
     {
       return None;
@@ -325,7 +323,7 @@ impl<'a> Analyzer<'a> {
       object_id: self.scoping.alloc_object_id(),
       keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
       unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
-      rest: RefCell::new(None),
+      rest: None,
       prototype: Cell::new(prototype),
       mangling_group,
     })
