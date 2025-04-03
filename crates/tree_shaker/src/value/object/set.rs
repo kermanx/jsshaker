@@ -46,13 +46,6 @@ impl<'a> ObjectValue<'a> {
     }
 
     if let Some(key_literals) = key_literals {
-      for &key_literal in &key_literals {
-        analyzer.mark_exhaustive_write(
-          ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
-          target_depth,
-        );
-      }
-
       let mut keyed = self.keyed.borrow_mut();
 
       indeterminate |= key_literals.len() > 1;
@@ -75,6 +68,10 @@ impl<'a> ObjectValue<'a> {
             value
           };
           if property.set(analyzer, is_exhaustive, indeterminate, value, &mut setters) {
+            analyzer.mark_exhaustive_write(
+              ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
+              target_depth,
+            );
             analyzer
               .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
           }
