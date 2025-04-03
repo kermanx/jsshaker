@@ -6,7 +6,7 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
-  value::consumed_object,
+  value::{ValueTrait, consumed_object},
 };
 
 pub struct PendingSetter<'a> {
@@ -29,6 +29,13 @@ impl<'a> ObjectValue<'a> {
 
     let (target_depth, is_exhaustive, mut indeterminate, deps) =
       self.prepare_mutation(analyzer, dep);
+    let key_literals = key.get_to_literals(analyzer);
+
+    if is_exhaustive && key_literals.is_none() {
+      self.consume(analyzer);
+      return consumed_object::set_property(analyzer, dep, key, value);
+    }
+
     let value = analyzer.factory.computed(value, deps);
     let non_mangable_value = analyzer.factory.computed(value, key);
 
@@ -38,7 +45,7 @@ impl<'a> ObjectValue<'a> {
       indeterminate = true;
     }
 
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key_literals {
       for &key_literal in &key_literals {
         analyzer.mark_exhaustive_write(
           ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
