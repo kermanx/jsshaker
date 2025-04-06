@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
-  dep::Dep,
+  dep::{Dep, LazyDep},
   entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
@@ -16,18 +16,20 @@ use crate::{
 
 #[derive(Debug)]
 pub struct FunctionValue<'a> {
-  body_consumed: Cell<bool>,
   pub callee: CalleeInfo<'a>,
   pub variable_scope_stack: allocator::Vec<'a, VariableScopeId>,
   pub finite_recursion: bool,
   pub statics: &'a ObjectValue<'a>,
   /// The `prototype` property. Not `__proto__`.
   pub prototype: &'a ObjectValue<'a>,
+
+  // Workaround: The lazy dep of `this` value
+  body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    self.consume_body(analyzer);
+    self.consume_body(analyzer, analyzer.factory.unknown);
     self.statics.consume(analyzer);
     self.prototype.consume(analyzer);
   }
@@ -83,13 +85,14 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    if self.body_consumed.get() {
-      return consumed_object::call(self, analyzer, dep, this, args);
+    if let Some(this_dep) = self.body_consumed.get() {
+      this_dep.push(analyzer, this);
+      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer);
-      return consumed_object::call(self, analyzer, dep, this, args);
+      self.consume_body(analyzer, this);
+      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
     }
 
     self.call_impl::<false>(analyzer, dep, this, args, false)
@@ -101,12 +104,12 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    if self.body_consumed.get() {
+    if self.body_consumed.get().is_some() {
       return consumed_object::construct(self, analyzer, dep, args);
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer);
+      self.consume_body(analyzer, analyzer.factory.unknown);
       return consumed_object::construct(self, analyzer, dep, args);
     }
 
@@ -271,10 +274,14 @@ impl<'a> FunctionValue<'a> {
     self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
-  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>) {
-    if self.body_consumed.replace(true) {
+  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>) {
+    if self.body_consumed.get().is_some() {
       return;
     }
+
+    let this_dep = analyzer.factory.lazy_dep(analyzer.factory.vec1(this));
+    let this = analyzer.factory.computed_unknown(this_dep);
+    self.body_consumed.set(Some(this_dep));
 
     analyzer.consume(self.callee.into_node());
 
@@ -287,7 +294,7 @@ impl<'a> FunctionValue<'a> {
       self.call_impl::<false>(
         analyzer,
         analyzer.factory.no_dep,
-        analyzer.factory.unknown,
+        this,
         analyzer.factory.unknown,
         true,
       )
@@ -303,7 +310,6 @@ impl<'a> Analyzer<'a> {
   pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
     let (statics, prototype) = self.new_function_object(Some(node.into()));
     let function = self.factory.alloc(FunctionValue {
-      body_consumed: Cell::new(false),
       callee: self.new_callee_info(node),
       variable_scope_stack: allocator::Vec::from_iter_in(
         self.scoping.variable.stack.iter().copied(),
@@ -312,6 +318,7 @@ impl<'a> Analyzer<'a> {
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       statics,
       prototype,
+      body_consumed: Cell::new(None),
     });
 
     let mut created_in_self = false;
@@ -323,7 +330,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if created_in_self {
-      function.consume_body(self);
+      function.consume_body(self, self.factory.unknown);
     }
 
     function
