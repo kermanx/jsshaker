@@ -30,20 +30,44 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), node.r#async, false, consume);
+    let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
+      Box::new(move |analyzer: &mut Analyzer<'a>| {
+        analyzer.push_call_scope(
+          callee,
+          call_dep,
+          variable_scopes.to_vec(),
+          node.r#async,
+          false,
+          consume,
+        );
 
-    self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
-    if node.expression {
-      self.exec_function_expression_body(&node.body);
+        analyzer.exec_formal_parameters(
+          &node.params,
+          args,
+          DeclarationKind::ArrowFunctionParameter,
+        );
+        if node.expression {
+          analyzer.exec_function_expression_body(&node.body);
+        } else {
+          analyzer.exec_function_body(&node.body);
+        }
+
+        if consume {
+          analyzer.consume_return_values();
+        }
+
+        analyzer.pop_call_scope()
+      });
+
+    if !consume && (node.r#async) {
+      // Too complex to analyze the control flow, thus run exhaustively
+      self.exec_async_or_generator_fn(move |analyzer| {
+        runner(analyzer).consume(analyzer);
+      });
+      self.factory.unknown
     } else {
-      self.exec_function_body(&node.body);
+      runner(self)
     }
-
-    if consume {
-      self.consume_return_values();
-    }
-
-    self.pop_call_scope()
   }
 }
 

@@ -81,7 +81,7 @@ impl<'a> Analyzer<'a> {
         analyzer.pop_call_scope()
       });
 
-    if node.r#async || node.generator {
+    if !consume && (node.r#async || node.generator) {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).consume(analyzer);
