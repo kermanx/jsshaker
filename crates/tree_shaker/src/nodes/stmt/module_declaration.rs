@@ -1,10 +1,10 @@
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
-  ImportSpecifier, ModuleDeclaration, ModuleExportName,
+  ImportSpecifier, ModuleDeclaration, ModuleExportName, PropertyKind,
 };
 
-use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer};
+use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer, value::ObjectPrototype};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
@@ -100,7 +100,23 @@ impl<'a> Analyzer<'a> {
             ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => {
               module_info.default_export.unwrap_or(self.factory.unknown)
             }
-            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => todo!(),
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => {
+              // FIXME: This is not accurate
+              let named_exports = module_info.named_exports.clone();
+              let object = self
+                .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.null), None);
+              for (key, (scope, symbol)) in named_exports {
+                let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
+                object.init_property(
+                  self,
+                  PropertyKind::Init,
+                  self.factory.string(key.as_str()),
+                  value,
+                  true,
+                );
+              }
+              object.into()
+            }
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
               if let Some((scope, symbol)) =
                 module_info.named_exports.get(&node.imported.name()).copied()
