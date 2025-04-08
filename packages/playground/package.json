@@ -8,6 +8,7 @@
     "@iconify-json/carbon": "^1.2.1",
     "@kermanx/tree-shaker": "link:../wasm/pkg",
     "@shikijs/monaco": "^1.18.0",
+    "@types/uglify-js": "^3.17.5",
     "@unocss/reset": "^0.61.9",
     "@vitejs/plugin-vue": "^5.1.4",
     "@vueuse/core": "^11.1.0",
@@ -19,5 +20,9 @@
     "vite-plugin-wasm": "^3.3.0",
     "vue": "^3.5.7"
   },
-  "packageManager": "pnpm@9.11.0"
+  "packageManager": "pnpm@9.11.0",
+  "dependencies": {
+    "terser": "^5.39.0",
+    "uglify-js": "^3.19.3"
+  }
 }

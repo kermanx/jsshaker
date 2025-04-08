@@ -1,5 +1,5 @@
 import { compressToBase64, decompressFromBase64 } from 'lz-string'
-import { computed, ref, shallowRef, watch, watchEffect } from 'vue'
+import { computed, ComputedRef, ref, shallowReactive, shallowRef, watch, watchEffect } from 'vue'
 import { DEMO } from './examples';
 
 export const onInputUpdate: (() => void)[] = []
@@ -91,3 +91,11 @@ export const diagnostics = computed(() => {
   return result.value.diagnostics
 })
 export const hideDiagnostics = ref(false)
+
+export function format(code: string) {
+  const { output, diagnostics } = treeShake(code, "disabled", false, false);
+  return diagnostics.map((d: string) => `// ${d}\n`).join('') + (output || code)
+}
+
+export const diffWith = ref<string>("none");
+export const diffCode = shallowRef<ComputedRef<string> | null>(null);

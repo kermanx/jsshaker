@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Editor from './Editor.vue';
-import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate, diffCode } from './states';
+import Terser from './third/Terser.vue';
 </script>
 
 <template>
@@ -71,8 +72,11 @@ import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, i
           </span>
           <div flex-grow />
         </h2>
-        <div flex-grow relative max-h-full>
-          <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
+        <div flex-grow relative max-h-full flex flex-col>
+          <Editor v-model="output" lang="javascript" readonly :diff="diffCode != null" w-full flex-grow :key="String(diffCode != null)" />
+          <div bg-dark-600 w-full p-2 flex flex-col>
+            <Terser />
+          </div>
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
             <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative bg-op-80
