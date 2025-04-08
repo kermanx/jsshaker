@@ -94,7 +94,7 @@ export const hideDiagnostics = ref(false)
 
 export function format(code: string) {
   const { output, diagnostics } = treeShake(code, "disabled", false, false);
-  return diagnostics.map((d: string) => `// ${d}\n`).join('') + (output || code)
+  return diagnostics.map((d: string) => `// ${d}\n`).join('') + (output || code).trim()
 }
 
 export const diffWith = ref<string>("none");
