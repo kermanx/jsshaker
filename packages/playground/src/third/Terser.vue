@@ -26,7 +26,7 @@ watch([debouncedInput], async ([input]) => {
 
 <template>
   <div flex>
-    UglifyJS
+    Terser
     <div flex-grow />
     <Status :error :output="formatted" />
     <DiffToggle name="UglifyJS" :code="formatted" />
