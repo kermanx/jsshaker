@@ -52,7 +52,16 @@ impl<'a> Analyzer<'a> {
       class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
     };
 
-    self.push_variable_scope();
+    // Enter class statics scope
+    let variable_scope_stack = self.scoping.variable.stack.clone();
+    self.push_call_scope(
+      self.new_callee_info(CalleeNode::ClassStatics(node)),
+      self.factory.no_dep,
+      variable_scope_stack,
+      false,
+      false,
+      false,
+    );
     self.variable_scope_mut().super_class =
       Some(data.super_class.unwrap_or(self.factory.undefined));
 
@@ -90,16 +99,6 @@ impl<'a> Analyzer<'a> {
     }
 
     // 4. Execute static blocks
-    let variable_scope_stack = self.scoping.variable.stack.clone();
-    self.push_call_scope(
-      self.new_callee_info(CalleeNode::ClassStatics(node)),
-      self.factory.no_dep,
-      variable_scope_stack,
-      false,
-      false,
-      false,
-    );
-
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
       self.init_binding_identifier(id, Some(class.into()));
@@ -123,7 +122,6 @@ impl<'a> Analyzer<'a> {
     }
 
     self.pop_call_scope();
-    self.pop_variable_scope();
 
     class.into()
   }

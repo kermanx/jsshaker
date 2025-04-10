@@ -18,14 +18,11 @@ impl<'a> Analyzer<'a> {
           self.factory.vec1(self.factory.always_mangable_dep(key)),
           if definite { Some(false) } else { None },
         );
-        self.push_variable_scope();
-
         self.declare_for_statement_left(&node.left);
         self.init_for_statement_left(&node.left, key);
 
         self.exec_statement(&node.body);
 
-        self.pop_variable_scope();
         self.pop_cf_scope();
 
         if self.cf_scope().must_exited() {
@@ -38,14 +35,12 @@ impl<'a> Analyzer<'a> {
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       self.exec_loop(move |analyzer| {
         analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, analyzer.factory.vec(), None);
-        analyzer.push_variable_scope();
 
         analyzer.declare_for_statement_left(&node.left);
         analyzer.init_for_statement_left(&node.left, analyzer.factory.unknown_string);
 
         analyzer.exec_statement(&node.body);
 
-        analyzer.pop_variable_scope();
         analyzer.pop_cf_scope();
       });
       self.pop_cf_scope();
