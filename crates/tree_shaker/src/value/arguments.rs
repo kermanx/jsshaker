@@ -165,7 +165,6 @@ impl<'a> ArgumentsValue<'a> {
     dep: Dep<'a>,
   ) -> (Entity<'a>, Dep<'a>) {
     let (known1, rest1, dep1) = args1.iterate(analyzer, dep);
-    println!("rest1 = {rest1:#?}");
     if let Some(rest1) = rest1 {
       let value2 = args2.iterate_result_union(analyzer, dep);
       let rest =
