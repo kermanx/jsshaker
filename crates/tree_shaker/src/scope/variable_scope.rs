@@ -329,7 +329,6 @@ impl<'a> Analyzer<'a> {
 
   fn symbol_scope_id(&mut self, symbol: SymbolId) -> VariableScopeId {
     let scope_id = self.semantic().scoping().symbol_scope_id(symbol);
-    println!("Accessing {scope_id:?} {:?}", self.semantic().scoping().scope_flags(scope_id));
     let depth = self.module_info().scopes_depth[&scope_id];
     self.scoping.variable.stack[depth]
   }
