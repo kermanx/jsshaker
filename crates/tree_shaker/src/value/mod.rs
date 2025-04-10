@@ -136,16 +136,11 @@ pub trait ValueTrait<'a>: Debug {
 
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
-      rest_arr.deps.borrow_mut().push(if extras.is_empty() && rest.is_none() {
-        analyzer.dep((self, dep))
-      } else {
-        dep
-      });
       rest_arr.elements.borrow_mut().extend(extras);
       if let Some(rest) = rest {
         rest_arr.init_rest(rest);
       }
-      rest_arr.into()
+      analyzer.factory.computed(rest_arr.into(), dep)
     });
 
     (elements, rest_arr, dep)

@@ -308,7 +308,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         self.rest.borrow().iter().copied(),
         analyzer.allocator,
       )),
-      analyzer.dep((dep, self.deps.borrow_mut().collect(analyzer.factory))),
+      dep,
     )
   }
 

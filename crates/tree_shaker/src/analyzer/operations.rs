@@ -393,4 +393,13 @@ impl<'a> Analyzer<'a> {
       BinaryOperator::Instanceof => to_result(self.op_instanceof(lhs, rhs)),
     }
   }
+
+  // return a === undefined ? b : a
+  pub fn op_undefined_or(&self, a: Entity<'a>, b: Entity<'a>) -> Entity<'a> {
+    match a.test_is_undefined() {
+      Some(false) => a,
+      Some(true) => b,
+      None => self.factory.union((a, b)),
+    }
+  }
 }

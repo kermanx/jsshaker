@@ -156,3 +156,40 @@ impl<'a> ValueTrait<'a> for ArgumentsValue<'a> {
     unreachable!()
   }
 }
+
+impl<'a> ArgumentsValue<'a> {
+  pub fn from_concatenate(
+    analyzer: &mut Analyzer<'a>,
+    args1: Entity<'a>,
+    args2: Entity<'a>,
+    dep: Dep<'a>,
+  ) -> (Entity<'a>, Dep<'a>) {
+    let (known1, rest1, dep1) = args1.iterate(analyzer, dep);
+    println!("rest1 = {rest1:#?}");
+    if let Some(rest1) = rest1 {
+      let value2 = args2.iterate_result_union(analyzer, dep);
+      let rest =
+        if let Some(value2) = value2 { analyzer.factory.union((rest1, value2)) } else { rest1 };
+      (
+        analyzer.factory.arguments(allocator::Vec::from_iter_in(
+          known1.into_iter().map(|v| (false, v)).chain([(true, rest)]),
+          analyzer.allocator,
+        )),
+        dep1,
+      )
+    } else {
+      let (known2, rest2, dep2) = args2.iterate(analyzer, dep);
+      (
+        analyzer.factory.arguments(allocator::Vec::from_iter_in(
+          known1
+            .into_iter()
+            .map(|v| (false, v))
+            .chain(known2.into_iter().map(|v| (false, v)))
+            .chain(rest2.into_iter().map(|v| (true, v))),
+          analyzer.allocator,
+        )),
+        analyzer.dep((dep1, dep2)),
+      )
+    }
+  }
+}
