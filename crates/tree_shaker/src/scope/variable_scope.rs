@@ -327,27 +327,34 @@ impl<'a> Analyzer<'a> {
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
+  fn symbol_scope_id(&mut self, symbol: SymbolId) -> VariableScopeId {
+    let mut scope_id = self.semantic().scoping().symbol_scope_id(symbol);
+    let depth = loop {
+      if let Some(&depth) = self.module_info().scopes_depth.get(&scope_id) {
+        break depth;
+      }
+      scope_id = self.semantic().scoping().scope_parent_id(scope_id).unwrap();
+    };
+    self.scoping.variable.stack[depth]
+  }
+
   /// `None` for TDZ
   pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let id = self.scoping.variable.stack[depth];
-      if let Some(value) = self.read_on_scope(id, symbol) {
-        return value;
-      }
+    let scope = self.symbol_scope_id(symbol);
+    if let Some(value) = self.read_on_scope(scope, symbol) {
+      value
+    } else {
+      self.mark_unresolved_reference(symbol);
+      Some(self.factory.unknown)
     }
-    self.mark_unresolved_reference(symbol);
-    Some(self.factory.unknown)
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let id = self.scoping.variable.stack[depth];
-      if self.write_on_scope(id, symbol, new_val) {
-        return;
-      }
+    let scope = self.symbol_scope_id(symbol);
+    if !self.write_on_scope(scope, symbol, new_val) {
+      self.consume(new_val);
+      self.mark_unresolved_reference(symbol);
     }
-    self.consume(new_val);
-    self.mark_unresolved_reference(symbol);
   }
 
   fn mark_unresolved_reference(&mut self, symbol: SymbolId) {
