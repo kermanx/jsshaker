@@ -163,16 +163,18 @@ impl<'a> Analyzer<'a> {
     ret_val
   }
 
-  pub fn push_variable_scope(&mut self, scope_id: ScopeId) -> VariableScopeId {
-    let depth = self.scoping.variable.current_depth() + 1;
-    if let Some(&existing) = self.module_info().scopes_depth.get(&scope_id) {
-      debug_assert_eq!(existing, depth, "Scope: {scope_id:?} already exists");
+  pub fn set_variable_scope_depth(&mut self, scope: ScopeId) {
+    let depth = self.scoping.variable.current_depth();
+    if let Some(&existing) = self.module_info().scopes_depth.get(&scope) {
+      debug_assert_eq!(existing, depth, "Scope: {scope:?} already exists");
     }
-    self.module_info_mut().scopes_depth.insert(scope_id, depth);
+    self.module_info_mut().scopes_depth.insert(scope, depth);
+  }
 
-    println!("{:?} depth={}", scope_id, depth);
-
-    self.scoping.variable.push(VariableScope::new())
+  pub fn push_variable_scope(&mut self, scope: ScopeId) -> VariableScopeId {
+    let id = self.scoping.variable.push(VariableScope::new());
+    self.set_variable_scope_depth(scope);
+    id
   }
 
   pub fn pop_variable_scope(&mut self) -> VariableScopeId {
