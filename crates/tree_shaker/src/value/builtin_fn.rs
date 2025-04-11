@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{cell::Cell, fmt::Debug};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
@@ -8,6 +8,7 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
+  use_consumed_flag,
 };
 
 trait BuiltinFnImpl<'a>: Debug {
@@ -23,6 +24,7 @@ trait BuiltinFnImpl<'a>: Debug {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a>;
+  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 }
 
 impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
@@ -30,6 +32,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     if let Some(object) = self.object() {
       object.consume(analyzer);
     }
+    self.consume(analyzer);
   }
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
@@ -177,12 +180,13 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
 {
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct ImplementedBuiltinFnValue<'a, F: BuiltinFnImplementation<'a> + 'a> {
   #[cfg(feature = "flame")]
   pub name: &'static str,
   pub implementation: F,
   pub object: Option<&'a ObjectValue<'a>>,
+  pub consumed: Cell<bool>,
 }
 
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnValue<'a, F> {
@@ -210,6 +214,23 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
   ) -> Entity<'a> {
     (self.implementation)(analyzer, dep, this, args)
   }
+  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_consumed_flag!(self);
+
+    #[cfg(feature = "flame")]
+    let name = self.name;
+    #[cfg(not(feature = "flame"))]
+    let name = "";
+
+    analyzer.exec_consumed_fn(name, move |analyzer| {
+      self.call_impl(
+        analyzer,
+        analyzer.factory.no_dep,
+        analyzer.factory.unknown,
+        analyzer.factory.unknown,
+      )
+    });
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -225,6 +246,7 @@ impl<'a> Analyzer<'a> {
         name: _name,
         implementation,
         object: Some(self.new_function_object(None).0),
+        consumed: Cell::new(false),
       })
       .into()
   }

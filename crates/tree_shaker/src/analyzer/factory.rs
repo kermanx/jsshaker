@@ -212,6 +212,23 @@ impl<'a> Factory<'a> {
         name: _name,
         implementation,
         object: None,
+        consumed: Cell::new(true),
+      })
+      .into()
+  }
+
+  pub fn implemented_consumable_fn<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    _name: &'static str,
+    implementation: F,
+  ) -> Entity<'a> {
+    self
+      .alloc(ImplementedBuiltinFnValue {
+        #[cfg(feature = "flame")]
+        name: _name,
+        implementation,
+        object: None,
+        consumed: Cell::new(false),
       })
       .into()
   }
