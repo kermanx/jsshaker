@@ -82,10 +82,6 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.computed_unknown_string(self)
-  }
-
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.computed_unknown_string(self)
   }

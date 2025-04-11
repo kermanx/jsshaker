@@ -75,7 +75,9 @@ pub trait ValueTrait<'a>: Debug {
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a>;
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a>;
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
+    analyzer.factory.no_dep
+  }
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;

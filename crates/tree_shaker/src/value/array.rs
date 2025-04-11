@@ -312,10 +312,6 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     )
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string("object")
-  }
-
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);

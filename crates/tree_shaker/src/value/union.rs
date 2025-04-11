@@ -144,10 +144,12 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
     (vec![], analyzer.factory.try_union(results), analyzer.factory.no_dep)
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    // TODO: collect literals
-    let values = self.values.map(analyzer.allocator, |v| v.get_typeof(analyzer));
-    analyzer.factory.union(values)
+  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
+    let mut deps = analyzer.factory.vec();
+    for entity in self.values.iter() {
+      deps.push(entity.get_shallow_dep(analyzer));
+    }
+    analyzer.dep(deps)
   }
 
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

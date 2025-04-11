@@ -1,5 +1,7 @@
 use bitflags::bitflags;
 
+use crate::{analyzer::Factory, entity::Entity};
+
 bitflags! {
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
   pub struct TypeofResult: u8 {
@@ -24,17 +26,38 @@ bitflags! {
 }
 
 impl TypeofResult {
-  pub fn to_string(self) -> Option<&'static str> {
-    Some(match self {
-      TypeofResult::String => "string",
-      TypeofResult::Number => "number",
-      TypeofResult::BigInt => "bigint",
-      TypeofResult::Boolean => "boolean",
-      TypeofResult::Symbol => "symbol",
-      TypeofResult::Undefined => "undefined",
-      TypeofResult::Object => "object",
-      TypeofResult::Function => "function",
-      _ => return None,
-    })
+  pub fn to_entity<'a>(self, factory: &Factory<'a>) -> Entity<'a> {
+    match self.bits().count_ones() {
+      0 => factory.never,
+      n if n >= 8 => factory.unknown_string,
+      _ => {
+        let mut values = factory.vec();
+        if self.contains(TypeofResult::String) {
+          values.push(factory.string("string"));
+        }
+        if self.contains(TypeofResult::Number) {
+          values.push(factory.string("number"));
+        }
+        if self.contains(TypeofResult::BigInt) {
+          values.push(factory.string("bigint"));
+        }
+        if self.contains(TypeofResult::Boolean) {
+          values.push(factory.string("boolean"));
+        }
+        if self.contains(TypeofResult::Symbol) {
+          values.push(factory.string("symbol"));
+        }
+        if self.contains(TypeofResult::Undefined) {
+          values.push(factory.string("undefined"));
+        }
+        if self.contains(TypeofResult::Object) {
+          values.push(factory.string("object"));
+        }
+        if self.contains(TypeofResult::Function) {
+          values.push(factory.string("function"));
+        }
+        factory.union(values)
+      }
+    }
   }
 }

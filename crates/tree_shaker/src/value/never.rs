@@ -60,9 +60,6 @@ impl<'a> ValueTrait<'a> for NeverValue {
     (Vec::new(), None, analyzer.factory.no_dep)
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.never
-  }
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }

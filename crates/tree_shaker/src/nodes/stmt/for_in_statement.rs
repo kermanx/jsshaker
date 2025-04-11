@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     let right = self.exec_expression(&node.right);
 
     if let Some(keys) = right.get_own_keys(self) {
-      let dep = self.factory.dep((right.shallow_dep(), AstKind2::ForInStatement(node)));
+      let dep = self.factory.dep((right.get_shallow_dep(self), AstKind2::ForInStatement(node)));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
       for (definite, key) in keys {
         self.push_cf_scope_with_deps(

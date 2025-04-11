@@ -112,10 +112,6 @@ impl<'a> ValueTrait<'a> for ArgumentsValue<'a> {
     (elements, rest.map(|val| analyzer.factory.union(val)), dep)
   }
 
-  fn get_typeof(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
   fn get_to_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     unreachable!()
   }

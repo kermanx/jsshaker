@@ -17,10 +17,6 @@ pub struct Entity<'a> {
 }
 
 impl<'a> Entity<'a> {
-  pub fn shallow_dep(&self) -> Option<Dep<'a>> {
-    self.dep
-  }
-
   fn forward_dep(&self, dep: impl DepTrait<'a> + 'a, analyzer: &Analyzer<'a>) -> Dep<'a> {
     if let Some(d) = self.dep {
       analyzer.factory.dep((d, dep))
@@ -116,8 +112,12 @@ impl<'a> Entity<'a> {
   ) -> IteratedElements<'a> {
     self.value.iterate(analyzer, self.forward_dep(dep, analyzer))
   }
-  pub fn get_typeof(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_typeof(analyzer), analyzer)
+  pub fn get_shallow_dep(&self, analyzer: &Analyzer<'a>) -> Dep<'a> {
+    if let Some(dep) = self.dep {
+      analyzer.dep((dep, self.value.get_shallow_dep(analyzer)))
+    } else {
+      self.value.get_shallow_dep(analyzer)
+    }
   }
   pub fn get_to_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.get_to_string(analyzer), analyzer)

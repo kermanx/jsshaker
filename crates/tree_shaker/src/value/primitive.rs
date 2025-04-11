@@ -116,14 +116,6 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     }
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if let Some(str) = self.test_typeof().to_string() {
-      analyzer.factory.string(str)
-    } else {
-      analyzer.factory.unknown_string
-    }
-  }
-
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown_string
   }

@@ -83,8 +83,8 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.value.get_typeof(analyzer)
+  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
+    self.value.get_shallow_dep(analyzer)
   }
 
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

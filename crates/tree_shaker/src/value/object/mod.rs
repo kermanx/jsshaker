@@ -173,10 +173,6 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string("object")
-  }
-
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {

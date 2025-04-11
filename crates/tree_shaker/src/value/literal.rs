@@ -199,10 +199,6 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn get_typeof(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.string(self.test_typeof().to_string().unwrap())
-  }
-
   fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer
       .factory

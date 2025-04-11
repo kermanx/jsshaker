@@ -88,7 +88,9 @@ impl<'a> Analyzer<'a> {
         },
         argument,
       ),
-      UnaryOperator::Typeof => argument.get_typeof(self),
+      UnaryOperator::Typeof => self
+        .factory
+        .computed(argument.test_typeof().to_entity(self.factory), argument.get_shallow_dep(self)),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),
     }
