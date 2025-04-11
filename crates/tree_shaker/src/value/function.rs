@@ -188,7 +188,7 @@ impl<'a> FunctionValue<'a> {
     if !self.finite_recursion {
       let mut recursion_depth = 0usize;
       for scope in analyzer.scoping.call.iter().rev() {
-        if scope.callee.node == self.callee.node {
+        if scope.callee.instance_id == self.callee.instance_id {
           recursion_depth += 1;
           if recursion_depth >= analyzer.config.max_recursion_depth {
             return true;
