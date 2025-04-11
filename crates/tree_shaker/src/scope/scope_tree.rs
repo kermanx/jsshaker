@@ -1,7 +1,7 @@
 use oxc_index::{Idx, IndexVec};
 
 struct NodeInfo<I, T> {
-  data: Box<T>,
+  data: T,
   depth: usize,
   parent: Option<I>,
 }
@@ -66,11 +66,7 @@ impl<I: Idx, T> ScopeTree<I, T> {
 
   pub fn push(&mut self, data: T) -> I {
     let id = I::from_usize(self.nodes.len());
-    self.nodes.push(NodeInfo {
-      data: Box::new(data),
-      depth: self.stack.len(),
-      parent: self.stack.last().copied(),
-    });
+    self.nodes.push(NodeInfo { data, depth: self.stack.len(), parent: self.stack.last().copied() });
     self.stack.push(id);
     id
   }
