@@ -33,11 +33,12 @@ pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<
     "bind" => factory.implemented_builtin_fn("Function::bind", |analyzer, dep, func, args| {
       let (bound_this, bound_args, _deps) = args.destruct_as_array(analyzer, dep, 1, true);
       let bound_this = bound_this[0];
-      analyzer.factory.implemented_builtin_fn("Function::bound_fn", move |analyzer, dep, this, args| {
+      let bound_fn = analyzer.factory.implemented_builtin_fn("Function::bound_fn", move |analyzer, dep, this, args| {
         let this = analyzer.op_undefined_or(bound_this, this);
         let (args, dep) = ArgumentsValue::from_concatenate(analyzer, bound_args.unwrap(), args, dep);
         func.call(analyzer, dep, this, args)
-      })
+      });
+      analyzer.factory.computed(bound_fn, dep)
     }),
     "length" => factory.unknown_number,
     "arguments" => factory.unknown,
