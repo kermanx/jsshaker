@@ -152,7 +152,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     _analyzer: &Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
-    todo!()
+    None
   }
 
   fn test_typeof(&self) -> TypeofResult {
