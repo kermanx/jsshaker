@@ -130,7 +130,6 @@ impl<'a> Analyzer<'a> {
       root_variable_scope,
       true,
       false,
-      self.allocator,
     ));
     let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![CfScopeId::from(0)]);
     self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), Some(false)));

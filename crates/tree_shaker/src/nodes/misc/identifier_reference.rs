@@ -37,7 +37,6 @@ impl<'a> Analyzer<'a> {
         if self.config.unknown_global_side_effects {
           self.consume(dep);
           self.refer_to_global();
-          self.may_throw();
         }
         self.factory.unknown
       }
@@ -65,7 +64,6 @@ impl<'a> Analyzer<'a> {
     } else {
       self.consume(dep);
       self.consume(value);
-      self.may_throw();
       self.refer_to_global();
     }
   }

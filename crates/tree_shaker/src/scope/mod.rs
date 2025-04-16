@@ -2,7 +2,6 @@ pub mod call_scope;
 pub mod cf_scope;
 // pub mod r#loop;
 mod scope_tree;
-pub mod try_scope;
 // mod utils;
 pub mod variable_scope;
 
@@ -10,7 +9,6 @@ use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
 use scope_tree::ScopeTree;
-use try_scope::TryScope;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
 
@@ -53,7 +51,6 @@ impl<'a> Scoping<'a> {
         VariableScopeId::from(0),
         false,
         false,
-        factory.allocator,
       )],
       variable,
       cf,
@@ -76,14 +73,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_scope_mut(&mut self) -> &mut CallScope<'a> {
     self.scoping.call.last_mut().unwrap()
-  }
-
-  pub fn try_scope(&self) -> &TryScope<'a> {
-    self.call_scope().try_scopes.last().unwrap()
-  }
-
-  pub fn try_scope_mut(&mut self) -> &mut TryScope<'a> {
-    self.call_scope_mut().try_scopes.last_mut().unwrap()
   }
 
   pub fn cf_scope(&self) -> &CfScope<'a> {
@@ -150,7 +139,6 @@ impl<'a> Analyzer<'a> {
       body_variable_scope,
       is_async,
       is_generator,
-      self.allocator,
     ));
   }
 
@@ -216,17 +204,5 @@ impl<'a> Analyzer<'a> {
   pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
     let id = self.pop_cf_scope();
     self.scoping.cf.get_mut(id)
-  }
-
-  pub fn push_try_scope(&mut self) {
-    self.push_indeterminate_cf_scope();
-    let cf_scope_depth = self.scoping.cf.current_depth();
-    let try_scope = TryScope::new_in(cf_scope_depth, self.allocator);
-    self.call_scope_mut().try_scopes.push(try_scope);
-  }
-
-  pub fn pop_try_scope(&mut self) -> TryScope<'a> {
-    self.pop_cf_scope();
-    self.call_scope_mut().try_scopes.pop().unwrap()
   }
 }

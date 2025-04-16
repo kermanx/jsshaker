@@ -74,8 +74,6 @@ impl<'a> Analyzer<'a> {
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
             self.throw_builtin_error("Cannot destructure nullish value");
-          } else {
-            self.may_throw();
           }
           init.consume(self);
           let data = self.load_data::<ObjectPatternData>(AstKind2::ObjectPattern(node.as_ref()));

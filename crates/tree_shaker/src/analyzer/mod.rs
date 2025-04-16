@@ -3,7 +3,7 @@ pub mod exhaustive;
 mod factory;
 mod operations;
 
-use std::{collections::BTreeSet, mem};
+use std::collections::BTreeSet;
 
 use conditional::ConditionalDataMap;
 use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
@@ -91,7 +91,6 @@ impl<'a> Analyzer<'a> {
       }
 
       let mut dirty = false;
-      dirty |= self.consume_top_level_uncaught();
       dirty |= self.call_exhaustive_callbacks();
       dirty |= self.post_analyze_handle_conditional();
       // dirty |= self.post_analyze_handle_loops();
@@ -110,15 +109,9 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  fn consume_top_level_uncaught(&mut self) -> bool {
-    let factory = self.factory;
-    let thrown_values = &mut self.call_scope_mut().try_scopes.last_mut().unwrap().thrown_values;
-    if thrown_values.is_empty() {
-      false
-    } else {
-      let values = mem::replace(thrown_values, factory.vec());
-      self.consume(values);
-      true
+  pub fn throw_builtin_error(&mut self, message: impl Into<String>) {
+    if self.exit_by_throw() == 0 {
+      self.add_diagnostic(message);
     }
   }
 

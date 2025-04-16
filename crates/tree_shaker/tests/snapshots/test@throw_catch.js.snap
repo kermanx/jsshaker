@@ -1,16 +1,16 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/throw_catch.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/throw_catch.js
 ---
 export function f1(a) {
 	effect1();
 	throw effect2(), a;
 }
-export function f2() {
+export function f2(a) {
 	effect1();
 	try {
-		throw effect2();
+		throw effect2(), a;
 	} catch {
 		effect3();
 	} finally {

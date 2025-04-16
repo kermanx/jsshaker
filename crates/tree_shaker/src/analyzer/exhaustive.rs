@@ -84,12 +84,9 @@ impl<'a> Analyzer<'a> {
   ) {
     let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
       analyzer.push_indeterminate_cf_scope();
-      analyzer.push_try_scope();
       let ret_val = runner(analyzer);
-      let thrown_val = analyzer.pop_try_scope().thrown_val(analyzer);
       if !analyzer.is_inside_pure() {
         analyzer.consume(ret_val);
-        analyzer.consume(thrown_val);
       }
       analyzer.pop_cf_scope();
     });

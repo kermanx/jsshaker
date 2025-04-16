@@ -265,6 +265,18 @@ impl<'a> Analyzer<'a> {
     label_used
   }
 
+  pub fn exit_by_throw(&mut self) -> usize {
+    let mut target_depth = 0;
+    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
+      if cf_scope.exited.is_none() {
+        target_depth = idx;
+        break;
+      }
+    }
+    self.exit_to(target_depth);
+    target_depth
+  }
+
   pub fn refer_to_global(&mut self) {
     if self.is_inside_pure() {
       return;

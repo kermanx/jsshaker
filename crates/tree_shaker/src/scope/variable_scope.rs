@@ -175,8 +175,7 @@ impl<'a> Analyzer<'a> {
         // TDZ
         let variable_ref = variable.borrow();
         self.consume(variable_ref.decl_node);
-        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
-        self.handle_tdz(target_cf_scope);
+        self.handle_tdz();
       }
 
       value
@@ -206,7 +205,7 @@ impl<'a> Analyzer<'a> {
             self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           } else if !variable_ref.kind.is_redeclarable() {
             // TDZ write
-            self.handle_tdz(target_cf_scope);
+            self.handle_tdz();
             (true, false)
           } else {
             // Write uninitialized `var`
@@ -358,12 +357,8 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn handle_tdz(&mut self, target_cf_scope: usize) {
-    if self.has_exhaustive_scope_since(target_cf_scope) {
-      self.may_throw();
-    } else {
-      self.throw_builtin_error("Cannot access variable before initialization");
-    }
+  pub fn handle_tdz(&mut self) {
+    self.throw_builtin_error("Cannot access variable before initialization");
     self.refer_to_global();
   }
 

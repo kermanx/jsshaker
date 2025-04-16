@@ -35,8 +35,6 @@ impl<'a> Analyzer<'a> {
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
             self.throw_builtin_error("Cannot destructure nullish value");
-          } else {
-            self.may_throw();
           }
           value.consume(self);
           self.refer_dep(AstKind2::ObjectAssignmentTarget(node));
