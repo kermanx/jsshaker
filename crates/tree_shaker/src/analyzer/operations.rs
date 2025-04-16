@@ -149,7 +149,6 @@ impl<'a> Analyzer<'a> {
           }
         }
       }
-      assert!(result.is_some());
       result
     } else {
       None
