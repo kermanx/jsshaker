@@ -1,4 +1,4 @@
-use super::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue, ObjectPrototype, ObjectValue};
+use super::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{Dep, DepCollector, DepVec},
@@ -6,7 +6,7 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   scope::CfScopeKind,
   utils::Found,
-  value::{ValueTrait, consumed_object},
+  value::{PropertyKeyValue, ValueTrait, consumed_object},
 };
 
 pub struct PendingSetter<'a> {
@@ -182,7 +182,7 @@ impl<'a> ObjectValue<'a> {
   fn lookup_keyed_setters_on_proto(
     &self,
     analyzer: &mut Analyzer<'a>,
-    key_str: ObjectPropertyKey<'a>,
+    key_str: PropertyKeyValue<'a>,
     mut key_atom: Option<MangleAtom>,
     setters: &mut Vec<PendingSetter<'a>>,
   ) -> Found {

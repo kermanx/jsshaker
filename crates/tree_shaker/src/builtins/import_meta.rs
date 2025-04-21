@@ -3,7 +3,7 @@ use crate::{
   analyzer::Factory,
   dep::DepCollector,
   entity::Entity,
-  value::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue, ObjectPrototype},
+  value::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, PropertyKeyValue},
 };
 
 impl<'a> Builtins<'a> {
@@ -20,7 +20,7 @@ impl<'a> Builtins<'a> {
 
     // import.meta.url
     object.keyed.borrow_mut().insert(
-      ObjectPropertyKey::String("url"),
+      PropertyKeyValue::String("url"),
       ObjectProperty {
         definite: true,
         enumerable: true,

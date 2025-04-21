@@ -83,7 +83,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     _analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    (vec![], dep)
+    EnumeratedProperties { known: Default::default(), unknown: None, dep }
   }
 
   fn call(

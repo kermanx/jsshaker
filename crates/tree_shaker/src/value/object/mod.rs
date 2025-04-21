@@ -12,11 +12,12 @@ use std::{
 
 use oxc::allocator;
 use oxc_index::define_index_type;
-pub use property::{ObjectProperty, ObjectPropertyKey, ObjectPropertyValue};
+pub use property::{ObjectProperty, ObjectPropertyValue};
 use rustc_hash::FxHashSet;
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait, consumed_object,
+  EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue, TypeofResult, ValueTrait,
+  consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
@@ -68,7 +69,7 @@ pub struct ObjectValue<'a> {
   pub mangling_group: Option<ObjectManglingGroupId<'a>>,
 
   /// Properties keyed by known string
-  pub keyed: RefCell<allocator::HashMap<'a, ObjectPropertyKey<'a>, ObjectProperty<'a>>>,
+  pub keyed: RefCell<allocator::HashMap<'a, PropertyKeyValue<'a>, ObjectProperty<'a>>>,
   /// Properties keyed by unknown value
   pub unknown: RefCell<ObjectProperty<'a>>,
   /// Properties keyed by unknown value, but not included in `keyed`
@@ -212,11 +213,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     let mut keys = Vec::new();
     for (key, property) in self.keyed.borrow_mut().iter_mut() {
       let key_entity = property.key.unwrap_or_else(|| {
-        if let ObjectPropertyKey::String(key) = key {
-          analyzer.factory.string(key)
-        } else {
-          todo!()
-        }
+        if let PropertyKeyValue::String(key) = key { analyzer.factory.string(key) } else { todo!() }
       });
       let key_entity = if property.non_existent.is_empty() {
         key_entity
@@ -349,7 +346,7 @@ impl<'a> Analyzer<'a> {
       mangling_group.1,
     );
     statics.keyed.borrow_mut().insert(
-      ObjectPropertyKey::String("prototype"),
+      PropertyKeyValue::String("prototype"),
       ObjectProperty {
         definite: true,
         enumerable: false,

@@ -40,18 +40,16 @@ pub fn enumerate_properties<'a>(
   analyzer: &mut Analyzer<'a>,
   dep: Dep<'a>,
 ) -> EnumeratedProperties<'a> {
-  if analyzer.config.unknown_property_read_side_effects {
-    analyzer.consume(dep);
-    analyzer.refer_to_global();
-    (
-      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
-      analyzer.factory.no_dep,
-    )
-  } else {
-    (
-      vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
-      analyzer.dep((target, dep)),
-    )
+  EnumeratedProperties {
+    known: Default::default(),
+    unknown: Some(analyzer.factory.unknown),
+    dep: if analyzer.config.unknown_property_read_side_effects {
+      analyzer.consume(dep);
+      analyzer.refer_to_global();
+      analyzer.factory.no_dep
+    } else {
+      analyzer.dep((target, dep))
+    },
   }
 }
 

@@ -1,13 +1,14 @@
 use std::mem;
 
 use oxc::allocator;
+use rustc_hash::FxHashMap;
 
-use super::{ObjectPropertyKey, ObjectValue, get::GetPropertyContext};
+use super::{ObjectValue, get::GetPropertyContext};
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::Dep,
   scope::CfScopeKind,
-  value::{EnumeratedProperties, consumed_object},
+  value::{EnumeratedProperties, PropertyKeyValue, consumed_object},
 };
 
 impl<'a> ObjectValue<'a> {
@@ -22,7 +23,6 @@ impl<'a> ObjectValue<'a> {
 
     analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), None);
 
-    let mut result = vec![];
     let mut context = GetPropertyContext {
       key: analyzer.factory.never,
       values: vec![],
@@ -30,6 +30,7 @@ impl<'a> ObjectValue<'a> {
       extra_deps: analyzer.factory.vec(),
     };
 
+    let mut unknown = None;
     {
       {
         let mut unknown_keyed = self.unknown.borrow_mut();
@@ -47,10 +48,11 @@ impl<'a> ObjectValue<'a> {
         .factory
         .try_union(allocator::Vec::from_iter_in(context.values.drain(..), analyzer.allocator))
       {
-        result.push((false, analyzer.factory.unknown_primitive, value));
+        unknown = Some(value);
       }
     }
 
+    let mut known = FxHashMap::default();
     {
       let string_keyed = self.keyed.borrow();
       let keys = string_keyed.keys().cloned().collect::<Vec<_>>();
@@ -65,12 +67,15 @@ impl<'a> ObjectValue<'a> {
         }
 
         let definite = property.definite;
-        let key_entity = if let ObjectPropertyKey::String(key) = key {
-          if mangable {
-            analyzer.factory.mangable_string(key, property.mangling.unwrap())
-          } else {
-            analyzer.factory.string(key)
-          }
+        let (key, key_entity) = if let PropertyKeyValue::String(key) = key {
+          (
+            PropertyKeyValue::String(key),
+            if mangable {
+              analyzer.factory.mangable_string(key, property.mangling.unwrap())
+            } else {
+              analyzer.factory.string(key)
+            },
+          )
         } else {
           todo!()
         };
@@ -89,7 +94,7 @@ impl<'a> ObjectValue<'a> {
           .factory
           .try_union(allocator::Vec::from_iter_in(context.values.drain(..), analyzer.allocator))
         {
-          result.push((definite, key_entity, value));
+          known.insert(key, (definite, key_entity, value));
         }
       }
     }
@@ -98,6 +103,6 @@ impl<'a> ObjectValue<'a> {
 
     analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
-    (result, analyzer.dep((dep, context.extra_deps)))
+    EnumeratedProperties { known, unknown, dep: analyzer.dep((dep, context.extra_deps)) }
   }
 }

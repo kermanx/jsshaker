@@ -20,7 +20,7 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
-  value::{LiteralValue, ObjectPropertyKey},
+  value::{LiteralValue, PropertyKeyValue},
 };
 
 pub struct BuiltinPrototype<'a> {
@@ -57,10 +57,10 @@ impl<'a> BuiltinPrototype<'a> {
     self.symbol_keyed.insert(key, value.into());
   }
 
-  pub fn get_keyed(&self, key: ObjectPropertyKey) -> Option<Entity<'a>> {
+  pub fn get_keyed(&self, key: PropertyKeyValue) -> Option<Entity<'a>> {
     match key {
-      ObjectPropertyKey::String(s) => self.string_keyed.get(&s).copied(),
-      ObjectPropertyKey::Symbol(_) => todo!(),
+      PropertyKeyValue::String(s) => self.string_keyed.get(&s).copied(),
+      PropertyKeyValue::Symbol(_) => todo!(),
     }
   }
 

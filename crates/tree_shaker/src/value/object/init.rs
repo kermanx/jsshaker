@@ -100,11 +100,15 @@ impl<'a> ObjectValue<'a> {
     dep: impl DepTrait<'a> + 'a,
     argument: Entity<'a>,
   ) {
-    let (properties, deps) = argument.enumerate_properties(analyzer, dep);
-    for (definite, key, value) in properties {
+    let enumerated = argument.enumerate_properties(analyzer, dep);
+    for (definite, key, value) in enumerated.known.values().copied() {
       self.init_property(analyzer, PropertyKind::Init, key, value, definite);
     }
-    self.unknown.borrow_mut().non_existent.push(deps);
+    let mut unknown = self.unknown.borrow_mut();
+    if let Some(u) = enumerated.unknown {
+      unknown.possible_values.push(ObjectPropertyValue::Field(u, false));
+    }
+    unknown.non_existent.push(enumerated.dep);
   }
 
   pub fn init_rest(&mut self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {

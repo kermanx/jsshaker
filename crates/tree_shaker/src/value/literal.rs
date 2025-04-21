@@ -9,7 +9,7 @@ use oxc_syntax::number::ToJsString;
 use rustc_hash::FxHashSet;
 
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectPropertyKey, TypeofResult, ValueTrait,
+  EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult, ValueTrait,
   consumed_object, never::NeverValue,
 };
 use crate::{
@@ -110,25 +110,30 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     if let LiteralValue::String(value, atom) = self {
       let dep = analyzer.dep((dep, *atom));
       if value.len() <= analyzer.config.max_simple_string_length {
-        (
-          value
+        EnumeratedProperties {
+          known: value
             .char_indices()
             .map(|(i, c)| {
+              let i_str = analyzer.allocator.alloc_str(&i.to_string());
               (
-                true,
-                analyzer.factory.string(analyzer.allocator.alloc_str(&i.to_string())),
-                analyzer.factory.string(analyzer.allocator.alloc_str(&c.to_string())),
+                PropertyKeyValue::String(i_str),
+                (
+                  true,
+                  analyzer.factory.string(i_str),
+                  analyzer.factory.string(analyzer.allocator.alloc_str(&c.to_string())),
+                ),
               )
             })
             .collect(),
+          unknown: None,
           dep,
-        )
+        }
       } else {
         analyzer.factory.computed_unknown_string(self).enumerate_properties(analyzer, dep)
       }
     } else {
       // No effect
-      (vec![], dep)
+      EnumeratedProperties { known: Default::default(), unknown: None, dep }
     }
   }
 
@@ -508,17 +513,17 @@ impl<'a> LiteralValue<'a> {
   }
 }
 
-impl<'a> From<LiteralValue<'a>> for ObjectPropertyKey<'a> {
+impl<'a> From<LiteralValue<'a>> for PropertyKeyValue<'a> {
   fn from(val: LiteralValue<'a>) -> Self {
     match val {
-      LiteralValue::String(s, _) => ObjectPropertyKey::String(s),
-      LiteralValue::Symbol(s, _) => ObjectPropertyKey::Symbol(s),
+      LiteralValue::String(s, _) => PropertyKeyValue::String(s),
+      LiteralValue::Symbol(s, _) => PropertyKeyValue::Symbol(s),
       _ => unreachable!(),
     }
   }
 }
 
-impl<'a> From<LiteralValue<'a>> for (ObjectPropertyKey<'a>, Option<MangleAtom>) {
+impl<'a> From<LiteralValue<'a>> for (PropertyKeyValue<'a>, Option<MangleAtom>) {
   fn from(val: LiteralValue<'a>) -> Self {
     (
       val.into(),

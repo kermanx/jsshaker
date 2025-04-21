@@ -1,7 +1,4 @@
-use oxc::{
-  allocator::{self, Allocator},
-  semantic::SymbolId,
-};
+use oxc::allocator::{self, Allocator};
 
 use super::{get::GetPropertyContext, set::PendingSetter};
 use crate::{
@@ -11,12 +8,6 @@ use crate::{
   mangling::{MangleAtom, MangleConstraint},
   utils::Found,
 };
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ObjectPropertyKey<'a> {
-  String(&'a str),
-  Symbol(SymbolId),
-}
 
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPropertyValue<'a> {

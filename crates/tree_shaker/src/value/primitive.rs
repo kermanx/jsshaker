@@ -52,13 +52,10 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if *self == PrimitiveValue::String {
-      (
-        vec![(false, analyzer.factory.unknown_string, analyzer.factory.unknown_string)],
-        analyzer.dep((self, dep)),
-      )
-    } else {
-      (vec![], analyzer.dep((self, dep)))
+    EnumeratedProperties {
+      known: Default::default(),
+      unknown: (*self == PrimitiveValue::String).then_some(analyzer.factory.unknown_string),
+      dep,
     }
   }
 

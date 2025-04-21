@@ -4,9 +4,10 @@ use std::{
 };
 
 use oxc::allocator;
+use rustc_hash::FxHashMap;
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, ObjectPropertyKey, TypeofResult,
+  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue, TypeofResult,
   ValueTrait, consumed_object,
 };
 use crate::{
@@ -101,7 +102,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
                 |length| analyzer.factory.number(length as f64, None),
               ));
             } else if let Some(property) =
-              analyzer.builtins.prototypes.array.get_keyed(ObjectPropertyKey::String(key))
+              analyzer.builtins.prototypes.array.get_keyed(PropertyKeyValue::String(key))
             {
               result.push(property);
             } else {
@@ -217,32 +218,29 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
-      return (
-        vec![(false, analyzer.factory.unknown_primitive, analyzer.factory.unknown)],
-        analyzer.dep((self, dep)),
-      );
+      return EnumeratedProperties {
+        known: Default::default(),
+        unknown: Some(analyzer.factory.unknown),
+        dep: analyzer.dep((self, dep)),
+      };
     }
 
-    let mut entries = Vec::new();
+    let mut known = FxHashMap::default();
     for (i, element) in self.elements.borrow().iter().enumerate() {
-      entries.push((
-        true,
-        analyzer.factory.string(analyzer.allocator.alloc_str(&i.to_string())),
-        *element,
-      ));
+      let i_str = analyzer.allocator.alloc_str(&i.to_string());
+      known
+        .insert(PropertyKeyValue::String(i_str), (true, analyzer.factory.string(i_str), *element));
     }
     let rest = self.rest.borrow();
-    if !rest.is_empty() {
-      entries.push((
-        true,
-        analyzer.factory.unknown_string,
-        analyzer
-          .factory
-          .union(allocator::Vec::from_iter_in(rest.iter().copied(), analyzer.allocator)),
-      ));
-    }
+    let unknown = (!rest.is_empty()).then(|| {
+      analyzer.factory.union(allocator::Vec::from_iter_in(rest.iter().copied(), analyzer.allocator))
+    });
 
-    (entries, analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep)))
+    EnumeratedProperties {
+      known,
+      unknown,
+      dep: analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep)),
+    }
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {

@@ -1,13 +1,13 @@
 use oxc::allocator;
 
-use super::{ObjectPropertyKey, ObjectValue};
+use super::ObjectValue;
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
   dep::{Dep, DepVec},
   entity::Entity,
   mangling::MangleAtom,
   scope::CfScopeKind,
-  value::{consumed_object, object::ObjectPrototype},
+  value::{PropertyKeyValue, consumed_object, object::ObjectPrototype},
 };
 
 pub(crate) struct GetPropertyContext<'a> {
@@ -104,9 +104,9 @@ impl<'a> ObjectValue<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     context: &mut GetPropertyContext<'a>,
-    key: ObjectPropertyKey<'a>,
+    key: PropertyKeyValue<'a>,
     mut key_atom: Option<MangleAtom>,
-    exhaustive_deps: Option<&mut Vec<ObjectPropertyKey<'a>>>,
+    exhaustive_deps: Option<&mut Vec<PropertyKeyValue<'a>>>,
   ) -> bool {
     if self.is_mangable() {
       if key_atom.is_none() {

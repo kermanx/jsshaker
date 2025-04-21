@@ -42,12 +42,12 @@ impl<'a> Builtins<'a> {
       let target = known[0];
 
       let mut assign = |source: Entity<'a>, indeterminate: bool| {
-        let (properties, deps) = source.enumerate_properties(analyzer, dep);
-        for (definite, key, value) in properties {
+        let enumerated = source.enumerate_properties(analyzer, dep);
+        for (definite, key, value) in enumerated.known.into_values() {
           if indeterminate || !definite {
             analyzer.push_indeterminate_cf_scope();
           }
-          target.set_property(analyzer, deps, key, value);
+          target.set_property(analyzer, enumerated.dep, key, value);
           if indeterminate || !definite {
             analyzer.pop_cf_scope();
           }
@@ -68,50 +68,50 @@ impl<'a> Builtins<'a> {
   fn create_object_keys_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
-      let (properties, deps) = object.enumerate_properties(analyzer, dep);
+      let enumerated = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
 
-      for (_, key, value) in properties {
+      for (_, key, value) in enumerated.known.into_values() {
         if key.test_typeof().contains(TypeofResult::String) {
           array.init_rest(analyzer.factory.computed(key.get_to_string(analyzer), value));
         }
       }
 
-      analyzer.factory.computed(array.into(), deps)
+      analyzer.factory.computed(array.into(), enumerated.dep)
     })
   }
 
   fn create_object_values_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.values", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
-      let (properties, deps) = object.enumerate_properties(analyzer, dep);
+      let enumerated = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
 
-      for (_, _, value) in properties {
+      for (_, _, value) in enumerated.known.into_values() {
         array.init_rest(value);
       }
 
-      analyzer.factory.computed(array.into(), deps)
+      analyzer.factory.computed(array.into(), enumerated.dep)
     })
   }
 
   fn create_object_entries_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.entries", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
-      let (properties, deps) = object.enumerate_properties(analyzer, dep);
+      let enumerated = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
 
-      for (_, key, value) in properties {
+      for (_, key, value) in enumerated.known.into_values() {
         let entry = analyzer.new_empty_array();
         entry.push_element(key.get_to_string(analyzer));
         entry.push_element(value);
         array.init_rest(entry.into());
       }
 
-      analyzer.factory.computed(array.into(), deps)
+      analyzer.factory.computed(array.into(), enumerated.dep)
     })
   }
 
@@ -142,9 +142,9 @@ impl<'a> Builtins<'a> {
         if key.get_literal(analyzer).is_none() {
           break 'trackable;
         }
-        let (properties, dep) = descriptor.enumerate_properties(analyzer, dep);
+        let enumerated = descriptor.enumerate_properties(analyzer, dep);
         let mut value = analyzer.factory.undefined;
-        for (definite, key, value2) in properties {
+        for (definite, key, value2) in enumerated.known.into_values() {
           if !definite {
             break 'trackable;
           }
@@ -168,7 +168,7 @@ impl<'a> Builtins<'a> {
         }
         object.set_property(
           analyzer,
-          analyzer.factory.dep((dep, descriptor.get_shallow_dep(analyzer))),
+          analyzer.factory.dep((enumerated.dep, descriptor.get_shallow_dep(analyzer))),
           key,
           value,
         );

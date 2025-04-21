@@ -30,7 +30,12 @@ impl<'a> ValueTrait<'a> for NeverValue {
     analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> super::EnumeratedProperties<'a> {
-    (Vec::new(), analyzer.factory.no_dep)
+    // (Vec::new(), analyzer.factory.no_dep)
+    super::EnumeratedProperties {
+      known: Default::default(),
+      unknown: None,
+      dep: analyzer.factory.no_dep,
+    }
   }
   fn delete_property(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>, _key: Entity<'a>) {}
   fn call(

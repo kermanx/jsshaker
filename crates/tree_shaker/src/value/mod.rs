@@ -16,8 +16,8 @@ pub mod utils;
 
 pub use literal::LiteralValue;
 pub use object::*;
-use oxc::allocator;
-use rustc_hash::FxHashSet;
+use oxc::{allocator, semantic::SymbolId};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
 pub use utils::*;
@@ -28,8 +28,17 @@ use crate::{
   entity::Entity,
 };
 
-/// (vec![(definite, key, value)], dep)
-pub type EnumeratedProperties<'a> = (Vec<(bool, Entity<'a>, Entity<'a>)>, Dep<'a>);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PropertyKeyValue<'a> {
+  String(&'a str),
+  Symbol(SymbolId),
+}
+
+pub struct EnumeratedProperties<'a> {
+  pub known: FxHashMap<PropertyKeyValue<'a>, (bool, Entity<'a>, Entity<'a>)>,
+  pub unknown: Option<Entity<'a>>,
+  pub dep: Dep<'a>,
+}
 
 /// (vec![known_elements], rest, dep)
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>);

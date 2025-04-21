@@ -1,10 +1,10 @@
 use std::{cell::Cell, fmt::Debug};
 
-use rustc_hash::FxHashSet;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, ValueTrait,
-  consumed_object, utils::UnionLike,
+  EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, PropertyKeyValue,
+  TypeofResult, ValueTrait, utils::UnionLike,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
@@ -75,8 +75,39 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    // FIXME:
-    consumed_object::enumerate_properties(self, analyzer, dep)
+    let mut total = 0usize;
+    let mut known = FxHashMap::<PropertyKeyValue<'a>, (usize, Entity<'a>, Entity<'a>)>::default();
+    let mut unknown = analyzer.factory.vec();
+    let mut deps = analyzer.factory.vec();
+    for entity in self.values.iter() {
+      total += 1;
+      let enumerated = entity.enumerate_properties(analyzer, dep);
+      for (key, (definite, key_v, value)) in enumerated.known {
+        known
+          .entry(key)
+          .and_modify(|(count, key_vs, values)| {
+            if definite {
+              *count += 1;
+            }
+            *key_vs = analyzer.factory.union((*key_vs, key_v));
+            *values = analyzer.factory.union((*values, value));
+          })
+          .or_insert((1, key_v, value));
+      }
+      if let Some(unknown_value) = enumerated.unknown {
+        unknown.push(unknown_value);
+      }
+      deps.push(enumerated.dep);
+    }
+    EnumeratedProperties {
+      known: known
+        .into_iter()
+        .map(move |(key, (count, key_v, value))| (key, (total == count, key_v, value)))
+        .collect(),
+      unknown: analyzer.factory.try_union(unknown),
+      dep: analyzer.dep(deps),
+    }
+    // consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {

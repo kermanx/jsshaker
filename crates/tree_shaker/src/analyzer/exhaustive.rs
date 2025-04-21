@@ -11,14 +11,14 @@ use crate::{
   analyzer::Analyzer,
   entity::Entity,
   scope::{CfScopeId, CfScopeKind, VariableScopeId, cf_scope::ReferredState},
-  value::{ObjectId, ObjectPropertyKey},
+  value::{ObjectId, PropertyKeyValue},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ExhaustiveDepId<'a> {
   Variable(VariableScopeId, SymbolId),
   ObjectAll(ObjectId),
-  ObjectField(ObjectId, ObjectPropertyKey<'a>),
+  ObjectField(ObjectId, PropertyKeyValue<'a>),
   __Object(ObjectId),
 }
 
