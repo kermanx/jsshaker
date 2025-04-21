@@ -44,42 +44,41 @@ impl<'a> Analyzer<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let runner: Box<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a> =
-      Box::new(move |analyzer: &mut Analyzer<'a>| {
-        analyzer.push_call_scope(
-          callee,
-          call_dep,
-          variable_scopes.to_vec(),
-          node.r#async,
-          node.generator,
-          consume,
+    let runner = move |analyzer: &mut Analyzer<'a>| {
+      analyzer.push_call_scope(
+        callee,
+        call_dep,
+        variable_scopes.to_vec(),
+        node.r#async,
+        node.generator,
+        consume,
+      );
+
+      let variable_scope = analyzer.variable_scope_mut();
+      variable_scope.this = Some(this);
+      variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
+
+      let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
+      if declare_in_body {
+        let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
+        analyzer.declare_symbol(
+          symbol,
+          callee.into_node(),
+          false,
+          DeclarationKind::NamedFunctionInBody,
+          Some(fn_entity),
         );
+      }
 
-        let variable_scope = analyzer.variable_scope_mut();
-        variable_scope.this = Some(this);
-        variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
+      analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
+      analyzer.exec_function_body(node.body.as_ref().unwrap());
 
-        let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
-        if declare_in_body {
-          let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
-          analyzer.declare_symbol(
-            symbol,
-            callee.into_node(),
-            false,
-            DeclarationKind::NamedFunctionInBody,
-            Some(fn_entity),
-          );
-        }
+      if consume {
+        analyzer.consume_return_values();
+      }
 
-        analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
-        analyzer.exec_function_body(node.body.as_ref().unwrap());
-
-        if consume {
-          analyzer.consume_return_values();
-        }
-
-        analyzer.pop_call_scope()
-      });
+      analyzer.pop_call_scope()
+    };
 
     if !consume && (node.r#async || node.generator) {
       // Too complex to analyze the control flow, thus run exhaustively
