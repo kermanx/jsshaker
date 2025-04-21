@@ -161,6 +161,7 @@ ast_kind_2! {
   LogicalAssignmentExpressionLeft(&'a AssignmentExpression<'a>),
   JSXOpeningElement(&'a JSXOpeningElement<'a>),
   JSXAttributeName(&'a JSXAttributeName<'a>),
+  ArrowFunctionBodyExecuted(&'a FunctionBody<'a>),
 }
 
 impl<'a> CustomDepTrait<'a> for AstKind2<'a> {

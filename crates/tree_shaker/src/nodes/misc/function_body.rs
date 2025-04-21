@@ -13,15 +13,14 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
-    if let [Statement::ExpressionStatement(expr)] = node.statements.as_slice() {
-      let dep = AstKind2::FunctionBody(node);
-      let value = self.exec_expression(&expr.expression);
-      let value = self.factory.computed(value, dep);
-      let call_scope = self.call_scope_mut();
-      call_scope.returned_values.push(value);
-    } else {
+    let [Statement::ExpressionStatement(expr)] = node.statements.as_slice() else {
       unreachable!();
-    }
+    };
+    self.refer_dep(AstKind2::ArrowFunctionBodyExecuted(node));
+    let value = self.exec_expression(&expr.expression);
+    let value = self.factory.computed(value, AstKind2::FunctionBody(node));
+    let call_scope = self.call_scope_mut();
+    call_scope.returned_values.push(value);
   }
 }
 
@@ -43,25 +42,27 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
-    let need_val = self.is_referred(AstKind2::FunctionBody(node));
-
     let FunctionBody { span, directives, statements } = node;
-
-    if let Some(Statement::ExpressionStatement(expr)) = statements.into_iter().next() {
-      let ExpressionStatement { expression, .. } = expr.as_ref();
-
-      let expr = self.transform_expression(expression, need_val);
-
-      self.ast_builder.function_body(
-        *span,
-        self.clone_node(directives),
-        self.ast_builder.vec1(self.ast_builder.statement_expression(
-          *span,
-          expr.unwrap_or_else(|| self.build_unused_expression(*span)),
-        )),
-      )
-    } else {
+    let Some(Statement::ExpressionStatement(expr)) = statements.into_iter().next() else {
       unreachable!();
-    }
+    };
+    let ExpressionStatement { expression, .. } = expr.as_ref();
+
+    let expr = if self.is_referred(AstKind2::ArrowFunctionBodyExecuted(node)) {
+      let need_val = self.is_referred(AstKind2::FunctionBody(node));
+      self.transform_expression(expression, need_val)
+    } else {
+      None
+    };
+
+    self.ast_builder.function_body(
+      *span,
+      self.clone_node(directives),
+      self.ast_builder.vec1(
+        self
+          .ast_builder
+          .statement_expression(*span, expr.unwrap_or_else(|| self.build_unused_expression(*span))),
+      ),
+    )
   }
 }
