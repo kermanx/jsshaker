@@ -23,6 +23,7 @@ use crate::{
 
 #[derive(Default)]
 struct Data<'a> {
+  pub value: Option<Entity<'a>>,
   pub constructor: Option<&'a MethodDefinition<'a>>,
   pub keys: Vec<Option<Entity<'a>>>,
   pub super_class: Option<Entity<'a>>,
@@ -123,7 +124,9 @@ impl<'a> Analyzer<'a> {
 
     self.pop_call_scope();
 
-    class.into()
+    let class = class.into();
+    data.value = Some(class);
+    class
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {
@@ -157,6 +160,11 @@ impl<'a> Analyzer<'a> {
     variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */ ]));
     variable_scope.super_class = Some(super_class);
 
+    if let Some(id) = &node.id {
+      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.init_binding_identifier(id, data.value);
+    }
+
     // 1. Init properties
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
       if let ClassElement::PropertyDefinition(node) = element {
@@ -179,9 +187,13 @@ impl<'a> Analyzer<'a> {
       if consume {
         self.consume_return_values();
       }
+      self.pop_call_scope()
+    } else if let Some(super_class) = &data.super_class {
+      self.pop_call_scope();
+      super_class.call(self, self.factory.no_dep, this, args)
+    } else {
+      self.pop_call_scope()
     }
-
-    self.pop_call_scope()
   }
 }
 
