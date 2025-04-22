@@ -52,6 +52,9 @@ impl<'a> Builtins<'a> {
             analyzer.pop_cf_scope();
           }
         }
+        if let Some(unknown) = enumerated.unknown {
+          target.set_property(analyzer, enumerated.dep, analyzer.factory.unknown_string, unknown);
+        }
       };
 
       for source in &known[1..] {
@@ -68,17 +71,18 @@ impl<'a> Builtins<'a> {
   fn create_object_keys_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
-      let enumerated = object.enumerate_properties(analyzer, dep);
-
       let array = analyzer.new_empty_array();
-
-      for (_, key, value) in enumerated.known.into_values() {
-        if key.test_typeof().contains(TypeofResult::String) {
-          array.init_rest(analyzer.factory.computed(key.get_to_string(analyzer), value));
+      if let Some(keys) = object.get_own_keys(analyzer) {
+        for (_, key) in keys {
+          if key.test_typeof().contains(TypeofResult::String) {
+            array.init_rest(key);
+          }
         }
+      } else {
+        array.init_rest(analyzer.factory.unknown_string);
       }
 
-      analyzer.factory.computed(array.into(), enumerated.dep)
+      analyzer.factory.computed(array.into(), object.get_shallow_dep(analyzer))
     })
   }
 
@@ -91,6 +95,10 @@ impl<'a> Builtins<'a> {
 
       for (_, _, value) in enumerated.known.into_values() {
         array.init_rest(value);
+      }
+
+      if let Some(unknown) = enumerated.unknown {
+        array.init_rest(unknown);
       }
 
       analyzer.factory.computed(array.into(), enumerated.dep)
@@ -108,6 +116,13 @@ impl<'a> Builtins<'a> {
         let entry = analyzer.new_empty_array();
         entry.push_element(key.get_to_string(analyzer));
         entry.push_element(value);
+        array.init_rest(entry.into());
+      }
+
+      if let Some(unknown) = enumerated.unknown {
+        let entry = analyzer.new_empty_array();
+        entry.push_element(analyzer.factory.unknown_string);
+        entry.push_element(unknown);
         array.init_rest(entry.into());
       }
 
