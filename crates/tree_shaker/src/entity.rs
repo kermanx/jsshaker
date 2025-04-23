@@ -36,6 +36,10 @@ impl<'a> Entity<'a> {
     }
   }
 
+  pub fn value_eq(self, other: Self) -> bool {
+    std::ptr::eq(self.value, other.value)
+  }
+
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.consume(*self);
   }

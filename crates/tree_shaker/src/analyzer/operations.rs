@@ -51,10 +51,9 @@ impl<'a> Analyzer<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
-    // TODO: Find another way to do this
-    // if Entity::ptr_eq(lhs, rhs) {
-    //   return Some(true);
-    // }
+    if Entity::value_eq(lhs, rhs) {
+      return (Some(true), Some(MangleConstraint::None));
+    }
 
     let lhs_t = lhs.test_typeof();
     let rhs_t = rhs.test_typeof();
@@ -74,18 +73,16 @@ impl<'a> Analyzer<'a> {
 
       let mut constraints = Some(self.allocator.alloc(self.factory.vec()));
       let mut all_neq = true;
-      'check: for l in &lhs_lit {
+      for l in &lhs_lit {
         for r in &rhs_lit {
           let (eq, mc) = l.strict_eq(*r);
           all_neq &= !eq;
           if let Some(mc) = mc {
             if let Some(constraints) = &mut constraints {
               constraints.push(mc);
-            } else {
-              constraints = None;
             }
-          } else if !all_neq {
-            break 'check;
+          } else {
+            constraints = None;
           }
         }
       }
