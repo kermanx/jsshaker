@@ -168,17 +168,7 @@ impl<'a> Analyzer<'a> {
         self.module_info_mut().default_export = Some(value);
       }
       ModuleDeclaration::ExportAllDeclaration(_node) => {
-        // FIXME:
-        // let name = node.source.value.as_str();
-        // if let Some(known) = self.builtins.get_known_module(name) {
-        //   self.module_info_mut().pending_reexports.push(known.namespace);
-        // } else if let Some(resolved) = self.import_module(name) {
-        //   let named_exports = &self.modules.modules[resolved].pending_named_exports;
-        //   self.module_info_mut().pending_named_exports
-        // } else {
-        //   let unknown = self.factory.unknown;
-        //   self.module_info_mut().pending_reexports.push(unknown);
-        // }
+        todo!("ExportAllDeclaration");
       }
       _ => unreachable!(),
     }
@@ -275,7 +265,7 @@ impl<'a> Transformer<'a> {
           *span,
           declaration,
           self.clone_node(specifiers),
-          self.clone_node(source),
+          source.clone(),
           *export_kind,
           self.clone_node(with_clause),
         ))
