@@ -28,18 +28,18 @@ impl<'a> ObjectValue<'a> {
         let (key_str, key_atom) = key_literal.into();
         let mut keyed = self.keyed.borrow_mut();
         let existing = keyed.get_mut(&key_str);
-        let reused_property = definite
-          .then(|| {
-            existing.as_ref().and_then(|existing| {
-              for property in existing.possible_values.iter() {
-                if let ObjectPropertyValue::Property(getter, setter) = property {
-                  return Some((*getter, *setter));
-                }
+        let reused_property = if definite {
+          existing.as_ref().and_then(|existing| {
+            for property in existing.possible_values.iter() {
+              if let ObjectPropertyValue::Property(getter, setter) = property {
+                return Some((*getter, *setter));
               }
-              None
-            })
+            }
+            None
           })
-          .flatten();
+        } else {
+          None
+        };
         let constraint = if mangable {
           if let Some(existing) = &existing {
             let prev_atom = existing.mangling.unwrap();

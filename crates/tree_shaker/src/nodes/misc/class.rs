@@ -111,14 +111,7 @@ impl<'a> Analyzer<'a> {
         ClassElement::MethodDefinition(_node) => {}
         ClassElement::PropertyDefinition(node) if node.r#static => {
           let key = data.keys[index].unwrap();
-          let value = self.factory.computed(
-            if let Some(value) = &node.value {
-              self.exec_expression(value)
-            } else {
-              self.factory.undefined
-            },
-            AstKind2::PropertyDefinition(node),
-          );
+          let value = self.exec_property_definition(node);
           class.statics.init_property(self, PropertyKind::Init, key, value, true);
         }
         _ => {}
@@ -172,10 +165,8 @@ impl<'a> Analyzer<'a> {
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
       if let ClassElement::PropertyDefinition(node) = element {
         if !node.r#static {
-          if let Some(value) = &node.value {
-            let value = self.exec_expression(value);
-            this.set_property(self, AstKind2::PropertyDefinition(node), key.unwrap(), value);
-          }
+          let value = self.exec_property_definition(node);
+          this.set_property(self, self.factory.no_dep, key.unwrap(), value);
         }
       }
     }

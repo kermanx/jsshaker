@@ -29,11 +29,9 @@ impl<'a> Transformer<'a> {
       PropertyKey::StaticIdentifier(node) => need_val.then(|| {
         PropertyKey::StaticIdentifier(self.ast_builder.alloc(self.transform_identifier_name(node)))
       }),
-      PropertyKey::PrivateIdentifier(private_identifier) => need_val.then(|| {
-        PropertyKey::PrivateIdentifier(
-          self.ast_builder.alloc(self.transform_private_identifier(private_identifier)),
-        )
-      }),
+      PropertyKey::PrivateIdentifier(private_identifier) => self
+        .transform_private_identifier(private_identifier, need_val)
+        .map(|k| PropertyKey::PrivateIdentifier(self.ast_builder.alloc(k))),
       _ => {
         let node = node.to_expression();
         if need_val || self.transform_expression(node, false).is_some() {

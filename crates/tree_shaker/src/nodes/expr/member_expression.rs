@@ -191,7 +191,7 @@ impl<'a> Transformer<'a> {
               .member_expression_private_field_expression(
                 *span,
                 object.unwrap(),
-                self.transform_private_identifier(field),
+                self.transform_private_identifier(field, true).unwrap(),
                 need_optional,
               )
               .into(),
@@ -264,20 +264,21 @@ impl<'a> Transformer<'a> {
         let PrivateFieldExpression { span, object, field, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
-        let field = self.transform_private_identifier(field);
+        let field =
+          self.transform_private_identifier(field, need_write || transformed_object.is_some());
 
         if need_write {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             transformed_object.unwrap(),
-            field,
+            field.unwrap(),
             false,
           ))
         } else if transformed_object.is_some() {
           Some(self.ast_builder.member_expression_private_field_expression(
             *span,
             self.transform_expression(object, true).unwrap(),
-            field,
+            field.unwrap(),
             false,
           ))
         } else {
