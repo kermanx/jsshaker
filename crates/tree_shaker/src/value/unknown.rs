@@ -116,6 +116,10 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   fn test_nullish(&self) -> Option<bool> {
     None
   }
+
+  fn is_shared_value(&self) -> bool {
+    true
+  }
 }
 
 impl UnknownValue<'_> {

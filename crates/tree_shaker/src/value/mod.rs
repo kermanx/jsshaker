@@ -200,6 +200,11 @@ pub trait ValueTrait<'a>: Debug {
       analyzer.factory.arguments(analyzer.factory.vec1((false, value))),
     )
   }
+
+  /// If it is a shared value, reference equality doesn't mean anything.
+  fn is_shared_value(&self) -> bool {
+    false
+  }
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {

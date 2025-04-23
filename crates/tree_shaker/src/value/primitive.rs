@@ -167,6 +167,10 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
   }
+
+  fn is_shared_value(&self) -> bool {
+    true
+  }
 }
 
 impl<'a> PrimitiveValue {
