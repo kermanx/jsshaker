@@ -168,7 +168,9 @@ impl<'a> Analyzer<'a> {
         self.module_info_mut().default_export = Some(value);
       }
       ModuleDeclaration::ExportAllDeclaration(_node) => {
-        todo!("ExportAllDeclaration");
+        if self.module_stack.len() > 1 {
+          todo!("ExportAllDeclaration");
+        }
       }
       _ => unreachable!(),
     }
