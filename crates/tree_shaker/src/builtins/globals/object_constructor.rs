@@ -33,7 +33,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
-      let (known, rest, deps) = args.iterate(analyzer, dep);
+      let (known, rest, mut deps) = args.iterate(analyzer, dep);
 
       if known.len() < 2 {
         return analyzer.factory.computed_unknown((dep, args));
@@ -55,6 +55,7 @@ impl<'a> Builtins<'a> {
         if let Some(unknown) = enumerated.unknown {
           target.set_property(analyzer, enumerated.dep, analyzer.factory.unknown_string, unknown);
         }
+        deps = analyzer.factory.dep((deps, enumerated.dep));
       };
 
       for source in &known[1..] {
