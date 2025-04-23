@@ -1,5 +1,3 @@
-use std::borrow::BorrowMut;
-
 use crate::{
   builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
   init_namespace,
@@ -35,6 +33,6 @@ impl Builtins<'_> {
       // "toString" => factory.string("__#toString__"),
     });
 
-    self.globals.borrow_mut().insert("Symbol", object.into());
+    self.globals.insert("Symbol", object.into());
   }
 }

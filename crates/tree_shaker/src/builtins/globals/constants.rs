@@ -9,6 +9,8 @@ impl Builtins<'_> {
       "Infinity" => factory.infinity(true),
       "NaN" => factory.nan,
       "eval" => factory.unknown,
+      "RegExp" => factory.unknown,
+      "Array" => factory.unknown,
     })
   }
 }
