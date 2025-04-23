@@ -31,6 +31,7 @@ impl<'a> MangleConstraint<'a> {
 
   pub fn negate_equality(self, allocator: &'a Allocator) -> Self {
     match self {
+      MangleConstraint::None => MangleConstraint::None,
       MangleConstraint::Eq(a, b) => MangleConstraint::Neq(a, b),
       MangleConstraint::Neq(a, b) => MangleConstraint::Eq(a, b),
       MangleConstraint::Multiple(c) => MangleConstraint::Multiple({
