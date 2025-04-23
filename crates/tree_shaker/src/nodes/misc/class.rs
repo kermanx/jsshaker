@@ -110,13 +110,16 @@ impl<'a> Analyzer<'a> {
         ClassElement::StaticBlock(node) => self.exec_static_block(node),
         ClassElement::MethodDefinition(_node) => {}
         ClassElement::PropertyDefinition(node) if node.r#static => {
-          if let Some(value) = &node.value {
-            let key = data.keys[index].unwrap();
-            let value = self
-              .factory
-              .computed(self.exec_expression(value), AstKind2::PropertyDefinition(node));
-            class.statics.init_property(self, PropertyKind::Init, key, value, true);
-          }
+          let key = data.keys[index].unwrap();
+          let value = self.factory.computed(
+            if let Some(value) = &node.value {
+              self.exec_expression(value)
+            } else {
+              self.factory.undefined
+            },
+            AstKind2::PropertyDefinition(node),
+          );
+          class.statics.init_property(self, PropertyKind::Init, key, value, true);
         }
         _ => {}
       }
