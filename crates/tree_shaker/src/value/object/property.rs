@@ -132,6 +132,7 @@ impl<'a> ObjectProperty<'a> {
     for possible_value in &self.possible_values {
       match *possible_value {
         ObjectPropertyValue::Consumed(_, deps) => {
+          writable = true;
           was_consumed = Some(deps);
         }
         ObjectPropertyValue::Field(value, readonly) => {
