@@ -501,16 +501,6 @@ impl<'a> LiteralValue<'a> {
 
     (self == other && self != LiteralValue::NaN, None)
   }
-
-  pub fn with_mangle_atom(self, analyzer: &mut Analyzer<'a>) -> (Entity<'a>, Option<MangleAtom>) {
-    match self {
-      LiteralValue::String(value, atom) => {
-        let atom = atom.unwrap_or_else(|| analyzer.mangler.new_atom());
-        (analyzer.factory.alloc(LiteralValue::String(value, Some(atom))).into(), Some(atom))
-      }
-      _ => (analyzer.factory.alloc(self).into(), None),
-    }
-  }
 }
 
 impl<'a> From<LiteralValue<'a>> for PropertyKeyValue<'a> {

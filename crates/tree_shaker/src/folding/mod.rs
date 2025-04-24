@@ -43,6 +43,7 @@ pub struct FoldingData<'a> {
   pub state: FoldingState<'a>,
   pub used_values: allocator::Vec<'a, Entity<'a>>,
   pub used_mangle_atoms: allocator::Vec<'a, MangleAtom>,
+  pub allocated_atom: Option<MangleAtom>,
 }
 
 #[derive(Debug, Default)]
@@ -65,12 +66,21 @@ impl<'a> Analyzer<'a> {
         state: FoldingState::Initial,
         used_values: self.factory.vec(),
         used_mangle_atoms: self.factory.vec(),
+        allocated_atom: None,
       }))
     });
     if !data.borrow().state.is_foldable() {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
-      let (literal_value, mangle_atom) = literal.with_mangle_atom(self);
+      let (literal_value, mangle_atom) = match literal {
+        LiteralValue::String(value, atom) => {
+          let atom = atom.unwrap_or_else(|| {
+            *data.borrow_mut().allocated_atom.get_or_insert_with(|| self.mangler.new_atom())
+          });
+          (self.factory.alloc(LiteralValue::String(value, Some(atom))).into(), Some(atom))
+        }
+        _ => (self.factory.alloc(literal).into(), None),
+      };
       self.factory.computed(literal_value, FoldableDep { data, literal, value, mangle_atom })
     } else {
       self.factory.computed(value, UnFoldableDep { data })
@@ -90,11 +100,13 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         let values = data.used_values.drain(..).collect::<Vec<_>>();
+        let allocated_atom = data.allocated_atom.take();
         mem::drop(data);
         for value in values {
           value.consume_mangable(self);
           changed = true;
         }
+        self.consume(allocated_atom);
       }
     }
     changed
