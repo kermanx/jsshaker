@@ -41,16 +41,16 @@ impl<'a> Analyzer<'a> {
       if let Some((prototype_dep, super_statics, super_prototype)) =
         super_class.get_constructor_prototype(self, self.factory.no_dep)
       {
-        class.statics.prototype.set(super_statics);
-        class.prototype.prototype.set(super_prototype);
+        class.statics.set_prototype(super_statics);
+        class.prototype.set_prototype(super_prototype);
         class.prototype.unknown_mutate(self, prototype_dep);
       } else {
         let dep = self.factory.dep(*super_class);
-        class.statics.prototype.set(ObjectPrototype::Unknown(dep));
-        class.prototype.prototype.set(ObjectPrototype::Unknown(dep));
+        class.statics.set_prototype(ObjectPrototype::Unknown(dep));
+        class.prototype.set_prototype(ObjectPrototype::Unknown(dep));
       }
     } else {
-      class.prototype.prototype.set(ObjectPrototype::ImplicitOrNull);
+      class.prototype.set_prototype(ObjectPrototype::ImplicitOrNull);
     };
 
     // Enter class statics scope

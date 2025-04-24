@@ -66,7 +66,7 @@ pub struct ObjectValue<'a> {
   pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
-  pub mangling_group: Option<ObjectManglingGroupId<'a>>,
+  pub mangling_group: Cell<Option<ObjectManglingGroupId<'a>>>,
 
   /// Properties keyed by known string
   pub keyed: RefCell<allocator::HashMap<'a, PropertyKeyValue<'a>, ObjectProperty<'a>>>,
@@ -269,7 +269,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   pub fn is_mangable(&self) -> bool {
-    self.mangling_group.is_some_and(|group| group.get().is_some())
+    self.mangling_group.get().is_some_and(|group| group.get().is_some())
   }
 
   fn check_mangable(
@@ -290,7 +290,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn disable_mangling(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(group) = self.mangling_group {
+    if let Some(group) = self.mangling_group.get() {
       if let Some(group) = group.replace(None) {
         analyzer.mangler.mark_uniqueness_group_non_mangable(group);
       }
@@ -298,7 +298,18 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn add_to_mangling_group(&self, analyzer: &mut Analyzer<'a>, key_atom: MangleAtom) {
-    analyzer.mangler.add_to_uniqueness_group(self.mangling_group.unwrap().get().unwrap(), key_atom);
+    analyzer
+      .mangler
+      .add_to_uniqueness_group(self.mangling_group.get().unwrap().get().unwrap(), key_atom);
+  }
+
+  pub fn set_prototype(&self, prototype: ObjectPrototype<'a>) {
+    self.prototype.set(prototype);
+    match prototype {
+      ObjectPrototype::Custom(s) => self.mangling_group.set(s.mangling_group.get()),
+      ObjectPrototype::Builtin(_) | ObjectPrototype::Unknown(_) => self.mangling_group.set(None),
+      ObjectPrototype::ImplicitOrNull => {}
+    }
   }
 }
 
@@ -319,7 +330,7 @@ impl<'a> Analyzer<'a> {
       unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
       rest: None,
       prototype: Cell::new(prototype),
-      mangling_group,
+      mangling_group: Cell::new(mangling_group),
     })
   }
 

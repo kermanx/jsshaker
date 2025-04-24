@@ -182,7 +182,7 @@ impl<'a> Factory<'a> {
       unknown: ObjectProperty::new_in(self.allocator).into(),
       rest: Default::default(),
       prototype: Cell::new(prototype),
-      mangling_group: None,
+      mangling_group: Cell::new(None),
     })
   }
 

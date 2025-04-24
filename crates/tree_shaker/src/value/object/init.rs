@@ -112,7 +112,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   pub fn init_rest(&mut self, factory: &Factory<'a>, property: ObjectPropertyValue<'a>) {
-    assert_eq!(self.mangling_group, None);
+    assert_eq!(self.mangling_group.get(), None);
     if let Some(rest) = &self.rest {
       rest.borrow_mut().possible_values.push(property);
     } else {

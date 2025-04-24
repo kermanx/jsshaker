@@ -265,8 +265,10 @@ impl<'a> FunctionValue<'a> {
     args: Entity<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let m = self.prototype.is_mangable().then(|| analyzer.new_object_mangling_group());
-    let target = analyzer.new_empty_object(ObjectPrototype::Custom(self.prototype), m);
+    let target = analyzer.new_empty_object(
+      ObjectPrototype::Custom(self.prototype),
+      self.prototype.mangling_group.get(),
+    );
     self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
