@@ -186,7 +186,8 @@ impl<'a> Analyzer<'a> {
       self.pop_call_scope();
       super_class.call(self, self.factory.no_dep, this, args)
     } else {
-      self.pop_call_scope()
+      self.pop_call_scope();
+      self.factory.undefined
     }
   }
 }
