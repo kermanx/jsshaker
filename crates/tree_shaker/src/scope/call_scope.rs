@@ -52,13 +52,13 @@ impl<'a> CallScope<'a> {
   }
 
   pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<VariableScopeId>, Entity<'a>) {
-    let value = if self.returned_values.is_empty() {
-      analyzer.factory.undefined
-    } else {
-      analyzer.factory.union(allocator::Vec::from_iter_in(
-        self.returned_values.iter().copied(),
-        analyzer.allocator,
-      ))
+    let value = match &self.returned_values[..] {
+      [] => analyzer.factory.never,
+      [v] => *v,
+      [v1, v2] => analyzer.factory.union((*v1, *v2)),
+      values => analyzer
+        .factory
+        .union(allocator::Vec::from_iter_in(values.iter().copied(), analyzer.allocator)),
     };
 
     #[cfg(feature = "flame")]

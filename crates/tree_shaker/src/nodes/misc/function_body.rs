@@ -10,6 +10,13 @@ impl<'a> Analyzer<'a> {
     let data = self.load_data::<StatementVecData>(AstKind2::FunctionBody(node));
 
     self.exec_statement_vec(data, &node.statements);
+
+    if !self.cf_scope().must_exited() {
+      let factory = self.factory;
+      let dep = self.cf_scope_mut().deps.collect(factory);
+      let call_scope = self.call_scope_mut();
+      call_scope.returned_values.push(factory.computed(factory.undefined, dep));
+    }
   }
 
   pub fn exec_function_expression_body(&mut self, node: &'a FunctionBody<'a>) {
