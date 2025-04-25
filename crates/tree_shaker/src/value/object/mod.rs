@@ -203,10 +203,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    if self.consumed.get()
-      || self.rest.is_some()
-      || !self.unknown.borrow().possible_values.is_empty()
-    {
+    let mut unknown = self.unknown.borrow_mut();
+    if self.consumed.get() || self.rest.is_some() || !unknown.possible_values.is_empty() {
       return None;
     }
 
@@ -219,6 +217,11 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
         key_entity
       } else {
         analyzer.factory.computed(key_entity, property.non_existent.collect(analyzer.factory))
+      };
+      let key_entity = if unknown.non_existent.is_empty() {
+        key_entity
+      } else {
+        analyzer.factory.computed(key_entity, unknown.non_existent.collect(analyzer.factory))
       };
       let key_entity = analyzer.factory.computed(key_entity, {
         let mut deps = analyzer.factory.vec();
@@ -234,6 +237,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       });
       keys.push((property.definite, key_entity));
     }
+
     Some(keys)
   }
 
