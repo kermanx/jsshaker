@@ -306,7 +306,8 @@ impl<'a> Analyzer<'a> {
 
     if exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
-      self.module_info_mut().named_exports.insert(name, (variable_scope, symbol));
+      let dep = self.factory.no_dep;
+      self.module_info_mut().named_exports.insert(name, (variable_scope, symbol, dep));
     }
 
     if kind == DeclarationKind::FunctionParameter {

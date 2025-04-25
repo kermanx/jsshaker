@@ -13,7 +13,7 @@ use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
-  dep::{CustomDepTrait, DepAtom},
+  dep::{CustomDepTrait, Dep, DepAtom},
   entity::Entity,
   scope::{
     CfScopeId, CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
@@ -30,7 +30,7 @@ pub struct ModuleInfo<'a> {
   pub semantic: Rc<Semantic<'a>>,
   pub call_id: DepAtom,
 
-  pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId)>,
+  pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId, Dep<'a>)>,
   pub default_export: Option<Entity<'a>>,
 
   pub blocked_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
@@ -165,8 +165,9 @@ impl<'a> Analyzer<'a> {
     let ModuleInfo { call_id, named_exports, default_export, .. } =
       self.modules.modules[module_id].clone();
     self.refer_dep(call_id);
-    for (scope, symbol) in named_exports.into_values() {
+    for (scope, symbol, dep) in named_exports.into_values() {
       self.consume_on_scope(scope, symbol);
+      self.consume(dep);
     }
     if let Some(entity) = default_export {
       self.consume(entity);

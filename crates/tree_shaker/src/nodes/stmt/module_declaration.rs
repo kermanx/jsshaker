@@ -4,7 +4,10 @@ use oxc::ast::ast::{
   ImportSpecifier, ModuleDeclaration, ModuleExportName, PropertyKind,
 };
 
-use crate::{Analyzer, ast::DeclarationKind, transformer::Transformer, value::ObjectPrototype};
+use crate::{
+  Analyzer, ast::DeclarationKind, transformer::Transformer, utils::ast::AstKind2,
+  value::ObjectPrototype,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
@@ -18,7 +21,9 @@ impl<'a> Analyzer<'a> {
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
         if node.source.is_some() {
-          // Re-exports. Nothing to do.
+          if self.module_stack.len() > 1 {
+            todo!("ExportNamedDeclaration");
+          }
           return;
         }
         if let Some(declaration) = &node.declaration {
@@ -27,13 +32,16 @@ impl<'a> Analyzer<'a> {
         for specifier in &node.specifiers {
           match &specifier.local {
             ModuleExportName::IdentifierReference(node) => {
+              let dep = self.dep(AstKind2::ExportSpecifier(specifier));
               let reference = self.semantic().scoping().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
                 let scope = self.scoping.variable.current_id();
                 self
                   .module_info_mut()
                   .named_exports
-                  .insert(specifier.exported.name(), (scope, symbol));
+                  .insert(specifier.exported.name(), (scope, symbol, dep));
+              } else {
+                self.consume(dep);
               }
             }
             _ => unreachable!(),
@@ -105,23 +113,23 @@ impl<'a> Analyzer<'a> {
               let named_exports = module_info.named_exports.clone();
               let object = self
                 .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.null), None);
-              for (key, (scope, symbol)) in named_exports {
+              for (key, (scope, symbol, dep)) in named_exports {
                 let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
                 object.init_property(
                   self,
                   PropertyKind::Init,
                   self.factory.string(key.as_str()),
-                  value,
+                  self.factory.computed(value, dep),
                   true,
                 );
               }
               object.into()
             }
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
-              if let Some((scope, symbol)) =
+              if let Some((scope, symbol, dep)) =
                 module_info.named_exports.get(&node.imported.name()).copied()
               {
-                self.read_on_scope(scope, symbol).unwrap().unwrap()
+                self.factory.computed(self.read_on_scope(scope, symbol).unwrap().unwrap(), dep)
               } else {
                 self.factory.unknown
               }
@@ -260,13 +268,19 @@ impl<'a> Transformer<'a> {
           return Some(ModuleDeclaration::ExportNamedDeclaration(self.clone_node(node)));
         }
         let declaration = declaration.as_ref().and_then(|d| self.transform_declaration(d));
-        if declaration.is_none() && specifiers.is_empty() {
+        let mut transformed_specifiers = self.ast_builder.vec();
+        for specifier in specifiers {
+          if self.is_referred(AstKind2::ExportSpecifier(specifier)) {
+            transformed_specifiers.push(self.clone_node(specifier));
+          }
+        }
+        if declaration.is_none() && transformed_specifiers.is_empty() {
           return None;
         }
         Some(self.ast_builder.module_declaration_export_named_declaration(
           *span,
           declaration,
-          self.clone_node(specifiers),
+          transformed_specifiers,
           source.clone(),
           *export_kind,
           self.clone_node(with_clause),
