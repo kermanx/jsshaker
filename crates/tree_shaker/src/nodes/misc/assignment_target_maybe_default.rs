@@ -3,12 +3,7 @@ use oxc::{
   span::GetSpan,
 };
 
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
-
-#[derive(Debug, Default)]
-pub struct WithDefaultData {
-  need_init: bool,
-}
+use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_assignment_target_maybe_default(
@@ -18,11 +13,7 @@ impl<'a> Analyzer<'a> {
   ) {
     match node {
       AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(node) => {
-        let (need_init, value) = self.exec_with_default(&node.init, value);
-
-        let data = self.load_data::<WithDefaultData>(AstKind2::AssignmentTargetWithDefault(node));
-        data.need_init |= need_init;
-
+        let value = self.exec_with_default(&node.init, value);
         self.exec_assignment_target_write(&node.binding, value, None);
       }
       _ => self.exec_assignment_target_write(node.to_assignment_target(), value, None),
@@ -38,15 +29,12 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTargetMaybeDefault<'a>> {
     match node {
       AssignmentTargetMaybeDefault::AssignmentTargetWithDefault(node) => {
-        let data = self.get_data::<WithDefaultData>(AstKind2::AssignmentTargetWithDefault(node));
-
         let AssignmentTargetWithDefault { span, binding, init } = node.as_ref();
 
         let binding_span = binding.span();
         let (binding_is_empty, binding) =
           self.transform_assignment_target_write(binding, need_binding, false);
-        let init =
-          data.need_init.then(|| self.transform_expression(init, !binding_is_empty)).flatten();
+        let init = self.transform_with_default(init, !binding_is_empty);
 
         if let Some(init) = init {
           Some(self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(

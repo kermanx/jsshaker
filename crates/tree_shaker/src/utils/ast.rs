@@ -162,6 +162,7 @@ ast_kind_2! {
   JSXOpeningElement(&'a JSXOpeningElement<'a>),
   JSXAttributeName(&'a JSXAttributeName<'a>),
   ArrowFunctionBodyExecuted(&'a FunctionBody<'a>),
+  WithDefault(&'a Expression<'a>),
 }
 
 impl<'a> CustomDepTrait<'a> for AstKind2<'a> {

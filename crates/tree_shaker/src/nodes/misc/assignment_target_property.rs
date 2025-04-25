@@ -7,11 +7,6 @@ use oxc::{
 
 use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
-#[derive(Debug, Default)]
-struct IdentifierData {
-  need_init: bool,
-}
-
 impl<'a> Analyzer<'a> {
   /// Returns the key
   pub fn exec_assignment_target_property(
@@ -26,15 +21,8 @@ impl<'a> Analyzer<'a> {
 
         let value = value.get_property(self, dep, key);
 
-        let (need_init, value) = if let Some(init) = &node.init {
-          self.exec_with_default(init, value)
-        } else {
-          (false, value)
-        };
-
-        let data =
-          self.load_data::<IdentifierData>(AstKind2::AssignmentTargetPropertyIdentifier(node));
-        data.need_init |= need_init;
+        let value =
+          if let Some(init) = &node.init { self.exec_with_default(init, value) } else { value };
 
         self.exec_identifier_reference_write(&node.binding, value);
 
@@ -61,20 +49,16 @@ impl<'a> Transformer<'a> {
     let need_binding = self.is_referred(AstKind2::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let data =
-          self.get_data::<IdentifierData>(AstKind2::AssignmentTargetPropertyIdentifier(node));
-
         let AssignmentTargetPropertyIdentifier { span, binding, init } = node.as_ref();
 
         let binding_span = binding.span();
         let binding_name = binding.name.as_str();
         let binding = self.transform_identifier_reference_write(binding);
-        let init = data
-          .need_init
-          .then(|| {
-            init.as_ref().and_then(|init| self.transform_expression(init, binding.is_some()))
-          })
-          .flatten();
+        let init = if let Some(init) = init {
+          self.transform_with_default(init, binding.is_some())
+        } else {
+          None
+        };
 
         if need_binding && binding.is_none() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(

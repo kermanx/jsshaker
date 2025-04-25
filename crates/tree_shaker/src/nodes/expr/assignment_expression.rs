@@ -65,9 +65,7 @@ impl<'a> Analyzer<'a> {
           let right = exec_right(self);
           self.factory.logical_result(left, right, to_logical_operator(node.operator))
         }
-        (false, false) => {
-          unreachable!("Logical assignment expression should have at least one side")
-        }
+        (false, false) => unreachable!(),
       };
 
       if maybe_right {
