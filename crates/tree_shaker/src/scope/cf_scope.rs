@@ -266,13 +266,16 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exit_by_throw(&mut self) -> usize {
-    let mut target_depth = 0;
-    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
-      if cf_scope.exited != Some(false) {
-        target_depth = idx;
-        break;
+    let target_depth = self.scoping.try_catch_depth.unwrap_or_else(|| {
+      let mut target_depth = 0;
+      for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
+        if cf_scope.exited != Some(false) {
+          target_depth = idx;
+          break;
+        }
       }
-    }
+      target_depth
+    });
     self.exit_to(target_depth);
     target_depth
   }

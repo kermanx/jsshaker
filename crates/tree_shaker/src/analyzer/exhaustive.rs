@@ -215,6 +215,7 @@ impl<'a> Analyzer<'a> {
     if self.pending_deps.is_empty() {
       return false;
     }
+    let old_try_catch_depth = self.scoping.try_catch_depth.take();
     loop {
       let runners = mem::take(&mut self.pending_deps);
       for runner in runners {
@@ -225,6 +226,7 @@ impl<'a> Analyzer<'a> {
         // self.debug += 1;
       }
       if self.pending_deps.is_empty() {
+        self.scoping.try_catch_depth = old_try_catch_depth;
         return true;
       }
     }

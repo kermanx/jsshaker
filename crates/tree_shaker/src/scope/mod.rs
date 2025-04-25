@@ -26,6 +26,7 @@ pub struct Scoping<'a> {
   pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
   pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
   pub pure: usize,
+  pub try_catch_depth: Option<usize>,
 
   pub object_symbol_counter: usize,
 }
@@ -55,6 +56,7 @@ impl<'a> Scoping<'a> {
       variable,
       cf,
       pure: 0,
+      try_catch_depth: None,
 
       object_symbol_counter: 128,
     }
