@@ -26,6 +26,7 @@ impl<'a> Builtins<'a> {
       "entries" => self.create_object_entries_impl(),
       "freeze" => self.create_object_freeze_impl(),
       "defineProperty" => self.create_object_define_property_impl(),
+      "create" => self.create_object_create_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", object.into());
@@ -193,6 +194,30 @@ impl<'a> Builtins<'a> {
 
       object.unknown_mutate(analyzer, (dep, key, descriptor));
       object
+    })
+  }
+
+  fn create_object_create_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.create", |analyzer, dep, _, args| {
+      let [proto, properties] = args.destruct_as_array(analyzer, dep, 2, false).0[..] else {
+        unreachable!()
+      };
+      let deps = analyzer.dep((proto, dep));
+      if properties.test_is_undefined() != Some(true) {
+        // Has properties
+        let enumerated = properties.enumerate_properties(analyzer, deps);
+        if !enumerated.known.is_empty() || enumerated.unknown.is_some() {
+          return analyzer.factory.computed_unknown((enumerated.dep, properties));
+        }
+      }
+      let prototype = if proto.test_nullish() == Some(true) {
+        ObjectPrototype::ImplicitOrNull
+      } else {
+        ObjectPrototype::Unknown(deps)
+      };
+      let mangling = analyzer.new_object_mangling_group();
+      let object = analyzer.new_empty_object(prototype, Some(mangling));
+      analyzer.factory.computed(object.into(), deps)
     })
   }
 }
