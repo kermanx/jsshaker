@@ -71,9 +71,7 @@ impl<'a> Analyzer<'a> {
 
     let cf_scope = self.cf_scope();
     if cf_scope.referred_state != ReferredState::ReferredClean && cf_scope.deps.may_not_referred() {
-      self.push_indeterminate_cf_scope();
       runner(self);
-      self.pop_cf_scope();
     }
   }
 
@@ -83,12 +81,10 @@ impl<'a> Analyzer<'a> {
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
   ) {
     let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
-      analyzer.push_indeterminate_cf_scope();
       let ret_val = runner(analyzer);
       if !analyzer.is_inside_pure() {
         analyzer.consume(ret_val);
       }
-      analyzer.pop_cf_scope();
     });
     self.exec_exhaustively(kind, true, true, runner);
   }
@@ -110,7 +106,7 @@ impl<'a> Analyzer<'a> {
         temp_deps: drain.then(FxHashSet::default),
         register_deps: register.then(Default::default),
       }),
-      Some(false),
+      None,
     );
     let mut round_counter = 0;
     loop {
