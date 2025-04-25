@@ -1,35 +1,34 @@
 use oxc::{
   ast::ast::{
-    Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKey, PropertyKind,
-    SpreadElement,
+    Expression, ObjectExpression, ObjectProperty, ObjectPropertyKind, PropertyKind, SpreadElement,
   },
   span::{GetSpan, SPAN},
 };
 
 use crate::{
   analyzer::Analyzer, ast::AstKind2, build_effect, entity::Entity, transformer::Transformer,
+  value::ObjectPrototype,
 };
 
 impl<'a> Analyzer<'a> {
   pub fn exec_object_expression(&mut self, node: &'a ObjectExpression) -> Entity<'a> {
     let object = self.use_mangable_plain_object(AstKind2::ObjectExpression(node));
 
-    let mut has_proto = false;
-
     for property in &node.properties {
       match property {
         ObjectPropertyKind::ObjectProperty(node) => {
           let key = self.exec_property_key(&node.key);
           let value = self.exec_expression(&node.value);
-          let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
-
-          if matches!(&node.key, PropertyKey::StaticIdentifier(node) if node.name == "__proto__") {
-            if value.test_nullish() != Some(true) {
-              has_proto = true;
-            }
-            // Ensure the __proto__ is consumed - it may be overridden by the next property like ["__proto__"]: 1
-            self.consume((key, value));
+          if node.key.is_specific_id("__proto__") {
+            let dep = self.dep((key, value, AstKind2::ObjectProperty(node)));
+            object.set_prototype(if value.test_nullish() == Some(true) {
+              ObjectPrototype::ImplicitOrNull
+            } else {
+              ObjectPrototype::Unknown(dep)
+            });
+            object.add_extra_dep(dep);
           } else {
+            let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
             object.init_property(self, node.kind, key, value, true);
           }
         }
@@ -40,12 +39,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    let object = Entity::from(object);
-    if has_proto {
-      // Deoptimize the object
-      self.consume(object);
-    }
-    object
+    object.into()
   }
 }
 

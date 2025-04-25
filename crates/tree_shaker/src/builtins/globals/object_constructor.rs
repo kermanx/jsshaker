@@ -217,7 +217,8 @@ impl<'a> Builtins<'a> {
       };
       let mangling = analyzer.new_object_mangling_group();
       let object = analyzer.new_empty_object(prototype, Some(mangling));
-      analyzer.factory.computed(object.into(), deps)
+      object.add_extra_dep(deps);
+      object.into()
     })
   }
 }

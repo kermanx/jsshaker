@@ -104,7 +104,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       return consumed_object::unknown_mutate(analyzer, dep);
     }
 
-    self.unknown.borrow_mut().non_existent.push(dep);
+    self.add_extra_dep(dep);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
@@ -310,6 +310,10 @@ impl<'a> ObjectValue<'a> {
       ObjectPrototype::Builtin(_) | ObjectPrototype::Unknown(_) => self.mangling_group.set(None),
       ObjectPrototype::ImplicitOrNull => {}
     }
+  }
+
+  pub fn add_extra_dep(&self, dep: Dep<'a>) {
+    self.unknown.borrow_mut().non_existent.push(dep);
   }
 }
 
