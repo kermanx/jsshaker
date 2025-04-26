@@ -310,7 +310,8 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { TreeShakeResultBinding, treeShake } = nativeBinding
+const { TreeShakeResultBinding, treeShake, treeShakeEntry } = nativeBinding
 
 module.exports.TreeShakeResultBinding = TreeShakeResultBinding
 module.exports.treeShake = treeShake
+module.exports.treeShakeEntry = treeShakeEntry
