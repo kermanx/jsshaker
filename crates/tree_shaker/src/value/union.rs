@@ -51,7 +51,10 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
     key: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(analyzer.allocator, |v| v.get_property(analyzer, dep, key))
+      self.values.map(analyzer.allocator, |v| {
+        analyzer.cf_scope_mut().exited = None;
+        v.get_property(analyzer, dep, key)
+      })
     });
     analyzer.factory.union(values)
   }
@@ -65,6 +68,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   ) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
+        analyzer.cf_scope_mut().exited = None;
         entity.set_property(analyzer, dep, key, value)
       }
     });
@@ -113,6 +117,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
+        analyzer.cf_scope_mut().exited = None;
         entity.delete_property(analyzer, dep, key);
       }
     })
@@ -126,7 +131,10 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
     args: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(analyzer.allocator, |v| v.call(analyzer, dep, this, args))
+      self.values.map(analyzer.allocator, |v| {
+        analyzer.cf_scope_mut().exited = None;
+        v.call(analyzer, dep, this, args)
+      })
     });
     analyzer.factory.union(values)
   }
@@ -138,21 +146,30 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
     args: Entity<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(analyzer.allocator, |v| v.construct(analyzer, dep, args))
+      self.values.map(analyzer.allocator, |v| {
+        analyzer.cf_scope_mut().exited = None;
+        v.construct(analyzer, dep, args)
+      })
     });
     analyzer.factory.union(values)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(analyzer.allocator, |v| v.jsx(analyzer, props))
+      self.values.map(analyzer.allocator, |v| {
+        analyzer.cf_scope_mut().exited = None;
+        v.jsx(analyzer, props)
+      })
     });
     analyzer.factory.union(values)
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
-      self.values.map(analyzer.allocator, |v| v.r#await(analyzer, dep))
+      self.values.map(analyzer.allocator, |v| {
+        analyzer.cf_scope_mut().exited = None;
+        v.r#await(analyzer, dep)
+      })
     });
     analyzer.factory.union(values)
   }

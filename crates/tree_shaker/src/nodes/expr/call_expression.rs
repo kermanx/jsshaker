@@ -73,7 +73,7 @@ impl<'a> Transformer<'a> {
     node: &'a CallExpression<'a>,
     need_val: bool,
   ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
-    let dep_id: AstKind2<'_> = AstKind2::CallExpression(node);
+    let dep_id = AstKind2::CallExpression(node);
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
