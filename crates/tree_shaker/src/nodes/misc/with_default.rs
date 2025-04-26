@@ -7,9 +7,9 @@ impl<'a> Analyzer<'a> {
   pub fn exec_with_default(
     &mut self,
     default: &'a Expression<'a>,
-    value: Entity<'a>,
+    original: Entity<'a>,
   ) -> Entity<'a> {
-    let (maybe_original, maybe_fallback) = match value.test_is_undefined() {
+    let (maybe_original, maybe_fallback) = match original.test_is_undefined() {
       Some(true) => (false, true),
       Some(false) => (true, false),
       None => (true, true),
@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     let forward_original = |analyzer: &mut Analyzer<'a>| {
       analyzer.forward_logical_left_val(
         AstKind2::WithDefault(default),
-        value,
+        original,
         maybe_original,
         maybe_fallback,
       )
@@ -26,7 +26,7 @@ impl<'a> Analyzer<'a> {
     let exec_fallback = |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_logical_right_cf_scope(
         AstKind2::WithDefault(default),
-        value,
+        original,
         maybe_original,
         maybe_fallback,
       );
@@ -38,7 +38,7 @@ impl<'a> Analyzer<'a> {
       val
     };
 
-    match (maybe_original, maybe_fallback) {
+    let result = match (maybe_original, maybe_fallback) {
       (true, false) => forward_original(self),
       (false, true) => exec_fallback(self),
       (true, true) => {
@@ -47,7 +47,9 @@ impl<'a> Analyzer<'a> {
         self.factory.logical_result(fallback, original, LogicalOperator::Coalesce)
       }
       (false, false) => unreachable!(),
-    }
+    };
+
+    self.factory.computed(result, original.get_shallow_dep(self))
   }
 }
 
