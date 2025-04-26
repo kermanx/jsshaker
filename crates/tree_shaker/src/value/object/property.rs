@@ -125,6 +125,7 @@ impl<'a> ObjectProperty<'a> {
     indeterminate: bool,
     value: Entity<'a>,
     setters: &mut Vec<PendingSetter<'a>>,
+    deferred_deps: &mut Vec<Entity<'a>>,
   ) -> bool {
     let mut writable = false;
     let mut was_consumed = None;
@@ -164,7 +165,7 @@ impl<'a> ObjectProperty<'a> {
       if is_exhaustive {
         if let Some(was_consumed) = was_consumed {
           for field_value in field_values {
-            was_consumed.push(analyzer, field_value);
+            was_consumed.push_defer(field_value, deferred_deps);
           }
         } else {
           self.possible_values.push(ObjectPropertyValue::new_consumed(

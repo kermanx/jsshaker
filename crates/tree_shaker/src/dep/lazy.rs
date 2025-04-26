@@ -24,4 +24,14 @@ impl<'a, T: DepTrait<'a> + 'a> LazyDep<'a, T> {
       analyzer.consume(dep);
     }
   }
+
+  pub fn push_defer(&self, dep: T, deferred_deps: &mut Vec<T>) {
+    let mut deps_ref = self.0.borrow_mut();
+    if let Some(deps) = deps_ref.as_mut() {
+      deps.push(dep);
+    } else {
+      drop(deps_ref);
+      deferred_deps.push(dep);
+    }
+  }
 }

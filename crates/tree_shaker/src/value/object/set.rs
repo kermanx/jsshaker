@@ -40,6 +40,7 @@ impl<'a> ObjectValue<'a> {
     let non_mangable_value = analyzer.factory.computed(value, key);
 
     let mut setters = vec![];
+    let mut deferred_deps = vec![];
 
     if self.lookup_unknown_keyed_setters(analyzer, &mut setters).may_found() {
       indeterminate = true;
@@ -67,7 +68,14 @@ impl<'a> ObjectValue<'a> {
           } else {
             value
           };
-          if property.set(analyzer, is_exhaustive, indeterminate, value, &mut setters) {
+          if property.set(
+            analyzer,
+            is_exhaustive,
+            indeterminate,
+            value,
+            &mut setters,
+            &mut deferred_deps,
+          ) {
             analyzer.mark_exhaustive_write(
               ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
               target_depth,
@@ -84,7 +92,7 @@ impl<'a> ObjectValue<'a> {
         }
 
         if let Some(rest) = &self.rest {
-          rest.borrow_mut().set(analyzer, false, true, value, &mut setters);
+          rest.borrow_mut().set(analyzer, false, true, value, &mut setters, &mut deferred_deps);
           continue;
         }
 
@@ -149,6 +157,8 @@ impl<'a> ObjectValue<'a> {
       }
       analyzer.pop_cf_scope();
     }
+
+    analyzer.consume(deferred_deps);
   }
 
   fn lookup_unknown_keyed_setters(
