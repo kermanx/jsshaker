@@ -68,18 +68,14 @@ impl<'a> ObjectValue<'a> {
     }
 
     if !context.getters.is_empty() {
-      let indeterminate = if check_rest || !context.values.is_empty() || context.getters.len() > 1 {
-        None
-      } else {
-        Some(false)
-      };
+      let indeterminate = check_rest || !context.values.is_empty() || context.getters.len() > 1;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         analyzer.factory.vec1(if mangable { dep } else { analyzer.dep((dep, key)) }),
         indeterminate,
       );
       for getter in context.getters {
-        analyzer.cf_scope_mut().exited = indeterminate;
+        analyzer.cf_scope_mut().exited = if indeterminate { None } else { Some(false) };
         context.values.push(getter.call_as_getter(analyzer, analyzer.factory.no_dep, self.into()));
       }
       analyzer.pop_cf_scope();

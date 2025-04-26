@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
-    self.push_cf_scope(CfScopeKind::Labeled(node), Some(false));
+    self.push_cf_scope(CfScopeKind::Labeled(node), false);
     self.exec_statement(&node.body);
     self.pop_cf_scope();
   }

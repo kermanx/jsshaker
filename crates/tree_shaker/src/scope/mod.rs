@@ -36,7 +36,7 @@ impl<'a> Scoping<'a> {
     let mut variable = ScopeTree::new();
     variable.push(VariableScope::new_with_this(factory.unknown));
     let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), Some(false)));
+    cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), false));
     Scoping {
       call: vec![CallScope::new_in(
         DepAtom::from_counter(),
@@ -130,7 +130,7 @@ impl<'a> Analyzer<'a> {
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function,
       self.factory.vec1(self.dep((call_dep, dep_id))),
-      Some(false),
+      false,
     );
 
     self.scoping.call.push(CallScope::new_in(
@@ -162,29 +162,29 @@ impl<'a> Analyzer<'a> {
     self.scoping.variable.pop()
   }
 
-  pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, exited: Option<bool>) -> usize {
-    self.push_cf_scope_with_deps(kind, self.factory.vec(), exited)
+  pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, indeterminate: bool) -> usize {
+    self.push_cf_scope_with_deps(kind, self.factory.vec(), indeterminate)
   }
 
   pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind<'a>,
     deps: DepVec<'a>,
-    exited: Option<bool>,
+    indeterminate: bool,
   ) -> usize {
-    self.scoping.cf.push(CfScope::new(kind, deps, exited));
+    self.scoping.cf.push(CfScope::new(kind, deps, indeterminate));
     self.scoping.cf.current_depth()
   }
 
   pub fn push_indeterminate_cf_scope(&mut self) {
-    self.push_cf_scope(CfScopeKind::Indeterminate, None);
+    self.push_cf_scope(CfScopeKind::Indeterminate, true);
   }
 
   pub fn push_dependent_cf_scope(&mut self, dep: impl DepTrait<'a> + 'a) {
     self.push_cf_scope_with_deps(
       CfScopeKind::Dependent,
       self.factory.vec1(dep.uniform(self.allocator)),
-      Some(false),
+      false,
     );
   }
 

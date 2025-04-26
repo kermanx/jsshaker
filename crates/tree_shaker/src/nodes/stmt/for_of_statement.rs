@@ -24,12 +24,12 @@ impl<'a> Analyzer<'a> {
 
     let dep = self.dep((AstKind2::ForOfStatement(node), right));
 
-    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
+    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
     self.exec_loop(move |analyzer| {
       analyzer.declare_for_statement_left(&node.left);
       analyzer.init_for_statement_left(&node.left, iterated);
 
-      analyzer.push_cf_scope(CfScopeKind::LoopContinue, None);
+      analyzer.push_cf_scope(CfScopeKind::LoopContinue, true);
       analyzer.exec_statement(&node.body);
       analyzer.pop_cf_scope();
     });

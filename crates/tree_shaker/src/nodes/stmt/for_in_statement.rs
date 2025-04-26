@@ -11,12 +11,12 @@ impl<'a> Analyzer<'a> {
 
     if let Some(keys) = right.get_own_keys(self) {
       let dep = self.factory.dep((right.get_shallow_dep(self), AstKind2::ForInStatement(node)));
-      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
+      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
       for (definite, key) in keys {
         self.push_cf_scope_with_deps(
           CfScopeKind::LoopContinue,
           self.factory.vec1(self.factory.always_mangable_dep(key)),
-          if definite { Some(false) } else { None },
+          !definite,
         );
         self.declare_for_statement_left(&node.left);
         self.init_for_statement_left(&node.left, key);
@@ -32,9 +32,9 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
     } else {
       let dep = self.dep((AstKind2::ForInStatement(node), right));
-      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
+      self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
       self.exec_loop(move |analyzer| {
-        analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, analyzer.factory.vec(), None);
+        analyzer.push_cf_scope_with_deps(CfScopeKind::LoopContinue, analyzer.factory.vec(), true);
 
         analyzer.declare_for_statement_left(&node.left);
         analyzer.init_for_statement_left(&node.left, analyzer.factory.unknown_string);

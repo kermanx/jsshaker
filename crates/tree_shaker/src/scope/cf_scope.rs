@@ -70,8 +70,13 @@ pub struct CfScope<'a> {
 }
 
 impl<'a> CfScope<'a> {
-  pub fn new(kind: CfScopeKind<'a>, deps: DepVec<'a>, exited: Option<bool>) -> Self {
-    CfScope { kind, deps: DepCollector::new(deps), referred_state: ReferredState::Never, exited }
+  pub fn new(kind: CfScopeKind<'a>, deps: DepVec<'a>, indeterminate: bool) -> Self {
+    CfScope {
+      kind,
+      deps: DepCollector::new(deps),
+      referred_state: ReferredState::Never,
+      exited: if indeterminate { None } else { Some(false) },
+    }
   }
 
   pub fn push_dep(&mut self, dep: Dep<'a>) {
@@ -169,6 +174,11 @@ impl<'a> Analyzer<'a> {
     for depth in (target_depth..from_depth).rev() {
       let id = self.scoping.cf.stack[depth];
       let cf_scope = self.scoping.cf.get_mut(id);
+
+      if cf_scope.must_exited() {
+        return Some(Some(self.factory.no_dep));
+      }
+
       let this_dep = cf_scope.deps.try_collect(self.factory);
 
       // Update exited state

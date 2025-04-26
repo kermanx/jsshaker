@@ -106,10 +106,11 @@ impl<'a> Analyzer<'a> {
         temp_deps: drain.then(FxHashSet::default),
         register_deps: register.then(Default::default),
       }),
-      None,
+      true,
     );
     let mut round_counter = 0;
     loop {
+      self.cf_scope_mut().exited = None;
       #[cfg(feature = "flame")]
       let _scope_guard = flame::start_guard(format!(
         "!{_kind}@{:06X} x{}",

@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
     }
 
     // 3. consequent
-    self.push_cf_scope(CfScopeKind::Switch, Some(false));
+    self.push_cf_scope(CfScopeKind::Switch, false);
     let mut entered = Some(false);
     for (index, case) in node.cases.iter().enumerate() {
       if self.cf_scope().must_exited() {

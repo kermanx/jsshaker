@@ -129,11 +129,7 @@ impl<'a> Analyzer<'a> {
     let dep =
       self.register_conditional_data(id, test, maybe_true, maybe_false, is_true, has_contra);
 
-    self.push_cf_scope_with_deps(
-      kind,
-      self.factory.vec1(self.dep(dep)),
-      if maybe_true && maybe_false { None } else { Some(false) },
-    );
+    self.push_cf_scope_with_deps(kind, self.factory.vec1(self.dep(dep)), maybe_true && maybe_false);
 
     dep
   }

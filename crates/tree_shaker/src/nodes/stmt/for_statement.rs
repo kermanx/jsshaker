@@ -29,13 +29,13 @@ impl<'a> Analyzer<'a> {
       self.dep(AstKind2::ForStatement(node))
     };
 
-    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), Some(false));
+    self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
     self.exec_loop(move |analyzer| {
       if analyzer.cf_scope().must_exited() {
         return;
       }
 
-      analyzer.push_cf_scope(CfScopeKind::LoopContinue, None);
+      analyzer.push_cf_scope(CfScopeKind::LoopContinue, true);
       analyzer.exec_statement(&node.body);
       if let Some(update) = &node.update {
         analyzer.exec_expression(update);

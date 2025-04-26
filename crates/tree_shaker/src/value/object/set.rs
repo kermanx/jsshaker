@@ -146,18 +146,14 @@ impl<'a> ObjectValue<'a> {
     }
 
     if !setters.is_empty() {
-      let indeterminate = if indeterminate || setters.len() > 1 || setters[0].indeterminate {
-        None
-      } else {
-        Some(false)
-      };
+      let indeterminate = indeterminate || setters.len() > 1 || setters[0].indeterminate;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         analyzer.factory.vec1(analyzer.dep((dep, key))),
         indeterminate,
       );
       for s in setters {
-        analyzer.cf_scope_mut().exited = indeterminate;
+        analyzer.cf_scope_mut().exited = if indeterminate { None } else { Some(false) };
         s.setter.call_as_setter(analyzer, s.dep, self.into(), non_mangable_value);
       }
       analyzer.pop_cf_scope();

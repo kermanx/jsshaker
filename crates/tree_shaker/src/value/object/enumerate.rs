@@ -21,7 +21,7 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), None);
+    analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), true);
 
     let mut context = GetPropertyContext {
       key: analyzer.factory.never,

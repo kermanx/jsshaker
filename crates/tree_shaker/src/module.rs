@@ -132,7 +132,7 @@ impl<'a> Analyzer<'a> {
       false,
     ));
     let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![CfScopeId::from(0)]);
-    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), Some(false)));
+    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), false));
 
     let program = unsafe { &*program.get() };
     for node in &program.body {
