@@ -72,9 +72,9 @@ impl<'a> Transformer<'a> {
     node: &'a ArrowFunctionExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    if need_val || self.is_referred(AstKind2::ArrowFunctionExpression(node)) {
-      let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
+    let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
+    if self.is_referred(AstKind2::ArrowFunctionExpression(node)) {
       let params = self.transform_formal_parameters(params);
       let body = if *expression {
         self.transform_function_expression_body(body)
@@ -91,6 +91,31 @@ impl<'a> Transformer<'a> {
         NONE,
         body,
       ))
+    } else if need_val {
+      Some(
+        self.ast_builder.expression_arrow_function(
+          *span,
+          true,
+          false,
+          NONE,
+          self.ast_builder.formal_parameters(
+            params.span,
+            params.kind,
+            self.ast_builder.vec(),
+            NONE,
+          ),
+          NONE,
+          self.ast_builder.function_body(
+            body.span,
+            self.ast_builder.vec(),
+            self.ast_builder.vec1(
+              self
+                .ast_builder
+                .statement_expression(body.span, self.build_unused_expression(body.span)),
+            ),
+          ),
+        ),
+      )
     } else {
       None
     }

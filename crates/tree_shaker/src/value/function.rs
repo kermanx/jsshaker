@@ -45,7 +45,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.statics.get_property(analyzer, self.forward_dep(dep, analyzer), key)
+    self.statics.get_property(analyzer, dep, key)
   }
 
   fn set_property(
@@ -60,11 +60,11 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    self.statics.set_property(analyzer, self.forward_dep(dep, analyzer), key, value);
+    self.statics.set_property(analyzer, dep, key, value);
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    self.statics.delete_property(analyzer, self.forward_dep(dep, analyzer), key);
+    self.statics.delete_property(analyzer, dep, key);
   }
 
   fn enumerate_properties(
@@ -297,10 +297,6 @@ impl<'a> FunctionValue<'a> {
         true,
       )
     });
-  }
-
-  fn forward_dep(&self, dep: Dep<'a>, analyzer: &Analyzer<'a>) -> Dep<'a> {
-    analyzer.dep((dep, self.callee.into_node()))
   }
 }
 

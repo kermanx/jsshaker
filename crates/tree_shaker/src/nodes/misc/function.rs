@@ -1,7 +1,8 @@
 use oxc::{
   allocator,
-  ast::ast::{
-    Function, FunctionType, TSThisParameter, TSTypeAnnotation, TSTypeParameterDeclaration,
+  ast::{
+    NONE,
+    ast::{Function, FunctionType},
   },
 };
 
@@ -23,13 +24,14 @@ impl<'a> Analyzer<'a> {
   pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
     let entity = self.exec_function(node);
 
-    let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
+    let id = node.id.as_ref().unwrap();
+    let symbol = id.symbol_id.get().unwrap();
     self.declare_symbol(
       symbol,
-      AstKind2::Function(node),
+      AstKind2::BindingIdentifier(id),
       exporting,
       DeclarationKind::Function,
-      Some(entity),
+      Some(self.factory.computed(entity, AstKind2::BindingIdentifier(id))),
     );
   }
 
@@ -98,9 +100,10 @@ impl<'a> Transformer<'a> {
     node: &'a Function<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, Function<'a>>> {
-    if need_val || self.is_referred(AstKind2::Function(node)) {
-      let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
+    let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
+    let need_id = id.as_ref().is_some_and(|id| self.is_referred(AstKind2::BindingIdentifier(id)));
+    if self.is_referred(AstKind2::Function(node)) {
       let old_declaration_only = self.declaration_only.replace(false);
 
       let params = self.transform_formal_parameters(params);
@@ -118,15 +121,33 @@ impl<'a> Transformer<'a> {
       Some(self.ast_builder.alloc_function(
         *span,
         *r#type,
-        id.clone(),
+        if need_id { id.clone() } else { None },
         *generator,
         *r#async,
         false,
-        None::<TSTypeParameterDeclaration>,
-        None::<TSThisParameter>,
+        NONE,
+        NONE,
         params,
-        None::<TSTypeAnnotation>,
+        NONE,
         body,
+      ))
+    } else if need_val || need_id {
+      Some(self.ast_builder.alloc_function(
+        *span,
+        *r#type,
+        if need_id { id.clone() } else { None },
+        *generator,
+        *r#async,
+        false,
+        NONE,
+        NONE,
+        self.ast_builder.formal_parameters(params.span, params.kind, self.ast_builder.vec(), NONE),
+        NONE,
+        Some(self.ast_builder.function_body(
+          params.span,
+          self.ast_builder.vec(),
+          self.ast_builder.vec(),
+        )),
       ))
     } else {
       None
