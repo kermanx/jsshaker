@@ -25,9 +25,8 @@ impl<'a> Analyzer<'a> {
     let entity = self.exec_function(node);
 
     let id = node.id.as_ref().unwrap();
-    let symbol = id.symbol_id.get().unwrap();
     self.declare_symbol(
-      symbol,
+      id.symbol_id(),
       AstKind2::BindingIdentifier(id),
       exporting,
       DeclarationKind::Function,
@@ -62,13 +61,13 @@ impl<'a> Analyzer<'a> {
 
       let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
       if declare_in_body {
-        let symbol = node.id.as_ref().unwrap().symbol_id.get().unwrap();
+        let id = node.id.as_ref().unwrap();
         analyzer.declare_symbol(
-          symbol,
-          callee.into_node(),
+          id.symbol_id(),
+          AstKind2::BindingIdentifier(id),
           false,
           DeclarationKind::NamedFunctionInBody,
-          Some(fn_entity),
+          Some(analyzer.factory.computed(fn_entity, AstKind2::BindingIdentifier(id))),
         );
       }
 
