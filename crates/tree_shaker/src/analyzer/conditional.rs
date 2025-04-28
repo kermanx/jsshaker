@@ -52,7 +52,7 @@ impl<'a> ConditionalBranch<'a> {
   }
 }
 
-impl<'a> CustomDepTrait<'a> for &'a ConditionalBranch<'a> {
+impl<'a> CustomDepTrait<'a> for ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.id);
     self.refer_with_data(data);
@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
     is_consequent: bool,
     has_contra: bool,
   ) -> Dep<'a> {
-    let dep = self.push_conditional_cf_scope(
+    self.push_conditional_cf_scope(
       id,
       kind,
       test,
@@ -79,8 +79,7 @@ impl<'a> Analyzer<'a> {
       maybe_alternate,
       is_consequent,
       has_contra,
-    );
-    self.dep(dep)
+    )
   }
 
   pub fn forward_logical_left_val(
@@ -103,7 +102,7 @@ impl<'a> Analyzer<'a> {
     maybe_right: bool,
   ) -> Dep<'a> {
     assert!(maybe_right);
-    let dep = self.push_conditional_cf_scope(
+    self.push_conditional_cf_scope(
       id,
       CfScopeKind::Indeterminate,
       left,
@@ -111,8 +110,7 @@ impl<'a> Analyzer<'a> {
       maybe_right,
       false,
       false,
-    );
-    self.dep(dep)
+    )
   }
 
   #[allow(clippy::too_many_arguments)]
@@ -125,11 +123,11 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> impl CustomDepTrait<'a> + 'a {
+  ) -> Dep<'a> {
     let dep =
       self.register_conditional_data(id, test, maybe_true, maybe_false, is_true, has_contra);
 
-    self.push_cf_scope_with_deps(kind, self.factory.vec1(self.dep(dep)), maybe_true && maybe_false);
+    self.push_cf_scope_with_deps(kind, self.factory.vec1(dep), maybe_true && maybe_false);
 
     dep
   }
@@ -142,7 +140,7 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> &'a ConditionalBranch<'a> {
+  ) -> Dep<'a> {
     let id = id.into();
     let call_id = self.call_scope().call_id;
 
@@ -163,7 +161,7 @@ impl<'a> Analyzer<'a> {
 
     node_to_data.entry(id).or_insert_with(ConditionalData::default);
 
-    branch
+    Dep(branch)
   }
 
   fn is_contra_branch_impure(
