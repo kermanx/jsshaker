@@ -308,7 +308,7 @@ fn main() {
 }
 
 fn get_gzipped_size(content: &str) -> usize {
-  let mut encoder = GzEncoder::new(Vec::new(), Compression::best());
+  let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
   encoder.write_all(content.as_bytes()).unwrap();
   encoder.finish().unwrap().len()
 }

@@ -37,9 +37,7 @@ struct ConditionalBranch<'a> {
 
 impl<'a> ConditionalBranch<'a> {
   fn refer_with_data(&self, data: &mut ConditionalData<'a>) {
-    if !self.referred.get() {
-      self.referred.set(true);
-
+    if !self.referred.replace(true) {
       data.maybe_true |= self.maybe_true;
       data.maybe_false |= self.maybe_false;
       data.tests_to_consume.push(self.test);
@@ -164,20 +162,15 @@ impl<'a> Analyzer<'a> {
     Dep(branch)
   }
 
-  fn is_contra_branch_impure(
-    &mut self,
-    branch: &'a ConditionalBranch<'a>,
-  ) -> Option<&mut ConditionalData<'a>> {
-    let data = self.get_conditional_data_mut(branch.id);
-    if branch.is_true_branch { data.impure_false } else { data.impure_true }.then_some(data)
-  }
-
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
     for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_branches) {
       if self.is_referred(call_id) {
         let mut remaining_branches = vec![];
         for branch in branches {
-          if let Some(data) = self.is_contra_branch_impure(branch) {
+          let data = self.get_conditional_data_mut(branch.id);
+          let is_opposite_impure =
+            if branch.is_true_branch { data.impure_false } else { data.impure_true };
+          if is_opposite_impure {
             branch.refer_with_data(data);
           } else {
             remaining_branches.push(branch);
