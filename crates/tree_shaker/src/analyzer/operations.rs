@@ -14,8 +14,10 @@ impl<'a> Analyzer<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
-    if let (Some(true), m) = self.op_strict_eq(lhs, rhs) {
-      return (Some(true), m);
+    if let (Some(v), m) = self.op_strict_eq(lhs, rhs) {
+      if v || lhs.test_typeof().must_equal(rhs.test_typeof()) {
+        return (Some(v), m);
+      }
     }
 
     if lhs.test_nullish() == Some(true) && rhs.test_nullish() == Some(true) {

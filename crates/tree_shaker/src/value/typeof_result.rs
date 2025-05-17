@@ -60,4 +60,8 @@ impl TypeofResult {
       }
     }
   }
+
+  pub fn must_equal(self, other: TypeofResult) -> bool {
+    self == other && self.bits().count_ones() == 1
+  }
 }
