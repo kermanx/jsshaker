@@ -52,7 +52,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         v.get_property(analyzer, dep, key)
       })
     });
@@ -68,7 +68,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   ) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         entity.set_property(analyzer, dep, key, value)
       }
     });
@@ -117,7 +117,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     analyzer.exec_indeterminately(|analyzer| {
       for entity in self.values.iter() {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         entity.delete_property(analyzer, dep, key);
       }
     })
@@ -132,7 +132,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         v.call(analyzer, dep, this, args)
       })
     });
@@ -147,7 +147,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         v.construct(analyzer, dep, args)
       })
     });
@@ -157,7 +157,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         v.jsx(analyzer, props)
       })
     });
@@ -167,7 +167,7 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
-        analyzer.cf_scope_mut().exited = None;
+        analyzer.cf_scope_mut().reset_indeterminate();
         v.r#await(analyzer, dep)
       })
     });

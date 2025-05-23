@@ -95,6 +95,11 @@ impl<'a> CfScope<'a> {
     }
   }
 
+  pub fn reset_indeterminate(&mut self) {
+    self.exited = None;
+    self.deps.force_clear();
+  }
+
   pub fn must_exited(&self) -> bool {
     matches!(self.exited, Some(true))
   }
