@@ -1,5 +1,3 @@
-use std::mem;
-
 use oxc::{ast::ast::LabeledStatement, span::Atom};
 use oxc_index::define_index_type;
 
@@ -300,18 +298,19 @@ impl<'a> Analyzer<'a> {
       return;
     }
 
-    let factory = self.factory;
+    let mut deps = vec![];
+
     for depth in (0..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
-          mem::replace(&mut scope.deps, DepCollector::new(factory.vec())).consume_all(self);
+          deps.push(scope.deps.take(self.factory));
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
           scope.referred_state = ReferredState::ReferredClean;
-          mem::replace(&mut scope.deps, DepCollector::new(factory.vec())).consume_all(self);
+          deps.push(scope.deps.take(self.factory));
           for depth in (0..depth).rev() {
             let scope = self.scoping.cf.get_mut_from_depth(depth);
             match scope.referred_state {
@@ -327,6 +326,8 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
+
+    self.consume(deps);
 
     self.call_exhaustive_callbacks();
   }

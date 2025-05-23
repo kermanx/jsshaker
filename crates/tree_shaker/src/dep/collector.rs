@@ -43,6 +43,12 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
     self.try_collect(factory).unwrap_or(factory.no_dep)
   }
 
+  pub fn take(&mut self, factory: &Factory<'a>) -> Dep<'a> {
+    let dep = self.collect(factory);
+    self.force_clear();
+    dep
+  }
+
   pub fn consume_all(&self, analyzer: &mut Analyzer<'a>) {
     for value in &self.current {
       value.consume(analyzer);
