@@ -61,7 +61,6 @@ impl<'a> Transformer<'a> {
               self
                 .ast_builder
                 .vec1(self.ast_builder.array_expression_element_spread_element(right_span, right)),
-              None,
             ),
           ),
         )

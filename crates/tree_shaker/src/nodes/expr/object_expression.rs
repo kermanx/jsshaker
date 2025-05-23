@@ -49,7 +49,7 @@ impl<'a> Transformer<'a> {
     node: &'a ObjectExpression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let ObjectExpression { span, properties, .. } = node;
+    let ObjectExpression { span, properties } = node;
 
     if need_val {
       let mut transformed_properties = self.ast_builder.vec();
@@ -117,7 +117,7 @@ impl<'a> Transformer<'a> {
                     &self.ast_builder,
                     *span,
                     Some(argument);
-                    self.ast_builder.expression_object(SPAN, self.ast_builder.vec(), None)
+                    self.ast_builder.expression_object(SPAN, self.ast_builder.vec())
                   )
                 },
               )
@@ -127,7 +127,7 @@ impl<'a> Transformer<'a> {
           }
         });
       }
-      Some(self.ast_builder.expression_object(*span, transformed_properties, None))
+      Some(self.ast_builder.expression_object(*span, transformed_properties))
     } else {
       let mut effects = vec![];
       for property in properties {

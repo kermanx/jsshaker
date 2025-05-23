@@ -98,7 +98,7 @@ impl<'a> Transformer<'a> {
         self.update_var_decl_state(symbol, false);
       }
 
-      Some(self.ast_builder.alloc_identifier_reference(*span, name))
+      Some(self.ast_builder.alloc_identifier_reference(*span, *name))
     } else {
       None
     }

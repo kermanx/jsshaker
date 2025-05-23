@@ -66,18 +66,17 @@ impl<'a> Transformer<'a> {
     self.ast_builder.alloc_jsx_element(
       *span,
       {
-        let JSXOpeningElement { span, self_closing, attributes, .. } = opening_element.as_ref();
+        let JSXOpeningElement { span, name, attributes, .. } = opening_element.as_ref();
 
         self.ast_builder.jsx_opening_element(
           *span,
-          *self_closing,
-          name,
-          self.transform_jsx_attributes_need_val(attributes),
+          self.clone_node(name),
           NONE,
+          self.transform_jsx_attributes_need_val(attributes),
         )
       },
-      closing_element,
       self.transform_jsx_children_need_val(children),
+      closing_element,
     )
   }
 }

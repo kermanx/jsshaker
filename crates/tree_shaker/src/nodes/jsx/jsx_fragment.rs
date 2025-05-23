@@ -43,8 +43,8 @@ impl<'a> Transformer<'a> {
     self.ast_builder.alloc_jsx_fragment(
       *span,
       self.clone_node(opening_fragment),
-      self.clone_node(closing_fragment),
       self.transform_jsx_children_need_val(children),
+      self.clone_node(closing_fragment),
     )
   }
 }

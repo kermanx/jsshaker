@@ -72,11 +72,12 @@ impl<'a> Transformer<'a> {
         }
       }
       if transformed_exprs.is_empty() {
+        let s = transformed_quasis.pop().unwrap();
         Some(build_effect!(
           &self.ast_builder,
           *span,
           pending_effects;
-          self.ast_builder.expression_string_literal(*span, transformed_quasis.first().unwrap().clone(), None)
+          self.ast_builder.expression_string_literal(*span, self.ast_builder.atom(&s), None)
         ))
       } else {
         assert!(pending_effects.is_empty());

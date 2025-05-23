@@ -129,7 +129,7 @@ impl<'a> Analyzer<'a> {
           PropertyKind::Get => "get ",
           PropertyKind::Set => "set ",
         };
-        &*self.allocator.alloc_str(&(kind_text.to_string() + &s))
+        self.allocator.alloc_str(&(kind_text.to_string() + &s))
       }),
       AstKind::ImportSpecifier(node) => Some(node.imported.name().as_str()),
       _ => None,

@@ -25,6 +25,7 @@ export function f2() {
 	else effect2();
 }
 export function f3() {}
+// FIXME: this is a bug
 export function f4() {
 	let obj = {
 		a: 0,

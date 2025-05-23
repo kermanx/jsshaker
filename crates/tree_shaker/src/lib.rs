@@ -21,7 +21,7 @@ use mangling::ManglerTransformer;
 use module::ModuleInfo;
 use oxc::{
   allocator::Allocator,
-  codegen::{CodeGenerator, CodegenOptions, CodegenReturn},
+  codegen::{Codegen, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
   parser::Parser,
   span::SourceType,
@@ -101,7 +101,7 @@ pub fn tree_shake<F: Vfs + 'static>(
       });
 
       // Step 4: Generate output
-      let codegen = CodeGenerator::new()
+      let codegen = Codegen::new()
         .with_options(codegen_options.clone())
         .with_scoping(minifier_return.and_then(|r| r.scoping));
       codegen_return.insert(path.to_string(), codegen.build(program));
@@ -120,7 +120,7 @@ pub fn tree_shake<F: Vfs + 'static>(
       let minifier = Minifier::new(options);
       minifier.build(&allocator, &mut program)
     });
-    let codegen = CodeGenerator::new()
+    let codegen = Codegen::new()
       .with_options(codegen_options.clone())
       .with_scoping(minifier_return.and_then(|r| r.scoping));
     let mut codegen_return = FxHashMap::default();

@@ -3,6 +3,7 @@ source: crates/tree_shaker/tests/mod.rs
 expression: do_tree_shake(input)
 input_file: crates/tree_shaker/tests/fixtures/react/context.js
 ---
+// @react-jsx
 import React from "react";
 export function case_provided() {
 	const MyContext = React.createContext();

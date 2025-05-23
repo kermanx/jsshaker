@@ -63,7 +63,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<AssignmentTargetPattern<'a>> {
     match node {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
-        let ArrayAssignmentTarget { span, elements, rest, trailing_comma } = node.as_ref();
+        let ArrayAssignmentTarget { span, elements, rest } = node.as_ref();
 
         let is_referred = self.is_referred(AstKind2::ArrayAssignmentTarget(node));
 
@@ -88,14 +88,10 @@ impl<'a> Transformer<'a> {
         if !is_referred && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
-          let trailing_comma = (transformed_elements.last().is_some_and(Option::is_none)
-            && rest.is_none())
-          .then_some(trailing_comma.unwrap_or_default());
           Some(self.ast_builder.assignment_target_pattern_array_assignment_target(
             *span,
             transformed_elements,
             rest,
-            trailing_comma,
           ))
         }
       }

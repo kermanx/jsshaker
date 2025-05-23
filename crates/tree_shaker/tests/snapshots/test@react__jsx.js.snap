@@ -1,8 +1,9 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/react/jsx.js
+source: crates/tree_shaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/tree_shaker/tests/fixtures/react/jsx.js
 ---
+// @react-jsx
 function Comp() {
 	const __unused_FD45 = effect();
 	return <div>

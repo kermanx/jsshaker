@@ -99,7 +99,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.program(
       *span,
       *source_type,
-      *source_text,
+      source_text,
       self.clone_node(comments),
       self.clone_node(hashbang),
       self.clone_node(directives),
@@ -136,17 +136,21 @@ impl<'a> Transformer<'a> {
       if var_decls.get(symbol_id) == Some(&true) {
         let name = self.semantic.scoping().symbol_name(*symbol_id);
         let span = self.semantic.scoping().symbol_span(*symbol_id);
-        declarations.push(self.ast_builder.variable_declarator(
-          span,
-          VariableDeclarationKind::Var,
-          self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_binding_identifier(span, name),
-            NONE,
+        declarations.push(
+          self.ast_builder.variable_declarator(
+            span,
+            VariableDeclarationKind::Var,
+            self.ast_builder.binding_pattern(
+              self
+                .ast_builder
+                .binding_pattern_kind_binding_identifier(span, self.ast_builder.atom(name)),
+              NONE,
+              false,
+            ),
+            None,
             false,
           ),
-          None,
-          false,
-        ));
+        );
       }
     }
 
@@ -181,7 +185,7 @@ impl<'a> Transformer<'a> {
     } else {
       format!("__unused_{:04X}_{}", hash, index - 1)
     };
-    self.ast_builder.binding_identifier(span, name)
+    self.ast_builder.binding_identifier(span, self.ast_builder.atom(&name))
   }
 
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
@@ -253,7 +257,6 @@ impl<'a> Transformer<'a> {
     self.ast_builder.expression_object(
       span,
       self.ast_builder.vec1(self.ast_builder.object_property_kind_spread_property(span, argument)),
-      None,
     )
   }
 

@@ -242,6 +242,7 @@ impl<'a> Transformer<'a> {
               PropertyDefinitionType::PropertyDefinition,
               self.ast_builder.vec(),
               key,
+              NONE,
               None,
               false,
               false,
@@ -250,7 +251,6 @@ impl<'a> Transformer<'a> {
               false,
               false,
               false,
-              NONE,
               None,
             ));
           }
@@ -267,7 +267,7 @@ impl<'a> Transformer<'a> {
         NONE,
         super_class,
         NONE,
-        None,
+        self.ast_builder.vec(),
         body,
         false,
         false,
@@ -327,7 +327,7 @@ impl<'a> Transformer<'a> {
             NONE,
             None,
             NONE,
-            None,
+            self.ast_builder.vec(),
             self.ast_builder.class_body(
               body.span(),
               self

@@ -35,6 +35,7 @@ impl<'a> Transformer<'a> {
       *r#type,
       self.clone_node(decorators),
       key,
+      NONE,
       value,
       *computed,
       *r#static,
@@ -43,7 +44,6 @@ impl<'a> Transformer<'a> {
       false,
       false,
       false,
-      NONE,
       None,
     ))
   }

@@ -55,8 +55,8 @@ impl<'a> Transformer<'a> {
       Some(self.ast_builder.expression_tagged_template(
         *span,
         tag.unwrap(),
-        self.transform_quasi(quasi),
         NONE,
+        self.transform_quasi(quasi),
       ))
     } else {
       build_effect!(

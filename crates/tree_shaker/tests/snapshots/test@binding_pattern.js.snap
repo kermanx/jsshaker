@@ -8,6 +8,7 @@ export function simple(unknown) {
 	effect(2);
 	effect(3);
 	effect(4);
+	// Destructing unknown has effect
 	let { g: { h, i: { j } } } = unknown;
 }
 export function with_rest(unknown) {

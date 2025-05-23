@@ -59,6 +59,7 @@ impl<'a> Transformer<'a> {
           PropertyDefinitionType::PropertyDefinition,
           self.ast_builder.vec(),
           key,
+          NONE,
           None,
           true,
           *r#static,
@@ -67,7 +68,6 @@ impl<'a> Transformer<'a> {
           false,
           false,
           false,
-          NONE,
           None,
         )
       })
