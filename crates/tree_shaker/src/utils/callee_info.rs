@@ -109,7 +109,7 @@ impl<'a> Analyzer<'a> {
           CalleeNode::Module => "<Module>",
         };
         let debug_name = format!("{}:{}:{}", resolved_name, line_col.line + 1, line_col.col + 1);
-        self.allocator.alloc(debug_name)
+        self.allocator.alloc_str(&debug_name)
       },
     }
   }
