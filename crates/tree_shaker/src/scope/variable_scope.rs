@@ -10,6 +10,7 @@ use crate::{
   ast::DeclarationKind,
   dep::{Dep, LazyDep},
   entity::Entity,
+  module::{ModuleId, NamedExport},
   utils::ast::AstKind2,
 };
 
@@ -28,6 +29,7 @@ pub struct Variable<'a> {
 
 #[derive(Default)]
 pub struct VariableScope<'a> {
+  pub module_id: Option<ModuleId>,
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
@@ -307,7 +309,10 @@ impl<'a> Analyzer<'a> {
     if exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
       let dep = self.factory.no_dep;
-      self.module_info_mut().named_exports.insert(name, (variable_scope, symbol, dep));
+      self
+        .module_info_mut()
+        .named_exports
+        .insert(name, NamedExport::Variable(variable_scope, symbol, dep));
     }
 
     if kind == DeclarationKind::FunctionParameter {

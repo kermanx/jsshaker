@@ -22,6 +22,36 @@ use crate::{
   utils::{CalleeInfo, CalleeNode},
 };
 
+#[derive(Debug, Clone, Copy)]
+pub enum NamedExport<'a> {
+  Variable(VariableScopeId, SymbolId, Dep<'a>),
+  ReExport(ModuleId, Atom<'a>, Dep<'a>),
+  Value(Entity<'a>),
+}
+
+impl<'a> CustomDepTrait<'a> for NamedExport<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    match *self {
+      NamedExport::Variable(scope, symbol, dep) => {
+        let value = analyzer.read_on_scope(scope, symbol);
+        analyzer.consume((value, dep));
+      }
+      NamedExport::ReExport(module_id, name, dep) => {
+        if name == "default" {
+          analyzer.consume(analyzer.modules.modules[module_id].default_export);
+        } else {
+          let export = analyzer.modules.modules[module_id].named_exports.get(&name).copied();
+          analyzer.consume(export);
+        }
+        analyzer.consume(dep);
+      }
+      NamedExport::Value(entity) => {
+        analyzer.consume(entity);
+      }
+    }
+  }
+}
+
 #[derive(Clone)]
 pub struct ModuleInfo<'a> {
   pub path: Atom<'a>,
@@ -30,7 +60,7 @@ pub struct ModuleInfo<'a> {
   pub semantic: Rc<Semantic<'a>>,
   pub call_id: DepAtom,
 
-  pub named_exports: FxHashMap<Atom<'a>, (VariableScopeId, SymbolId, Dep<'a>)>,
+  pub named_exports: FxHashMap<Atom<'a>, NamedExport<'a>>,
   pub default_export: Option<Entity<'a>>,
 
   pub blocked_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
@@ -165,12 +195,22 @@ impl<'a> Analyzer<'a> {
     let ModuleInfo { call_id, named_exports, default_export, .. } =
       self.modules.modules[module_id].clone();
     self.refer_dep(call_id);
-    for (scope, symbol, dep) in named_exports.into_values() {
-      self.consume_on_scope(scope, symbol);
-      self.consume(dep);
+    for named_export in named_exports.into_values() {
+      self.consume(named_export);
     }
     if let Some(entity) = default_export {
       self.consume(entity);
+    }
+  }
+
+  pub fn get_named_export_value(&mut self, named_export: NamedExport<'a>) -> Entity<'a> {
+    match named_export {
+      NamedExport::Variable(scope, symbol, dep) => {
+        let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
+        self.factory.computed(value, dep)
+      }
+      NamedExport::ReExport(_, _, _) => todo!(),
+      NamedExport::Value(entity) => entity,
     }
   }
 }

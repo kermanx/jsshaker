@@ -5,8 +5,8 @@ use oxc::ast::ast::{
 };
 
 use crate::{
-  Analyzer, ast::DeclarationKind, transformer::Transformer, utils::ast::AstKind2,
-  value::ObjectPrototype,
+  Analyzer, ast::DeclarationKind, module::NamedExport, transformer::Transformer,
+  utils::ast::AstKind2, value::ObjectPrototype,
 };
 
 impl<'a> Analyzer<'a> {
@@ -20,9 +20,35 @@ impl<'a> Analyzer<'a> {
         }
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
-        if node.source.is_some() {
-          if self.module_stack.len() > 1 {
-            todo!("ExportNamedDeclaration");
+        if let Some(source) = &node.source {
+          if let Some(known) = self.builtins.get_known_module(&source.value) {
+            for specifier in &node.specifiers {
+              let value = known.namespace.get_property(
+                self,
+                AstKind2::ExportSpecifier(specifier),
+                self.factory.string(specifier.local.name().as_str()),
+              );
+              self
+                .module_info_mut()
+                .named_exports
+                .insert(specifier.exported.name(), NamedExport::Value(value));
+            }
+          } else if let Some(module) = self.resolve_and_import_module(&source.value) {
+            for specifier in &node.specifiers {
+              let dep = self.dep(AstKind2::ExportSpecifier(specifier));
+              self.module_info_mut().named_exports.insert(
+                specifier.exported.name(),
+                NamedExport::ReExport(module, specifier.local.name(), dep),
+              );
+            }
+          } else {
+            for specifier in &node.specifiers {
+              let value = self.factory.computed_unknown(AstKind2::ExportSpecifier(specifier));
+              self
+                .module_info_mut()
+                .named_exports
+                .insert(specifier.exported.name(), NamedExport::Value(value));
+            }
           }
           return;
         }
@@ -39,7 +65,7 @@ impl<'a> Analyzer<'a> {
                 self
                   .module_info_mut()
                   .named_exports
-                  .insert(specifier.exported.name(), (scope, symbol, dep));
+                  .insert(specifier.exported.name(), NamedExport::Variable(scope, symbol, dep));
               } else {
                 self.consume(dep);
               }
@@ -113,23 +139,23 @@ impl<'a> Analyzer<'a> {
               let named_exports = module_info.named_exports.clone();
               let object = self
                 .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.null), None);
-              for (key, (scope, symbol, dep)) in named_exports {
-                let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
+              for (key, named_export) in named_exports {
+                let value = self.get_named_export_value(named_export);
                 object.init_property(
                   self,
                   PropertyKind::Init,
                   self.factory.string(key.as_str()),
-                  self.factory.computed(value, dep),
+                  value,
                   true,
                 );
               }
               object.into()
             }
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
-              if let Some((scope, symbol, dep)) =
+              if let Some(named_export) =
                 module_info.named_exports.get(&node.imported.name()).copied()
               {
-                self.factory.computed(self.read_on_scope(scope, symbol).unwrap().unwrap(), dep)
+                self.get_named_export_value(named_export)
               } else {
                 self.factory.unknown
               }
