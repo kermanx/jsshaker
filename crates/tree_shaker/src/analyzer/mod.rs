@@ -116,12 +116,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn add_diagnostic(&mut self, message: impl Into<String>) {
-    if let Some(span) = self.span_stack.last() {
-      let start = self.line_index().line_col(span.start.into());
-      let end = self.line_index().line_col(span.end.into());
-      let span_text =
-        format!(" at {}:{}-{}:{}", start.line + 1, start.col + 1, end.line + 1, end.col + 1);
-      self.diagnostics.insert(message.into() + &span_text);
+    if !self.span_stack.is_empty() {
+      self.diagnostics.insert(format!("{} at {}", message.into(), self.format_current_span()));
     } else {
       self.diagnostics.insert(message.into());
     }
@@ -133,6 +129,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn current_span(&self) -> Span {
     *self.span_stack.last().unwrap()
+  }
+
+  pub fn format_current_span(&self) -> String {
+    let path = self.module_info().path;
+    let span = self.current_span();
+    let start = self.line_index().line_col(span.start.into());
+    let end = self.line_index().line_col(span.end.into());
+    format!("{}:{}:{}-{}:{}", path, start.line + 1, start.col + 1, end.line + 1, end.col + 1)
   }
 
   pub fn push_span(&mut self, node: &impl GetSpan) {
