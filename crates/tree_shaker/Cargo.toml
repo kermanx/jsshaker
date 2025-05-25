@@ -38,6 +38,7 @@ oxc_syntax = { workspace = true, features = ["to_js_string"] }
 regex = { workspace = true }
 rustc-hash = { workspace = true }
 line-index = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 insta = { workspace = true, features = ["glob"] }

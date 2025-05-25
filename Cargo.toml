@@ -37,6 +37,7 @@ napi-derive = "2.16.13"
 napi-build = "2.1.5"
 console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2.100"
+serde = "1.0.219"
 
 [profile.release]
 # Configurations explicitly listed here for clarity.

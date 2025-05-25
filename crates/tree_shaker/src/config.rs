@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TreeShakeJsxPreset {
   None,
   React,
@@ -10,7 +12,7 @@ impl TreeShakeJsxPreset {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TreeShakeConfig {
   pub enabled: bool,
   pub jsx: TreeShakeJsxPreset,
