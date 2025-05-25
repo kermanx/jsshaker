@@ -278,8 +278,12 @@ impl<'a> Analyzer<'a> {
     label_used
   }
 
-  pub fn exit_by_throw(&mut self) -> usize {
+  pub fn exit_by_throw(&mut self, explicit: bool) -> usize {
     let target_depth = self.scoping.try_catch_depth.unwrap_or_else(|| {
+      if explicit {
+        self.refer_to_global();
+        return 0;
+      }
       let mut target_depth = 0;
       for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
         if cf_scope.exited != Some(false) {

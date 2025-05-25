@@ -110,7 +110,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn throw_builtin_error(&mut self, message: impl Into<String>) {
-    if self.exit_by_throw() == 0 {
+    if self.exit_by_throw(false) == 0 {
       self.add_diagnostic(message);
     }
   }
