@@ -10,6 +10,7 @@ use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
 pub use factory::Factory;
 use oxc::{
   allocator::Allocator,
+  semantic::SymbolId,
   span::{GetSpan, Span},
 };
 use rustc_hash::{FxHashMap, FxHashSet};
@@ -40,6 +41,7 @@ pub struct Analyzer<'a> {
   pub scoping: Scoping<'a>,
 
   pub data: ExtraData<'a>,
+  pub exhausted_variables: Option<FxHashSet<(ModuleId, SymbolId)>>,
   pub exhaustive_callbacks: FxHashMap<ExhaustiveDepId<'a>, FxHashSet<ExhaustiveCallback<'a>>>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
@@ -67,6 +69,7 @@ impl<'a> Analyzer<'a> {
       scoping: Scoping::new(factory),
 
       data: Default::default(),
+      exhausted_variables: config.remember_exhausted_variables.then(Default::default),
       exhaustive_callbacks: Default::default(),
       referred_deps: Default::default(),
       conditional_data: Default::default(),

@@ -10,7 +10,7 @@ use crate::{
   ast::DeclarationKind,
   dep::{Dep, LazyDep},
   entity::Entity,
-  module::{ModuleId, NamedExport},
+  module::NamedExport,
   utils::ast::AstKind2,
 };
 
@@ -18,7 +18,7 @@ define_index_type! {
   pub struct VariableScopeId = u32;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
@@ -29,7 +29,6 @@ pub struct Variable<'a> {
 
 #[derive(Default)]
 pub struct VariableScope<'a> {
-  pub module_id: Option<ModuleId>,
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
@@ -97,6 +96,12 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       let has_fn_value = fn_value.is_some();
+      let exhausted = if let Some(exhausted_variables) = &self.exhausted_variables {
+        !has_fn_value && exhausted_variables.contains(&(self.current_module(), symbol))
+      } else {
+        false
+      };
+
       let variable = self.allocator.alloc(RefCell::new(Variable {
         kind,
         cf_scope: if kind.is_var() {
@@ -104,8 +109,9 @@ impl<'a> Analyzer<'a> {
         } else {
           self.scoping.cf.current_id()
         },
-        exhausted: None,
-        value: fn_value,
+        exhausted: exhausted
+          .then(|| self.factory.lazy_dep(self.factory.vec1(self.dep((fn_value, decl_node))))),
+        value: if exhausted { Some(self.factory.unknown) } else { fn_value },
         decl_node,
       }));
       self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
@@ -205,18 +211,22 @@ impl<'a> Analyzer<'a> {
           let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
             self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
-          } else if !variable_ref.kind.is_redeclarable() {
+          } else if variable_ref.kind.is_redeclarable() {
+            // Write uninitialized `var`
+            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
+          } else {
             // TDZ write
             self.handle_tdz();
             (true, false)
-          } else {
-            // Write uninitialized `var`
-            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
           };
           drop(variable_ref);
 
           let mut variable_ref = variable.borrow_mut();
           if should_consume {
+            let module_id = self.current_module();
+            if let Some(exhausted_variables) = &mut self.exhausted_variables {
+              exhausted_variables.insert((module_id, symbol));
+            }
             variable_ref.exhausted =
               Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
             variable_ref.value = Some(self.factory.unknown);
@@ -243,16 +253,12 @@ impl<'a> Analyzer<'a> {
 
   pub fn consume_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> bool {
     if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol).copied() {
-      let variable_ref = variable.borrow();
+      let variable_ref = *variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
-        drop(variable_ref);
         self.consume(dep);
       } else {
         self.consume(variable_ref.decl_node);
-        if let Some(value) = &variable_ref.value {
-          value.consume(self);
-        }
-        drop(variable_ref);
+        self.consume(variable_ref.value);
 
         let mut variable_ref = variable.borrow_mut();
         variable_ref.exhausted = Some(self.factory.consumed_lazy_dep);

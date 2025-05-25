@@ -16,6 +16,7 @@ pub struct TreeShakeConfig {
   pub jsx: TreeShakeJsxPreset,
 
   pub max_recursion_depth: usize,
+  pub remember_exhausted_variables: bool,
 
   pub mangling: Option<bool>,
   pub unknown_global_side_effects: bool,
@@ -45,6 +46,7 @@ impl TreeShakeConfig {
       jsx: TreeShakeJsxPreset::None,
 
       max_recursion_depth: 2,
+      remember_exhausted_variables: true,
 
       mangling: Some(false),
       unknown_global_side_effects: true,
@@ -113,6 +115,11 @@ impl TreeShakeConfig {
 
   pub fn with_max_recursion_depth(mut self, depth: usize) -> Self {
     self.max_recursion_depth = depth;
+    self
+  }
+
+  pub fn with_remember_exhausted(mut self, yes: bool) -> Self {
+    self.remember_exhausted_variables = yes;
     self
   }
 }

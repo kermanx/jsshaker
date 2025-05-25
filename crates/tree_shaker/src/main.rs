@@ -43,6 +43,9 @@ struct Args {
 
   #[arg(short, long, default_value_t = 2)]
   recursion_depth: usize,
+
+  #[arg(long, default_value_t = false)]
+  no_remember_exhausted: bool,
 }
 
 fn main() {
@@ -69,7 +72,8 @@ fn main() {
       std::process::exit(1);
     }
   })
-  .with_max_recursion_depth(args.recursion_depth);
+  .with_max_recursion_depth(args.recursion_depth)
+  .with_remember_exhausted(!args.no_remember_exhausted);
 
   let minify_options = MinifierOptions {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),
