@@ -46,10 +46,10 @@ impl<'a> Transformer<'a> {
     let left_span = left.span();
     let body_span = body.span();
 
-    let left = self.transform_for_statement_left(left);
+    let left = if need_loop { self.transform_for_statement_left(left) } else { None };
     let body = if need_loop { self.transform_statement(body) } else { None };
 
-    if (!need_loop || (left.is_none() && body.is_none())) && !r#await {
+    if left.is_none() && body.is_none() {
       return if self.is_referred(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();

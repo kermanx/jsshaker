@@ -42,7 +42,7 @@ impl<'a> Transformer<'a> {
 
     let need_loop = self.is_referred(AstKind2::WhileStatement(node));
     let test = self.transform_expression(test, need_loop);
-    let body = need_loop.then(|| self.transform_statement(body)).flatten();
+    let body = if need_loop { self.transform_statement(body) } else { None };
 
     match (test, body) {
       (Some(test), body) => Some(self.ast_builder.statement_while(

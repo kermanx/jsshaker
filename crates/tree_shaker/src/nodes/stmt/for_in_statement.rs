@@ -57,10 +57,10 @@ impl<'a> Transformer<'a> {
     let left_span = left.span();
     let body_span = body.span();
 
-    let left = self.transform_for_statement_left(left);
-    let body = self.transform_statement(body);
+    let left = if need_loop { self.transform_for_statement_left(left) } else { None };
+    let body = if need_loop { self.transform_statement(body) } else { None };
 
-    if !need_loop || (left.is_none() && body.is_none()) {
+    if left.is_none() && body.is_none() {
       return self
         .transform_expression(right, false)
         .map(|expr| self.ast_builder.statement_expression(*span, expr));
