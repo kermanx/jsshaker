@@ -71,6 +71,7 @@ function treeShake(...args: Parameters<(typeof import('@kermanx/tree-shaker'))['
   }
 }
 
+const copyOnly = computed(() => treeShake(debouncedInput.value, "disabled", false, false))
 const minifiedOnly = computed(() => treeShake(debouncedInput.value, "disabled", true, false))
 const treeShakedOnly = computed(() => treeShake(debouncedInput.value, preset.value, false, alwaysInline.value))
 const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, "disabled", true, false))
@@ -81,6 +82,7 @@ const result = computed(() => {
     output: doMinify.value ? treeShakedMinified.value.output : treeShakedOnly.value.output,
   }
 })
+export const copyOutput = computed(() => (doMinify.value ? minifiedOnly.value.output : copyOnly.value.output).trim() || `// Empty output or error`)
 export const output = computed(() => result.value.output.trim() || `// Empty output or error`)
 export const onlyMinifiedSize = computed(() => minifiedOnly.value.output.length)
 export const treeShakedUnminifiedSize = computed(() => treeShakedOnly.value.output.length)

@@ -5,23 +5,21 @@ import { onInputUpdate } from './states';
 
 const props = defineProps<{
   lang: 'javascript'
-  readonly?: boolean,
   options?: Partial<monaco.editor.IStandaloneEditorConstructionOptions>
+  original: string
+  modified: string
 }>()
-
-const emits = defineEmits<{
-  'update:editor': [monaco.editor.IStandaloneCodeEditor]
-}>()
-
-const value = defineModel<string>({ required: true })
 
 const container = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
-  const editor = monaco.editor.create(container.value!, {
-    value: value.value,
+  const originalModel = monaco.editor.createModel(props.original, props.lang)
+  const modifiedModel = monaco.editor.createModel(props.modified, props.lang)
+
+  const editor = monaco.editor.createDiffEditor(container.value!, {
+    originalEditable: false,
     language: props.lang,
-    readOnly: props.readonly,
+    readOnly: true,
     automaticLayout: true,
     lineNumbersMinChars: 3,
     wordWrap: 'on',
@@ -35,23 +33,24 @@ onMounted(async () => {
     },
     ...props.options,
   })
+  editor.setModel({
+    original: originalModel,
+    modified: modifiedModel,
+  });
 
-  emits('update:editor', editor)
+  watchEffect(() => {
+    originalModel.setValue(props.original)
+  })
+  watchEffect(() => {
+    modifiedModel.setValue(props.modified)
+  })
 
-  if (props.readonly) {
-    watchEffect(() => {
-      editor.setValue(value.value)
-    })
-  }
-  else {
-    editor.onDidChangeModelContent(() => {
-      value.value = editor.getValue()
-    })
-  }
   const index = onInputUpdate.length;
   onInputUpdate.push(async () => {
     await nextTick()
-    editor.setValue(value.value)
+    await nextTick()
+    originalModel.setValue(props.original)
+    modifiedModel.setValue(props.modified)
   })
   onUnmounted(() => {
     onInputUpdate[index] = () => { }

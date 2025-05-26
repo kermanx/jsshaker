@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import Editor from './Editor.vue';
-import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { alwaysInline, copyOutput, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import DiffEditor from './DiffEditor.vue';
+
+const showDiff = ref(false);
 </script>
 
 <template>
@@ -70,9 +74,17 @@ import { alwaysInline, debouncedInput, diagnostics, doMinify, hideDiagnostics, i
             </math>={{ treeShakeRate.toFixed(2) }}%<span op80>)</span>
           </span>
           <div flex-grow />
+          <label flex align-center gap-1 select-none font-mono text-4 mr-6 mt--6px>
+            <span op-80>
+              Diff view:
+            </span>
+            <input v-model="showDiff" type="checkbox">
+          </label>
         </h2>
         <div flex-grow relative max-h-full>
-          <Editor v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
+          <Editor v-if="!showDiff" v-model="output" lang="javascript" readonly class="w-full h-full max-h-full" />
+          <DiffEditor v-else lang="javascript" :original="copyOutput" :modified="output"
+            class="w-full h-full max-h-full" />
           <div z-20 absolute left-1 right-2 bottom--2 children:p-2 children:px-3 children:b-2 children:rounded flex
             flex-col gap-2>
             <div v-if="diagnostics.length" v-show="!hideDiagnostics" relative bg-op-80
