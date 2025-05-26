@@ -41,4 +41,8 @@ impl Analyzer<'_> {
       raw.contains("@__FINITE_RECURSION__") || raw.contains("#__FINITE_RECURSION__")
     })
   }
+
+  pub fn has_no_shake_notation(&self, span: Span) -> bool {
+    self.has_annotation(span, |raw| raw.contains("@__NO_SHAKE__"))
+  }
 }

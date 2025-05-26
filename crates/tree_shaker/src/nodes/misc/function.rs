@@ -18,6 +18,9 @@ use crate::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_function(&mut self, node: &'a Function<'a>) -> Entity<'a> {
+    if self.has_no_shake_notation(node.span) {
+      return self.factory.computed_unknown(AstKind2::FunctionNoShake(node));
+    }
     self.new_function(CalleeNode::Function(node)).into()
   }
 
@@ -99,6 +102,10 @@ impl<'a> Transformer<'a> {
     node: &'a Function<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, Function<'a>>> {
+    if self.is_referred(AstKind2::FunctionNoShake(node)) {
+      return Some(self.ast_builder.alloc(self.clone_node(node)));
+    }
+
     let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
     let need_id = id.as_ref().is_some_and(|id| self.is_referred(AstKind2::BindingIdentifier(id)));

@@ -163,6 +163,7 @@ ast_kind_2! {
   JSXAttributeName(&'a JSXAttributeName<'a>),
   ArrowFunctionBodyExecuted(&'a FunctionBody<'a>),
   WithDefault(&'a Expression<'a>),
+  FunctionNoShake(&'a Function<'a>),
 }
 
 impl<'a> CustomDepTrait<'a> for AstKind2<'a> {
