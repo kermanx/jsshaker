@@ -35,8 +35,13 @@ export default function (options: {
           modulePreload: {
             polyfill: false,
             ...(typeof config?.build?.modulePreload === 'object' ? config.build.modulePreload : {}),
-          }
-        }
+          },
+        },
+        esbuild: {
+          minifyIdentifiers: false,
+          minifyWhitespace: false,
+          minifySyntax: false,
+        },
       }
     },
     renderChunk: {
