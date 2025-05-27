@@ -1,22 +1,28 @@
-use std::{cell::Cell, fmt::Debug};
+use std::{array, cell::Cell, fmt::Debug, iter::Copied, slice};
 
+use oxc::allocator::{self, Allocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, PropertyKeyValue,
-  TypeofResult, ValueTrait, utils::UnionLike,
+  TypeofResult, UnionHint, ValueTrait,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
+use crate::{
+  analyzer::{Analyzer, Factory},
+  dep::Dep,
+  entity::Entity,
+  use_consumed_flag,
+};
 
 #[derive(Debug)]
-pub struct UnionValue<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> {
+pub struct UnionValue<'a, V: UnionValues<'a> + Debug + 'a> {
   /// Possible values
   pub values: V,
   pub consumed: Cell<bool>,
   pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
+impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
@@ -282,5 +288,95 @@ impl<'a, V: UnionLike<'a, Entity<'a>> + Debug + 'a> ValueTrait<'a> for UnionValu
       }
     }
     Some(result)
+  }
+}
+
+pub trait UnionValues<'a> {
+  fn len(&self) -> usize;
+  type Iter<'b>: Iterator<Item = Entity<'a>>
+  where
+    Self: 'b,
+    'a: 'b;
+  fn iter<'b>(&'b self) -> Self::Iter<'b>
+  where
+    'a: 'b;
+  fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self;
+  fn union(self, factory: &Factory<'a>) -> Entity<'a>;
+}
+
+impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
+  fn len(&self) -> usize {
+    self.iter().len()
+  }
+  type Iter<'b>
+    = Copied<slice::Iter<'b, Entity<'a>>>
+  where
+    Self: 'b,
+    'a: 'b;
+  fn iter<'b>(&'b self) -> Self::Iter<'b>
+  where
+    'a: 'b,
+  {
+    self.as_slice().iter().copied()
+  }
+  fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
+    allocator::Vec::from_iter_in(self.iter().map(f), allocator)
+  }
+  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
+    let mut filtered = factory.vec();
+    for value in &self {
+      match value.get_union_hint() {
+        UnionHint::Never => continue,
+        UnionHint::Unknown => return factory.computed_unknown(factory.dep(self)),
+        _ => filtered.push(*value),
+      }
+    }
+    match filtered.len() {
+      0 => factory.never,
+      1 => filtered.into_iter().next().unwrap(),
+      _ => factory
+        .alloc(UnionValue {
+          values: filtered,
+          consumed: Cell::new(false),
+          phantom: std::marker::PhantomData,
+        })
+        .into(),
+    }
+  }
+}
+
+impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
+  fn len(&self) -> usize {
+    2
+  }
+  type Iter<'b>
+    = array::IntoIter<Entity<'a>, 2>
+  where
+    Self: 'b,
+    'a: 'b;
+  fn iter<'b>(&'b self) -> Self::Iter<'b>
+  where
+    'a: 'b,
+  {
+    [self.0, self.1].into_iter()
+  }
+  fn map(&self, _allocator: &'a Allocator, mut f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
+    (f(self.0), f(self.1))
+  }
+  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
+    match (self.0.get_union_hint(), self.1.get_union_hint()) {
+      (UnionHint::Never, _) => self.1,
+      (_, UnionHint::Never) => self.0,
+      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => {
+        factory.computed_unknown((self.0, self.1))
+      }
+      _ => factory
+        .alloc(UnionValue {
+          values: self,
+          consumed: Cell::new(false),
+          phantom: std::marker::PhantomData,
+        })
+        .into(),
+    }
   }
 }

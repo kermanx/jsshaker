@@ -20,7 +20,6 @@ use oxc::{allocator, semantic::SymbolId};
 use rustc_hash::{FxHashMap, FxHashSet};
 use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
-pub use utils::*;
 
 use crate::{
   analyzer::Analyzer,
@@ -42,6 +41,12 @@ pub struct EnumeratedProperties<'a> {
 
 /// (vec![known_elements], rest, dep)
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>);
+
+pub enum UnionHint {
+  Unknown,
+  Never,
+  Etc,
+}
 
 pub trait ValueTrait<'a>: Debug {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>);
@@ -204,6 +209,9 @@ pub trait ValueTrait<'a>: Debug {
   /// If it is a shared value, reference equality doesn't mean anything.
   fn is_shared_value(&self) -> bool {
     false
+  }
+  fn get_union_hint(&self) -> UnionHint {
+    UnionHint::Etc
   }
 }
 
