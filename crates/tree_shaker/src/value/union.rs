@@ -328,7 +328,10 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
     for value in &self {
       match value.get_union_hint() {
         UnionHint::Never => continue,
-        UnionHint::Unknown => has_unknown = true,
+        UnionHint::Unknown => {
+          has_unknown = true;
+          filtered.push(*value)
+        }
         _ => filtered.push(*value),
       }
     }
