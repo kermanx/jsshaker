@@ -202,13 +202,12 @@ impl<'a> Factory<'a> {
 
   pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
     &self,
-    _name: &'static str,
+    name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self
       .alloc(ImplementedBuiltinFnValue {
-        #[cfg(feature = "flame")]
-        name: _name,
+        name,
         implementation,
         object: None,
         consumed: Cell::new(true),
@@ -218,13 +217,12 @@ impl<'a> Factory<'a> {
 
   pub fn implemented_consumable_fn<F: BuiltinFnImplementation<'a> + 'a>(
     &self,
-    _name: &'static str,
+    name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self
       .alloc(ImplementedBuiltinFnValue {
-        #[cfg(feature = "flame")]
-        name: _name,
+        name,
         implementation,
         object: None,
         consumed: Cell::new(false),

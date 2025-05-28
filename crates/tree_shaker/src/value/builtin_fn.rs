@@ -12,7 +12,6 @@ use crate::{
 };
 
 trait BuiltinFnImpl<'a>: Debug {
-  #[cfg(feature = "flame")]
   fn name(&self) -> &'static str;
   fn object(&self) -> Option<&'a ObjectValue<'a>> {
     None
@@ -63,7 +62,10 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
       object.set_property(analyzer, dep, key, value)
     } else {
       analyzer.add_diagnostic(
-      "Should not set property of builtin function, it may cause unexpected tree-shaking behavior",
+        format!(
+          "Should not set property of builtin function `{}`, it may cause unexpected tree-shaking behavior",
+          self.name()
+        )
     );
       consumed_object::set_property(analyzer, dep, key, value)
     }
@@ -182,7 +184,6 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
 
 #[derive(Clone)]
 pub struct ImplementedBuiltinFnValue<'a, F: BuiltinFnImplementation<'a> + 'a> {
-  #[cfg(feature = "flame")]
   pub name: &'static str,
   pub implementation: F,
   pub object: Option<&'a ObjectValue<'a>>,
@@ -198,7 +199,6 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnValu
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
   for ImplementedBuiltinFnValue<'a, F>
 {
-  #[cfg(feature = "flame")]
   fn name(&self) -> &'static str {
     self.name
   }
@@ -217,10 +217,7 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     use_consumed_flag!(self);
 
-    #[cfg(feature = "flame")]
     let name = self.name;
-    #[cfg(not(feature = "flame"))]
-    let name = "";
 
     analyzer.exec_consumed_fn(name, move |analyzer| {
       self.call_impl(
@@ -236,14 +233,13 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
 impl<'a> Analyzer<'a> {
   pub fn dynamic_implemented_builtin<F: BuiltinFnImplementation<'a> + 'a>(
     &mut self,
-    _name: &'static str,
+    name: &'static str,
     implementation: F,
   ) -> Entity<'a> {
     self
       .factory
       .alloc(ImplementedBuiltinFnValue {
-        #[cfg(feature = "flame")]
-        name: _name,
+        name,
         implementation,
         object: Some(self.new_function_object(None).0),
         consumed: Cell::new(false),
@@ -258,7 +254,6 @@ pub struct PureBuiltinFnValue<'a> {
 }
 
 impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
-  #[cfg(feature = "flame")]
   fn name(&self) -> &'static str {
     "<PureBuiltin>"
   }
