@@ -309,7 +309,11 @@ impl<'a> Factory<'a> {
   }
 
   pub fn try_union<V: UnionValues<'a> + Debug + 'a>(&self, values: V) -> Option<Entity<'a>> {
-    values.try_union(self)
+    match values.len() {
+      0 => None,
+      1 => Some(values.iter().next().unwrap()),
+      _ => Some(values.union(self)),
+    }
   }
 
   pub fn union<V: UnionValues<'a> + Debug + 'a>(&self, values: V) -> Entity<'a> {
