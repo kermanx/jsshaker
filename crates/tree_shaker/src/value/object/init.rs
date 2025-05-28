@@ -106,6 +106,7 @@ impl<'a> ObjectValue<'a> {
     }
     let mut unknown = self.unknown.borrow_mut();
     if let Some(u) = enumerated.unknown {
+      self.disable_mangling(analyzer);
       unknown.possible_values.push(ObjectPropertyValue::Field(u, false));
     }
     unknown.non_existent.push(enumerated.dep);
