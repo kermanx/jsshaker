@@ -11,6 +11,15 @@ impl Builtins<'_> {
       "eval" => factory.unknown,
       "RegExp" => factory.unknown,
       "Array" => factory.unknown,
+
+      "$$DEBUG$$" => factory.implemented_builtin_fn(
+        "debug",
+        |analyzer, dep, _this, args| {
+          let args = args.destruct_as_array(analyzer, dep, 1, true).0;
+          println!("Debug: {:#?}", args[0]);
+          analyzer.factory.undefined
+        },
+      ),
     })
   }
 }
