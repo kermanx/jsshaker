@@ -5,8 +5,8 @@ use crate::{
   analyzer::Factory,
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
-    EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, Value,
-    ValueTrait,
+    EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, UnionHint,
+    Value, ValueTrait,
   },
 };
 
@@ -203,6 +203,10 @@ impl<'a> Entity<'a> {
     value: Entity<'a>,
   ) -> Entity<'a> {
     self.value.call_as_setter(analyzer, self.forward_dep(dep, analyzer), this, value)
+  }
+
+  pub fn get_union_hint(&self) -> UnionHint {
+    self.value.get_union_hint()
   }
 }
 

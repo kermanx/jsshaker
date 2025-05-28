@@ -23,9 +23,8 @@ use crate::{
     never::NeverValue,
     primitive::PrimitiveValue,
     react_element::ReactElementValue,
-    union::UnionValue,
+    union::UnionValues,
     unknown::UnknownValue,
-    utils::UnionLike,
   },
 };
 pub struct Factory<'a> {
@@ -311,26 +310,15 @@ impl<'a> Factory<'a> {
       .into()
   }
 
-  pub fn try_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(
-    &self,
-    values: V,
-  ) -> Option<Entity<'a>> {
+  pub fn try_union<V: UnionValues<'a> + Debug + 'a>(&self, values: V) -> Option<Entity<'a>> {
     match values.len() {
       0 => None,
       1 => Some(values.iter().next().unwrap()),
-      _ => Some(
-        self
-          .alloc(UnionValue {
-            values,
-            consumed: Cell::new(false),
-            phantom: std::marker::PhantomData,
-          })
-          .into(),
-      ),
+      _ => Some(values.union(self)),
     }
   }
 
-  pub fn union<V: UnionLike<'a, Entity<'a>> + Debug + 'a>(&self, values: V) -> Entity<'a> {
+  pub fn union<V: UnionValues<'a> + Debug + 'a>(&self, values: V) -> Entity<'a> {
     self.try_union(values).unwrap()
   }
 
@@ -346,7 +334,7 @@ impl<'a> Factory<'a> {
     }
   }
 
-  pub fn computed_union<V: UnionLike<'a, Entity<'a>> + Debug + 'a, T: DepTrait<'a> + 'a>(
+  pub fn computed_union<V: UnionValues<'a> + Debug + 'a, T: DepTrait<'a> + 'a>(
     &self,
     values: V,
     dep: T,

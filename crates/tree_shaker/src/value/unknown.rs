@@ -1,6 +1,8 @@
 use std::marker::PhantomData;
 
-use super::{EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object};
+use super::{
+  EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait, consumed_object,
+};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Default)]
@@ -119,6 +121,9 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
 
   fn is_shared_value(&self) -> bool {
     true
+  }
+  fn get_union_hint(&self) -> UnionHint {
+    UnionHint::Unknown
   }
 }
 

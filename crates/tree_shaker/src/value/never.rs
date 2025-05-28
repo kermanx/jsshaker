@@ -1,4 +1,4 @@
-use super::ValueTrait;
+use super::{UnionHint, ValueTrait};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
@@ -101,5 +101,9 @@ impl<'a> ValueTrait<'a> for NeverValue {
   }
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn get_union_hint(&self) -> UnionHint {
+    UnionHint::Never
   }
 }
