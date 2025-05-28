@@ -123,7 +123,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     true
   }
   fn get_union_hint(&self) -> UnionHint {
-    UnionHint::Etc
+    UnionHint::Unknown
   }
 }
 
