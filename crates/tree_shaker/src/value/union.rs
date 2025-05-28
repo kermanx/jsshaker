@@ -301,7 +301,7 @@ pub trait UnionValues<'a> {
   where
     'a: 'b;
   fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self;
-  fn union(self, factory: &Factory<'a>) -> Entity<'a>;
+  fn try_union(self, factory: &Factory<'a>) -> Option<Entity<'a>>;
 }
 
 impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
@@ -322,7 +322,7 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
   fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
     allocator::Vec::from_iter_in(self.iter().map(f), allocator)
   }
-  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
+  fn try_union(self, factory: &Factory<'a>) -> Option<Entity<'a>> {
     let mut filtered = factory.vec();
     let mut has_unknown = false;
     for value in &self {
@@ -336,18 +336,29 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
       }
     }
     if has_unknown {
-      return factory.computed_unknown(filtered);
+      return Some(factory.computed_unknown(filtered));
     }
     match filtered.len() {
-      0 => factory.never,
-      1 => filtered.into_iter().next().unwrap(),
-      _ => factory
-        .alloc(UnionValue {
-          values: filtered,
-          consumed: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-        .into(),
+      0 => None,
+      1 => Some(filtered[0]),
+      2 => Some(
+        factory
+          .alloc(UnionValue {
+            values: (filtered[0], filtered[1]),
+            consumed: Cell::new(false),
+            phantom: std::marker::PhantomData,
+          })
+          .into(),
+      ),
+      _ => Some(
+        factory
+          .alloc(UnionValue {
+            values: filtered,
+            consumed: Cell::new(false),
+            phantom: std::marker::PhantomData,
+          })
+          .into(),
+      ),
     }
   }
 }
@@ -370,18 +381,21 @@ impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
   fn map(&self, _allocator: &'a Allocator, mut f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
     (f(self.0), f(self.1))
   }
-  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
+  fn try_union(self, factory: &Factory<'a>) -> Option<Entity<'a>> {
     match (self.0.get_union_hint(), self.1.get_union_hint()) {
-      (UnionHint::Never, _) => self.1,
-      (_, UnionHint::Never) => self.0,
-      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => factory.computed_unknown(self),
-      _ => factory
-        .alloc(UnionValue {
-          values: self,
-          consumed: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-        .into(),
+      (UnionHint::Never, UnionHint::Never) => None,
+      (UnionHint::Never, _) => Some(self.1),
+      (_, UnionHint::Never) => Some(self.0),
+      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => Some(factory.computed_unknown(self)),
+      _ => Some(
+        factory
+          .alloc(UnionValue {
+            values: self,
+            consumed: Cell::new(false),
+            phantom: std::marker::PhantomData,
+          })
+          .into(),
+      ),
     }
   }
 }
