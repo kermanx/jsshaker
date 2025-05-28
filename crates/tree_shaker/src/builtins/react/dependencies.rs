@@ -8,7 +8,6 @@ use crate::{
   dep::{Dep, DepCollector},
   entity::Entity,
   module::ModuleId,
-  scope::CfScopeKind,
 };
 
 #[derive(Debug)]
@@ -20,6 +19,7 @@ pub struct ReactDependenciesData<'a> {
   /// `vec![None]`: has changed
   /// `vec![Some(value)]`: always be value
   pub previous: Option<Vec<Option<Entity<'a>>>>,
+  pub previous_rest: bool,
 }
 
 pub type ReactDependencies<'a> =
@@ -46,6 +46,7 @@ pub fn check_dependencies<'a>(
         rest_collector: DepCollector::new(factory.vec()),
         extra_collector: DepCollector::new(factory.vec()),
         previous: None,
+        previous_rest: false,
       }))
     })
     .clone();
@@ -58,10 +59,22 @@ pub fn check_dependencies<'a>(
     data.collectors[index].push(*element);
   }
 
-  let ReactDependenciesData { collectors, rest_collector, extra_collector, previous } = &mut *data;
+  let ReactDependenciesData {
+    collectors,
+    rest_collector,
+    extra_collector,
+    previous,
+    previous_rest,
+  } = &mut *data;
   extra_collector.push(iterate_dep);
 
-  let mut require_rerun = !rest_collector.is_empty() || rest.is_some();
+  let mut require_rerun = false;
+
+  if !*previous_rest && rest.is_some() {
+    require_rerun = true;
+    *previous_rest = true;
+  }
+
   let result = if let Some(previous) = previous {
     let mut changed = vec![];
     for (index, element) in elements.iter().enumerate() {
@@ -128,8 +141,8 @@ pub fn check_dependencies<'a>(
 
   if require_rerun {
     for depth in 0..analyzer.scoping.cf.stack.len() {
-      if let CfScopeKind::Exhaustive(exhaustive_data) =
-        &mut analyzer.scoping.cf.get_mut_from_depth(depth).kind
+      if let Some(exhaustive_data) =
+        analyzer.scoping.cf.get_mut_from_depth(depth).exhaustive_data_mut()
       {
         exhaustive_data.clean = false;
         break;
