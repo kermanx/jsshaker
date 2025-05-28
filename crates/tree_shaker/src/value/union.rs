@@ -324,12 +324,16 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
   }
   fn union(self, factory: &Factory<'a>) -> Entity<'a> {
     let mut filtered = factory.vec();
+    let mut has_unknown = false;
     for value in &self {
       match value.get_union_hint() {
         UnionHint::Never => continue,
-        UnionHint::Unknown => return factory.computed_unknown(factory.dep(self)),
+        UnionHint::Unknown => has_unknown = true,
         _ => filtered.push(*value),
       }
+    }
+    if has_unknown {
+      return factory.computed_unknown(filtered);
     }
     match filtered.len() {
       0 => factory.never,
@@ -367,9 +371,7 @@ impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
     match (self.0.get_union_hint(), self.1.get_union_hint()) {
       (UnionHint::Never, _) => self.1,
       (_, UnionHint::Never) => self.0,
-      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => {
-        factory.computed_unknown((self.0, self.1))
-      }
+      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => factory.computed_unknown(self),
       _ => factory
         .alloc(UnionValue {
           values: self,
