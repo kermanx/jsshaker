@@ -1,6 +1,6 @@
 # Experimental Tree Shaker
 
-\[WIP\] This is an experimental tree shaker (code size optimizer) for JavaScript based on [the Oxc compiler](https://oxc.rs).
+\[WIP\] This is an experimental tree shaker (code size optimizer) for JavaScript based on [the Oxc parser](https://oxc.rs).
 
 [**Try online**](https://kermanx.github.io/tree-shaker/) | [**Run locally**](#run-locally)
 
