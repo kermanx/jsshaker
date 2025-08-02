@@ -27,6 +27,7 @@ use crate::{
     unknown::UnknownValue,
   },
 };
+
 pub struct Factory<'a> {
   pub allocator: &'a Allocator,
   instance_id_counter: Cell<usize>,

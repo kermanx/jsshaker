@@ -57,7 +57,7 @@ pub fn tree_shake<F: Vfs + 'static>(
     // Step 1: Analyze
     let mut analyzer = Analyzer::new_in(Box::new(vfs), config, &allocator);
     analyzer.import_module(entry);
-    analyzer.finalize();
+    analyzer.post_analysis();
     let Analyzer {
       modules,
       diagnostics,
