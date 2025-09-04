@@ -22,6 +22,7 @@ const metadata = {
   actor: Number(GITHUB_ACTOR_ID),
 };
 
+console.log(metadata)
 const key = hash(metadata);
 
 const checkResponse = await fetch(new URL("/check", apiUrl), {
