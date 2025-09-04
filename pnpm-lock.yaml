@@ -20,22 +20,6 @@ importers:
       ohash:
         specifier: ^2.0.11
         version: 2.0.11
-    optionalDependencies:
-      '@jsshaker/binding-darwin-arm64':
-        specifier: 0.0.0
-        version: 0.0.0
-      '@jsshaker/binding-darwin-x64':
-        specifier: 0.0.0
-        version: 0.0.0
-      '@jsshaker/binding-linux-x64-gnu':
-        specifier: 0.0.0
-        version: 0.0.0
-      '@jsshaker/binding-wasm32-wasi':
-        specifier: 0.0.0
-        version: 0.0.0
-      '@jsshaker/binding-win32-x64-msvc':
-        specifier: 0.0.0
-        version: 0.0.0
 
   packages/napi/npm/darwin-arm64: {}
 
@@ -989,31 +973,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.30':
     resolution: {integrity: sha512-GQ7Nw5G2lTu/BtHTKfXhKHok2WGetd4XYcVKGx00SjAk8GMwgJM3zr6zORiPGuOE+/vkc90KtTosSSvaCjKb2Q==}
-
-  '@jsshaker/binding-darwin-arm64@0.0.0':
-    resolution: {integrity: sha512-T2FoRAQQam7sJYU7Pp9JjlgTq283fEkLWO4f3Bij+EMaYJheE+DRp12+5mNfXNRTCvO5G/lUkS4A4u+7+ACZzg==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@jsshaker/binding-darwin-x64@0.0.0':
-    resolution: {integrity: sha512-EEje5OtuLL5K4FR11dNYBfqzkNBSgDmf9SMVNu4XtcAeiGHUxp6fr1f95aKNSe5M8USdQsJXYZ69cLJdF+6Bvw==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@jsshaker/binding-linux-x64-gnu@0.0.0':
-    resolution: {integrity: sha512-5c52zw8Tzp//UFs3YdWllRgIqXpou78716jYxB8hUD9MBnN/V1zS4Xwthbs+Yi1TpsgHrqLKXsiwJ/CMsRMchA==}
-    cpu: [x64]
-    os: [linux]
-
-  '@jsshaker/binding-wasm32-wasi@0.0.0':
-    resolution: {integrity: sha512-idad17fu87V9pfrXrNhjplvyRrEPTrifFHrvwLUPvukJNBezYHMb1WtN4vXQ3CkcGpfra3qBe+jXoz9QwYB2QQ==}
-    engines: {node: '>=14.0.0'}
-    cpu: [wasm32]
-
-  '@jsshaker/binding-win32-x64-msvc@0.0.0':
-    resolution: {integrity: sha512-niPT5SkKIiw/cAu2Tur/cDfBcqLK/DO0ITZ4aVvh9ib0BPJEIVhA2JpgifkRmeZk6ydIKK5kypBrOcQoDdJNng==}
-    cpu: [x64]
-    os: [win32]
 
   '@mswjs/interceptors@0.39.6':
     resolution: {integrity: sha512-bndDP83naYYkfayr/qhBHMhk0YGwS1iv6vaEGcr0SQbO0IZtbOPqjKjds/WcG+bJA+1T5vCx6kprKOzn5Bg+Vw==}
@@ -4358,23 +4317,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  '@jsshaker/binding-darwin-arm64@0.0.0':
-    optional: true
-
-  '@jsshaker/binding-darwin-x64@0.0.0':
-    optional: true
-
-  '@jsshaker/binding-linux-x64-gnu@0.0.0':
-    optional: true
-
-  '@jsshaker/binding-wasm32-wasi@0.0.0':
-    dependencies:
-      '@napi-rs/wasm-runtime': 1.0.3
-    optional: true
-
-  '@jsshaker/binding-win32-x64-msvc@0.0.0':
-    optional: true
 
   '@mswjs/interceptors@0.39.6':
     dependencies:
