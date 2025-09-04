@@ -112,6 +112,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          registry-url: https://registry.npmjs.org/
       - name: Setup PNPM
         uses: pnpm/action-setup@v4
         with:
@@ -139,7 +140,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           NPM_CONFIG_PROVENANCE: true
 
-      - run: node ./scripts/patch.mjs
-        working-directory: ./packages/napi
-      - run: pnpx pkg-pr-new publish './' './npm/*' --pnpm
-        working-directory: ./packages/napi
+      # - run: node ./scripts/patch.mjs
+      #   working-directory: ./packages/napi
+      # - run: pnpx pkg-pr-new publish './' './npm/*' --pnpm
+      #   working-directory: ./packages/napi
