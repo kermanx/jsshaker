@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { parseArgs } = require("node:util");
-const { shakeSingleModule } = require("./index.js");
+const { shakeMultiModule } = require("./index.js");
 const { writeFile, mkdir } = require("node:fs/promises");
 const { join, dirname } = require("node:path");
 
@@ -28,7 +28,7 @@ if (positionals.length !== 1) {
   throw new Error("Must provide exactly one entry js file path.");
 }
 
-const result = shakeSingleModule(
+const result = shakeMultiModule(
   positionals[0],
   {
     preset: values.preset,
