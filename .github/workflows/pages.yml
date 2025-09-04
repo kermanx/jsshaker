@@ -42,16 +42,15 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Install NPM dependencies
+        run: pnpm i
+
       - name: Build crates
         run: cargo build --release
 
       - name: Build wasm
         run: pnpm build --target wasm32-wasip1-threads
         working-directory: ./packages/napi
-
-      - name: Install NPM dependencies
-        run: pnpm i
-        working-directory: ./packages/playground
 
       - name: Build UI
         run: pnpm run build --base /${{github.event.repository.name}}/
