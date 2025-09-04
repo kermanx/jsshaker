@@ -9,6 +9,10 @@
     "jsshaker.win32-x64-msvc.node"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kermanx/jsshaker"
+  },
   "os": [
     "win32"
   ]

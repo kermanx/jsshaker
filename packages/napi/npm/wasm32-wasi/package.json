@@ -16,6 +16,10 @@
   "engines": {
     "node": ">=14.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kermanx/jsshaker"
+  },
   "browser": "jsshaker.wasi-browser.js",
   "dependencies": {
     "@napi-rs/wasm-runtime": "^1.0.3"

@@ -9,6 +9,10 @@
     "jsshaker.darwin-arm64.node"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kermanx/jsshaker"
+  },
   "os": [
     "darwin"
   ]
