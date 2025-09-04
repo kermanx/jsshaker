@@ -1,3 +1,6 @@
 [toolchain]
-channel = "1.85.1"
+channel = "1.89.0"
 profile = "default"
+targets = [
+  "wasm32-wasip1-threads"
+]

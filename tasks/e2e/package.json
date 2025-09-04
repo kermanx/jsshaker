@@ -1,13 +1,13 @@
 {
   "type": "module",
   "scripts": {
-    "build:commonjs": "tsup --config ./commonjs/tsup.config.js",
-    "build:vue": "vite build ./vue",
-    "build:vuetify": "vite build ./vuetify",
-    "build:react": "vite build ./react",
-    "build-shaken": "cross-env DISABLE_TREE_SHAKE=0 pnpm run --parallel \"/^build:.*/\"",
-    "build-unshaken": "cross-env DISABLE_TREE_SHAKE=1 pnpm run --parallel \"/^build:.*/\"",
-    "build": "pnpm run --parallel \"/^build-.*/\"",
+    "e2e-build:commonjs": "tsup --config ./commonjs/tsup.config.js",
+    "e2e-build:vue": "vite build ./vue",
+    "e2e-build:vuetify": "vite build ./vuetify",
+    "e2e-build:react": "vite build ./react",
+    "e2e-build-shaken": "cross-env DISABLE_TREE_SHAKE=0 pnpm run --parallel \"/^e2e-build:.*/\"",
+    "e2e-build-unshaken": "cross-env DISABLE_TREE_SHAKE=1 pnpm run --parallel \"/^e2e-build:.*/\"",
+    "build": "pnpm run --parallel \"/^e2e-build-.*/\"",
     "test": "vitest"
   },
   "devDependencies": {
