@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const { parseArgs } = require("node:util");
-const { treeShakeEntry } = require("./index.js");
+const { shakeSingleModule } = require("./index.js");
 const { writeFile, mkdir } = require("node:fs/promises");
 const { join, dirname } = require("node:path");
 
@@ -28,10 +28,12 @@ if (positionals.length !== 1) {
   throw new Error("Must provide exactly one entry js file path.");
 }
 
-const result = treeShakeEntry(
+const result = shakeSingleModule(
   positionals[0],
-  values.preset || "recommended",
-  values.minify || false
+  {
+    preset: values.preset,
+    minify: values.minify,
+  }
 );
 
 for (const message of result.diagnostics) {

@@ -1,4 +1,4 @@
-name: Publish Any Commit
+name: Release
 
 on:
   pull_request:
@@ -115,7 +115,6 @@ jobs:
           version: 9
       - name: Install dependencies
         run: pnpm install
-        working-directory: ./packages/napi
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -127,6 +126,16 @@ jobs:
         run: ls -R ./npm
         shell: bash
         working-directory: ./packages/napi
+
+      - name: Publish to NPM
+        continue-on-error: true
+        run: |
+          pnpm -r --filter "./packages/napi/npm/**" publish --access public --no-git-checks
+          pnpm publish ./packages/napi --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NPM_CONFIG_PROVENANCE: true
+
       - run: node ./scripts/patch.mjs
         working-directory: ./packages/napi
       - run: pnpx pkg-pr-new publish './' './npm/*' --pnpm

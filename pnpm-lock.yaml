@@ -20,6 +20,36 @@ importers:
       ohash:
         specifier: ^2.0.11
         version: 2.0.11
+    optionalDependencies:
+      '@jsshaker/binding-darwin-arm64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@jsshaker/binding-darwin-x64':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@jsshaker/binding-linux-x64-gnu':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@jsshaker/binding-wasm32-wasi':
+        specifier: 0.0.0
+        version: 0.0.0
+      '@jsshaker/binding-win32-x64-msvc':
+        specifier: 0.0.0
+        version: 0.0.0
+
+  packages/napi/npm/darwin-arm64: {}
+
+  packages/napi/npm/darwin-x64: {}
+
+  packages/napi/npm/linux-x64-gnu: {}
+
+  packages/napi/npm/wasm32-wasi:
+    dependencies:
+      '@napi-rs/wasm-runtime':
+        specifier: ^1.0.3
+        version: 1.0.3
+
+  packages/napi/npm/win32-x64-msvc: {}
 
   packages/playground:
     devDependencies:
@@ -106,7 +136,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       tsup:
         specifier: ^8.3.5
-        version: 8.5.0(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)
+        version: 8.5.0(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1)
       typescript:
         specifier: ^5.6.3
         version: 5.9.2
@@ -959,6 +989,31 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.30':
     resolution: {integrity: sha512-GQ7Nw5G2lTu/BtHTKfXhKHok2WGetd4XYcVKGx00SjAk8GMwgJM3zr6zORiPGuOE+/vkc90KtTosSSvaCjKb2Q==}
+
+  '@jsshaker/binding-darwin-arm64@0.0.0':
+    resolution: {integrity: sha512-T2FoRAQQam7sJYU7Pp9JjlgTq283fEkLWO4f3Bij+EMaYJheE+DRp12+5mNfXNRTCvO5G/lUkS4A4u+7+ACZzg==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@jsshaker/binding-darwin-x64@0.0.0':
+    resolution: {integrity: sha512-EEje5OtuLL5K4FR11dNYBfqzkNBSgDmf9SMVNu4XtcAeiGHUxp6fr1f95aKNSe5M8USdQsJXYZ69cLJdF+6Bvw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@jsshaker/binding-linux-x64-gnu@0.0.0':
+    resolution: {integrity: sha512-5c52zw8Tzp//UFs3YdWllRgIqXpou78716jYxB8hUD9MBnN/V1zS4Xwthbs+Yi1TpsgHrqLKXsiwJ/CMsRMchA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@jsshaker/binding-wasm32-wasi@0.0.0':
+    resolution: {integrity: sha512-idad17fu87V9pfrXrNhjplvyRrEPTrifFHrvwLUPvukJNBezYHMb1WtN4vXQ3CkcGpfra3qBe+jXoz9QwYB2QQ==}
+    engines: {node: '>=14.0.0'}
+    cpu: [wasm32]
+
+  '@jsshaker/binding-win32-x64-msvc@0.0.0':
+    resolution: {integrity: sha512-niPT5SkKIiw/cAu2Tur/cDfBcqLK/DO0ITZ4aVvh9ib0BPJEIVhA2JpgifkRmeZk6ydIKK5kypBrOcQoDdJNng==}
+    cpu: [x64]
+    os: [win32]
 
   '@mswjs/interceptors@0.39.6':
     resolution: {integrity: sha512-bndDP83naYYkfayr/qhBHMhk0YGwS1iv6vaEGcr0SQbO0IZtbOPqjKjds/WcG+bJA+1T5vCx6kprKOzn5Bg+Vw==}
@@ -2403,6 +2458,10 @@ packages:
     resolution: {integrity: sha512-pmfRbVRs/7khFrSAYnSiJ8C0D5GvzkE4Ey2pAvUcJsw1ly/p+7ut27jbJrjY79BpAJQJ4gXYFtK6d1Aub+9baQ==}
     hasBin: true
 
+  jiti@2.5.1:
+    resolution: {integrity: sha512-twQoecYPiVA5K/h6SxtORw/Bs3ar+mLUtoPSc7iMXzQzK8d7eJ/R09wmTwAjiamETn1cXYPGfNnu7DMoHgu12w==}
+    hasBin: true
+
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
@@ -3591,6 +3650,11 @@ packages:
   yallist@3.1.1:
     resolution: {integrity: sha512-a4UGQaWPH59mOXUYnAG2ewncQS4i4F43Tv3JoAM+s2VDAmS9NsK8GpDMLrCHPksFT7h3K6TOoUNn2pb7RoXx4g==}
 
+  yaml@2.8.1:
+    resolution: {integrity: sha512-lcYcMxX2PO9XMGvAJkJ3OsNMw+/7FKes7/hgerGUYWIoWu5j/+YQqcZr5JnPZWzOsEBgMbSbiSTn/dv/69Mkpw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yargs-parser@13.1.2:
     resolution: {integrity: sha512-3lbsNRf/j+A4QuSZfDRA7HRSfWrzO0YjqTJd5kjAq37Zep1CEgaYmrH9Q3GwPiB9cHyd1Y1UwggGhJGoxipbzg==}
 
@@ -4294,6 +4358,23 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@jsshaker/binding-darwin-arm64@0.0.0':
+    optional: true
+
+  '@jsshaker/binding-darwin-x64@0.0.0':
+    optional: true
+
+  '@jsshaker/binding-linux-x64-gnu@0.0.0':
+    optional: true
+
+  '@jsshaker/binding-wasm32-wasi@0.0.0':
+    dependencies:
+      '@napi-rs/wasm-runtime': 1.0.3
+    optional: true
+
+  '@jsshaker/binding-win32-x64-msvc@0.0.0':
+    optional: true
 
   '@mswjs/interceptors@0.39.6':
     dependencies:
@@ -5862,6 +5943,9 @@ snapshots:
 
   jiti@2.0.0-beta.3: {}
 
+  jiti@2.5.1:
+    optional: true
+
   joycon@3.1.1: {}
 
   js-tokens@4.0.0: {}
@@ -6156,13 +6240,14 @@ snapshots:
     optionalDependencies:
       fsevents: 2.3.2
 
-  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5):
+  postcss-load-config@6.0.1(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(yaml@2.8.1):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
-      jiti: 1.21.7
+      jiti: 2.5.1
       postcss: 8.5.6
       tsx: 4.20.5
+      yaml: 2.8.1
 
   postcss@8.5.6:
     dependencies:
@@ -6875,7 +6960,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.0(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2):
+  tsup@8.5.0(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(typescript@5.9.2)(yaml@2.8.1):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.25.9)
       cac: 6.7.14
@@ -6886,7 +6971,7 @@ snapshots:
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.6)(tsx@4.20.5)
+      postcss-load-config: 6.0.1(jiti@2.5.1)(postcss@8.5.6)(tsx@4.20.5)(yaml@2.8.1)
       resolve-from: 5.0.0
       rollup: 4.50.0
       source-map: 0.8.0-beta.0
@@ -7153,6 +7238,9 @@ snapshots:
   y18n@5.0.8: {}
 
   yallist@3.1.1: {}
+
+  yaml@2.8.1:
+    optional: true
 
   yargs-parser@13.1.2:
     dependencies:

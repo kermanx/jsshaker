@@ -1,5 +1,6 @@
 packages:
   - 'packages/*'
+  - 'packages/napi/npm/*'
   - 'tasks/*'
 supportedArchitectures:
   cpu:
