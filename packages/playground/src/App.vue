@@ -74,8 +74,8 @@ const showDiff = ref(false);
             </math>={{ treeShakeRate.toFixed(2) }}%<span op80>)</span>
           </span>
           <div flex-grow />
-          <label flex align-center gap-1 select-none font-mono text-4 mr-6 mt--6px>
-            <span op-80>
+          <label flex align-center gap-x-1 select-none font-mono text-4 mr-6 mt--6px>
+            <span op-80 text-nowrap>
               Diff view:
             </span>
             <input v-model="showDiff" type="checkbox">

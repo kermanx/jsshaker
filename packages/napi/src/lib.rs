@@ -15,6 +15,8 @@ pub struct Options {
   pub preset: Option<String>,
   pub minify: Option<bool>,
   pub always_inline_literal: Option<bool>,
+  #[napi(ts_type = "'react'")]
+  pub jsx: Option<String>,
 }
 
 fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
@@ -30,7 +32,8 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
       "disabled" => jsshaker::TreeShakeConfig::disabled(),
       _ => panic!("Invalid tree shake option {:?}", preset),
     }
-    .with_always_inline_literal(always_inline_literal),
+    .with_always_inline_literal(always_inline_literal)
+    .with_react_jsx(options.jsx.as_deref() == Some("react")),
     minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
     codegen_options: CodegenOptions { minify, ..Default::default() },
   }

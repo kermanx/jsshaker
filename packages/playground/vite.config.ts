@@ -17,4 +17,12 @@ export default defineConfig({
   build: {
     target: 'esnext',
   },
+  resolve: {
+    alias: {
+      'jsshaker': 'jsshaker/jsshaker.wasi-browser.js',
+    }
+  },
+  define: {
+    'process.env.NODE_DEBUG_NATIVE': 'undefined',
+  }
 })

@@ -9,6 +9,7 @@ export interface Options {
   preset?: 'safest' | 'recommended' | 'smallest' | 'disabled'
   minify?: boolean
   alwaysInlineLiteral?: boolean
+  jsx?: 'react'
 }
 
 export declare function shakeMultiModule(entryPath: string, options: Options): MultiModuleResult

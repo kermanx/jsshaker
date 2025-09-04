@@ -16,7 +16,8 @@
     ],
     "wasm": {
       "browser": {
-        "fs": false
+        "fs": false,
+        "asyncInit": true
       }
     }
   },
@@ -38,8 +39,8 @@
   "scripts": {
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
-    "build:wasi": "pnpm build --target wasm32-wasip1-threads",
     "build:debug": "napi build --platform",
+    "build:wasi": "pnpm build:debug --target wasm32-wasip1-threads",
     "prepublishOnly": "napi prepublish -t npm",
     "universal": "napi universal",
     "version": "napi version"

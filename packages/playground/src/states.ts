@@ -75,21 +75,25 @@ const copyOnly = computed(() => treeShake(debouncedInput.value, {
   preset: 'disabled',
   minify: false,
   alwaysInlineLiteral: false,
+  jsx: 'react',
 }))
 const minifiedOnly = computed(() => treeShake(debouncedInput.value, {
   preset: 'disabled',
   minify: true,
   alwaysInlineLiteral: false,
+  jsx: 'react',
 }))
 const treeShakedOnly = computed(() => treeShake(debouncedInput.value, {
   preset: preset.value as any,
   minify: false,
   alwaysInlineLiteral: alwaysInline.value,
+  jsx: 'react',
 }))
 const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, {
   preset: 'disabled',
   minify: true,
   alwaysInlineLiteral: false,
+  jsx: 'react',
 }))
 
 const result = computed(() => {
