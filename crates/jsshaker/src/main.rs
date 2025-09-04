@@ -7,7 +7,7 @@ use jsshaker::{
   vfs::{SingleFileFs, StdFs, Vfs},
 };
 use oxc::{
-  codegen::CodegenOptions,
+  codegen::{CodegenOptions, CommentOptions},
   minifier::{MangleOptions, MinifierOptions},
 };
 
@@ -79,7 +79,8 @@ fn main() {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),
     ..Default::default()
   };
-  let min_codegen_options = CodegenOptions { minify: true, comments: false, ..Default::default() };
+  let min_codegen_options =
+    CodegenOptions { minify: true, comments: CommentOptions::disabled(), ..Default::default() };
 
   if args.single_file {
     let source = match std::fs::read_to_string(&args.path) {
@@ -106,7 +107,7 @@ fn main() {
       JsShakerOptions {
         vfs: SingleFileFs(source.clone()),
         config: shake_disabled.clone(),
-        minify_options: Some(minify_options),
+        minify_options: Some(minify_options.clone()),
         codegen_options: min_codegen_options.clone(),
       },
       SingleFileFs::ENTRY_PATH.to_string(),
@@ -126,7 +127,7 @@ fn main() {
       JsShakerOptions {
         vfs: SingleFileFs(shaken_code.clone()),
         config: shake_disabled.clone(),
-        minify_options: Some(minify_options),
+        minify_options: Some(minify_options.clone()),
         codegen_options: min_codegen_options,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
@@ -198,7 +199,7 @@ fn main() {
       JsShakerOptions {
         vfs: StdFs,
         config: shake_enabled,
-        minify_options: args.minify.then_some(minify_options),
+        minify_options: args.minify.then_some(minify_options.clone()),
         codegen_options: if args.minify {
           min_codegen_options.clone()
         } else {
@@ -252,7 +253,7 @@ fn main() {
         JsShakerOptions {
           vfs: SingleFileFs(source.clone()),
           config: shake_disabled.clone(),
-          minify_options: args.minify.then_some(minify_options),
+          minify_options: args.minify.then_some(minify_options.clone()),
           codegen_options: if args.minify {
             min_codegen_options.clone()
           } else {

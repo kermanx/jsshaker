@@ -342,7 +342,7 @@ impl<'a> LiteralValue<'a> {
         }
       }
       LiteralValue::BigInt(value) => {
-        ast_builder.expression_big_int_literal(span, *value, BigintBase::Decimal)
+        ast_builder.expression_big_int_literal(span, *value, None, BigintBase::Decimal)
       }
       LiteralValue::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
       LiteralValue::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),

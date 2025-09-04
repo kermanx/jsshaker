@@ -28,14 +28,12 @@ impl<'a> Analyzer<'a> {
       arguments.push((false, self.factory.computed(value, dep)));
     }
 
-    let value = tag.call(
+    tag.call(
       self,
       AstKind2::TaggedTemplateExpression(node),
       this,
       self.factory.arguments(arguments),
-    );
-
-    value
+    )
   }
 }
 

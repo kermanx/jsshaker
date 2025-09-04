@@ -50,7 +50,7 @@ impl<'a> Analyzer<'a> {
       val
     };
 
-    let value = match (maybe_left, maybe_right) {
+    match (maybe_left, maybe_right) {
       (false, true) => exec_right(self),
       (true, false) => forward_left(self),
       (true, true) => {
@@ -59,9 +59,7 @@ impl<'a> Analyzer<'a> {
         self.factory.logical_result(left, right, node.operator)
       }
       (false, false) => unreachable!("Logical expression should have at least one possible branch"),
-    };
-
-    value
+    }
   }
 }
 

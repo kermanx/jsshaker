@@ -130,7 +130,7 @@ impl<'a> Transformer<'a> {
 
     let BindingPattern { kind, .. } = node;
 
-    let transformed = match kind {
+    match kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let result = self.transform_binding_identifier(node).map(|identifier| {
           self.ast_builder.binding_pattern(
@@ -265,8 +265,6 @@ impl<'a> Transformer<'a> {
           transformed_left
         }
       }
-    };
-
-    transformed
+    }
   }
 }

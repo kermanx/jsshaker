@@ -313,7 +313,7 @@ impl<'a> Transformer<'a> {
         ))
       }
       ModuleDeclaration::ExportDefaultDeclaration(node) => {
-        let ExportDefaultDeclaration { span, declaration, exported } = node.as_ref();
+        let ExportDefaultDeclaration { span, declaration } = node.as_ref();
         let declaration = match declaration {
           ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
             ExportDefaultDeclarationKind::FunctionDeclaration(
@@ -327,11 +327,7 @@ impl<'a> Transformer<'a> {
           }
           node => self.transform_expression(node.to_expression(), true).unwrap().into(),
         };
-        Some(self.ast_builder.module_declaration_export_default_declaration(
-          *span,
-          exported.clone(),
-          declaration,
-        ))
+        Some(self.ast_builder.module_declaration_export_default_declaration(*span, declaration))
       }
       ModuleDeclaration::ExportAllDeclaration(node) => {
         Some(ModuleDeclaration::ExportAllDeclaration(self.clone_node(node)))

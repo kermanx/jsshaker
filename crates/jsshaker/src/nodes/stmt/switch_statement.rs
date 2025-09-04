@@ -138,7 +138,7 @@ impl<'a> Transformer<'a> {
 
       match test {
         Some(None) => {
-          if consequent.len() > 0 {
+          if !consequent.is_empty() {
             if let Some(last) = transformed_cases.last_mut() {
               last.2.extend(consequent);
             } else {

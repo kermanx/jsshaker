@@ -92,9 +92,9 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
       };
 
       // Step 3: Minify
-      let minifier_return = minify_options.map(|options| {
+      let minifier_return = minify_options.clone().map(|options| {
         let minifier = Minifier::new(options);
-        minifier.build(&allocator, program)
+        minifier.dce(&allocator, program)
       });
 
       // Step 4: Generate output
@@ -115,7 +115,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     let mut program = parsed.program;
     let minifier_return = minify_options.map(|options| {
       let minifier = Minifier::new(options);
-      minifier.build(&allocator, &mut program)
+      minifier.dce(&allocator, &mut program)
     });
     let codegen = Codegen::new()
       .with_options(codegen_options.clone())

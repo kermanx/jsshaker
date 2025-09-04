@@ -2,7 +2,7 @@ extern crate console_error_panic_hook;
 
 use jsshaker::vfs::SingleFileFs;
 use oxc::{
-  codegen::CodegenOptions,
+  codegen::{CodegenOptions, CommentOptions},
   minifier::{MangleOptions, MinifierOptions},
 };
 use wasm_bindgen::prelude::*;
@@ -42,7 +42,7 @@ pub fn tree_shake(
       }),
       codegen_options: CodegenOptions {
         minify: do_minify,
-        comments: !do_minify,
+        comments: if do_minify { CommentOptions::disabled() } else { CommentOptions::default() },
         ..Default::default()
       },
     },

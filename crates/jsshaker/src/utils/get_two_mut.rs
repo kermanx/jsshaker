@@ -10,6 +10,6 @@ where
 {
   unsafe {
     let vec = vec as *mut IndexVec<K, V>;
-    (&mut (*vec)[index1], &mut (*vec)[index2])
+    (&mut (&mut (*vec))[index1], &mut (&mut (*vec))[index2])
   }
 }

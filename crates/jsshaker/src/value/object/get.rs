@@ -182,6 +182,6 @@ impl<'a> ObjectValue<'a> {
         context.values.push(analyzer.factory.computed_unknown(dep));
         true
       }
-    }) || unknown_keyed.possible_values.len() > 0
+    }) || !unknown_keyed.possible_values.is_empty()
   }
 }
