@@ -32,7 +32,7 @@ impl<'a> From<AstKind2<'a>> for DepAtom {
 
 impl From<DepAtom> for AstKind2<'_> {
   fn from(val: DepAtom) -> Self {
-    unsafe { std::mem::transmute(val.0) }
+    unsafe { std::mem::transmute::<(usize, usize), AstKind2<'_>>(val.0) }
   }
 }
 

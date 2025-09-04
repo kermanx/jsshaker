@@ -114,9 +114,8 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Transformer<'a> {
-  pub fn build_folded_expr(&self, node: impl Into<DepAtom>) -> Option<Expression<'a>> {
-    let node = node.into();
-    let data = self.folder.nodes.get(&node)?.borrow();
+  pub fn build_folded_expr(&self, node: AstKind2) -> Option<Expression<'a>> {
+    let data = self.folder.nodes.get(&node.into())?.borrow();
     data.state.get_foldable_literal().map(|literal| {
       let span = node.span();
       let mangle_atom = data.used_mangle_atoms.first().copied();
