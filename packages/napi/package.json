@@ -1,6 +1,6 @@
 {
   "name": "jsshaker",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "type": "commonjs",
   "main": "index.js",
   "browser": "browser.js",
@@ -27,7 +27,15 @@
   "files": [
     "index.d.ts",
     "index.js",
-    "cli.js"
+    "cli.js",
+    "README.md",
+    "browser.js",
+    "jsshaker.wasi.cjs",
+    "jsshaker.wasi-browser.cjs",
+    "wasi-worker.mjs",
+    "wasi-worker-browser.mjs",
+    "*.wasm",
+    "*.node"
   ],
   "license": "MIT",
   "devDependencies": {
@@ -41,16 +49,9 @@
     "build": "napi build --platform --release",
     "build:debug": "napi build --platform",
     "build:wasi": "pnpm build:debug --target wasm32-wasip1-threads",
-    "prepublishOnly": "napi prepublish -t npm",
+    "prepublishOnly": "napi prepublish -t npm --no-gh-release",
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "pnpm@10.15.1",
-  "optionalDependencies": {
-    "@jsshaker/binding-linux-x64-gnu": "0.0.0",
-    "@jsshaker/binding-win32-x64-msvc": "0.0.0",
-    "@jsshaker/binding-darwin-x64": "0.0.0",
-    "@jsshaker/binding-darwin-arm64": "0.0.0",
-    "@jsshaker/binding-wasm32-wasi": "0.0.0"
-  }
+  "packageManager": "pnpm@10.15.1"
 }
