@@ -1,6 +1,6 @@
 {
   "name": "jsshaker",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "commonjs",
   "main": "index.js",
   "browser": "browser.js",
@@ -45,5 +45,12 @@
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "pnpm@10.15.1"
+  "packageManager": "pnpm@10.15.1",
+  "optionalDependencies": {
+    "@jsshaker/binding-linux-x64-gnu": "0.0.0",
+    "@jsshaker/binding-win32-x64-msvc": "0.0.0",
+    "@jsshaker/binding-darwin-x64": "0.0.0",
+    "@jsshaker/binding-darwin-arm64": "0.0.0",
+    "@jsshaker/binding-wasm32-wasi": "0.0.0"
+  }
 }
