@@ -40,7 +40,7 @@ jobs:
       - name: Build fixtures
         run: |
           pnpm i
-          pnpm build-unshaken
+          pnpm e2e-build-unshaken
         working-directory: ./tasks/e2e
 
       - name: Build benchmarks

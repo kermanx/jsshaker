@@ -31,9 +31,6 @@ jobs:
         with:
           node-version: 22
 
-      - name: Setup Wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
-
       - name: Setup Rust
         uses: Boshen/setup-rust@main
 
@@ -49,8 +46,8 @@ jobs:
         run: cargo build --release
 
       - name: Build wasm
-        run: wasm-pack build --release
-        working-directory: ./packages/wasm
+        run: pnpm build --target wasm32-wasip1-threads
+        working-directory: ./packages/napi
 
       - name: Install NPM dependencies
         run: pnpm i
