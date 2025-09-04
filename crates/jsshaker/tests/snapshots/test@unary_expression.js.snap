@@ -1,0 +1,27 @@
+---
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/unary_expression.js
+---
+export const result = {
+	s1: "number",
+	s2: "bigint",
+	s3: "string",
+	s4: "boolean",
+	s5: "object",
+	s6: "undefined",
+	s7: "object",
+	s9: typeof f1,
+	s11: typeof unknown,
+	s12: (unknown, "string"),
+	s13: typeof (unknown ? "_" : 1)
+};
+export function deletion() {
+	const obj1 = { c: 3 };
+	if (unknown) {
+		delete obj1.c;
+	}
+	const c = unknown;
+	delete unknown[c];
+	effect(void 0, void 0, obj1.c, 4);
+}

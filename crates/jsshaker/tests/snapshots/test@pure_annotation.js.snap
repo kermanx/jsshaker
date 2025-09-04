@@ -1,0 +1,41 @@
+---
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/pure_annotation.js
+---
+unknown1(1, other1());
+unknown2.g(1, other2(), other3());
+unknown3?.g().h(1, other4());
+export const a = unknown4.g?.(1, other5());
+function simple() {
+	effect();
+	return a;
+}
+simple();
+simple(other1());
+export const b = simple(other2());
+export const c = simple(0, other2());
+function nested1() {
+	return simple();
+}
+nested1(other1());
+export const d = nested1(other2());
+function nested2() {
+	unknown(1);
+	return unknown(2);
+}
+nested2(other1());
+export const e = nested2(other2());
+function mutate(obj) {
+	obj.a = b;
+	return obj.f();
+}
+mutate({ f: () => effect() });
+export const f = mutate({ f: effect });
+class Class {
+	constructor() {
+		effect();
+	}
+}
+new Class(other1());
+export const g = new Class(other2());

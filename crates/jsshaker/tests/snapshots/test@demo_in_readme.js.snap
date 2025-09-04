@@ -1,0 +1,9 @@
+---
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/demo_in_readme.js
+---
+// @minify
+export function f() {
+	return 1;
+}

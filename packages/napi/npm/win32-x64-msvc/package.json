@@ -1,18 +1,15 @@
 {
-  "name": "@kermanx/tree-shaker-win32-x64-msvc",
+  "name": "@jsshaker/binding-win32-x64-msvc",
   "version": "0.0.0",
-  "os": [
-    "win32"
-  ],
   "cpu": [
     "x64"
   ],
-  "main": "tree-shaker.win32-x64-msvc.node",
+  "main": "jsshaker.win32-x64-msvc.node",
   "files": [
-    "tree-shaker.win32-x64-msvc.node"
+    "jsshaker.win32-x64-msvc.node"
   ],
   "license": "MIT",
-  "engines": {
-    "node": ">= 10"
-  }
+  "os": [
+    "win32"
+  ]
 }

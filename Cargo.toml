@@ -6,15 +6,15 @@ members = ["crates/*", "packages/napi", "packages/wasm", "tasks/benchmark"]
 authors = ["_Kerman <kermanx@qq.com>"]
 categories = ["compilers", "development-tools", "web-programming"]
 edition = "2024"
-homepage = "https://kermanx.github.io/tree-shaker"
+homepage = "https://github.com/kermanx/jsshaker"
 keywords = ["JavaScript", "TypeScript", "oxc"]
 license = "MIT"
-repository = "https://github.com/KermanX/tree-shaker"
+repository = "https://github.com/kermanx/jsshaker"
 rust-version = "1.85"                                              # Should sync with oxc
-description = "An experimental tree shaker for JS based on Oxc."
+description = "Code size optimizer for JavaScript"
 
 [workspace.dependencies]
-tree_shaker = { path = "crates/tree_shaker" }
+jsshaker = { path = "crates/jsshaker" }
 
 bitflags = "2.6.0"
 clap = "4.5.20"
@@ -32,9 +32,9 @@ regex = "1.10.6"
 rustc-hash = "2.0.0"
 insta = "1.39.0"
 criterion = { package = "codspeed-criterion-compat", version = "*" }
-napi = "2.16.16"
-napi-derive = "2.16.13"
-napi-build = "2.1.5"
+napi = "3.2.4"
+napi-derive = "3.2.4"
+napi-build = "2.2.3"
 console_error_panic_hook = "0.1.7"
 wasm-bindgen = "0.2.100"
 serde = "1.0.219"

@@ -6,14 +6,14 @@ export default function (options: {
   post?: (code: string) => string,
 } = {}): Plugin | false {
   const logger = createLogger("info", {
-    prefix: "tree-shaker"
+    prefix: "jsshaker"
   })
 
   const disabled = +(process.env.DISABLE_TREE_SHAKE ?? 0);
-  const treeShake = disabled ? null : import("@kermanx/tree-shaker");
+  const treeShake = disabled ? null : import("jsshaker");
 
   return {
-    name: "tree-shaker",
+    name: "jsshaker",
     enforce: 'post',
     apply: 'build',
     config(config) {
@@ -52,7 +52,9 @@ export default function (options: {
         }
         code = options.pre?.(code) ?? code;
         const startTime = Date.now();
-        const { output, diagnostics } = (await treeShake).treeShake(code, "recommended", false);
+        const { output, diagnostics } = (await treeShake).shakeSingleModule(code, {
+          preset: 'recommended',
+        });
         const duration = `${Date.now() - startTime}ms`;
         logger.info(pico.yellowBright(`\ntree-shake duration: ${duration}`));
         for (const diagnostic of diagnostics) {

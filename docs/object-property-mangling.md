@@ -51,11 +51,11 @@ VSCode 使用 TypeScript 编写，它在打包时通过调用 TypeScript 提供�
 
 ## 实现
 
-该优化在 Tree-shaker 基本的分析框架下完成。
+该优化在 JsShaker 基本的分析框架下完成。
 
 ### 字符串字面量的重命名
 
-首先，tree-shaker 实现了字符串字面量做比较的重命名，即：
+首先，JsShaker 实现了字符串字面量做比较的重命名，即：
 
 ```js
 const s1 = "hello", s2 = unknown ? "hello" : "world";

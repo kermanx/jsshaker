@@ -46,22 +46,22 @@ function save() {
 load()
 watchEffect(save)
 
-let library = shallowRef<typeof import('@kermanx/tree-shaker') | null>(null)
-function treeShake(...args: Parameters<(typeof import('@kermanx/tree-shaker'))['tree_shake']>) {
+let library = shallowRef<typeof import('jsshaker') | null>(null)
+function treeShake(...args: Parameters<(typeof import('jsshaker'))['shakeSingleModule']>) {
   if (!library.value) {
-    import('@kermanx/tree-shaker').then(lib => {
+    import('jsshaker').then(lib => {
       library.value = lib
     }).catch(err => {
       console.error(err)
       library.value = {
-        tree_shake: () => ({ output: `Failed to load library.\n${err}`, diagnostics: [], free() { } }),
-        Result: null!,
+        shakeSingleModule: () => ({ output: `Failed to load library.\n${err}`, diagnostics: [] }),
+        ...({} as any)
       }
     })
     return { output: 'Loading library...', diagnostics: [] }
   }
   try {
-    return library.value.tree_shake(...args)
+    return library.value.shakeSingleModule(...args)
   }
   catch (e) {
     console.error(e)
@@ -71,10 +71,26 @@ function treeShake(...args: Parameters<(typeof import('@kermanx/tree-shaker'))['
   }
 }
 
-const copyOnly = computed(() => treeShake(debouncedInput.value, "disabled", false, false))
-const minifiedOnly = computed(() => treeShake(debouncedInput.value, "disabled", true, false))
-const treeShakedOnly = computed(() => treeShake(debouncedInput.value, preset.value, false, alwaysInline.value))
-const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, "disabled", true, false))
+const copyOnly = computed(() => treeShake(debouncedInput.value, {
+  preset: 'disabled',
+  minify: false,
+  alwaysInlineLiteral: false,
+}))
+const minifiedOnly = computed(() => treeShake(debouncedInput.value, {
+  preset: 'disabled',
+  minify: true,
+  alwaysInlineLiteral: false,
+}))
+const treeShakedOnly = computed(() => treeShake(debouncedInput.value, {
+  preset: preset.value as any,
+  minify: false,
+  alwaysInlineLiteral: alwaysInline.value,
+}))
+const treeShakedMinified = computed(() => treeShake(treeShakedOnly.value.output, {
+  preset: 'disabled',
+  minify: true,
+  alwaysInlineLiteral: false,
+}))
 
 const result = computed(() => {
   return {

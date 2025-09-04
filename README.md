@@ -1,8 +1,8 @@
-# Experimental Tree Shaker
+# JsShaker
 
-\[WIP\] This is an experimental tree shaker (code size optimizer) for JavaScript based on [the Oxc parser](https://oxc.rs).
+\[WIP\] This is an experimental code size optimizer for JavaScript based on [the Oxc parser](https://oxc.rs).
 
-[**Try online**](https://kermanx.github.io/tree-shaker/) | [**Run locally**](#run-locally)
+[**Try online**](https://kermanx.com/jsshaker) | [**Run locally**](#run-locally)
 
 ## Features
 
@@ -246,7 +246,7 @@ export function main() {
 ## Comparison
 
 - **Rollup**: Rollup tree-shakes the code in a multi-module context, and it has information about the side effects of the modules. This project does a more fine-grained tree-shaking, and it can be used as a post-processor for Rollup, and is expected to produce smaller code.
-- **Closure Compiler**/**swc**: they support both minification and dead code elimination, while this project is focused on tree-shaking (difference below). You can expect a size reduction when using tree-shaker on their output, and vice versa.
+- **Closure Compiler**/**swc**: they support both minification and dead code elimination, while this project is focused on tree-shaking (difference below). You can expect a size reduction when using JsShaker on their output, and vice versa.
 
 ### What's Tree Shaking?
 
@@ -262,7 +262,7 @@ Here is a simple comparison:
 - Type narrowing
 - Pure annotation
 - Complete JS Builtins metadata
-- Test against fixtures from other tree shakers like Rollup
+- Test against fixtures from other optimizers like Rollup
 - Rollup-like try-scope optimization/de-optimization
 - Reuse code with oxc_minifier for JS computation logics
 

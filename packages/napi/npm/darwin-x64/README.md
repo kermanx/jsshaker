@@ -1,3 +1,3 @@
-# `@kermanx/tree-shaker-darwin-x64`
+# `@jsshaker/binding-darwin-x64`
 
-This is the **x86_64-apple-darwin** binary for `@kermanx/tree-shaker`
+This is the **x86_64-apple-darwin** binary for `@jsshaker/binding`

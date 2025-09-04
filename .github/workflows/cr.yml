@@ -10,7 +10,7 @@ on:
 
 env:
   DEBUG: napi:*
-  APP_NAME: tree-shaker
+  APP_NAME: jsshaker
   MACOSX_DEPLOYMENT_TARGET: '10.13'
   CARGO_INCREMENTAL: '1'
 
@@ -38,6 +38,9 @@ jobs:
           - host: macos-latest
             target: aarch64-apple-darwin
             build: pnpm build --target aarch64-apple-darwin
+          - host: ubuntu-latest
+            target: wasm32-wasip1-threads
+            build: pnpm build --target wasm32-wasip1-threads
     name: ${{ matrix.settings.target }}
     runs-on: ${{ matrix.settings.host }}
     steps:
@@ -90,7 +93,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: packages/napi/${{ env.APP_NAME }}.*.node
+          path: |
+            packages/napi/${{ env.APP_NAME }}.*.node
+            packages/napi/${{ env.APP_NAME }}.*.wasm
           if-no-files-found: error
 
   publish:

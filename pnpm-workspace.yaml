@@ -1,0 +1,7 @@
+packages:
+  - 'packages/*'
+  - 'tasks/*'
+supportedArchitectures:
+  cpu:
+    - current
+    - wasm32

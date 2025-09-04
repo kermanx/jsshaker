@@ -1,11 +1,11 @@
 use std::{fs::read_to_string, path::Path};
 
 use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
-use tree_shaker::{TreeShakeConfig, TreeShakeOptions, tree_shake, vfs::SingleFileFs};
+use jsshaker::{JsShakerOptions, TreeShakeConfig, tree_shake, vfs::SingleFileFs};
 
-fn run_tree_shaker(source_text: String) -> String {
+fn run_jsshaker(source_text: String) -> String {
   let result = tree_shake(
-    TreeShakeOptions {
+    JsShakerOptions {
       vfs: SingleFileFs(source_text),
       config: TreeShakeConfig::recommended(),
       minify_options: None,
@@ -28,7 +28,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
     let source_text = read_to_string(input_path).unwrap();
 
     group.bench_with_input(BenchmarkId::from_parameter(fixture), &source_text, |b, source_text| {
-      b.iter(|| run_tree_shaker(black_box(source_text.clone())))
+      b.iter(|| run_jsshaker(black_box(source_text.clone())))
     });
   }
 

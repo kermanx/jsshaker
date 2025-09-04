@@ -1,18 +1,15 @@
 {
-  "name": "@kermanx/tree-shaker-darwin-arm64",
+  "name": "@jsshaker/binding-darwin-arm64",
   "version": "0.0.0",
-  "os": [
-    "darwin"
-  ],
   "cpu": [
     "arm64"
   ],
-  "main": "tree-shaker.darwin-arm64.node",
+  "main": "jsshaker.darwin-arm64.node",
   "files": [
-    "tree-shaker.darwin-arm64.node"
+    "jsshaker.darwin-arm64.node"
   ],
   "license": "MIT",
-  "engines": {
-    "node": ">= 10"
-  }
+  "os": [
+    "darwin"
+  ]
 }

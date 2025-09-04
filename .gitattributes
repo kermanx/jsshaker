@@ -1,2 +1,2 @@
-crates/tree_shaker/tests/fixtures/** linguist-vendored
-crates/tree_shaker/tests/snapshots/** linguist-generated
+crates/jsshaker/tests/fixtures/** linguist-vendored
+crates/jsshaker/tests/snapshots/** linguist-generated

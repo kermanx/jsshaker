@@ -1,13 +1,14 @@
 // @ts-check
 
-import { treeShake } from '@kermanx/tree-shaker'
+import { shakeSingleModule } from 'jsshaker'
 import { readFileSync, writeFileSync } from 'fs'
-import * as prettier from 'prettier'
 
 const input = readFileSync('./input.js', 'utf8');
 
 const start = Date.now();
-const result = treeShake(input, "recommended", false, false);
+const result = shakeSingleModule(input, {
+  preset: 'recommended',
+});
 console.log('Time:', Date.now() - start + 'ms');
 
 writeFileSync('./output.js', result.output);

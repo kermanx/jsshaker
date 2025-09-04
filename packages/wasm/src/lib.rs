@@ -1,10 +1,10 @@
 extern crate console_error_panic_hook;
 
+use jsshaker::vfs::SingleFileFs;
 use oxc::{
   codegen::CodegenOptions,
   minifier::{MangleOptions, MinifierOptions},
 };
-use tree_shaker::vfs::SingleFileFs;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen(getter_with_clone)]
@@ -22,14 +22,14 @@ pub fn tree_shake(
 ) -> Result {
   console_error_panic_hook::set_once();
 
-  let result = tree_shaker::tree_shake(
-    tree_shaker::TreeShakeOptions {
+  let result = jsshaker::tree_shake(
+    jsshaker::JsShakerOptions {
       vfs: SingleFileFs(source_text),
       config: match preset.as_str() {
-        "recommended" => tree_shaker::TreeShakeConfig::recommended(),
-        "smallest" => tree_shaker::TreeShakeConfig::smallest(),
-        "safest" => tree_shaker::TreeShakeConfig::safest(),
-        "disabled" => tree_shaker::TreeShakeConfig::disabled(),
+        "recommended" => jsshaker::TreeShakeConfig::recommended(),
+        "smallest" => jsshaker::TreeShakeConfig::smallest(),
+        "safest" => jsshaker::TreeShakeConfig::safest(),
+        "disabled" => jsshaker::TreeShakeConfig::disabled(),
         _ => unreachable!("Invalid preset {}", preset),
       }
       .with_react_jsx(true)

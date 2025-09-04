@@ -1,5 +1,5 @@
 [package]
-name = "kermanx_tree-shaker_napi"
+name = "jsshaker_napi"
 version = "0.0.0"
 authors.workspace = true
 categories.workspace = true
@@ -22,7 +22,7 @@ doctest = false
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 napi = { workspace = true, features = ["napi4"] }
 napi-derive = { workspace = true }
-tree_shaker = { workspace = true }
+jsshaker = { workspace = true }
 oxc = { workspace = true, features = ["codegen", "semantic", "minifier"] }
 
 [build-dependencies]

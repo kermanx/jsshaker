@@ -1,6 +1,6 @@
 // @ts-check
 
-const { treeShake } = require('@kermanx/tree-shaker')
+const { shakeSingleModule } = require('jsshaker')
 const pc = require("picocolors");
 const Diff = require('diff')
 const process = require('process');
@@ -70,9 +70,15 @@ module.exports = function(test) {
     if (process.env.CI) {
       process.stderr.write(`[TREESHAKE] ${test.file}\n`)
     }
-    let minified = treeShake(main, "disabled", do_minify).output;
+    let minified = shakeSingleModule(main, {
+      preset: 'disabled',
+      minify: do_minify,
+    }).output;
     let startTime = Date.now();
-    let treeShaked = treeShake(main, "safest", do_minify).output;
+    let treeShaked = shakeSingleModule(main, {
+      preset: 'safest',
+      minify: do_minify,
+    }).output;
     let endTime = Date.now();
 
     minifiedTotal += minified.length;

@@ -1,0 +1,43 @@
+---
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/exec_exhaustively.js
+---
+export function f1() {
+	let x = false;
+	let y = 0;
+	while (someCondition()) {
+		if (x) {
+			y++;
+		}
+		x = true;
+		effect(y);
+	}
+}
+export function f2() {
+	let a = true;
+	while (sth()) {
+		a = true;
+		if (a) effect1();
+		else effect2();
+	}
+	if (a) effect1();
+	else effect2();
+}
+export function f3() {}
+// FIXME: this is a bug
+export function f4() {
+	let obj = {
+		a: 0,
+		b: 0
+	};
+	while (sth()) {
+		if (obj.a++ > 10) {
+			obj.b = "abc";
+		}
+	}
+	test = typeof obj.b;
+}
+export function f5() {
+	while (a);
+}

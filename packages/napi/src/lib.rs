@@ -2,67 +2,70 @@
 
 use std::collections::HashMap;
 
-use napi_derive::napi;
-use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
-use tree_shaker::{
-  TreeShakeOptions,
+use jsshaker::{
+  JsShakerOptions,
   vfs::{SingleFileFs, StdFs, Vfs},
 };
+use napi_derive::napi;
+use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 
-#[napi]
-pub struct TreeShakeResultBinding {
+#[napi(object)]
+pub struct Options {
+  #[napi(ts_type = "'safest' | 'recommended' | 'smallest' | 'disabled'")]
+  pub preset: Option<String>,
+  pub minify: Option<bool>,
+  pub always_inline_literal: Option<bool>,
+}
+
+fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
+  let preset = options.preset.as_deref().unwrap_or("recommended");
+  let minify = options.minify.unwrap_or(false);
+  let always_inline_literal = options.always_inline_literal.unwrap_or(false);
+  JsShakerOptions {
+    vfs,
+    config: match preset {
+      "safest" => jsshaker::TreeShakeConfig::safest(),
+      "recommended" => jsshaker::TreeShakeConfig::recommended(),
+      "smallest" => jsshaker::TreeShakeConfig::smallest(),
+      "disabled" => jsshaker::TreeShakeConfig::disabled(),
+      _ => panic!("Invalid tree shake option {:?}", preset),
+    }
+    .with_always_inline_literal(always_inline_literal),
+    minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
+    codegen_options: CodegenOptions { minify, ..Default::default() },
+  }
+}
+
+#[napi(object)]
+pub struct SingleModuleResult {
   pub output: String,
   pub diagnostics: Vec<String>,
 }
 
-#[napi(
-  ts_args_type = "input: string, preset: 'safest' | 'recommended' | 'smallest' | 'disabled', minify: boolean"
-)]
-pub fn tree_shake(source_text: String, preset: String, minify: bool) -> TreeShakeResultBinding {
-  let result = tree_shaker::tree_shake(
-    get_options(SingleFileFs(source_text), preset.as_str(), minify),
+#[napi]
+pub fn shake_single_module(source_text: String, options: Options) -> SingleModuleResult {
+  let result = jsshaker::tree_shake(
+    resolve_options(SingleFileFs(source_text), options),
     SingleFileFs::ENTRY_PATH.to_string(),
   );
-  TreeShakeResultBinding {
+  SingleModuleResult {
     output: result.codegen_return[SingleFileFs::ENTRY_PATH].code.clone(),
     diagnostics: result.diagnostics.into_iter().collect(),
   }
 }
 
 #[napi(object)]
-pub struct TreeShakeEntryResultBinding {
+pub struct MultiModuleResult {
   pub output: HashMap<String, String>,
   pub diagnostics: Vec<String>,
 }
 
-#[napi(
-  ts_args_type = "entryPath: string, preset: 'safest' | 'recommended' | 'smallest' | 'disabled', minify: boolean"
-)]
-pub fn tree_shake_entry(
-  entry_path: String,
-  preset: String,
-  minify: bool,
-) -> TreeShakeEntryResultBinding {
-  let result =
-    tree_shaker::tree_shake(get_options(StdFs, preset.as_str(), minify), entry_path.clone());
+#[napi]
+pub fn shake_multi_module(entry_path: String, options: Options) -> MultiModuleResult {
+  let result = jsshaker::tree_shake(resolve_options(StdFs, options), entry_path.clone());
   let mut output = HashMap::default();
   for (entry, codegen_result) in result.codegen_return {
     output.insert(entry, codegen_result.code);
   }
-  TreeShakeEntryResultBinding { output, diagnostics: result.diagnostics.into_iter().collect() }
-}
-
-fn get_options<F: Vfs>(vfs: F, preset: &str, minify: bool) -> TreeShakeOptions<F> {
-  TreeShakeOptions {
-    vfs,
-    config: match preset {
-      "safest" => tree_shaker::TreeShakeConfig::safest(),
-      "recommended" => tree_shaker::TreeShakeConfig::recommended(),
-      "smallest" => tree_shaker::TreeShakeConfig::smallest(),
-      "disabled" => tree_shaker::TreeShakeConfig::disabled(),
-      _ => panic!("Invalid tree shake option {}", preset),
-    },
-    minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
-    codegen_options: CodegenOptions { minify, ..Default::default() },
-  }
+  MultiModuleResult { output, diagnostics: result.diagnostics.into_iter().collect() }
 }

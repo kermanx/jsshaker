@@ -1,0 +1,15 @@
+---
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/mangling/jsx.js
+---
+// @react-jsx
+function Comp({ a: propName }) {
+	return <div>
+      {propName}
+    </div>;
+}
+export function main(aaa) {
+	return <Comp a={aaa}>
+    </Comp>;
+}

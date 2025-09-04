@@ -548,7 +548,7 @@
   "language/statements/generators/dstr/dflt-ary-ptrn-elem-id-iter-val-err.js",
   "language/statements/let/dstr/ary-ptrn-elem-id-iter-val-err.js",
 
-  "// Errors thrown by circular dependency or import timing, cannot be handled by tree shaker",
+  "// Errors thrown by circular dependency or import timing, cannot be handled by JsShaker",
   "language/module-code/instn-iee-bndng-cls.js",
   "language/module-code/instn-iee-bndng-const.js",
   "language/module-code/instn-iee-bndng-let.js",
@@ -586,7 +586,7 @@
   "// WTF, Rollup and esbuild don't handle this",
   "language/global-code/decl-lex-restricted-global.js",
   
-  "// Import attributes, not caused by tree shaker",
+  "// Import attributes, not caused by JsShaker",
   "language/import/import-attributes/json-extensibility-array.js",
   "language/import/import-attributes/json-extensibility-object.js",
   "language/import/import-attributes/json-idempotency.js",

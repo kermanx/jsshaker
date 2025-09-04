@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [Vue(), Unocss(), Wasm()],
   optimizeDeps: {
     exclude: [
-      '@kermanx/tree-shaker',
+      'jsshaker',
     ],
     include: [
       'monaco-editor/esm/vs/editor/editor.worker',

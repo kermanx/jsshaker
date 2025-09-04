@@ -1,0 +1,44 @@
+[package]
+name = "jsshaker"
+version = "0.0.0"
+authors.workspace = true
+categories.workspace = true
+edition.workspace = true
+homepage.workspace = true
+include = ["/src"]
+keywords.workspace = true
+license.workspace = true
+publish = true
+repository.workspace = true
+rust-version.workspace = true
+description.workspace = true
+
+[lints]
+workspace = true
+
+[lib]
+test = true
+doctest = false
+
+[features]
+flame = ["dep:flame", "dep:flamescope"]
+
+[dependencies]
+bitflags = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+dashmap = { workspace = true }
+flame = { workspace = true, optional = true }
+flamescope = { workspace = true, optional = true }
+flate2 = { workspace = true }
+oxc = { workspace = true, features = ["codegen", "semantic", "minifier"] }
+oxc_ast_visit = { workspace = true }
+oxc_ecmascript = { workspace = true }
+oxc_index = { workspace = true }
+oxc_syntax = { workspace = true, features = ["to_js_string"] }
+regex = { workspace = true }
+rustc-hash = { workspace = true }
+line-index = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+insta = { workspace = true, features = ["glob"] }

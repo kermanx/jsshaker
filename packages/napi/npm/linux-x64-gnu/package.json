@@ -1,20 +1,17 @@
 {
-  "name": "@kermanx/tree-shaker-linux-x64-gnu",
+  "name": "@jsshaker/binding-linux-x64-gnu",
   "version": "0.0.0",
-  "os": [
-    "linux"
-  ],
   "cpu": [
     "x64"
   ],
-  "main": "tree-shaker.linux-x64-gnu.node",
+  "main": "jsshaker.linux-x64-gnu.node",
   "files": [
-    "tree-shaker.linux-x64-gnu.node"
+    "jsshaker.linux-x64-gnu.node"
   ],
   "license": "MIT",
-  "engines": {
-    "node": ">= 10"
-  },
+  "os": [
+    "linux"
+  ],
   "libc": [
     "glibc"
   ]

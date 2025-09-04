@@ -1,33 +1,48 @@
 {
-  "name": "@kermanx/tree-shaker",
+  "name": "jsshaker",
   "version": "0.0.0",
+  "type": "commonjs",
   "main": "index.js",
-  "types": "index.d.ts",
+  "browser": "browser.js",
   "napi": {
-    "name": "tree-shaker",
-    "triples": {
-      "defaults": true,
-      "additional": [
-        "aarch64-apple-darwin"
-      ]
+    "binaryName": "jsshaker",
+    "packageName": "@jsshaker/binding",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "x86_64-pc-windows-msvc",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "wasm32-wasip1-threads"
+    ],
+    "wasm": {
+      "browser": {
+        "fs": false
+      }
     }
+  },
+  "bin": {
+    "jsshaker": "./cli.js"
   },
   "files": [
     "index.d.ts",
-    "index.js"
+    "index.js",
+    "cli.js"
   ],
   "license": "MIT",
   "devDependencies": {
-    "@napi-rs/cli": "^2.18.4",
-    "ohash": "^1.1.4"
+    "@napi-rs/cli": "^3.1.5",
+    "@napi-rs/wasm-runtime": "^1.0.3",
+    "emnapi": "^1.5.0",
+    "ohash": "^2.0.11"
   },
   "scripts": {
     "artifacts": "napi artifacts",
     "build": "napi build --platform --release",
+    "build:wasi": "pnpm build --target wasm32-wasip1-threads",
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "pnpm@9.11.0"
+  "packageManager": "pnpm@10.15.1"
 }
