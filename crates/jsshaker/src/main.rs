@@ -1,11 +1,10 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use clap::Parser;
-use flate2::{write::GzEncoder, Compression};
+use flate2::{Compression, write::GzEncoder};
 use jsshaker::{
-  tree_shake,
+  JsShakerOptions, TreeShakeConfig, tree_shake,
   vfs::{SingleFileFs, StdFs, Vfs},
-  TreeShakeConfig, JsShakerOptions,
 };
 use oxc::{
   codegen::CodegenOptions,

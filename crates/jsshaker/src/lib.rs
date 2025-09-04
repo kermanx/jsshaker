@@ -44,10 +44,7 @@ pub struct JsShakerReturn {
   pub diagnostics: BTreeSet<String>,
 }
 
-pub fn tree_shake<F: Vfs + 'static>(
-  options: JsShakerOptions<F>,
-  entry: String,
-) -> JsShakerReturn {
+pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) -> JsShakerReturn {
   let JsShakerOptions { vfs, config, minify_options, codegen_options } = options;
 
   if config.enabled {

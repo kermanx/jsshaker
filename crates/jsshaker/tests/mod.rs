@@ -1,7 +1,7 @@
 use std::fs;
 
 use insta::{assert_snapshot, glob};
-use jsshaker::{tree_shake, vfs::SingleFileFs, TreeShakeConfig, JsShakerOptions};
+use jsshaker::{JsShakerOptions, TreeShakeConfig, tree_shake, vfs::SingleFileFs};
 use oxc::{codegen::CodegenOptions, minifier::MinifierOptions};
 
 fn do_tree_shake(input: String) -> String {
