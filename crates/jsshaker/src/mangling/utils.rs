@@ -28,10 +28,10 @@ pub fn get_mangled_name(n: usize) -> String {
 
 pub fn is_literal_mangable(literals: &FxHashSet<LiteralValue<'_>>) -> bool {
   for key_literal in literals {
-    if let LiteralValue::String(_, key_atom) = key_literal {
-      if key_atom.is_none() {
-        return false;
-      }
+    if let LiteralValue::String(_, key_atom) = key_literal
+      && key_atom.is_none()
+    {
+      return false;
     }
   }
   true

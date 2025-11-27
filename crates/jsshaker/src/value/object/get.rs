@@ -119,10 +119,10 @@ impl<'a> ObjectValue<'a> {
 
     let mut string_keyed = self.keyed.borrow_mut();
     if let Some(property) = string_keyed.get_mut(&key) {
-      if let Some(exhaustive_deps) = exhaustive_deps {
-        if property.may_be_unconsumed_field() {
-          exhaustive_deps.push(key);
-        }
+      if let Some(exhaustive_deps) = exhaustive_deps
+        && property.may_be_unconsumed_field()
+      {
+        exhaustive_deps.push(key);
       }
       property.get(analyzer, context, key_atom);
       if property.definite {

@@ -14,10 +14,10 @@ impl<'a> Analyzer<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
-    if let (Some(v), m) = self.op_strict_eq(lhs, rhs) {
-      if v || lhs.test_typeof().must_equal(rhs.test_typeof()) {
-        return (Some(v), m);
-      }
+    if let (Some(v), m) = self.op_strict_eq(lhs, rhs)
+      && (v || lhs.test_typeof().must_equal(rhs.test_typeof()))
+    {
+      return (Some(v), m);
     }
 
     if lhs.test_nullish() == Some(true) && rhs.test_nullish() == Some(true) {
@@ -38,11 +38,11 @@ impl<'a> Analyzer<'a> {
 
     let lhs_lit = lhs.get_literal(self);
     let rhs_lit = rhs.get_literal(self);
-    if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
-      if lhs_lit.test_typeof() == rhs_lit.test_typeof() {
-        let (eq, m) = lhs_lit.strict_eq(rhs_lit);
-        return (Some(!eq), m.map(|m| m.negate_equality(self.allocator)));
-      }
+    if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit)
+      && lhs_lit.test_typeof() == rhs_lit.test_typeof()
+    {
+      let (eq, m) = lhs_lit.strict_eq(rhs_lit);
+      return (Some(!eq), m.map(|m| m.negate_equality(self.allocator)));
     }
 
     (None, None)

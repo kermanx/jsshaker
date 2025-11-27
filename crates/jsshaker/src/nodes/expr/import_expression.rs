@@ -11,10 +11,10 @@ impl<'a> Analyzer<'a> {
     let options = node.options.as_ref().map(|option| self.exec_expression(option));
     let dep = self.dep((AstKind2::ImportExpression(node), specifier, options));
 
-    if let Some(LiteralValue::String(specifier, _m)) = specifier.get_literal(self) {
-      if let Some(module_id) = self.resolve_and_import_module(specifier) {
-        return self.factory.computed_unknown((module_id, dep));
-      }
+    if let Some(LiteralValue::String(specifier, _m)) = specifier.get_literal(self)
+      && let Some(module_id) = self.resolve_and_import_module(specifier)
+    {
+      return self.factory.computed_unknown((module_id, dep));
     }
 
     self.factory.computed_unknown(dep)

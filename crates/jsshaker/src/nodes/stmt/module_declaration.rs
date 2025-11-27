@@ -108,14 +108,14 @@ impl<'a> Analyzer<'a> {
       let known = self.builtins.get_known_module(name);
       let resolved = if known.is_none() { self.resolve_and_import_module(name) } else { None };
 
-      if let Some(resolved) = resolved {
-        if self.module_stack.contains(&resolved) {
-          // Circular dependency
-          let module = self.current_module();
-          let scope = self.scoping.variable.current_id();
-          self.modules.modules[resolved].blocked_imports.push((module, scope, node));
-          return;
-        }
+      if let Some(resolved) = resolved
+        && self.module_stack.contains(&resolved)
+      {
+        // Circular dependency
+        let module = self.current_module();
+        let scope = self.scoping.variable.current_id();
+        self.modules.modules[resolved].blocked_imports.push((module, scope, node));
+        return;
       }
 
       for specifier in specifiers {

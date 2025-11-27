@@ -14,7 +14,7 @@ export function simple(unknown) {
 export function with_rest(unknown) {
 	let { ...rest } = { b: unknown };
 	effect(void 0, rest.b, 2);
-	let { b,...__unused_56F4 } = unknown;
+	let { b, ...__unused_56F4 } = unknown;
 	let { a: d } = { a: unknown };
 	effect(d);
 }

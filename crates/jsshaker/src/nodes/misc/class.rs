@@ -71,13 +71,13 @@ impl<'a> Analyzer<'a> {
       let key = element.property_key().map(|key| self.exec_property_key(key));
       data.keys.push(key);
 
-      if let ClassElement::MethodDefinition(method) = element {
-        if method.kind.is_constructor() {
-          if data.constructor.is_some() {
-            self.throw_builtin_error("A class may only have one constructor");
-          }
-          data.constructor = Some(method);
+      if let ClassElement::MethodDefinition(method) = element
+        && method.kind.is_constructor()
+      {
+        if data.constructor.is_some() {
+          self.throw_builtin_error("A class may only have one constructor");
         }
+        data.constructor = Some(method);
       }
     }
 
@@ -163,11 +163,11 @@ impl<'a> Analyzer<'a> {
 
     // 1. Init properties
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
-      if let ClassElement::PropertyDefinition(node) = element {
-        if !node.r#static {
-          let value = self.exec_property_definition(node);
-          this.set_property(self, self.factory.no_dep, key.unwrap(), value);
-        }
+      if let ClassElement::PropertyDefinition(node) = element
+        && !node.r#static
+      {
+        let value = self.exec_property_definition(node);
+        this.set_property(self, self.factory.no_dep, key.unwrap(), value);
       }
     }
 
@@ -285,12 +285,11 @@ impl<'a> Transformer<'a> {
       }
 
       for element in &body.body {
-        if let Some(key) = element.property_key() {
-          if key.is_expression() {
-            if let Some(element) = self.transform_expression(key.to_expression(), false) {
-              statements.push(self.ast_builder.statement_expression(element.span(), element));
-            }
-          }
+        if let Some(key) = element.property_key()
+          && key.is_expression()
+          && let Some(element) = self.transform_expression(key.to_expression(), false)
+        {
+          statements.push(self.ast_builder.statement_expression(element.span(), element));
         }
       }
 

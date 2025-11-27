@@ -166,21 +166,20 @@ impl<'a> Transformer<'a> {
     if let Some(literal) = literal {
       if let Some(inner) = inner {
         // Avoid `(a = 1, 1)`
-        if let Expression::AssignmentExpression(node) = &inner {
-          if node.operator == AssignmentOperator::Assign && node.right.is_literal() {
-            return Some(inner);
-          }
+        if let Expression::AssignmentExpression(node) = &inner
+          && node.operator == AssignmentOperator::Assign
+          && node.right.is_literal()
+        {
+          return Some(inner);
         }
 
         // Avoid `(void effect(), void 0)`
-        if let Expression::UnaryExpression(node) = &inner {
-          if node.operator == UnaryOperator::Void {
-            if let Expression::UnaryExpression(literal) = &literal {
-              if literal.operator == UnaryOperator::Void {
-                return Some(inner);
-              }
-            }
-          }
+        if let Expression::UnaryExpression(node) = &inner
+          && node.operator == UnaryOperator::Void
+          && let Expression::UnaryExpression(literal) = &literal
+          && literal.operator == UnaryOperator::Void
+        {
+          return Some(inner);
         }
 
         Some(build_effect!(&self.ast_builder, span, inner; literal))

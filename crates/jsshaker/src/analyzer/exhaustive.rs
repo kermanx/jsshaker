@@ -154,18 +154,16 @@ impl<'a> Analyzer<'a> {
     for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if let Some(data) = scope.exhaustive_data_mut() {
-        if data.clean {
-          if let Some(temp_deps) = data.temp_deps.as_mut() {
-            temp_deps.insert(id);
-            id.object_read_extra().map(|id| temp_deps.insert(id));
-          }
+        if data.clean
+          && let Some(temp_deps) = data.temp_deps.as_mut()
+        {
+          temp_deps.insert(id);
+          id.object_read_extra().map(|id| temp_deps.insert(id));
         }
-        if !registered {
-          if let Some(register_deps) = data.register_deps.as_mut() {
-            registered = true;
-            register_deps.insert(id);
-            id.object_read_extra().map(|id| register_deps.insert(id));
-          }
+        if !registered && let Some(register_deps) = data.register_deps.as_mut() {
+          registered = true;
+          register_deps.insert(id);
+          id.object_read_extra().map(|id| register_deps.insert(id));
         }
       }
     }
@@ -180,17 +178,18 @@ impl<'a> Analyzer<'a> {
       indeterminate |= scope.is_indeterminate();
       if let Some(data) = scope.exhaustive_data_mut() {
         exhaustive = true;
-        if (need_mark || data.register_deps.is_some()) && data.clean {
-          if let Some(temp_deps) = &data.temp_deps {
-            if temp_deps.contains(&id) {
-              data.clean = false;
-            } else if let Some(id) = id.object_write_extra() {
-              if temp_deps.contains(&id) {
-                data.clean = false;
-              }
-            }
-            need_mark = false;
+        if (need_mark || data.register_deps.is_some())
+          && data.clean
+          && let Some(temp_deps) = &data.temp_deps
+        {
+          if temp_deps.contains(&id) {
+            data.clean = false;
+          } else if let Some(id) = id.object_write_extra()
+            && temp_deps.contains(&id)
+          {
+            data.clean = false;
           }
+          need_mark = false;
         }
       }
     }
@@ -200,11 +199,11 @@ impl<'a> Analyzer<'a> {
   pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId<'a>) -> bool {
     let mut found = false;
     let mut do_request = |id: ExhaustiveDepId<'a>| {
-      if let Some(runners) = self.exhaustive_callbacks.get_mut(&id) {
-        if !runners.is_empty() {
-          self.pending_deps.extend(runners.drain());
-          found = true;
-        }
+      if let Some(runners) = self.exhaustive_callbacks.get_mut(&id)
+        && !runners.is_empty()
+      {
+        self.pending_deps.extend(runners.drain());
+        found = true;
       }
     };
     do_request(id);

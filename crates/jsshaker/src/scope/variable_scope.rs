@@ -321,10 +321,10 @@ impl<'a> Analyzer<'a> {
         .insert(name, NamedExport::Variable(variable_scope, symbol, dep));
     }
 
-    if kind == DeclarationKind::FunctionParameter {
-      if let Some(arguments) = &mut self.variable_scope_mut().arguments {
-        arguments.1.push(symbol);
-      }
+    if kind == DeclarationKind::FunctionParameter
+      && let Some(arguments) = &mut self.variable_scope_mut().arguments
+    {
+      arguments.1.push(symbol);
     }
   }
 

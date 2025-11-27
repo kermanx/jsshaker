@@ -135,10 +135,10 @@ impl<'a> Transformer<'a> {
           ObjectPropertyKind::ObjectProperty(node) => {
             let ObjectProperty { key, value, .. } = node.as_ref();
 
-            if let Some(key) = self.transform_property_key(key, false) {
-              if let Ok(key) = key.try_into() {
-                effects.push(key);
-              }
+            if let Some(key) = self.transform_property_key(key, false)
+              && let Ok(key) = key.try_into()
+            {
+              effects.push(key);
             }
             if let Some(value) = self.transform_expression(value, false) {
               effects.push(value);

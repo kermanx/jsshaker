@@ -294,10 +294,10 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn disable_mangling(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(group) = self.mangling_group.get() {
-      if let Some(group) = group.replace(None) {
-        analyzer.mangler.mark_uniqueness_group_non_mangable(group);
-      }
+    if let Some(group) = self.mangling_group.get()
+      && let Some(group) = group.replace(None)
+    {
+      analyzer.mangler.mark_uniqueness_group_non_mangable(group);
     }
   }
 
