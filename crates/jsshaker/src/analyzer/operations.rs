@@ -189,8 +189,25 @@ impl<'a> Analyzer<'a> {
       | TypeofResult::Function;
     let must_not_convert_to_str =
       TypeofResult::Number | TypeofResult::Boolean | TypeofResult::Undefined | TypeofResult::BigInt;
+    let maybe_number = lhs_t.intersects(may_convert_to_num) && rhs_t.intersects(may_convert_to_num);
+    let maybe_bigint = lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt);
+    let maybe_string = !lhs_t.difference(must_not_convert_to_str).is_empty()
+      || !rhs_t.difference(must_not_convert_to_str).is_empty();
 
-    if lhs_t.intersects(may_convert_to_num) && rhs_t.intersects(may_convert_to_num) {
+    if lhs_lit.is_none() || rhs_lit.is_none() {
+      let type_count = maybe_number as u8 + maybe_bigint as u8 + maybe_string as u8;
+      return if type_count > 1 {
+        self.factory.computed(self.factory.unknown_primitive, (lhs, rhs))
+      } else if maybe_number {
+        self.factory.computed(self.factory.unknown_number, (lhs, rhs))
+      } else if maybe_bigint {
+        self.factory.computed(self.factory.unknown_bigint, (lhs, rhs))
+      } else {
+        self.factory.computed(self.factory.unknown_string, (lhs, rhs))
+      };
+    }
+
+    if maybe_number {
       // Possibly number
       match (lhs_lit.and_then(|v| v.to_number()), rhs_lit.and_then(|v| v.to_number())) {
         (Some(l), Some(r)) => match (l, r) {
@@ -207,13 +224,11 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    if lhs_t.contains(TypeofResult::BigInt) && rhs_t.contains(TypeofResult::BigInt) {
+    if maybe_bigint {
       // Possibly bigint
       values.push(self.factory.unknown_bigint);
     }
-    if !lhs_t.difference(must_not_convert_to_str).is_empty()
-      || !rhs_t.difference(must_not_convert_to_str).is_empty()
-    {
+    if maybe_string {
       let lhs_str = lhs.get_to_string(self);
       let rhs_str = rhs.get_to_string(self);
 
