@@ -42,9 +42,9 @@ impl<'a> Analyzer<'a> {
       (true, false) => forward_original(self),
       (false, true) => exec_fallback(self),
       (true, true) => {
-        let fallback = exec_fallback(self);
         let original = forward_original(self);
-        self.factory.logical_result(fallback, original, LogicalOperator::Coalesce)
+        let fallback = exec_fallback(self);
+        self.factory.logical_result(original, fallback, LogicalOperator::Coalesce)
       }
       (false, false) => unreachable!(),
     };
