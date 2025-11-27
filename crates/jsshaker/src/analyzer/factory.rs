@@ -301,7 +301,7 @@ impl<'a> Factory<'a> {
             _ => None,
           },
           LogicalOperator::Coalesce => match right.test_nullish() {
-            Some(true) => Some(true),
+            Some(false) => Some(false),
             _ => None,
           },
         },
