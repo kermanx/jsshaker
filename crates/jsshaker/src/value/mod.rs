@@ -45,7 +45,7 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>);
 pub enum UnionHint {
   Unknown,
   Never,
-  Etc,
+  Other,
 }
 
 pub trait ValueTrait<'a>: Debug {
@@ -211,7 +211,7 @@ pub trait ValueTrait<'a>: Debug {
     false
   }
   fn get_union_hint(&self) -> UnionHint {
-    UnionHint::Etc
+    UnionHint::Other
   }
 }
 
