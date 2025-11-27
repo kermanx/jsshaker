@@ -29,7 +29,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     key: Entity<'a>,
   ) -> Entity<'a> {
     // TODO: PrimitiveValue::String
-    if *self == PrimitiveValue::Mixed || *self == PrimitiveValue::String {
+    if self.maybe_string() {
       analyzer.factory.computed_unknown((self, dep, key))
     } else {
       let prototype = self.get_prototype(analyzer);
@@ -54,7 +54,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   ) -> EnumeratedProperties<'a> {
     EnumeratedProperties {
       known: Default::default(),
-      unknown: (*self == PrimitiveValue::String).then_some(analyzer.factory.unknown_string),
+      unknown: self.maybe_string().then_some(analyzer.factory.unknown_string),
       dep,
     }
   }
@@ -101,7 +101,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    if *self == PrimitiveValue::String {
+    if self.maybe_string() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
@@ -140,10 +140,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     }
   }
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    match self {
-      PrimitiveValue::String => None,
-      _ => Some(vec![]),
-    }
+    if self.maybe_string() { None } else { Some(vec![]) }
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -183,5 +180,9 @@ impl<'a> PrimitiveValue {
       PrimitiveValue::Symbol => &analyzer.builtins.prototypes.symbol,
       PrimitiveValue::Mixed => unreachable!("Cannot get prototype of mixed primitive"),
     }
+  }
+
+  fn maybe_string(&self) -> bool {
+    matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String)
   }
 }
