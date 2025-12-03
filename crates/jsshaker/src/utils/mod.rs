@@ -5,6 +5,7 @@ mod data;
 pub mod effect_builder;
 mod escape_template_element_value;
 mod f64_with_eq;
+pub mod flame;
 mod found;
 mod get_two_mut;
 mod private_identifier_name;

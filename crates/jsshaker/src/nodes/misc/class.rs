@@ -181,7 +181,7 @@ impl<'a> Analyzer<'a> {
       if consume {
         self.consume_return_values();
       }
-      self.pop_call_scope()
+      self.pop_call_scope().0
     } else if let Some(super_class) = &data.super_class {
       self.pop_call_scope();
       super_class.call(self, self.factory.no_dep, this, args)

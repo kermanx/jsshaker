@@ -25,6 +25,7 @@ pub struct FunctionValue<'a> {
 
   // Workaround: The lazy dep of `this` value
   body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
+  pub next_time_consume: Cell<bool>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
@@ -85,6 +86,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
+    if self.next_time_consume.get() {
+      self.consume_body(analyzer, this);
+    }
+
     if let Some(this_dep) = self.body_consumed.get() {
       this_dep.push(analyzer, this);
       return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
@@ -195,7 +200,7 @@ impl<'a> FunctionValue<'a> {
     false
   }
 
-  pub fn call_impl<const IS_NEW: bool>(
+  pub fn call_impl<const AS_CTOR: bool>(
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
@@ -241,7 +246,7 @@ impl<'a> FunctionValue<'a> {
       }
       _ => unreachable!(),
     };
-    let ret_val = if IS_NEW {
+    let ret_val = if AS_CTOR {
       let typeof_ret = ret_val.test_typeof();
       match (
         typeof_ret.intersects(TypeofResult::Object),
@@ -313,6 +318,7 @@ impl<'a> Analyzer<'a> {
       statics,
       prototype,
       body_consumed: Cell::new(None),
+      next_time_consume: Cell::new(false),
     });
 
     let mut created_in_self = false;

@@ -9,6 +9,7 @@ use crate::{
   dep::Dep,
   entity::Entity,
   use_consumed_flag,
+  utils::flame,
 };
 
 trait BuiltinFnImpl<'a>: Debug {

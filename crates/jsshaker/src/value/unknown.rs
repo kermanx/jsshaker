@@ -125,6 +125,9 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Unknown
   }
+  fn no_useful_info(&self) -> bool {
+    true
+  }
 }
 
 impl UnknownValue<'_> {

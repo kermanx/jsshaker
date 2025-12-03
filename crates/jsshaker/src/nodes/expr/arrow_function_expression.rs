@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
         analyzer.consume_return_values();
       }
 
-      analyzer.pop_call_scope()
+      analyzer.pop_call_scope().0
     };
 
     if !consume && node.r#async {

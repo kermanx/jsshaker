@@ -126,7 +126,9 @@ impl<'a> Analyzer<'a> {
 
     self.module_stack.push(callee.module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
-    let body_variable_scope = self.push_variable_scope();
+    let mut body_variable_scope = VariableScope::new();
+    body_variable_scope.call_scope = Some(self.scoping.call.len());
+    let body_variable_scope_id = self.scoping.variable.push(body_variable_scope);
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function,
       self.factory.vec1(self.dep((call_dep, dep_id))),
@@ -138,20 +140,20 @@ impl<'a> Analyzer<'a> {
       callee,
       old_variable_scope_stack,
       cf_scope_depth,
-      body_variable_scope,
+      body_variable_scope_id,
       is_async,
       is_generator,
     ));
   }
 
-  pub fn pop_call_scope(&mut self) -> Entity<'a> {
+  pub fn pop_call_scope(&mut self) -> (Entity<'a>, bool) {
     let scope = self.scoping.call.pop().unwrap();
-    let (old_variable_scope_stack, ret_val) = scope.finalize(self);
+    let (old_variable_scope_stack, ret_val, has_outer_deps) = scope.finalize(self);
     self.pop_cf_scope();
     self.pop_variable_scope();
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
-    ret_val
+    (ret_val, has_outer_deps)
   }
 
   pub fn push_variable_scope(&mut self) -> VariableScopeId {

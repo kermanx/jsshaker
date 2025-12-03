@@ -33,6 +33,7 @@ pub struct VariableScope<'a> {
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
+  pub call_scope: Option<usize>,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -343,11 +344,30 @@ impl<'a> Analyzer<'a> {
     for depth in (0..self.scoping.variable.stack.len()).rev() {
       let id = self.scoping.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {
+        self.mark_outer_dep(depth, value);
         return value;
       }
     }
     self.mark_unresolved_reference(symbol);
     Some(self.factory.unknown)
+  }
+
+  fn mark_outer_dep(&mut self, depth: usize, value: Option<Entity<'a>>) {
+    if let Some(value) = value {
+      if value.no_useful_info() {
+        return;
+      }
+      if (depth + 1) >= self.scoping.variable.stack.len() {
+        return;
+      }
+      for d in (depth + 1)..self.scoping.variable.stack.len() {
+        let variable_scope = self.scoping.variable.stack[d];
+        if let Some(call_scope) = self.scoping.variable.get(variable_scope).call_scope {
+          let call_scope = &mut self.scoping.call[call_scope];
+          call_scope.has_outer_deps = true;
+        }
+      }
+    }
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {

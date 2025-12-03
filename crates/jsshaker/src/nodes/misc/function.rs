@@ -14,6 +14,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
+  value::function::FunctionValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -39,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_function(
     &mut self,
-    fn_entity: Entity<'a>,
+    fn_value: &'a FunctionValue<'a>,
     callee: CalleeInfo<'a>,
     call_dep: Dep<'a>,
     node: &'a Function<'a>,
@@ -70,7 +71,7 @@ impl<'a> Analyzer<'a> {
           AstKind2::BindingIdentifier(id),
           false,
           DeclarationKind::NamedFunctionInBody,
-          Some(analyzer.factory.computed(fn_entity, AstKind2::BindingIdentifier(id))),
+          Some(analyzer.factory.computed(fn_value.into(), AstKind2::BindingIdentifier(id))),
         );
       }
 
@@ -81,7 +82,15 @@ impl<'a> Analyzer<'a> {
         analyzer.consume_return_values();
       }
 
-      analyzer.pop_call_scope()
+      let (ret_val, has_outer_deps) = analyzer.pop_call_scope();
+
+      if !has_outer_deps {
+        if this.no_useful_info() && args.no_useful_info() {
+          fn_value.next_time_consume.set(true);
+        }
+      }
+
+      ret_val
     };
 
     if !consume && (node.r#async || node.generator) {

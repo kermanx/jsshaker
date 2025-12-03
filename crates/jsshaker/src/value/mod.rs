@@ -2,7 +2,7 @@ pub mod arguments;
 pub mod array;
 pub mod builtin_fn;
 mod consumed_object;
-mod function;
+pub mod function;
 mod literal;
 pub mod logical_result;
 pub mod never;
@@ -212,6 +212,9 @@ pub trait ValueTrait<'a>: Debug {
   }
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Other
+  }
+  fn no_useful_info(&self) -> bool {
+    false
   }
 }
 

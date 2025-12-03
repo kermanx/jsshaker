@@ -208,6 +208,9 @@ impl<'a> Entity<'a> {
   pub fn get_union_hint(&self) -> UnionHint {
     self.value.get_union_hint()
   }
+  pub fn no_useful_info(&self) -> bool {
+    self.value.no_useful_info()
+  }
 }
 
 impl<'a> CustomDepTrait<'a> for Entity<'a> {

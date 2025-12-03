@@ -11,6 +11,7 @@ use crate::{
   analyzer::Analyzer,
   entity::Entity,
   scope::{CfScopeId, CfScopeKind, VariableScopeId, cf_scope::ReferredState},
+  utils::flame,
   value::{ObjectId, PropertyKeyValue},
 };
 
