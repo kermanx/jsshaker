@@ -151,6 +151,14 @@ impl<'a> ValueTrait<'a> for ArgumentsValue<'a> {
   fn test_nullish(&self) -> Option<bool> {
     unreachable!()
   }
+  fn no_useful_info(&self) -> bool {
+    for (_, entity) in &self.arguments {
+      if !entity.no_useful_info() {
+        return false;
+      }
+    }
+    true
+  }
 }
 
 impl<'a> ArgumentsValue<'a> {
