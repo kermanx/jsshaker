@@ -34,6 +34,7 @@ pub struct VariableScope<'a> {
   pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
   pub call_scope: Option<usize>,
+  pub has_outer_deps: bool,
 }
 
 impl fmt::Debug for VariableScope<'_> {
@@ -362,10 +363,7 @@ impl<'a> Analyzer<'a> {
       }
       for d in (depth + 1)..self.scoping.variable.stack.len() {
         let variable_scope = self.scoping.variable.stack[d];
-        if let Some(call_scope) = self.scoping.variable.get(variable_scope).call_scope {
-          let call_scope = &mut self.scoping.call[call_scope];
-          call_scope.has_outer_deps = true;
-        }
+        self.scoping.variable.get_mut(variable_scope).has_outer_deps = true;
       }
     }
   }

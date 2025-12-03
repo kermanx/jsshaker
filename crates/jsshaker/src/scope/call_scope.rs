@@ -21,7 +21,6 @@ pub struct CallScope<'a> {
   pub is_async: bool,
   pub is_generator: bool,
   pub need_consume_arguments: bool,
-  pub has_outer_deps: bool,
 
   #[cfg(feature = "flame")]
   pub scope_guard: flame::SpanGuard,
@@ -47,14 +46,13 @@ impl<'a> CallScope<'a> {
       is_async,
       is_generator,
       need_consume_arguments: false,
-      has_outer_deps: false,
 
       #[cfg(feature = "flame")]
       scope_guard: flame::start_guard(callee.debug_name.to_string()),
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<VariableScopeId>, Entity<'a>, bool) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<VariableScopeId>, Entity<'a>) {
     let value = match &self.returned_values[..] {
       [] => analyzer.factory.never,
       [v] => *v,
@@ -67,7 +65,7 @@ impl<'a> CallScope<'a> {
     #[cfg(feature = "flame")]
     self.scope_guard.end();
 
-    (self.old_variable_scope_stack, value, self.has_outer_deps)
+    (self.old_variable_scope_stack, value)
   }
 }
 

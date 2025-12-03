@@ -148,11 +148,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> (Entity<'a>, bool) {
     let scope = self.scoping.call.pop().unwrap();
-    let (old_variable_scope_stack, ret_val, has_outer_deps) = scope.finalize(self);
+    let (old_variable_scope_stack, ret_val) = scope.finalize(self);
     self.pop_cf_scope();
+
+    let has_outer_deps = self.scoping.variable.get_current().has_outer_deps;
     self.pop_variable_scope();
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
+
     (ret_val, has_outer_deps)
   }
 
