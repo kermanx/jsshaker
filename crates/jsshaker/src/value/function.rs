@@ -212,7 +212,7 @@ impl<'a> FunctionValue<'a> {
     let call_dep = analyzer.dep((self.callee.into_node(), dep));
     let ret_val = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
-        self.into(),
+        self,
         self.callee,
         call_dep,
         node,

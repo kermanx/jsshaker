@@ -8,7 +8,6 @@ use crate::{
   dep::{DepAtom, DepTrait},
   entity::Entity,
   utils::CalleeInfo,
-  utils::flame,
 };
 
 pub struct CallScope<'a> {
