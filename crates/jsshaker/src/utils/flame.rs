@@ -1,7 +1,6 @@
+#[cfg(feature = "flame")]
 pub struct SpanGuard {
-  #[cfg(feature = "flame")]
   name: flame::StrCow,
-  #[cfg(feature = "flame")]
   _guard: flame::SpanGuard,
 }
 
@@ -12,6 +11,7 @@ impl Drop for SpanGuard {
   }
 }
 
+#[cfg(feature = "flame")]
 impl SpanGuard {
   pub fn end(self) {}
 }
@@ -23,7 +23,7 @@ pub fn start_guard<S: Into<flame::StrCow>>(name: S) -> SpanGuard {
   SpanGuard { name: name.clone(), _guard: flame::start_guard(name) }
 }
 
-#[cfg(not(feature = "flame"))]
-pub fn start_guard<S: Into<String>>(_name: S) -> SpanGuard {
-  SpanGuard {}
-}
+// #[cfg(not(feature = "flame"))]
+// pub fn start_guard<S: Into<String>>(_name: S) -> SpanGuard {
+//   SpanGuard {}
+// }

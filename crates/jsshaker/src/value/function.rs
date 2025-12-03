@@ -88,6 +88,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   ) -> Entity<'a> {
     if self.next_time_consume.get() {
       self.consume_body(analyzer, this);
+      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
     }
 
     if let Some(this_dep) = self.body_consumed.get() {
