@@ -17,5 +17,5 @@ const obj2 = {
 obj2.getThis()
 test2(obj2.getThis())
 test2((0, obj2).getThis())
-test2((0, obj2.getThis)())
 test2(((((obj2.getThis))))())
+test2((0, obj2.getThis)())
