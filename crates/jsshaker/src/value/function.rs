@@ -24,13 +24,13 @@ pub struct FunctionValue<'a> {
   pub prototype: &'a ObjectValue<'a>,
 
   // Workaround: The lazy dep of `this` value
-  body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
+  body_consumed: Cell<Option<(bool, LazyDep<'a, Entity<'a>>)>>,
   pub next_time_consume: Cell<bool>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    self.consume_body(analyzer, analyzer.factory.unknown);
+    self.consume_body(analyzer, analyzer.factory.unknown, true);
     self.statics.consume(analyzer);
     self.prototype.consume(analyzer);
   }
@@ -86,19 +86,22 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     this: Entity<'a>,
     args: Entity<'a>,
   ) -> Entity<'a> {
-    if self.next_time_consume.get() {
-      self.consume_body(analyzer, this);
-      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
+    if self.next_time_consume.get()
+      && (this.test_is_undefined() == Some(true) || this.no_useful_info())
+      && args.no_useful_info()
+    {
+      self.consume_body(analyzer, this, false);
+      return consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
     }
 
-    if let Some(this_dep) = self.body_consumed.get() {
+    if let Some((true, this_dep)) = self.body_consumed.get() {
       this_dep.push(analyzer, this);
-      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
+      return consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, this);
-      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
+      self.consume_body(analyzer, this, true);
+      return consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
     }
 
     self.call_impl::<false>(analyzer, dep, this, args, false)
@@ -111,12 +114,12 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     args: Entity<'a>,
   ) -> Entity<'a> {
     if self.body_consumed.get().is_some() {
-      return consumed_object::construct(self, analyzer, dep, args);
+      return consumed_object::fn_construct(analyzer, dep, args);
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, analyzer.factory.unknown);
-      return consumed_object::construct(self, analyzer, dep, args);
+      self.consume_body(analyzer, analyzer.factory.unknown, true);
+      return consumed_object::fn_construct(analyzer, dep, args);
     }
 
     self.construct_impl(analyzer, dep, args, false)
@@ -278,14 +281,14 @@ impl<'a> FunctionValue<'a> {
     self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
-  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>) {
-    if self.body_consumed.get().is_some() {
+  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>, permanent: bool) {
+    if let Some((true, _)) = self.body_consumed.get() {
       return;
     }
 
     let this_dep = analyzer.factory.lazy_dep(analyzer.factory.vec1(this));
     let this = analyzer.factory.computed_unknown(this_dep);
-    self.body_consumed.set(Some(this_dep));
+    self.body_consumed.set(Some((permanent, this_dep)));
 
     analyzer.consume(self.callee.into_node());
 
@@ -331,7 +334,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if created_in_self {
-      function.consume_body(self, self.factory.unknown);
+      function.consume_body(self, self.factory.unknown, true);
     }
 
     function

@@ -77,6 +77,24 @@ pub fn call<'a>(
   }
 }
 
+pub fn fn_call<'a>(
+  analyzer: &mut Analyzer<'a>,
+  dep: Dep<'a>,
+  this: Entity<'a>,
+  args: Entity<'a>,
+) -> Entity<'a> {
+  if analyzer.is_inside_pure() {
+    let dep = analyzer.dep((dep, this, args));
+    this.unknown_mutate(analyzer, dep);
+    args.unknown_mutate(analyzer, dep);
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume((dep, this, args));
+    analyzer.refer_to_global();
+    analyzer.factory.unknown
+  }
+}
+
 pub fn construct<'a>(
   target: Value<'a>,
   analyzer: &mut Analyzer<'a>,
@@ -88,6 +106,17 @@ pub fn construct<'a>(
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume((target, dep, args));
+    analyzer.refer_to_global();
+    analyzer.factory.unknown
+  }
+}
+
+pub fn fn_construct<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>, args: Entity<'a>) -> Entity<'a> {
+  if analyzer.is_inside_pure() {
+    args.unknown_mutate(analyzer, (dep, args));
+    analyzer.factory.computed_unknown(dep)
+  } else {
+    analyzer.consume((dep, args));
     analyzer.refer_to_global();
     analyzer.factory.unknown
   }

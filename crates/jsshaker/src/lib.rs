@@ -56,6 +56,14 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     let mut analyzer = Analyzer::new_in(Box::new(vfs), config, &allocator);
     analyzer.import_module(entry);
     analyzer.post_analysis();
+
+    if !analyzer.debug_names.is_empty() {
+      println!("Debugged functions:");
+      for name in analyzer.debug_names.iter() {
+        println!("{}", name);
+      }
+    }
+
     let Analyzer {
       modules,
       diagnostics,

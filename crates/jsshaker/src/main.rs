@@ -46,6 +46,9 @@ struct Args {
 
   #[arg(long, default_value_t = false)]
   no_remember_exhausted: bool,
+
+  #[arg(long, default_value_t = false)]
+  no_next_time_consume: bool,
 }
 
 fn main() {
@@ -73,7 +76,8 @@ fn main() {
     }
   })
   .with_max_recursion_depth(args.recursion_depth)
-  .with_remember_exhausted(!args.no_remember_exhausted);
+  .with_remember_exhausted(!args.no_remember_exhausted)
+  .with_enable_next_time_consume(!args.no_next_time_consume);
 
   let minify_options = MinifierOptions {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),

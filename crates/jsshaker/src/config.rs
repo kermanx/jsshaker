@@ -19,6 +19,7 @@ pub struct TreeShakeConfig {
 
   pub max_recursion_depth: usize,
   pub remember_exhausted_variables: bool,
+  pub enable_next_time_consume: bool,
 
   pub mangling: Option<bool>,
   pub unknown_global_side_effects: bool,
@@ -49,6 +50,7 @@ impl TreeShakeConfig {
 
       max_recursion_depth: 2,
       remember_exhausted_variables: true,
+      enable_next_time_consume: true,
 
       mangling: Some(false),
       unknown_global_side_effects: true,
@@ -122,6 +124,11 @@ impl TreeShakeConfig {
 
   pub fn with_remember_exhausted(mut self, yes: bool) -> Self {
     self.remember_exhausted_variables = yes;
+    self
+  }
+
+  pub fn with_enable_next_time_consume(mut self, yes: bool) -> Self {
+    self.enable_next_time_consume = yes;
     self
   }
 }

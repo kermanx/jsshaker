@@ -52,6 +52,8 @@ pub struct Analyzer<'a> {
   pub mangler: Mangler<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub diagnostics: BTreeSet<String>,
+
+  pub debug_names: FxHashSet<&'a str>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -80,6 +82,8 @@ impl<'a> Analyzer<'a> {
       mangler: Mangler::new(config.mangling.is_some(), allocator),
       pending_deps: Default::default(),
       diagnostics: Default::default(),
+
+      debug_names: Default::default(),
     }
   }
 

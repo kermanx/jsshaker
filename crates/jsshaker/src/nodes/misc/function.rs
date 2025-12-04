@@ -84,10 +84,12 @@ impl<'a> Analyzer<'a> {
 
       let (ret_val, has_outer_deps) = analyzer.pop_call_scope();
 
-      if !has_outer_deps
+      if analyzer.config.enable_next_time_consume
+        && !has_outer_deps
         && (this.test_is_undefined() == Some(true) || this.no_useful_info())
         && args.no_useful_info()
       {
+        // analyzer.debug_names.insert(callee.debug_name);
         fn_value.next_time_consume.set(true);
       }
 
