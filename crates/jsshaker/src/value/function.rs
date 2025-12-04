@@ -90,8 +90,9 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
       && (this.test_is_undefined() == Some(true) || this.no_useful_info())
       && args.no_useful_info()
     {
-      self.consume_body(analyzer, this, false);
-      return consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
+      let ret = self.consume_body(analyzer, this, false);
+      consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
+      return ret;
     }
 
     if let Some((true, this_dep)) = self.body_consumed.get() {
@@ -100,8 +101,9 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, this, true);
-      return consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
+      let ret = self.consume_body(analyzer, this, true);
+      consumed_object::fn_call(analyzer, dep, analyzer.factory.unknown, args);
+      return ret;
     }
 
     self.call_impl::<false>(analyzer, dep, this, args, false)
@@ -118,8 +120,9 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, analyzer.factory.unknown, true);
-      return consumed_object::fn_construct(analyzer, dep, args);
+      let ret = self.consume_body(analyzer, analyzer.factory.unknown, true);
+      consumed_object::fn_construct(analyzer, dep, args);
+      return ret;
     }
 
     self.construct_impl(analyzer, dep, args, false)
@@ -281,9 +284,14 @@ impl<'a> FunctionValue<'a> {
     self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
-  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>, permanent: bool) {
+  pub fn consume_body(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    this: Entity<'a>,
+    permanent: bool,
+  ) -> Entity<'a> {
     if let Some((true, _)) = self.body_consumed.get() {
-      return;
+      return analyzer.factory.unknown;
     }
 
     let this_dep = analyzer.factory.lazy_dep(analyzer.factory.vec1(this));
@@ -305,7 +313,7 @@ impl<'a> FunctionValue<'a> {
         analyzer.factory.unknown,
         true,
       )
-    });
+    })
   }
 }
 
