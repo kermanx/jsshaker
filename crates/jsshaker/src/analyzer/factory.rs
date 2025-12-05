@@ -57,7 +57,9 @@ pub struct Factory<'a> {
   pub pure_fn_returns_null: Entity<'a>,
   pub pure_fn_returns_undefined: Entity<'a>,
 
-  pub empty_arguments: Entity<'a>,
+  pub empty_arguments: ArgumentsValue<'a>,
+  pub unknown_arguments: ArgumentsValue<'a>,
+
   pub unmatched_prototype_property: Entity<'a>,
 
   pub no_dep: Dep<'a>,
@@ -97,12 +99,10 @@ impl<'a> Factory<'a> {
     let pure_fn_returns_undefined =
       allocator.alloc(PureBuiltinFnValue::new(|f| f.undefined)).into();
 
-    let empty_arguments = allocator
-      .alloc(ArgumentsValue {
-        consumed: Cell::new(false),
-        arguments: allocator::Vec::new_in(allocator),
-      })
-      .into();
+    let empty_arguments = ArgumentsValue { elements: &[], rest: None };
+    let unknown_arguments =
+      ArgumentsValue { elements: allocator.alloc([]), rest: Some(immutable_unknown) };
+
     let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
@@ -139,6 +139,8 @@ impl<'a> Factory<'a> {
       pure_fn_returns_undefined,
 
       empty_arguments,
+      unknown_arguments,
+
       unmatched_prototype_property,
 
       no_dep,
@@ -186,8 +188,12 @@ impl<'a> Factory<'a> {
     })
   }
 
-  pub fn arguments(&self, arguments: allocator::Vec<'a, (bool, Entity<'a>)>) -> Entity<'a> {
-    self.alloc(ArgumentsValue { consumed: Cell::new(false), arguments }).into()
+  pub fn arguments(
+    &self,
+    elements: &'a [Entity<'a>],
+    rest: Option<Entity<'a>>,
+  ) -> ArgumentsValue<'a> {
+    ArgumentsValue { elements, rest }
   }
 
   pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayValue<'a> {

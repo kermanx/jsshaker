@@ -1,6 +1,9 @@
 use std::cell::{Cell, RefCell};
 
-use super::{EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object};
+use super::{
+  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, arguments::ArgumentsValue,
+  consumed_object,
+};
 use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
@@ -86,7 +89,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
     if analyzer.config.preserve_exceptions {
@@ -100,7 +103,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
     if analyzer.config.preserve_exceptions {

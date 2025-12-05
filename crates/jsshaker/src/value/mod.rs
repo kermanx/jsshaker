@@ -25,6 +25,7 @@ use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
   entity::Entity,
+  value::arguments::ArgumentsValue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -81,10 +82,14 @@ pub trait ValueTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a>;
-  fn construct(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, args: Entity<'a>)
-  -> Entity<'a>;
+  fn construct(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Dep<'a>,
+    args: ArgumentsValue<'a>,
+  ) -> Entity<'a>;
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a>;
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a>;
@@ -202,7 +207,7 @@ pub trait ValueTrait<'a>: Debug {
       analyzer,
       dep,
       this,
-      analyzer.factory.arguments(analyzer.factory.vec1((false, value))),
+      analyzer.factory.arguments(analyzer.factory.alloc([value]), None),
     )
   }
 

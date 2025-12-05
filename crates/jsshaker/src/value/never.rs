@@ -1,4 +1,4 @@
-use super::{UnionHint, ValueTrait};
+use super::{UnionHint, ValueTrait, arguments::ArgumentsValue};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
@@ -43,7 +43,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
     analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
     _this: Entity<'a>,
-    _args: Entity<'a>,
+    _args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.factory.never
   }
@@ -51,7 +51,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
-    _args: Entity<'a>,
+    _args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.factory.never
   }

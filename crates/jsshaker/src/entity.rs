@@ -6,7 +6,7 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
     EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, UnionHint,
-    Value, ValueTrait,
+    Value, ValueTrait, arguments::ArgumentsValue,
   },
 };
 
@@ -91,7 +91,7 @@ impl<'a> Entity<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: impl DepTrait<'a> + 'a,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     self.value.call(analyzer, self.forward_dep(dep, analyzer), this, args)
   }
@@ -99,7 +99,7 @@ impl<'a> Entity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: impl DepTrait<'a> + 'a,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     self.value.construct(analyzer, self.forward_dep(dep, analyzer), args)
   }

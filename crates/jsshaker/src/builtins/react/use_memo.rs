@@ -8,9 +8,8 @@ pub type ReactUseMemos<'a> = FxHashMap<(ModuleId, Span), Entity<'a>>;
 
 pub fn create_react_use_memo_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::useMemo", |analyzer, dep, _this, args| {
-    let [calculate, dependencies] = args.destruct_as_array(analyzer, dep, 2, false).0[..] else {
-      unreachable!()
-    };
+    let calculate = args.get(analyzer, 0);
+    let dependencies = args.get(analyzer, 1);
 
     let (changed, dep) = check_dependencies(analyzer, dep, dependencies);
 

@@ -1,4 +1,4 @@
-use super::{EnumeratedProperties, IteratedElements, Value};
+use super::{EnumeratedProperties, IteratedElements, Value, arguments::ArgumentsValue};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -63,12 +63,11 @@ pub fn call<'a>(
   analyzer: &mut Analyzer<'a>,
   dep: Dep<'a>,
   this: Entity<'a>,
-  args: Entity<'a>,
+  args: ArgumentsValue<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
     let dep = analyzer.dep((target, dep, this, args));
     this.unknown_mutate(analyzer, dep);
-    args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume((target, dep, this, args));
@@ -81,10 +80,9 @@ pub fn construct<'a>(
   target: Value<'a>,
   analyzer: &mut Analyzer<'a>,
   dep: Dep<'a>,
-  args: Entity<'a>,
+  args: ArgumentsValue<'a>,
 ) -> Entity<'a> {
   if analyzer.is_inside_pure() {
-    args.unknown_mutate(analyzer, (target, dep, args));
     analyzer.factory.computed_unknown(dep)
   } else {
     analyzer.consume((target, dep, args));

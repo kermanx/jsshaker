@@ -6,22 +6,36 @@ use oxc::{
 use crate::{
   Analyzer,
   ast::{Arguments, AstKind2},
-  entity::Entity,
   transformer::Transformer,
+  value::arguments::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
-    let mut arguments = self.factory.vec();
-    for argument in node {
-      let (spread, val) = match argument {
-        Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
-        node => (false, self.exec_expression(node.to_expression())),
-      };
-      let dep = AstKind2::Argument(argument);
-      arguments.push((spread, self.factory.computed(val, dep)));
+  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> ArgumentsValue<'a> {
+    let mut elements = self.factory.vec();
+    let mut rest = self.factory.vec();
+
+    for element in node {
+      let dep = AstKind2::Argument(element);
+      match element {
+        Argument::SpreadElement(node) => {
+          if let Some(spread) = self.exec_spread_element(node) {
+            rest.push(self.factory.computed(spread, dep));
+          }
+        }
+        _ => {
+          let value = self.exec_expression(element.to_expression());
+          let element = self.factory.computed(value, dep);
+          if rest.is_empty() {
+            elements.push(element);
+          } else {
+            rest.push(element);
+          }
+        }
+      }
     }
-    self.factory.arguments(arguments)
+
+    ArgumentsValue { elements: self.factory.alloc(elements), rest: self.factory.try_union(rest) }
   }
 }
 

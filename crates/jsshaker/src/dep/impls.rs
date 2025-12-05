@@ -29,6 +29,14 @@ impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for &'a RefCell<T> {
   }
 }
 
+impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for &'a [T] {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    for item in *self {
+      item.consume(analyzer)
+    }
+  }
+}
+
 impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for Vec<T> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     for item in self {

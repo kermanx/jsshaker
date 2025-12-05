@@ -5,7 +5,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, PropertyKeyValue,
-  TypeofResult, UnionHint, ValueTrait,
+  TypeofResult, UnionHint, ValueTrait, arguments::ArgumentsValue,
 };
 use crate::{
   analyzer::{Analyzer, Factory},
@@ -134,7 +134,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {
@@ -149,7 +149,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     let values = analyzer.exec_indeterminately(|analyzer| {
       self.values.map(analyzer.allocator, |v| {

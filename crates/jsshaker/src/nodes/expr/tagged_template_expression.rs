@@ -20,19 +20,19 @@ impl<'a> Analyzer<'a> {
       Err(v) => return v,
     };
 
-    let mut arguments = self.factory.vec1((false, self.factory.unknown));
+    let mut arguments = self.factory.vec1(self.factory.unknown);
 
     for expr in &node.quasi.expressions {
       let value = self.exec_expression(expr);
       let dep = AstKind2::ExpressionInTaggedTemplate(expr);
-      arguments.push((false, self.factory.computed(value, dep)));
+      arguments.push(self.factory.computed(value, dep));
     }
 
     tag.call(
       self,
       AstKind2::TaggedTemplateExpression(node),
       this,
-      self.factory.arguments(arguments),
+      self.factory.arguments(self.factory.alloc(arguments), None),
     )
   }
 }

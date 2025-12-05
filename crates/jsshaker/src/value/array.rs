@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue, TypeofResult,
-  ValueTrait, consumed_object,
+  ValueTrait, arguments::ArgumentsValue, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
@@ -264,7 +264,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::call(self, analyzer, dep, this, args)
   }
@@ -273,7 +273,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
   }

@@ -6,24 +6,30 @@ use oxc::{
   span::{GetSpan, SPAN},
 };
 
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, transformer::Transformer,
+  value::arguments::ArgumentsValue,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_formal_parameters(
     &mut self,
     node: &'a FormalParameters<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
     kind: DeclarationKind,
   ) {
-    let (elements_init, rest_init, _deps) =
-      args.destruct_as_array(self, self.factory.no_dep, node.items.len(), node.rest.is_some());
-
     for param in &node.items {
       self.declare_binding_pattern(&param.pattern, false, kind);
     }
 
-    for (param, init) in node.items.iter().zip(elements_init) {
-      self.init_binding_pattern(&param.pattern, Some(init));
+    for (param, init) in node.items.iter().zip(args.elements) {
+      self.init_binding_pattern(&param.pattern, Some(*init));
+    }
+    if node.items.len() > args.elements.len() {
+      let value = args.rest.unwrap_or(self.factory.undefined);
+      for param in &node.items[args.elements.len()..] {
+        self.init_binding_pattern(&param.pattern, Some(value));
+      }
     }
 
     // In case of `function(x=arguments, y)`, `y` should also be consumed
@@ -33,8 +39,18 @@ impl<'a> Analyzer<'a> {
     }
 
     if let Some(rest) = &node.rest {
+      let arr = self.new_empty_array();
+      if args.elements.len() > node.items.len() {
+        for element in &args.elements[node.items.len()..] {
+          arr.push_element(*element);
+        }
+      }
+      if let Some(rest) = args.rest {
+        arr.init_rest(rest);
+      }
+
       self.declare_binding_rest_element(rest, false, kind);
-      self.init_binding_rest_element(rest, rest_init.unwrap());
+      self.init_binding_rest_element(rest, arr.into());
     }
   }
 }
