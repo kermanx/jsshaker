@@ -4,7 +4,7 @@ use oxc::{allocator, span::GetSpan};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  consumed_object,
+  arguments::ArgumentsValue, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -83,7 +83,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     if let Some(this_dep) = self.body_consumed.get() {
       this_dep.push(analyzer, this);
@@ -102,7 +102,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     if self.body_consumed.get().is_some() {
       return consumed_object::construct(self, analyzer, dep, args);
@@ -121,7 +121,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
       analyzer,
       analyzer.factory.no_dep,
       analyzer.factory.unknown,
-      analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
+      analyzer.factory.arguments(analyzer.factory.alloc([props]), None),
     )
   }
 
@@ -200,7 +200,7 @@ impl<'a> FunctionValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
     let call_dep = analyzer.dep((self.callee.into_node(), dep));
@@ -262,7 +262,7 @@ impl<'a> FunctionValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
     let target = analyzer.new_empty_object(
@@ -293,7 +293,7 @@ impl<'a> FunctionValue<'a> {
         analyzer,
         analyzer.factory.no_dep,
         this,
-        analyzer.factory.unknown,
+        analyzer.factory.unknown_arguments,
         true,
       )
     });

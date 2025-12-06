@@ -17,7 +17,7 @@ use rustc_hash::FxHashSet;
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue, TypeofResult, ValueTrait,
-  consumed_object,
+  arguments::ArgumentsValue, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
@@ -107,7 +107,11 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.add_extra_dep(dep);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    let (should_consume, _) =
+      analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    if should_consume {
+      self.consume(analyzer);
+    }
   }
 
   fn get_property(
@@ -146,7 +150,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::call(self, analyzer, dep, this, args)
   }
@@ -155,7 +159,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
   }

@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 
 use super::{
   EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult, ValueTrait,
-  consumed_object, never::NeverValue,
+  arguments::ArgumentsValue, consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -153,7 +153,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot call a non-function object {:?}", self));
     if analyzer.config.preserve_exceptions {
@@ -167,7 +167,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
     if analyzer.config.preserve_exceptions {

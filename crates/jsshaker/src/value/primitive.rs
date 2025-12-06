@@ -1,6 +1,6 @@
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, consumed_object,
-  never::NeverValue,
+  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, arguments::ArgumentsValue,
+  consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
 
@@ -68,7 +68,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call non-object");
     if analyzer.config.preserve_exceptions {
@@ -82,7 +82,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot construct non-object");
     if analyzer.config.preserve_exceptions {

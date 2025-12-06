@@ -1,4 +1,5 @@
 use oxc::{
+  allocator,
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
@@ -8,34 +9,55 @@ use crate::{
   ast::{Arguments, AstKind2},
   entity::Entity,
   transformer::Transformer,
+  value::arguments::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> Entity<'a> {
-    let mut arguments = self.factory.vec();
-    for argument in node {
-      let (spread, val) = match argument {
-        Argument::SpreadElement(node) => (true, self.exec_expression(&node.argument)),
-        node => (false, self.exec_expression(node.to_expression())),
+  pub fn exec_arguments(&mut self, node: &'a Arguments<'a>) -> ArgumentsValue<'a> {
+    let mut elements = self.factory.vec();
+    let mut rest = self.factory.vec();
+
+    for element in node {
+      let dep = AstKind2::Argument(element);
+      let mut push_element = |element: Entity<'a>| {
+        if rest.is_empty() {
+          elements.push(element);
+        } else {
+          rest.push(element);
+        }
       };
-      let dep = AstKind2::Argument(argument);
-      arguments.push((spread, self.factory.computed(val, dep)));
+      match element {
+        Argument::SpreadElement(node) => {
+          let (els, r, d) = self.exec_spread_element(node);
+          for el in els {
+            push_element(self.factory.computed(el, (dep, d)));
+          }
+          if let Some(r) = r {
+            rest.push(self.factory.computed(r, (dep, d)));
+          }
+        }
+        _ => {
+          let element = self.exec_expression(element.to_expression());
+          push_element(self.factory.computed(element, dep));
+        }
+      }
     }
-    self.factory.arguments(arguments)
+
+    ArgumentsValue { elements: elements.into_bump_slice(), rest: self.factory.try_union(rest) }
   }
 }
 
 impl<'a> Transformer<'a> {
   pub fn transform_arguments_need_call(&self, node: &'a Arguments<'a>) -> Arguments<'a> {
-    let mut arguments = self.ast_builder.vec();
+    let mut arguments_rev = vec![];
     let mut preserve_args_num = false;
     for argument in node.into_iter().rev() {
       if let Some(argument) = self.transform_argument_need_call(argument, preserve_args_num) {
-        arguments.insert(0, argument);
+        arguments_rev.push(argument);
         preserve_args_num = true;
       }
     }
-    arguments
+    allocator::Vec::from_iter_in(arguments_rev.into_iter().rev(), self.allocator)
   }
 
   fn transform_argument_need_call(
@@ -46,11 +68,7 @@ impl<'a> Transformer<'a> {
     let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
-      Argument::SpreadElement(node) => {
-        // Currently, a spread element de-optimize the arguments.
-        let expr = self.transform_expression(&node.argument, true).unwrap();
-        Some(self.ast_builder.argument_spread_element(span, expr))
-      }
+      Argument::SpreadElement(node) => self.transform_arguments_spread_element(node, is_referred),
       _ => self
         .transform_expression(node.to_expression(), is_referred)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))

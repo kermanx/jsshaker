@@ -11,6 +11,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
+  value::arguments::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -27,7 +28,7 @@ impl<'a> Analyzer<'a> {
     call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: &'a [VariableScopeId],
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
     let runner = move |analyzer: &mut Analyzer<'a>| {

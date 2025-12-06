@@ -1,41 +1,29 @@
 use super::{BuiltinPrototype, object::create_object_prototype};
-use crate::{
-  analyzer::Factory,
-  init_prototype,
-  value::{ObjectId, arguments::ArgumentsValue},
-};
+use crate::{analyzer::Factory, init_prototype, value::arguments::ArgumentsValue};
 
 pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
-      let mut args = args.destruct_as_array(analyzer, dep, 2, false).0;
-      let args_arg = {
-        let arg = args.pop().unwrap();
-        let cf_scope = analyzer.scoping.cf.current_id();
-        // This can be any value
-        let arguments_object_id = ObjectId::from_usize(0);
-        match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.array(cf_scope, arguments_object_id).into(),
-          Some(false) => arg,
-          None => analyzer.factory.union((
-            arg,
-            analyzer.factory.array(cf_scope, arguments_object_id).into(),
-          )),
-        }
+      let this_arg = args.get(analyzer, 0);
+      let arg = args.get(analyzer, 1);
+      let args_arg = match arg.test_is_undefined() {
+        Some(true) => analyzer.factory.empty_arguments,
+        Some(false) => ArgumentsValue::from_value(analyzer, arg, dep),
+        None => analyzer.factory.unknown_arguments,
       };
-      let this_arg = args.pop().unwrap();
-      this.call(analyzer, dep, this_arg, args_arg)
+      let deps = analyzer.factory.dep((dep,arg.get_shallow_dep(analyzer)));
+      this.call(analyzer, deps, this_arg, args_arg)
     }),
     "call" => factory.implemented_builtin_fn("Function::call", |analyzer, dep, this, args| {
-      let (this_arg, args_arg, _deps) = args.destruct_as_array(analyzer, dep, 1, true);
-      this.call(analyzer, dep, this_arg[0], args_arg.unwrap())
+      let (this_arg, args_arg) = args.split_at(analyzer, 1);
+      this.call(analyzer, dep, this_arg[0], args_arg)
     }),
     "bind" => factory.implemented_builtin_fn("Function::bind", |analyzer, dep, func, args| {
-      let (bound_this, bound_args, _deps) = args.destruct_as_array(analyzer, dep, 1, true);
+      let (bound_this, bound_args) = args.split_at(analyzer, 1);
       let bound_this = bound_this[0];
       let bound_fn = analyzer.factory.implemented_consumable_fn("Function::bound_fn", move |analyzer, dep, this, args| {
         let this = analyzer.op_undefined_or(bound_this, this);
-        let (args, dep) = ArgumentsValue::from_concatenate(analyzer, bound_args.unwrap(), args, dep);
+        let args = ArgumentsValue::from_concatenate(analyzer, bound_args, args);
         func.call(analyzer, dep, this, args)
       });
       analyzer.factory.computed(bound_fn, dep)

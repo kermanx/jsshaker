@@ -33,14 +33,8 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
-      let (known, rest, mut deps) = args.iterate(analyzer, dep);
-
-      if known.len() < 2 {
-        return analyzer.factory.computed_unknown((dep, args));
-      }
-
-      let target = known[0];
+    self.factory.implemented_builtin_fn("Object.assign", |analyzer, mut dep, _, args| {
+      let target = args.get(analyzer, 0);
 
       let mut assign = |source: Entity<'a>, indeterminate: bool| {
         let enumerated = source.enumerate_properties(analyzer, dep);
@@ -56,23 +50,23 @@ impl<'a> Builtins<'a> {
         if let Some(unknown) = enumerated.unknown {
           target.set_property(analyzer, enumerated.dep, analyzer.factory.unknown_string, unknown);
         }
-        deps = analyzer.factory.dep((deps, enumerated.dep));
+        dep = analyzer.factory.dep((dep, enumerated.dep));
       };
 
-      for source in &known[1..] {
+      for source in args.elements.iter().skip(1) {
         assign(*source, false);
       }
-      if let Some(rest) = rest {
+      if let Some(rest) = args.rest {
         assign(rest, true);
       }
 
-      analyzer.factory.computed(target, deps)
+      analyzer.factory.computed(target, dep)
     })
   }
 
   fn create_object_keys_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      let object = args.get(analyzer, 0);
       let array = analyzer.new_empty_array();
       if let Some(keys) = object.get_own_keys(analyzer) {
         for (_, key) in keys {
@@ -84,13 +78,13 @@ impl<'a> Builtins<'a> {
         array.init_rest(analyzer.factory.unknown_string);
       }
 
-      analyzer.factory.computed(array.into(), object.get_shallow_dep(analyzer))
+      analyzer.factory.computed(array.into(), (dep, object.get_shallow_dep(analyzer)))
     })
   }
 
   fn create_object_values_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.values", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      let object = args.get(analyzer, 0);
       let enumerated = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
@@ -109,7 +103,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_entries_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.entries", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      let object = args.get(analyzer, 0);
       let enumerated = object.enumerate_properties(analyzer, dep);
 
       let array = analyzer.new_empty_array();
@@ -134,7 +128,7 @@ impl<'a> Builtins<'a> {
 
   fn create_object_freeze_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.freeze", |analyzer, dep, _, args| {
-      let object = args.destruct_as_array(analyzer, dep, 1, false).0[0];
+      let object = args.get(analyzer, 0);
       if analyzer.config.preserve_writablity {
         object.unknown_mutate(analyzer, dep);
         object
@@ -147,10 +141,9 @@ impl<'a> Builtins<'a> {
 
   fn create_object_define_property_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.defineProperty", |analyzer, dep, _, args| {
-      let [object, key, descriptor] = args.destruct_as_array(analyzer, dep, 3, false).0[..] else {
-        unreachable!()
-      };
-      let key = key.get_to_property_key(analyzer);
+      let object = args.get(analyzer, 0);
+      let key = args.get(analyzer, 1).get_to_property_key(analyzer);
+      let descriptor = args.get(analyzer, 2);
 
       'trackable: {
         if analyzer.config.preserve_writablity {
@@ -199,9 +192,8 @@ impl<'a> Builtins<'a> {
 
   fn create_object_create_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.create", |analyzer, dep, _, args| {
-      let [proto, properties] = args.destruct_as_array(analyzer, dep, 2, false).0[..] else {
-        unreachable!()
-      };
+      let proto = args.get(analyzer, 0);
+      let properties = args.get(analyzer, 1);
       let deps = analyzer.dep((proto, dep));
       if properties.test_is_undefined() != Some(true) {
         // Has properties

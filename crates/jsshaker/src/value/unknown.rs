@@ -1,7 +1,8 @@
 use std::marker::PhantomData;
 
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait, consumed_object,
+  EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
+  arguments::ArgumentsValue, consumed_object,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
@@ -56,7 +57,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::call(self, analyzer, dep, this, args)
   }
@@ -65,7 +66,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
   }

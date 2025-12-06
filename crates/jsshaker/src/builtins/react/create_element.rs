@@ -2,8 +2,8 @@ use crate::{analyzer::Factory, entity::Entity, value::ObjectPrototype};
 
 pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
-    let (args, children, _) = args.destruct_as_array(analyzer, dep, 2, true);
-    let [tag, props] = args[..] else { unreachable!() };
+    let tag = args.get(analyzer, 0);
+    let props = args.get(analyzer, 1);
     let props = match props.test_nullish() {
       Some(true) => analyzer.factory.computed(
         analyzer
@@ -23,6 +23,14 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
       )),
     };
 
+    let children = analyzer.new_empty_array();
+    for element in args.elements.iter().skip(2) {
+      children.push_element(*element);
+    }
+    if let Some(rest) = args.rest {
+      children.init_rest(rest);
+    }
+
     // Special prop: ref
     let r#ref =
       props.get_property(analyzer, analyzer.factory.no_dep, analyzer.factory.string("ref"));
@@ -33,7 +41,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
           analyzer,
           analyzer.factory.no_dep,
           analyzer.factory.unknown,
-          analyzer.factory.unknown,
+          analyzer.factory.unknown_arguments,
         )
       });
     }
@@ -49,8 +57,10 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
       analyzer,
       analyzer.factory.no_dep,
       analyzer.factory.string("children"),
-      children.unwrap(),
+      children.into(),
     );
-    analyzer.factory.react_element(tag, props)
+
+    let element = analyzer.factory.react_element(tag, analyzer.factory.computed(props, dep));
+    analyzer.factory.computed(element, dep)
   })
 }

@@ -12,6 +12,7 @@ use crate::{
   entity::Entity,
   module::NamedExport,
   utils::ast::AstKind2,
+  value::arguments::ArgumentsValue,
 };
 
 define_index_type! {
@@ -31,7 +32,7 @@ pub struct Variable<'a> {
 pub struct VariableScope<'a> {
   pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
-  pub arguments: Option<(Entity<'a>, Vec<SymbolId>)>,
+  pub arguments: Option<(ArgumentsValue<'a>, Vec<SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
 }
 
@@ -284,8 +285,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_arguments_on_scope(&mut self, id: VariableScopeId) -> bool {
-    if let Some((args_entity, args_symbols)) = self.scoping.variable.get(id).arguments.clone() {
-      args_entity.consume(self);
+    if let Some((args_value, args_symbols)) = self.scoping.variable.get(id).arguments.clone() {
+      self.consume(args_value);
       let mut arguments_consumed = true;
       for symbol in args_symbols {
         if !self.consume_on_scope(id, symbol) {

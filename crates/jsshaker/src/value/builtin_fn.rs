@@ -2,7 +2,7 @@ use std::{cell::Cell, fmt::Debug};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  consumed_object, never::NeverValue,
+  arguments::ArgumentsValue, consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::{Analyzer, Factory},
@@ -21,7 +21,7 @@ trait BuiltinFnImpl<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a>;
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 }
@@ -93,7 +93,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     #[cfg(feature = "flame")]
     let _scope_guard = flame::start_guard(self.name());
@@ -104,7 +104,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     consumed_object::construct(self, analyzer, dep, args)
   }
@@ -114,7 +114,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
       analyzer,
       analyzer.factory.no_dep,
       analyzer.factory.unknown,
-      analyzer.factory.arguments(analyzer.factory.vec1((false, props))),
+      analyzer.factory.arguments(analyzer.factory.alloc([props]), None),
     )
   }
 
@@ -174,10 +174,10 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
 }
 
 pub trait BuiltinFnImplementation<'a>:
-  Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>
+  Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, ArgumentsValue<'a>) -> Entity<'a>
 {
 }
-impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, Entity<'a>) -> Entity<'a>>
+impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, ArgumentsValue<'a>) -> Entity<'a>>
   BuiltinFnImplementation<'a> for T
 {
 }
@@ -210,7 +210,7 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     (self.implementation)(analyzer, dep, this, args)
   }
@@ -224,7 +224,7 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
         analyzer,
         analyzer.factory.no_dep,
         analyzer.factory.unknown,
-        analyzer.factory.unknown,
+        analyzer.factory.unknown_arguments,
       )
     });
   }
@@ -262,7 +262,7 @@ impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     let ret_val = (self.return_value)(analyzer.factory);
     let dep = analyzer.dep((dep, this, args));

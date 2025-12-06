@@ -1,190 +1,103 @@
-use std::cell::Cell;
-
 use oxc::allocator;
 
-use super::{
-  EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
-  consumed_object,
+use crate::{
+  analyzer::Analyzer,
+  dep::{CustomDepTrait, Dep},
+  entity::Entity,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct ArgumentsValue<'a> {
-  pub consumed: Cell<bool>,
-  pub arguments: allocator::Vec<'a, (bool, Entity<'a>)>,
+  pub elements: &'a [Entity<'a>],
+  pub rest: Option<Entity<'a>>,
 }
 
-impl<'a> ValueTrait<'a> for ArgumentsValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
-
-    for (_, entity) in &self.arguments {
-      entity.consume(analyzer);
-    }
-  }
-
-  fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    if self.consumed.get() {
-      return consumed_object::unknown_mutate(analyzer, dep);
-    }
-
-    for (_, entity) in &self.arguments {
-      entity.unknown_mutate(analyzer, dep);
-    }
-  }
-
-  fn get_property(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Dep<'a>,
-    _key: Entity<'a>,
-  ) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn set_property(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Dep<'a>,
-    _key: Entity<'a>,
-    _value: Entity<'a>,
-  ) {
-    unreachable!()
-  }
-
-  fn enumerate_properties(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Dep<'a>,
-  ) -> EnumeratedProperties<'a> {
-    unreachable!()
-  }
-
-  fn delete_property(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>, _key: Entity<'a>) {
-    unreachable!()
-  }
-
-  fn call(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Dep<'a>,
-    _this: Entity<'a>,
-    _args: Entity<'a>,
-  ) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn construct(
-    &'a self,
-    _analyzer: &mut Analyzer<'a>,
-    _dep: Dep<'a>,
-    _args: Entity<'a>,
-  ) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn jsx(&'a self, _analyzer: &mut Analyzer<'a>, _props: Entity<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn r#await(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    let mut elements = Vec::new();
-    let mut rest: Option<allocator::Vec<'a, Entity<'a>>> = None;
-    for (spread, entity) in &self.arguments {
-      if *spread {
-        if let Some(iterated) = entity.iterate_result_union(analyzer, dep) {
-          if let Some(rest) = &mut rest {
-            rest.push(iterated);
-          } else {
-            rest = Some(analyzer.factory.vec1(iterated));
-          }
-        }
-      } else if let Some(rest) = &mut rest {
-        rest.push(*entity);
-      } else {
-        elements.push(*entity);
-      }
-    }
-    (elements, rest.map(|val| analyzer.factory.union(val)), dep)
-  }
-
-  fn get_to_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_to_boolean(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
-    unreachable!()
-  }
-
-  fn get_constructor_prototype(
-    &'a self,
-    _analyzer: &Analyzer<'a>,
-    _dep: Dep<'a>,
-  ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
-    unreachable!()
-  }
-
-  fn test_typeof(&self) -> TypeofResult {
-    unreachable!()
-  }
-
-  fn test_truthy(&self) -> Option<bool> {
-    unreachable!()
-  }
-
-  fn test_nullish(&self) -> Option<bool> {
-    unreachable!()
+impl<'a> CustomDepTrait<'a> for ArgumentsValue<'a> {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.consume(self.elements);
+    analyzer.consume(self.rest);
   }
 }
 
 impl<'a> ArgumentsValue<'a> {
+  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
+    for entity in self.elements {
+      entity.unknown_mutate(analyzer, dep);
+    }
+    if let Some(rest) = self.rest {
+      rest.unknown_mutate(analyzer, dep);
+    }
+  }
+
+  pub fn get(&self, analyzer: &mut Analyzer<'a>, nth: usize) -> Entity<'a> {
+    if nth < self.elements.len() {
+      self.elements[nth]
+    } else if let Some(rest) = self.rest {
+      rest
+    } else {
+      analyzer.factory.undefined
+    }
+  }
+
+  pub fn split_at(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    mid: usize,
+  ) -> (Vec<Entity<'a>>, ArgumentsValue<'a>) {
+    if mid <= self.elements.len() {
+      let (left, right) = self.elements.split_at(mid);
+      (left.to_vec(), ArgumentsValue { elements: right, rest: self.rest })
+    } else {
+      let mut left = self.elements.to_vec();
+      left.resize(mid, analyzer.factory.undefined);
+      (left, ArgumentsValue { elements: &[], rest: self.rest })
+    }
+  }
+
+  pub fn from_value(
+    analyzer: &mut Analyzer<'a>,
+    value: Entity<'a>,
+    dep: Dep<'a>,
+  ) -> ArgumentsValue<'a> {
+    let (elements, rest, dep) = value.iterate(analyzer, dep);
+    let elements = allocator::Vec::from_iter_in(
+      elements.into_iter().map(|e| analyzer.factory.computed(e, dep)),
+      analyzer.allocator,
+    );
+    let rest = rest.map(|r| analyzer.factory.computed(r, dep));
+    ArgumentsValue { elements: analyzer.factory.alloc(elements), rest }
+  }
+
   pub fn from_concatenate(
     analyzer: &mut Analyzer<'a>,
-    args1: Entity<'a>,
-    args2: Entity<'a>,
-    dep: Dep<'a>,
-  ) -> (Entity<'a>, Dep<'a>) {
-    let (known1, rest1, dep1) = args1.iterate(analyzer, dep);
-    if let Some(rest1) = rest1 {
-      let value2 = args2.iterate_result_union(analyzer, dep);
-      let rest =
-        if let Some(value2) = value2 { analyzer.factory.union((rest1, value2)) } else { rest1 };
-      (
-        analyzer.factory.arguments(allocator::Vec::from_iter_in(
-          known1.into_iter().map(|v| (false, v)).chain([(true, rest)]),
-          analyzer.allocator,
-        )),
-        dep1,
-      )
+    args1: ArgumentsValue<'a>,
+    args2: ArgumentsValue<'a>,
+  ) -> ArgumentsValue<'a> {
+    if args2.elements.is_empty() {
+      ArgumentsValue {
+        elements: args1.elements,
+        rest: match (args1.rest, args2.rest) {
+          (Some(r1), Some(r2)) => Some(analyzer.factory.union((r1, r2))),
+          (Some(r1), None) => Some(r1),
+          (None, Some(r2)) => Some(r2),
+          (None, None) => None,
+        },
+      }
+    } else if let Some(rest1) = args1.rest {
+      let mut rest = analyzer.factory.vec();
+      rest.push(rest1);
+      for elem in args2.elements {
+        rest.push(*elem);
+      }
+      if let Some(rest2) = args2.rest {
+        rest.push(rest2);
+      }
+      ArgumentsValue { elements: args1.elements, rest: Some(analyzer.factory.union(rest)) }
     } else {
-      let (known2, rest2, dep2) = args2.iterate(analyzer, dep);
-      (
-        analyzer.factory.arguments(allocator::Vec::from_iter_in(
-          known1
-            .into_iter()
-            .map(|v| (false, v))
-            .chain(known2.into_iter().map(|v| (false, v)))
-            .chain(rest2.into_iter().map(|v| (true, v))),
-          analyzer.allocator,
-        )),
-        analyzer.dep((dep1, dep2)),
-      )
+      let mut new_elements = analyzer.factory.vec();
+      new_elements.extend_from_slice(args1.elements);
+      new_elements.extend_from_slice(args2.elements);
+      ArgumentsValue { elements: new_elements.into_bump_slice(), rest: args2.rest }
     }
   }
 }

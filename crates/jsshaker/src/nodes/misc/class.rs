@@ -18,7 +18,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-  value::{ObjectPrototype, ValueTrait},
+  value::{ObjectPrototype, ValueTrait, arguments::ArgumentsValue},
 };
 
 #[derive(Default)]
@@ -144,7 +144,7 @@ impl<'a> Analyzer<'a> {
     node: &'a Class<'a>,
     variable_scopes: &'a [VariableScopeId],
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
     let data = self.load_data::<Data>(AstKind2::Class(node));

@@ -1,4 +1,7 @@
-use super::{EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait};
+use super::{
+  EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
+  arguments::ArgumentsValue,
+};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone)]
@@ -57,7 +60,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     self.value.call(analyzer, dep, this, args)
   }
@@ -66,7 +69,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     self.value.construct(analyzer, dep, args)
   }

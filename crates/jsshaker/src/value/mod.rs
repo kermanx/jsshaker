@@ -25,6 +25,7 @@ use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
   entity::Entity,
+  value::arguments::ArgumentsValue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -81,10 +82,14 @@ pub trait ValueTrait<'a>: Debug {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     this: Entity<'a>,
-    args: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Entity<'a>;
-  fn construct(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, args: Entity<'a>)
-  -> Entity<'a>;
+  fn construct(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    dep: Dep<'a>,
+    args: ArgumentsValue<'a>,
+  ) -> Entity<'a>;
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a>;
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a>;
@@ -168,18 +173,11 @@ pub trait ValueTrait<'a>: Debug {
     dep: Dep<'a>,
   ) -> Option<Entity<'a>> {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
-    if let Some(rest) = rest {
-      let mut result = allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator);
-      result.push(rest);
-      Some(analyzer.factory.computed_union(result, deps))
-    } else if !elements.is_empty() {
-      Some(analyzer.factory.computed_union(
-        allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator),
-        deps,
-      ))
-    } else {
-      None
-    }
+    let union = analyzer.factory.try_union(allocator::Vec::from_iter_in(
+      elements.iter().copied().chain(rest),
+      analyzer.allocator,
+    ));
+    union.map(|u| analyzer.factory.computed(u, deps))
   }
 
   fn call_as_getter(
@@ -202,7 +200,7 @@ pub trait ValueTrait<'a>: Debug {
       analyzer,
       dep,
       this,
-      analyzer.factory.arguments(analyzer.factory.vec1((false, value))),
+      analyzer.factory.arguments(analyzer.factory.alloc([value]), None),
     )
   }
 
