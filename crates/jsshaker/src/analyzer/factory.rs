@@ -42,6 +42,11 @@ pub struct Factory<'a> {
   pub unknown_boolean: Entity<'a>,
   pub unknown_symbol: Entity<'a>,
 
+  pub unknown_truthy: Entity<'a>,
+  pub unknown_falsy: Entity<'a>,
+  pub unknown_nullish: Entity<'a>,
+  pub unknown_non_nullish: Entity<'a>,
+
   pub pure_fn_returns_unknown: Entity<'a>,
   pub pure_fn_returns_string: Entity<'a>,
   pub pure_fn_returns_number: Entity<'a>,
@@ -76,6 +81,19 @@ impl<'a> Factory<'a> {
     let unknown_bigint = allocator.alloc(PrimitiveValue::BigInt).into();
     let unknown_boolean = allocator.alloc(PrimitiveValue::Boolean).into();
     let unknown_symbol = allocator.alloc(PrimitiveValue::Symbol).into();
+
+    let unknown_truthy = allocator
+      .alloc(LogicalResultValue { value: immutable_unknown, is_coalesce: false, result: true })
+      .into();
+    let unknown_falsy = allocator
+      .alloc(LogicalResultValue { value: immutable_unknown, is_coalesce: false, result: false })
+      .into();
+    let unknown_nullish = allocator
+      .alloc(LogicalResultValue { value: immutable_unknown, is_coalesce: true, result: true })
+      .into();
+    let unknown_non_nullish = allocator
+      .alloc(LogicalResultValue { value: immutable_unknown, is_coalesce: true, result: false })
+      .into();
 
     let pure_fn_returns_unknown =
       allocator.alloc(PureBuiltinFnValue::new("<PureFn:unknown> ", immutable_unknown)).into();
@@ -123,6 +141,11 @@ impl<'a> Factory<'a> {
       unknown_bigint,
       unknown_boolean,
       unknown_symbol,
+
+      unknown_truthy,
+      unknown_falsy,
+      unknown_nullish,
+      unknown_non_nullish,
 
       pure_fn_returns_unknown,
       pure_fn_returns_string,

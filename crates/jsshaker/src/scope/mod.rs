@@ -9,7 +9,6 @@ pub mod variable_scope;
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
-use oxc::allocator;
 use scope_tree::ScopeTree;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
@@ -130,11 +129,7 @@ impl<'a> Analyzer<'a> {
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
-      CfScopeKind::Function(
-        self
-          .allocator
-          .alloc(FnCacheTrackingData { outer_deps: allocator::HashSet::new_in(self.allocator) }),
-      ),
+      CfScopeKind::Function(self.allocator.alloc(FnCacheTrackingData { has_outer_deps: false })),
       self.factory.vec1(self.dep((call_dep, dep_id))),
       false,
     );
@@ -150,14 +145,20 @@ impl<'a> Analyzer<'a> {
     ));
   }
 
-  pub fn pop_call_scope(&mut self) -> Entity<'a> {
+  pub fn pop_call_scope(&mut self) -> (Entity<'a>, FnCacheTrackingData) {
     let scope = self.scoping.call.pop().unwrap();
     let (old_variable_scope_stack, ret_val) = scope.finalize(self);
-    self.pop_cf_scope();
+    let cf_scope_id = self.pop_cf_scope();
+    let cf_scope = self.scoping.cf.get(cf_scope_id);
+    let CfScopeKind::Function(tracking_data) = &cf_scope.kind else {
+      unreachable!();
+    };
+    let tracking_data = **tracking_data;
+
     self.pop_variable_scope();
     self.replace_variable_scope_stack(old_variable_scope_stack);
     self.module_stack.pop();
-    ret_val
+    (ret_val, tracking_data)
   }
 
   pub fn push_variable_scope(&mut self) -> VariableScopeId {

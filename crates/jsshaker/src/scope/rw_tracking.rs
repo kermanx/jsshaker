@@ -51,8 +51,9 @@ impl<'a> Analyzer<'a> {
         }
       }
       if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.outer_deps.insert(id);
-        id.object_read_extra().map(|id| data.outer_deps.insert(id));
+        // data.outer_deps.insert(id);
+        // id.object_read_extra().map(|id| data.outer_deps.insert(id));
+        data.has_outer_deps = true;
       }
     }
   }

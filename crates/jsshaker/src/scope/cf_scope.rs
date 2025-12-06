@@ -17,7 +17,7 @@ pub enum CfScopeKind<'a> {
   Root,
   Module,
   Labeled(&'a LabeledStatement<'a>),
-  Function(&'a mut FnCacheTrackingData<'a>),
+  Function(&'a mut FnCacheTrackingData),
   LoopBreak,
   LoopContinue,
   Switch,
@@ -118,7 +118,7 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn fn_cache_tracking_data_mut(&mut self) -> Option<&mut FnCacheTrackingData<'a>> {
+  pub fn fn_cache_tracking_data_mut(&mut self) -> Option<&mut FnCacheTrackingData> {
     match &mut self.kind {
       CfScopeKind::Function(data) => Some(data),
       _ => None,

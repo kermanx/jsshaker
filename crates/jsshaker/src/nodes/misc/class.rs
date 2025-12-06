@@ -18,7 +18,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, ObjectPrototype, ValueTrait},
+  value::{ArgumentsValue, ObjectPrototype, ValueTrait, cache::FnCacheTrackingData},
 };
 
 #[derive(Default)]
@@ -146,7 +146,7 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
     consume: bool,
-  ) -> Entity<'a> {
+  ) -> (Entity<'a>, FnCacheTrackingData) {
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);
@@ -184,10 +184,11 @@ impl<'a> Analyzer<'a> {
       self.pop_call_scope()
     } else if let Some(super_class) = &data.super_class {
       self.pop_call_scope();
-      super_class.call(self, self.factory.no_dep, this, args)
+      let ret_val = super_class.call(self, self.factory.no_dep, this, args);
+      (ret_val, FnCacheTrackingData::worst_case())
     } else {
-      self.pop_call_scope();
-      self.factory.undefined
+      let (_, cache_tracking) = self.pop_call_scope();
+      (self.factory.undefined, cache_tracking)
     }
   }
 }
