@@ -217,9 +217,11 @@ impl<'a> FunctionValue<'a> {
     consume: bool,
   ) -> Entity<'a> {
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
-    if let Some(cache_key) = cache_key
+    if !consume
+      && let Some(cache_key) = cache_key
       && let Some(cached_ret) = self.cache.borrow().get_ret(analyzer, &cache_key)
     {
+      analyzer.consume((dep, this, args));
       return cached_ret;
     }
 
