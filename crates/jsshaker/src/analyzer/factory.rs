@@ -9,7 +9,7 @@ use oxc_syntax::operator::LogicalOperator;
 
 use crate::{
   TreeShakeConfig,
-  dep::{CustomDepTrait, Dep, DepCollector, DepTrait, LazyDep, OnceDep},
+  dep::{CustomDepTrait, Dep, DepTrait, LazyDep, OnceDep},
   entity::Entity,
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
@@ -17,7 +17,6 @@ use crate::{
   value::{
     LiteralValue, ObjectId, ObjectProperty, ObjectPrototype, ObjectValue,
     arguments::ArgumentsValue,
-    array::ArrayValue,
     builtin_fn::{BuiltinFnImplementation, ImplementedBuiltinFnValue, PureBuiltinFnValue},
     logical_result::LogicalResultValue,
     never::NeverValue,
@@ -193,17 +192,6 @@ impl<'a> Factory<'a> {
     rest: Option<Entity<'a>>,
   ) -> ArgumentsValue<'a> {
     ArgumentsValue { elements, rest }
-  }
-
-  pub fn array(&self, cf_scope: CfScopeId, object_id: ObjectId) -> &'a mut ArrayValue<'a> {
-    self.alloc(ArrayValue {
-      consumed: Cell::new(false),
-      deps: RefCell::new(DepCollector::new(self.vec())),
-      cf_scope,
-      object_id,
-      elements: RefCell::new(self.vec()),
-      rest: RefCell::new(self.vec()),
-    })
   }
 
   pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(

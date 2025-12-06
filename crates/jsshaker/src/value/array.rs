@@ -394,6 +394,15 @@ impl<'a> ArrayValue<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&mut self) -> &'a mut ArrayValue<'a> {
-    self.factory.array(self.scoping.cf.current_id(), self.scoping.alloc_object_id())
+    let cf_scope = self.scoping.cf.current_id();
+    let object_id = self.scoping.alloc_object_id();
+    self.factory.alloc(ArrayValue {
+      consumed: Cell::new(false),
+      deps: RefCell::new(DepCollector::new(self.factory.vec())),
+      cf_scope,
+      object_id,
+      elements: RefCell::new(self.factory.vec()),
+      rest: RefCell::new(self.factory.vec()),
+    })
   }
 }
