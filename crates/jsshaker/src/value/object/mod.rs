@@ -107,7 +107,11 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.add_extra_dep(dep);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    let (should_consume, _) =
+      analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    if should_consume {
+      self.consume(analyzer);
+    }
   }
 
   fn get_property(

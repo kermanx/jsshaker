@@ -2,8 +2,6 @@ use crate::{analyzer::Factory, entity::Entity, value::ObjectPrototype};
 
 pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createElement", |analyzer, _dep, _this, args| {
-    // let (args, children, _) = args.destruct_as_array(analyzer, dep, 2, true);
-    // let [tag, props] = args[..] else { unreachable!() };
     let tag = args.get(analyzer, 0);
     let props = args.get(analyzer, 1);
     let props = match props.test_nullish() {
