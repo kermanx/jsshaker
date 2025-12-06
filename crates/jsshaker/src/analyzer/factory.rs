@@ -100,8 +100,7 @@ impl<'a> Factory<'a> {
       allocator.alloc(PureBuiltinFnValue::new(|f| f.undefined)).into();
 
     let empty_arguments = ArgumentsValue { elements: &[], rest: None };
-    let unknown_arguments =
-      ArgumentsValue { elements: &[], rest: Some(immutable_unknown) };
+    let unknown_arguments = ArgumentsValue { elements: &[], rest: Some(immutable_unknown) };
 
     let unmatched_prototype_property: Entity<'a> =
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
