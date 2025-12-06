@@ -60,7 +60,7 @@ impl<'a> Transformer<'a> {
       let span = element.span();
       match element {
         ArrayExpressionElement::SpreadElement(node) => {
-          if let Some(element) = self.transform_spread_element(node, need_val) {
+          if let Some(element) = self.transform_array_spread_element(node, need_val) {
             transformed_elements.push(element);
           }
         }

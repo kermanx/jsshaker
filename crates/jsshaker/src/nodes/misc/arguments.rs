@@ -1,4 +1,5 @@
 use oxc::{
+  allocator,
   ast::ast::{Argument, Expression},
   span::GetSpan,
 };
@@ -41,15 +42,15 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_arguments_need_call(&self, node: &'a Arguments<'a>) -> Arguments<'a> {
-    let mut arguments = self.ast_builder.vec();
+    let mut arguments_rev = vec![];
     let mut preserve_args_num = false;
     for argument in node.into_iter().rev() {
       if let Some(argument) = self.transform_argument_need_call(argument, preserve_args_num) {
-        arguments.insert(0, argument);
+        arguments_rev.push(argument);
         preserve_args_num = true;
       }
     }
-    arguments
+    allocator::Vec::from_iter_in(arguments_rev.into_iter().rev(), self.allocator)
   }
 
   fn transform_argument_need_call(
@@ -61,9 +62,7 @@ impl<'a> Transformer<'a> {
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => {
-        // Currently, a spread element de-optimize the arguments.
-        let expr = self.transform_expression(&node.argument, true).unwrap();
-        Some(self.ast_builder.argument_spread_element(span, expr))
+        self.transform_arguments_spread_element(node, is_referred)
       }
       _ => self
         .transform_expression(node.to_expression(), is_referred)
