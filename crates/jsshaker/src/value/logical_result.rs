@@ -8,7 +8,7 @@ use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 pub struct LogicalResultValue<'a> {
   pub value: Entity<'a>,
   pub is_coalesce: bool,
-  pub result: Option<bool>,
+  pub result: bool,
 }
 
 impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
@@ -102,10 +102,8 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     let value = self.value.get_to_boolean(analyzer);
     if self.is_coalesce {
       value
-    } else if let Some(result) = self.result {
-      analyzer.factory.computed(analyzer.factory.boolean(result), value)
     } else {
-      value
+      analyzer.factory.computed(analyzer.factory.boolean(self.result), value)
     }
   }
 
@@ -134,10 +132,10 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   }
 
   fn test_truthy(&self) -> Option<bool> {
-    if self.is_coalesce { self.value.test_truthy() } else { self.result }
+    if self.is_coalesce { self.value.test_truthy() } else { Some(self.result) }
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    if self.is_coalesce { self.result } else { self.value.test_nullish() }
+    if self.is_coalesce { Some(self.result) } else { self.value.test_nullish() }
   }
 }

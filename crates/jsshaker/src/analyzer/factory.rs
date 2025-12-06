@@ -292,24 +292,26 @@ impl<'a> Factory<'a> {
     right: Entity<'a>,
     operator: LogicalOperator,
   ) -> Entity<'a> {
+    let value = self.union((left, right));
+    let result = match operator {
+      LogicalOperator::Or => match right.test_truthy() {
+        Some(true) => true,
+        _ => return value,
+      },
+      LogicalOperator::And => match right.test_truthy() {
+        Some(false) => false,
+        _ => return value,
+      },
+      LogicalOperator::Coalesce => match right.test_nullish() {
+        Some(false) => false,
+        _ => return value,
+      },
+    };
     self
       .alloc(LogicalResultValue {
-        value: self.union((left, right)),
+        value,
         is_coalesce: operator == LogicalOperator::Coalesce,
-        result: match operator {
-          LogicalOperator::Or => match right.test_truthy() {
-            Some(true) => Some(true),
-            _ => None,
-          },
-          LogicalOperator::And => match right.test_truthy() {
-            Some(false) => Some(false),
-            _ => None,
-          },
-          LogicalOperator::Coalesce => match right.test_nullish() {
-            Some(false) => Some(false),
-            _ => None,
-          },
-        },
+        result,
       })
       .into()
   }
