@@ -258,7 +258,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Object(self.object_id))
+    None //  Some(Cachable::Object(self.object_id))
   }
 }
 

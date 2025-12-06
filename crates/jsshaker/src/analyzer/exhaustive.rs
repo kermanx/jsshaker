@@ -4,7 +4,7 @@ use std::{
   rc::Rc,
 };
 
-use rustc_hash::FxHashSet;
+use oxc::allocator;
 
 use crate::{
   analyzer::Analyzer,
@@ -15,13 +15,13 @@ use crate::{
 #[derive(Debug)]
 pub struct ExhaustiveData<'a> {
   pub clean: bool,
-  pub temp_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
-  pub register_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
+  pub temp_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
+  pub register_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
 }
 
 #[derive(Clone)]
 pub struct ExhaustiveCallback<'a> {
-  pub handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
+  pub handler: Rc<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a>,
   pub drain: bool,
 }
 impl PartialEq for ExhaustiveCallback<'_> {
@@ -38,7 +38,10 @@ impl Hash for ExhaustiveCallback<'_> {
 
 impl<'a> Analyzer<'a> {
   pub fn exec_loop(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
-    let runner = Rc::new(runner);
+    let runner = Rc::new(move |analyzer: &mut Analyzer<'a>| {
+      runner(analyzer);
+      analyzer.factory.never
+    });
 
     self.exec_exhaustively("loop", true, false, runner.clone());
 
@@ -52,18 +55,22 @@ impl<'a> Analyzer<'a> {
     &mut self,
     kind: &str,
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
-  ) {
-    let runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a> = Rc::new(move |analyzer| {
+  ) -> Entity<'a> {
+    let runner = Rc::new(move |analyzer: &mut Analyzer<'a>| {
       let ret_val = runner(analyzer);
       if !analyzer.is_inside_pure() {
         analyzer.consume(ret_val);
       }
+      ret_val
     });
-    self.exec_exhaustively(kind, true, true, runner);
+    self.exec_exhaustively(kind, true, true, runner)
   }
 
-  pub fn exec_async_or_generator_fn(&mut self, runner: impl Fn(&mut Analyzer<'a>) + 'a) {
-    self.exec_exhaustively("async/generator", false, true, Rc::new(runner));
+  pub fn exec_async_or_generator_fn(
+    &mut self,
+    runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
+  ) -> Entity<'a> {
+    self.exec_exhaustively("async/generator", false, true, Rc::new(runner))
   }
 
   fn exec_exhaustively(
@@ -71,17 +78,18 @@ impl<'a> Analyzer<'a> {
     _kind: &str,
     drain: bool,
     register: bool,
-    runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-  ) {
+    runner: Rc<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a>,
+  ) -> Entity<'a> {
     self.push_cf_scope(
-      CfScopeKind::Exhaustive(ExhaustiveData {
+      CfScopeKind::Exhaustive(self.allocator.alloc(ExhaustiveData {
         clean: true,
-        temp_deps: drain.then(FxHashSet::default),
-        register_deps: register.then(Default::default),
-      }),
+        temp_deps: drain.then(|| allocator::HashSet::new_in(self.allocator)),
+        register_deps: register.then(|| allocator::HashSet::new_in(self.allocator)),
+      })),
       true,
     );
     let mut round_counter = 0;
+    let mut first_ret = None;
     loop {
       self.cf_scope_mut().exited = None;
       #[cfg(feature = "flame")]
@@ -90,7 +98,10 @@ impl<'a> Analyzer<'a> {
         (Rc::as_ptr(&runner) as *const () as usize) & 0xFFFFFF,
         round_counter
       ));
-      runner(self);
+
+      let ret = runner(self);
+      first_ret.get_or_insert(ret);
+
       round_counter += 1;
       if round_counter > 1000 {
         unreachable!("Exhaustive loop is too deep");
@@ -104,13 +115,14 @@ impl<'a> Analyzer<'a> {
     if let Some(register_deps) = data.register_deps.take() {
       self.register_exhaustive_callbacks(drain, runner, register_deps);
     }
+    first_ret.unwrap()
   }
 
   fn register_exhaustive_callbacks(
     &mut self,
     drain: bool,
-    handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<ReadWriteTarget<'a>>,
+    handler: Rc<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a>,
+    deps: allocator::HashSet<ReadWriteTarget<'a>>,
   ) {
     for id in deps {
       self

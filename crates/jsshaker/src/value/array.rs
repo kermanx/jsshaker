@@ -349,7 +349,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Object(self.object_id))
+    None //  Some(Cachable::Object(self.object_id))
   }
 }
 
