@@ -2,11 +2,11 @@ use oxc::allocator;
 
 use super::ObjectValue;
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   dep::{Dep, DepVec},
   entity::Entity,
   mangling::MangleAtom,
-  scope::CfScopeKind,
+  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
   value::{PropertyKeyValue, consumed_object, object::ObjectPrototype},
 };
 
@@ -83,11 +83,10 @@ impl<'a> ObjectValue<'a> {
 
     if let Some(exhaustive_deps) = exhaustive_deps {
       for key in exhaustive_deps {
-        analyzer
-          .mark_exhaustive_read(ExhaustiveDepId::ObjectField(self.object_id, key), self.cf_scope);
+        analyzer.track_read(ReadWriteTarget::ObjectField(self.object_id, key), self.cf_scope);
       }
     } else {
-      analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
+      analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
     }
 
     let value = analyzer

@@ -3,10 +3,11 @@ use std::mem;
 use oxc_index::{IndexVec, define_index_type};
 
 use crate::{
-  analyzer::{Analyzer, Factory, exhaustive::ExhaustiveDepId},
+  analyzer::{Analyzer, Factory},
   dep::{CustomDepTrait, Dep},
   entity::Entity,
   init_object,
+  scope::rw_tracking::ReadWriteTarget,
   value::{ObjectId, ObjectPrototype},
 };
 
@@ -101,7 +102,7 @@ fn create_react_context_provider_impl<'a>(
         let dep = data.dep;
 
         let should_consume =
-          analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(object_id));
+          analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(object_id));
 
         if should_consume {
           analyzer.consume(context_id);

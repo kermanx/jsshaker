@@ -5,9 +5,9 @@ use rustc_hash::FxHashMap;
 
 use super::{ObjectValue, get::GetPropertyContext};
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   dep::Dep,
-  scope::CfScopeKind,
+  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
   value::{EnumeratedProperties, PropertyKeyValue, consumed_object},
 };
 
@@ -101,7 +101,7 @@ impl<'a> ObjectValue<'a> {
 
     analyzer.pop_cf_scope();
 
-    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
+    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
 
     EnumeratedProperties { known, unknown, dep: analyzer.dep((dep, context.extra_deps)) }
   }

@@ -11,10 +11,10 @@ use super::{
   ValueTrait, arguments::ArgumentsValue, cachable::Cachable, consumed_object,
 };
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   dep::{CustomDepTrait, Dep, DepCollector, DepVec},
   entity::Entity,
-  scope::CfScopeId,
+  scope::{CfScopeId, rw_tracking::ReadWriteTarget},
   use_consumed_flag,
 };
 
@@ -47,7 +47,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     self.rest.borrow().consume(analyzer);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -75,7 +75,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
 
-    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
+    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return analyzer.factory.computed_unknown((self, dep, key));
@@ -215,7 +215,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
+    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return EnumeratedProperties {
@@ -294,7 +294,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::iterate(analyzer, dep);
     }
 
-    analyzer.mark_exhaustive_read(ExhaustiveDepId::ObjectAll(self.object_id), self.cf_scope);
+    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
 
     if !self.deps.borrow().is_empty() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
@@ -389,8 +389,8 @@ impl<'a> ArrayValue<'a> {
       }
     }
 
-    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
-    analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(self.object_id));
+    analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
 
     (is_exhaustive, indeterminate, exec_deps)
   }

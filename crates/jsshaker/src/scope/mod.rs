@@ -3,6 +3,7 @@ pub mod cf_scope;
 // pub mod r#loop;
 mod scope_tree;
 // mod utils;
+pub mod rw_tracking;
 pub mod variable_scope;
 
 use call_scope::CallScope;

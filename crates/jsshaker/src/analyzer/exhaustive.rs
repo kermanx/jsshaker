@@ -4,46 +4,19 @@ use std::{
   rc::Rc,
 };
 
-use oxc::semantic::SymbolId;
 use rustc_hash::FxHashSet;
 
 use crate::{
   analyzer::Analyzer,
   entity::Entity,
-  scope::{CfScopeId, CfScopeKind, VariableScopeId, cf_scope::ReferredState},
-  value::{ObjectId, PropertyKeyValue},
+  scope::{CfScopeKind, cf_scope::ReferredState, rw_tracking::ReadWriteTarget},
 };
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum ExhaustiveDepId<'a> {
-  Variable(VariableScopeId, SymbolId),
-  ObjectAll(ObjectId),
-  ObjectField(ObjectId, PropertyKeyValue<'a>),
-  __Object(ObjectId),
-}
-
-impl<'a> ExhaustiveDepId<'a> {
-  fn object_read_extra(self) -> Option<ExhaustiveDepId<'a>> {
-    match self {
-      ExhaustiveDepId::ObjectField(id, _) => Some(ExhaustiveDepId::__Object(id)),
-      _ => None,
-    }
-  }
-
-  fn object_write_extra(self) -> Option<ExhaustiveDepId<'a>> {
-    match self {
-      ExhaustiveDepId::ObjectAll(id) => Some(ExhaustiveDepId::__Object(id)),
-      ExhaustiveDepId::ObjectField(id, _) => Some(ExhaustiveDepId::ObjectAll(id)),
-      _ => None,
-    }
-  }
-}
 
 #[derive(Debug)]
 pub struct ExhaustiveData<'a> {
   pub clean: bool,
-  pub temp_deps: Option<FxHashSet<ExhaustiveDepId<'a>>>,
-  pub register_deps: Option<FxHashSet<ExhaustiveDepId<'a>>>,
+  pub temp_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
+  pub register_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
 }
 
 #[derive(Clone)]
@@ -137,7 +110,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     drain: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<ExhaustiveDepId<'a>>,
+    deps: FxHashSet<ReadWriteTarget<'a>>,
   ) {
     for id in deps {
       self
@@ -148,57 +121,9 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn mark_exhaustive_read(&mut self, id: ExhaustiveDepId<'a>, target: CfScopeId) {
-    let target_depth = self.find_first_different_cf_scope(target);
-    let mut registered = false;
-    for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
-      let scope = self.scoping.cf.get_mut_from_depth(depth);
-      if let Some(data) = scope.exhaustive_data_mut() {
-        if data.clean
-          && let Some(temp_deps) = data.temp_deps.as_mut()
-        {
-          temp_deps.insert(id);
-          id.object_read_extra().map(|id| temp_deps.insert(id));
-        }
-        if !registered && let Some(register_deps) = data.register_deps.as_mut() {
-          registered = true;
-          register_deps.insert(id);
-          id.object_read_extra().map(|id| register_deps.insert(id));
-        }
-      }
-    }
-  }
-
-  pub fn mark_exhaustive_write(&mut self, id: ExhaustiveDepId, target: usize) -> (bool, bool) {
-    let mut exhaustive = false;
-    let mut indeterminate = false;
-    let mut need_mark = true;
-    for depth in target..self.scoping.cf.stack.len() {
-      let scope = self.scoping.cf.get_mut_from_depth(depth);
-      indeterminate |= scope.is_indeterminate();
-      if let Some(data) = scope.exhaustive_data_mut() {
-        exhaustive = true;
-        if (need_mark || data.register_deps.is_some())
-          && data.clean
-          && let Some(temp_deps) = &data.temp_deps
-        {
-          if temp_deps.contains(&id) {
-            data.clean = false;
-          } else if let Some(id) = id.object_write_extra()
-            && temp_deps.contains(&id)
-          {
-            data.clean = false;
-          }
-          need_mark = false;
-        }
-      }
-    }
-    (exhaustive, indeterminate)
-  }
-
-  pub fn request_exhaustive_callbacks(&mut self, id: ExhaustiveDepId<'a>) -> bool {
+  pub fn request_exhaustive_callbacks(&mut self, id: ReadWriteTarget<'a>) -> bool {
     let mut found = false;
-    let mut do_request = |id: ExhaustiveDepId<'a>| {
+    let mut do_request = |id: ReadWriteTarget<'a>| {
       if let Some(runners) = self.exhaustive_callbacks.get_mut(&id)
         && !runners.is_empty()
       {

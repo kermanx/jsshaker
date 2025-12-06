@@ -6,11 +6,12 @@ use rustc_hash::FxHashMap;
 
 use super::cf_scope::CfScopeId;
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   ast::DeclarationKind,
   dep::{Dep, LazyDep},
   entity::Entity,
   module::NamedExport,
+  scope::rw_tracking::ReadWriteTarget,
   utils::ast::AstKind2,
   value::arguments::ArgumentsValue,
 };
@@ -117,7 +118,7 @@ impl<'a> Analyzer<'a> {
       }));
       self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
       if has_fn_value {
-        self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
+        self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
       }
     }
   }
@@ -144,7 +145,7 @@ impl<'a> Analyzer<'a> {
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
-      self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
+      self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
     }
   }
 
@@ -176,7 +177,7 @@ impl<'a> Analyzer<'a> {
       } else {
         let target_cf_scope = variable_ref.cf_scope;
         drop(variable_ref);
-        self.mark_exhaustive_read(ExhaustiveDepId::Variable(id, symbol), target_cf_scope);
+        self.track_read(ReadWriteTarget::Variable(id, symbol), target_cf_scope);
         value
       };
 
@@ -211,10 +212,10 @@ impl<'a> Analyzer<'a> {
           let old_val = variable_ref.value;
           let (should_consume, indeterminate) = if old_val.is_some() {
             // Normal write
-            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
+            self.track_write(ReadWriteTarget::Variable(id, symbol), target_cf_scope)
           } else if variable_ref.kind.is_redeclarable() {
             // Write uninitialized `var`
-            self.mark_exhaustive_write(ExhaustiveDepId::Variable(id, symbol), target_cf_scope)
+            self.track_write(ReadWriteTarget::Variable(id, symbol), target_cf_scope)
           } else {
             // TDZ write
             self.handle_tdz();
@@ -243,7 +244,7 @@ impl<'a> Analyzer<'a> {
           };
           drop(variable_ref);
 
-          self.request_exhaustive_callbacks(ExhaustiveDepId::Variable(id, symbol));
+          self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
         }
       }
       true

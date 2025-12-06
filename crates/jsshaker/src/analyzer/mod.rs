@@ -8,7 +8,7 @@ mod pre;
 use std::collections::BTreeSet;
 
 use conditional::ConditionalDataMap;
-use exhaustive::{ExhaustiveCallback, ExhaustiveDepId};
+use exhaustive::ExhaustiveCallback;
 pub use factory::Factory;
 use oxc::{
   allocator::Allocator,
@@ -24,7 +24,7 @@ use crate::{
   folding::ConstantFolder,
   mangling::Mangler,
   module::{ModuleId, Modules},
-  scope::Scoping,
+  scope::{Scoping, rw_tracking::ReadWriteTarget},
   utils::ExtraData,
   vfs::Vfs,
 };
@@ -44,7 +44,7 @@ pub struct Analyzer<'a> {
 
   pub data: ExtraData<'a>,
   pub exhausted_variables: Option<FxHashSet<(ModuleId, SymbolId)>>,
-  pub exhaustive_callbacks: FxHashMap<ExhaustiveDepId<'a>, FxHashSet<ExhaustiveCallback<'a>>>,
+  pub exhaustive_callbacks: FxHashMap<ReadWriteTarget<'a>, FxHashSet<ExhaustiveCallback<'a>>>,
   pub referred_deps: ReferredDeps,
   pub conditional_data: ConditionalDataMap<'a>,
   // pub loop_data: LoopDataMap<'a>,

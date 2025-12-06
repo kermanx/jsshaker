@@ -1,10 +1,10 @@
 use super::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   dep::{Dep, DepCollector, DepVec},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
-  scope::CfScopeKind,
+  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
   utils::Found,
   value::{PropertyKeyValue, ValueTrait, consumed_object},
 };
@@ -76,19 +76,19 @@ impl<'a> ObjectValue<'a> {
             &mut setters,
             &mut deferred_deps,
           ) {
-            analyzer.mark_exhaustive_write(
-              ExhaustiveDepId::ObjectField(self.object_id, key_literal.into()),
+            analyzer.track_write(
+              ReadWriteTarget::ObjectField(self.object_id, key_literal.into()),
               target_depth,
             );
             analyzer
-              .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
+              .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
           }
           if property.definite {
             continue;
           }
         } else {
           analyzer
-            .request_exhaustive_callbacks(ExhaustiveDepId::ObjectField(self.object_id, key_str));
+            .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
         }
 
         if let Some(rest) = &self.rest {
@@ -122,9 +122,9 @@ impl<'a> ObjectValue<'a> {
       }
     } else {
       if is_exhaustive {
-        analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+        analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
       }
-      analyzer.request_exhaustive_callbacks(ExhaustiveDepId::ObjectAll(self.object_id));
+      analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
 
       self.disable_mangling(analyzer);
 

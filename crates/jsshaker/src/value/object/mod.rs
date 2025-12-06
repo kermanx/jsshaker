@@ -20,12 +20,12 @@ use super::{
   arguments::ArgumentsValue, cachable::Cachable, consumed_object,
 };
 use crate::{
-  analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
+  analyzer::Analyzer,
   builtins::BuiltinPrototype,
   dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
-  scope::CfScopeId,
+  scope::{CfScopeId, rw_tracking::ReadWriteTarget},
   use_consumed_flag,
   utils::ast::AstKind2,
 };
@@ -96,7 +96,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+    analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -108,7 +108,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let (should_consume, _) =
-      analyzer.mark_exhaustive_write(ExhaustiveDepId::ObjectAll(self.object_id), target_depth);
+      analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
     if should_consume {
       self.consume(analyzer);
     }
