@@ -1,6 +1,7 @@
 pub mod arguments;
 pub mod array;
 pub mod builtin_fn;
+pub mod cachable;
 mod consumed_object;
 mod function;
 mod literal;
@@ -25,7 +26,7 @@ use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
   entity::Entity,
-  value::arguments::ArgumentsValue,
+  value::{arguments::ArgumentsValue, cachable::Cachable},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -211,6 +212,8 @@ pub trait ValueTrait<'a>: Debug {
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Other
   }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>>;
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {

@@ -8,7 +8,7 @@ use rustc_hash::FxHashMap;
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue, TypeofResult,
-  ValueTrait, arguments::ArgumentsValue, consumed_object,
+  ValueTrait, arguments::ArgumentsValue, cachable::Cachable, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveDepId},
@@ -346,6 +346,10 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Object(self.object_id))
   }
 }
 

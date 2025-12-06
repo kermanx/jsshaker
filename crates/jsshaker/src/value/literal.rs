@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 
 use super::{
   EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, consumed_object, never::NeverValue,
+  arguments::ArgumentsValue, cachable::Cachable, consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -310,6 +310,10 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(matches!(self, LiteralValue::Null | LiteralValue::Undefined))
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Literal(*self))
   }
 }
 

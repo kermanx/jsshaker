@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use super::{
   EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
-  arguments::ArgumentsValue, consumed_object,
+  arguments::ArgumentsValue, cachable::Cachable, consumed_object,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
@@ -125,6 +125,10 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   }
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Unknown
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Unknown)
   }
 }
 

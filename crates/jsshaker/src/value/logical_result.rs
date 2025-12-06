@@ -1,6 +1,6 @@
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue,
+  arguments::ArgumentsValue, cachable::Cachable,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
@@ -137,5 +137,17 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     if self.is_coalesce { Some(self.result) } else { self.value.test_nullish() }
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    match self.value.as_cachable() {
+      Some(Cachable::Unknown) => match (self.is_coalesce, self.result) {
+        (true, true) => Some(Cachable::UnknownNullish),
+        (true, false) => Some(Cachable::UnknownNonNullish),
+        (false, true) => Some(Cachable::UnknownTruthy),
+        (false, false) => Some(Cachable::UnknownFalsy),
+      },
+      other => other,
+    }
   }
 }

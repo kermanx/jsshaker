@@ -8,6 +8,7 @@ use oxc::{
   semantic::ScopeId,
   span::{GetSpan, Span},
 };
+use oxc_index::define_nonmax_u32_index_type;
 
 use super::ast::AstKind2;
 use crate::{analyzer::Analyzer, module::ModuleId};
@@ -68,11 +69,15 @@ impl hash::Hash for CalleeNode<'_> {
   }
 }
 
+define_nonmax_u32_index_type! {
+  pub struct CalleeInstanceId;
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct CalleeInfo<'a> {
   pub module_id: ModuleId,
   pub node: CalleeNode<'a>,
-  pub instance_id: usize,
+  pub instance_id: CalleeInstanceId,
   #[cfg(feature = "flame")]
   pub debug_name: &'a str,
 }

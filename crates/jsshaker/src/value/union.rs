@@ -5,7 +5,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
   EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, PropertyKeyValue,
-  TypeofResult, UnionHint, ValueTrait, arguments::ArgumentsValue,
+  TypeofResult, UnionHint, ValueTrait, arguments::ArgumentsValue, cachable::Cachable,
 };
 use crate::{
   analyzer::{Analyzer, Factory},
@@ -288,6 +288,10 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
       }
     }
     Some(result)
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    None // TODO: implement cachable for union values
   }
 }
 

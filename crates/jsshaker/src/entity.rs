@@ -6,7 +6,7 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
     EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, UnionHint,
-    Value, ValueTrait, arguments::ArgumentsValue,
+    Value, ValueTrait, arguments::ArgumentsValue, cachable::Cachable,
   },
 };
 
@@ -207,6 +207,10 @@ impl<'a> Entity<'a> {
 
   pub fn get_union_hint(&self) -> UnionHint {
     self.value.get_union_hint()
+  }
+
+  pub fn as_cachable(&self) -> Option<Cachable<'a>> {
+    self.value.as_cachable()
   }
 }
 

@@ -2,14 +2,9 @@ use std::{cell::Cell, fmt::Debug};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, consumed_object, never::NeverValue,
+  arguments::ArgumentsValue, cachable::Cachable, consumed_object, never::NeverValue,
 };
-use crate::{
-  analyzer::{Analyzer, Factory},
-  dep::Dep,
-  entity::Entity,
-  use_consumed_flag,
-};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
 trait BuiltinFnImpl<'a>: Debug {
   fn name(&self) -> &'static str;
@@ -171,6 +166,10 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
   }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::BuiltinFn(self.name()))
+  }
 }
 
 pub trait BuiltinFnImplementation<'a>:
@@ -250,12 +249,13 @@ impl<'a> Analyzer<'a> {
 
 #[derive(Debug, Clone)]
 pub struct PureBuiltinFnValue<'a> {
-  return_value: fn(&Factory<'a>) -> Entity<'a>,
+  name: &'static str,
+  return_value: Entity<'a>,
 }
 
 impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
   fn name(&self) -> &'static str {
-    "<PureBuiltin>"
+    self.name
   }
   fn call_impl(
     &self,
@@ -264,16 +264,15 @@ impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    let ret_val = (self.return_value)(analyzer.factory);
     let dep = analyzer.dep((dep, this, args));
     this.unknown_mutate(analyzer, dep);
     args.unknown_mutate(analyzer, dep);
-    analyzer.factory.computed(ret_val, dep)
+    analyzer.factory.computed(self.return_value, dep)
   }
 }
 
 impl<'a> PureBuiltinFnValue<'a> {
-  pub fn new(return_value: fn(&Factory<'a>) -> Entity<'a>) -> Self {
-    Self { return_value }
+  pub fn new(name: &'static str, return_value: Entity<'a>) -> Self {
+    Self { name, return_value }
   }
 }

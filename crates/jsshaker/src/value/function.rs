@@ -4,7 +4,7 @@ use oxc::{allocator, span::GetSpan};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, consumed_object,
+  arguments::ArgumentsValue, cachable::Cachable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -176,6 +176,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Object(self.statics.object_id))
   }
 }
 

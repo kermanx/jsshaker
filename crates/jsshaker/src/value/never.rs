@@ -1,4 +1,4 @@
-use super::{UnionHint, ValueTrait, arguments::ArgumentsValue};
+use super::{UnionHint, ValueTrait, arguments::ArgumentsValue, cachable::Cachable};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
@@ -105,5 +105,9 @@ impl<'a> ValueTrait<'a> for NeverValue {
 
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Never
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Never)
   }
 }

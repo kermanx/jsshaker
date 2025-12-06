@@ -13,7 +13,7 @@ use crate::{
   entity::Entity,
   mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
   scope::CfScopeId,
-  utils::F64WithEq,
+  utils::{CalleeInstanceId, F64WithEq},
   value::{
     LiteralValue, ObjectId, ObjectProperty, ObjectPrototype, ObjectValue,
     arguments::ArgumentsValue,
@@ -82,21 +82,23 @@ impl<'a> Factory<'a> {
     let unknown_boolean = allocator.alloc(PrimitiveValue::Boolean).into();
     let unknown_symbol = allocator.alloc(PrimitiveValue::Symbol).into();
 
-    let pure_fn_returns_unknown = allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown)).into();
+    let pure_fn_returns_unknown =
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:unknown> ", immutable_unknown)).into();
 
     let pure_fn_returns_string =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_string)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:string> ", unknown_string)).into();
     let pure_fn_returns_number =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_number)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:number> ", unknown_number)).into();
     let pure_fn_returns_bigint =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_bigint)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:bigint> ", unknown_bigint)).into();
     let pure_fn_returns_boolean =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_boolean)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:boolean> ", unknown_boolean)).into();
     let pure_fn_returns_symbol =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.unknown_symbol)).into();
-    let pure_fn_returns_null = allocator.alloc(PureBuiltinFnValue::new(|f| f.null)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:symbol> ", unknown_symbol)).into();
+    let pure_fn_returns_null =
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:null> ", null)).into();
     let pure_fn_returns_undefined =
-      allocator.alloc(PureBuiltinFnValue::new(|f| f.undefined)).into();
+      allocator.alloc(PureBuiltinFnValue::new("<PureFn:undefined> ", undefined)).into();
 
     let empty_arguments = ArgumentsValue { elements: &[], rest: None };
     let unknown_arguments = ArgumentsValue { elements: &[], rest: Some(immutable_unknown) };
@@ -160,10 +162,10 @@ impl<'a> Factory<'a> {
     vec
   }
 
-  pub fn alloc_instance_id(&self) -> usize {
+  pub fn alloc_instance_id(&self) -> CalleeInstanceId {
     let id = self.instance_id_counter.get();
     self.instance_id_counter.set(id + 1);
-    id
+    CalleeInstanceId::from_usize(id)
   }
 
   pub fn builtin_object(

@@ -1,10 +1,10 @@
 use super::{
   EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, arguments::ArgumentsValue,
-  consumed_object, never::NeverValue,
+  cachable::Cachable, consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimitiveValue {
   // TODO: NumericString, NoneEmptyString, ...
   Mixed,
@@ -167,6 +167,10 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
 
   fn is_shared_value(&self) -> bool {
     true
+  }
+
+  fn as_cachable(&self) -> Option<Cachable<'a>> {
+    Some(Cachable::Primitive(*self))
   }
 }
 
