@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
       self,
       AstKind2::TaggedTemplateExpression(node),
       this,
-      self.factory.arguments(self.factory.alloc(arguments), None),
+      self.factory.arguments(arguments.into_bump_slice(), None),
     )
   }
 }

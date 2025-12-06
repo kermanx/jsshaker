@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    ArgumentsValue { elements: self.factory.alloc(elements), rest: self.factory.try_union(rest) }
+    ArgumentsValue { elements: elements.into_bump_slice(), rest: self.factory.try_union(rest) }
   }
 }
 

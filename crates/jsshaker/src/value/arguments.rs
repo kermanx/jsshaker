@@ -97,7 +97,7 @@ impl<'a> ArgumentsValue<'a> {
       let mut new_elements = analyzer.factory.vec();
       new_elements.extend_from_slice(args1.elements);
       new_elements.extend_from_slice(args2.elements);
-      ArgumentsValue { elements: analyzer.factory.alloc(new_elements), rest: args2.rest }
+      ArgumentsValue { elements: new_elements.into_bump_slice(), rest: args2.rest }
     }
   }
 }
