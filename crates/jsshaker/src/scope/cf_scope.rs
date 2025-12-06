@@ -5,6 +5,7 @@ use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveData},
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
+  value::cache::FnCacheTrackingData,
 };
 
 define_index_type! {
@@ -16,20 +17,20 @@ pub enum CfScopeKind<'a> {
   Root,
   Module,
   Labeled(&'a LabeledStatement<'a>),
-  Function,
+  Function(&'a mut FnCacheTrackingData<'a>),
   LoopBreak,
   LoopContinue,
   Switch,
 
   Dependent,
   Indeterminate,
-  Exhaustive(ExhaustiveData<'a>),
+  Exhaustive(&'a mut ExhaustiveData<'a>),
   ExitBlocker(Option<usize>),
 }
 
 impl<'a> CfScopeKind<'a> {
   pub fn is_function(&self) -> bool {
-    matches!(self, CfScopeKind::Function)
+    matches!(self, CfScopeKind::Function(_))
   }
 
   pub fn is_breakable_without_label(&self) -> bool {
@@ -113,6 +114,13 @@ impl<'a> CfScope<'a> {
   pub fn exhaustive_data_mut(&mut self) -> Option<&mut ExhaustiveData<'a>> {
     match &mut self.kind {
       CfScopeKind::Exhaustive(data) => Some(data),
+      _ => None,
+    }
+  }
+
+  pub fn fn_cache_tracking_data_mut(&mut self) -> Option<&mut FnCacheTrackingData<'a>> {
+    match &mut self.kind {
+      CfScopeKind::Function(data) => Some(data),
       _ => None,
     }
   }

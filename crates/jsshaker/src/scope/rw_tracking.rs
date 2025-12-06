@@ -50,6 +50,10 @@ impl<'a> Analyzer<'a> {
           id.object_read_extra().map(|id| register_deps.insert(id));
         }
       }
+      if let Some(data) = scope.fn_cache_tracking_data_mut() {
+        data.outer_deps.insert(id);
+        id.object_read_extra().map(|id| data.outer_deps.insert(id));
+      }
     }
   }
 

@@ -4,7 +4,7 @@ use std::{
   rc::Rc,
 };
 
-use rustc_hash::FxHashSet;
+use oxc::allocator;
 
 use crate::{
   analyzer::Analyzer,
@@ -15,8 +15,8 @@ use crate::{
 #[derive(Debug)]
 pub struct ExhaustiveData<'a> {
   pub clean: bool,
-  pub temp_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
-  pub register_deps: Option<FxHashSet<ReadWriteTarget<'a>>>,
+  pub temp_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
+  pub register_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
 }
 
 #[derive(Clone)]
@@ -74,11 +74,11 @@ impl<'a> Analyzer<'a> {
     runner: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
   ) {
     self.push_cf_scope(
-      CfScopeKind::Exhaustive(ExhaustiveData {
+      CfScopeKind::Exhaustive(self.allocator.alloc(ExhaustiveData {
         clean: true,
-        temp_deps: drain.then(FxHashSet::default),
-        register_deps: register.then(Default::default),
-      }),
+        temp_deps: drain.then(|| allocator::HashSet::new_in(self.allocator)),
+        register_deps: register.then(|| allocator::HashSet::new_in(self.allocator)),
+      })),
       true,
     );
     let mut round_counter = 0;
@@ -110,7 +110,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     drain: bool,
     handler: Rc<dyn Fn(&mut Analyzer<'a>) + 'a>,
-    deps: FxHashSet<ReadWriteTarget<'a>>,
+    deps: allocator::HashSet<'a, ReadWriteTarget<'a>>,
   ) {
     for id in deps {
       self

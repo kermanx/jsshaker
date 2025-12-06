@@ -1,6 +1,6 @@
 mod arguments;
 mod builtin;
-mod cache;
+pub mod cache;
 
 use std::cell::Cell;
 
