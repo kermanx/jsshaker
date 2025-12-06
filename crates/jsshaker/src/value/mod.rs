@@ -1,6 +1,4 @@
-pub mod arguments;
 pub mod array;
-pub mod builtin_fn;
 pub mod cachable;
 mod consumed_object;
 mod function;
@@ -15,6 +13,8 @@ pub mod union;
 pub mod unknown;
 pub mod utils;
 
+use cachable::Cachable;
+pub use function::*;
 pub use literal::LiteralValue;
 pub use object::*;
 use oxc::{allocator, semantic::SymbolId};
@@ -26,7 +26,6 @@ use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
   entity::Entity,
-  value::{arguments::ArgumentsValue, cachable::Cachable},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, arguments::ArgumentsValue,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
   cachable::Cachable, consumed_object,
 };
 use crate::{

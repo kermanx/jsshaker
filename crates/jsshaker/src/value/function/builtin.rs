@@ -1,8 +1,8 @@
 use std::{cell::Cell, fmt::Debug};
 
-use super::{
-  EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable, consumed_object, never::NeverValue,
+use super::super::{
+  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
+  TypeofResult, ValueTrait, cachable::Cachable, consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 

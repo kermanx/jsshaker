@@ -7,8 +7,7 @@ use oxc::{
 };
 
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, transformer::Transformer,
-  value::arguments::ArgumentsValue,
+  analyzer::Analyzer, ast::DeclarationKind, transformer::Transformer, value::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {

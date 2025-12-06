@@ -13,7 +13,7 @@ use crate::{
   module::NamedExport,
   scope::rw_tracking::ReadWriteTarget,
   utils::ast::AstKind2,
-  value::arguments::ArgumentsValue,
+  value::ArgumentsValue,
 };
 
 define_index_type! {

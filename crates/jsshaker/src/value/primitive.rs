@@ -1,5 +1,5 @@
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait, arguments::ArgumentsValue,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
   cachable::Cachable, consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};

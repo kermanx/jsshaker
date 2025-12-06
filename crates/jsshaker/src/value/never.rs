@@ -1,4 +1,4 @@
-use super::{UnionHint, ValueTrait, arguments::ArgumentsValue, cachable::Cachable};
+use super::{ArgumentsValue, UnionHint, ValueTrait, cachable::Cachable};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]

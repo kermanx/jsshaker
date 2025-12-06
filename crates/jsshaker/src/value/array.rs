@@ -7,8 +7,8 @@ use oxc::allocator;
 use rustc_hash::FxHashMap;
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue, TypeofResult,
-  ValueTrait, arguments::ArgumentsValue, cachable::Cachable, consumed_object,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue,
+  TypeofResult, ValueTrait, cachable::Cachable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,

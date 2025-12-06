@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
 use super::{
-  EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable, consumed_object,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
+  cachable::Cachable, consumed_object,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 

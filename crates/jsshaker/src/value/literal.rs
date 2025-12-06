@@ -9,8 +9,8 @@ use oxc_syntax::number::ToJsString;
 use rustc_hash::FxHashSet;
 
 use super::{
-  EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable, consumed_object, never::NeverValue,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
+  ValueTrait, cachable::Cachable, consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,

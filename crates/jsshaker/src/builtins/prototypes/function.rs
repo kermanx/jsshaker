@@ -1,5 +1,5 @@
 use super::{BuiltinPrototype, object::create_object_prototype};
-use crate::{analyzer::Factory, init_prototype, value::arguments::ArgumentsValue};
+use crate::{analyzer::Factory, init_prototype, value::ArgumentsValue};
 
 pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {

@@ -14,7 +14,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-  value::arguments::ArgumentsValue,
+  value::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {

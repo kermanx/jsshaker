@@ -1,10 +1,14 @@
+mod arguments;
+mod builtin;
+mod cache;
+
 use std::cell::Cell;
 
 use oxc::{allocator, span::GetSpan};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable, consumed_object,
+  cachable::Cachable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -13,6 +17,8 @@ use crate::{
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
 };
+pub use arguments::*;
+pub use builtin::*;
 
 #[derive(Debug)]
 pub struct FunctionValue<'a> {

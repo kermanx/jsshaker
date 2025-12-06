@@ -18,7 +18,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-  value::{ObjectPrototype, ValueTrait, arguments::ArgumentsValue},
+  value::{ArgumentsValue, ObjectPrototype, ValueTrait},
 };
 
 #[derive(Default)]

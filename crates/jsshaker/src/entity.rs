@@ -5,8 +5,8 @@ use crate::{
   analyzer::Factory,
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
-    EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, TypeofResult, UnionHint,
-    Value, ValueTrait, arguments::ArgumentsValue, cachable::Cachable,
+    ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
+    TypeofResult, UnionHint, Value, ValueTrait, cachable::Cachable,
   },
 };
 

@@ -1,6 +1,6 @@
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  ValueTrait, cachable::Cachable,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 

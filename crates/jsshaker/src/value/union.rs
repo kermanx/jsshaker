@@ -4,8 +4,8 @@ use oxc::allocator::{self, Allocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype, PropertyKeyValue,
-  TypeofResult, UnionHint, ValueTrait, arguments::ArgumentsValue, cachable::Cachable,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
+  PropertyKeyValue, TypeofResult, UnionHint, ValueTrait, cachable::Cachable,
 };
 use crate::{
   analyzer::{Analyzer, Factory},

@@ -9,7 +9,7 @@ use crate::{
   ast::{Arguments, AstKind2},
   entity::Entity,
   transformer::Transformer,
-  value::arguments::ArgumentsValue,
+  value::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {

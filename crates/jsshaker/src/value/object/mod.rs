@@ -16,8 +16,8 @@ pub use property::{ObjectProperty, ObjectPropertyValue};
 use rustc_hash::FxHashSet;
 
 use super::{
-  EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue, TypeofResult, ValueTrait,
-  arguments::ArgumentsValue, cachable::Cachable, consumed_object,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
+  TypeofResult, ValueTrait, cachable::Cachable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
