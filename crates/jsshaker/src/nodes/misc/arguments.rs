@@ -61,9 +61,7 @@ impl<'a> Transformer<'a> {
     let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
-      Argument::SpreadElement(node) => {
-        self.transform_arguments_spread_element(node, is_referred)
-      }
+      Argument::SpreadElement(node) => self.transform_arguments_spread_element(node, is_referred),
       _ => self
         .transform_expression(node.to_expression(), is_referred)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))
