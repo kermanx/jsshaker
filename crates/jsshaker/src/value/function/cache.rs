@@ -45,8 +45,14 @@ impl<'a> FnCache<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Option<FnCacheEntryKey<'a>> {
+    if !analyzer.config.enable_fn_cache {
+      return None;
+    }
+
     let this = this.as_cachable()?;
-    args.rest?; // TODO: Support this case
+    if args.rest.is_some() {
+      return None; // TODO: Support this case
+    }
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
       cargs.push(arg.as_cachable()?);
