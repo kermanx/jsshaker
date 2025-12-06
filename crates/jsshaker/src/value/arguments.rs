@@ -1,3 +1,5 @@
+use oxc::allocator;
+
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
@@ -18,6 +20,15 @@ impl<'a> CustomDepTrait<'a> for ArgumentsValue<'a> {
 }
 
 impl<'a> ArgumentsValue<'a> {
+  pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
+    for entity in self.elements {
+      entity.unknown_mutate(analyzer, dep);
+    }
+    if let Some(rest) = self.rest {
+      rest.unknown_mutate(analyzer, dep);
+    }
+  }
+
   pub fn get(&self, analyzer: &mut Analyzer<'a>, nth: usize) -> Entity<'a> {
     if nth < self.elements.len() {
       self.elements[nth]
@@ -48,8 +59,13 @@ impl<'a> ArgumentsValue<'a> {
     value: Entity<'a>,
     dep: Dep<'a>,
   ) -> ArgumentsValue<'a> {
-    let (elements, rest, _dep) = value.iterate(analyzer, dep);
-    ArgumentsValue { elements: analyzer.allocator.alloc_slice_copy(elements.as_slice()), rest }
+    let (elements, rest, dep) = value.iterate(analyzer, dep);
+    let elements = allocator::Vec::from_iter_in(
+      elements.into_iter().map(|e| analyzer.factory.computed(e, dep)),
+      analyzer.allocator,
+    );
+    let rest = rest.map(|r| analyzer.factory.computed(r, dep));
+    ArgumentsValue { elements: analyzer.factory.alloc(elements), rest }
   }
 
   pub fn from_concatenate(

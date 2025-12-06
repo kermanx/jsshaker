@@ -65,7 +65,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_keys_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Object.keys", |analyzer, _dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.get(analyzer, 0);
       let array = analyzer.new_empty_array();
       if let Some(keys) = object.get_own_keys(analyzer) {
@@ -78,7 +78,7 @@ impl<'a> Builtins<'a> {
         array.init_rest(analyzer.factory.unknown_string);
       }
 
-      analyzer.factory.computed(array.into(), object.get_shallow_dep(analyzer))
+      analyzer.factory.computed(array.into(), (dep, object.get_shallow_dep(analyzer)))
     })
   }
 

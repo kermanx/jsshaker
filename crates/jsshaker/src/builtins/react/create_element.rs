@@ -1,7 +1,7 @@
 use crate::{analyzer::Factory, entity::Entity, value::ObjectPrototype};
 
 pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
-  factory.implemented_builtin_fn("React::createElement", |analyzer, _dep, _this, args| {
+  factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
     let tag = args.get(analyzer, 0);
     let props = args.get(analyzer, 1);
     let props = match props.test_nullish() {
@@ -59,6 +59,8 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
       analyzer.factory.string("children"),
       children.into(),
     );
-    analyzer.factory.react_element(tag, props)
+
+    let element = analyzer.factory.react_element(tag, analyzer.factory.computed(props, dep));
+    analyzer.factory.computed(element, dep)
   })
 }

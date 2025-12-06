@@ -4,16 +4,15 @@ use crate::{analyzer::Factory, init_prototype, value::arguments::ArgumentsValue}
 pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply" => factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
-      let args_arg = {
-        let arg = args.get(analyzer, 1);
-        match arg.test_is_undefined() {
-          Some(true) => analyzer.factory.empty_arguments,
-          Some(false) => ArgumentsValue::from_value(analyzer, arg, dep),
-          None => analyzer.factory.unknown_arguments,
-        }
-      };
       let this_arg = args.get(analyzer, 0);
-      this.call(analyzer, dep, this_arg, args_arg)
+      let arg = args.get(analyzer, 1);
+      let args_arg = match arg.test_is_undefined() {
+        Some(true) => analyzer.factory.empty_arguments,
+        Some(false) => ArgumentsValue::from_value(analyzer, arg, dep),
+        None => analyzer.factory.unknown_arguments,
+      };
+      let deps = analyzer.factory.dep((dep,arg.get_shallow_dep(analyzer)));
+      this.call(analyzer, deps, this_arg, args_arg)
     }),
     "call" => factory.implemented_builtin_fn("Function::call", |analyzer, dep, this, args| {
       let (this_arg, args_arg) = args.split_at(analyzer, 1);

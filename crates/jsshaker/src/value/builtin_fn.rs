@@ -267,6 +267,7 @@ impl<'a> BuiltinFnImpl<'a> for PureBuiltinFnValue<'a> {
     let ret_val = (self.return_value)(analyzer.factory);
     let dep = analyzer.dep((dep, this, args));
     this.unknown_mutate(analyzer, dep);
+    args.unknown_mutate(analyzer, dep);
     analyzer.factory.computed(ret_val, dep)
   }
 }
