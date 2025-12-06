@@ -1,11 +1,11 @@
 use oxc::ast::ast::{Argument, ArrayExpressionElement, SpreadElement};
 
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, value::IteratedElements};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> Option<Entity<'a>> {
+  pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> IteratedElements<'a> {
     let argument = self.exec_expression(&node.argument);
-    argument.iterate_result_union(self, AstKind2::SpreadElement(node))
+    argument.iterate(self, AstKind2::SpreadElement(node))
   }
 }
 

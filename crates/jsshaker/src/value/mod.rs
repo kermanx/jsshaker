@@ -173,18 +173,11 @@ pub trait ValueTrait<'a>: Debug {
     dep: Dep<'a>,
   ) -> Option<Entity<'a>> {
     let (elements, rest, deps) = self.iterate(analyzer, dep);
-    if let Some(rest) = rest {
-      let mut result = allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator);
-      result.push(rest);
-      Some(analyzer.factory.computed_union(result, deps))
-    } else if !elements.is_empty() {
-      Some(analyzer.factory.computed_union(
-        allocator::Vec::from_iter_in(elements.iter().copied(), analyzer.allocator),
-        deps,
-      ))
-    } else {
-      None
-    }
+    let union = analyzer.factory.try_union(allocator::Vec::from_iter_in(
+      elements.iter().copied().chain(rest),
+      analyzer.allocator,
+    ));
+    union.map(|u| analyzer.factory.computed(u, deps))
   }
 
   fn call_as_getter(

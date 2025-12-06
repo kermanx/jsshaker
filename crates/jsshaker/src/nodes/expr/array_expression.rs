@@ -8,32 +8,33 @@ use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Tran
 impl<'a> Analyzer<'a> {
   pub fn exec_array_expression(&mut self, node: &'a ArrayExpression<'a>) -> Entity<'a> {
     let array = self.new_empty_array();
-
     let mut rest = self.factory.vec();
 
     for element in &node.elements {
+      let mut push_element = |element: Entity<'a>| {
+        if rest.is_empty() {
+          array.push_element(element);
+        } else {
+          rest.push(element);
+        }
+      };
       match element {
         ArrayExpressionElement::SpreadElement(node) => {
-          if let Some(spread) = self.exec_spread_element(node) {
-            rest.push(spread);
+          let (els, r, d) = self.exec_spread_element(node);
+          for el in els {
+            push_element(self.factory.computed(el, d));
+          }
+          if let Some(r) = r {
+            rest.push(self.factory.computed(r, d));
           }
         }
         ArrayExpressionElement::Elision(_node) => {
-          if rest.is_empty() {
-            array.push_element(self.factory.undefined);
-          } else {
-            rest.push(self.factory.undefined);
-          }
+          push_element(self.factory.undefined);
         }
         _ => {
           let dep = AstKind2::ArrayExpressionElement(element);
           let value = self.exec_expression(element.to_expression());
-          let element = self.factory.computed(value, dep);
-          if rest.is_empty() {
-            array.push_element(element);
-          } else {
-            rest.push(element);
-          }
+          push_element(self.factory.computed(value, dep));
         }
       }
     }

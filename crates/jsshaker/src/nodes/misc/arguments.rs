@@ -7,6 +7,7 @@ use oxc::{
 use crate::{
   Analyzer,
   ast::{Arguments, AstKind2},
+  entity::Entity,
   transformer::Transformer,
   value::arguments::ArgumentsValue,
 };
@@ -18,20 +19,26 @@ impl<'a> Analyzer<'a> {
 
     for element in node {
       let dep = AstKind2::Argument(element);
+      let mut push_element = |element: Entity<'a>| {
+        if rest.is_empty() {
+          elements.push(element);
+        } else {
+          rest.push(element);
+        }
+      };
       match element {
         Argument::SpreadElement(node) => {
-          if let Some(spread) = self.exec_spread_element(node) {
-            rest.push(self.factory.computed(spread, dep));
+          let (els, r, d) = self.exec_spread_element(node);
+          for el in els {
+            push_element(self.factory.computed(el, (dep, d)));
+          }
+          if let Some(r) = r {
+            rest.push(self.factory.computed(r, (dep, d)));
           }
         }
         _ => {
-          let value = self.exec_expression(element.to_expression());
-          let element = self.factory.computed(value, dep);
-          if rest.is_empty() {
-            elements.push(element);
-          } else {
-            rest.push(element);
-          }
+          let element = self.exec_expression(element.to_expression());
+          push_element(self.factory.computed(element, dep));
         }
       }
     }
@@ -61,9 +68,7 @@ impl<'a> Transformer<'a> {
     let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
-      Argument::SpreadElement(node) => {
-        self.transform_arguments_spread_element(node, is_referred)
-      }
+      Argument::SpreadElement(node) => self.transform_arguments_spread_element(node, is_referred),
       _ => self
         .transform_expression(node.to_expression(), is_referred)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))
