@@ -65,7 +65,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     value: Entity<'a>,
   ) {
     // TODO: Support analyzing this kind of mutation
-    if analyzer.op_strict_eq(key, analyzer.factory.string("prototype")).0 != Some(false) {
+    if analyzer.op_strict_eq(key, analyzer.factory.string("prototype"), false).0 != Some(false) {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 

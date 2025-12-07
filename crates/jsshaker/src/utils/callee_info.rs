@@ -96,6 +96,7 @@ impl<'a> Analyzer<'a> {
       instance_id: self.factory.alloc_instance_id(),
       #[cfg(feature = "flame")]
       debug_name: {
+        let file_name = self.module_info().path.as_str();
         let line_col = self.line_index().line_col(node.span().start.into());
         let resolved_name = match node {
           CalleeNode::Function(node) => {
@@ -113,7 +114,8 @@ impl<'a> Analyzer<'a> {
           CalleeNode::Root => "<Root>",
           CalleeNode::Module => "<Module>",
         };
-        let debug_name = format!("{}:{}:{}", resolved_name, line_col.line + 1, line_col.col + 1);
+        let debug_name =
+          format!("{}[./{}:{}:{}]", resolved_name, file_name, line_col.line + 1, line_col.col + 1);
         self.allocator.alloc_str(&debug_name)
       },
     }
