@@ -146,7 +146,7 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
     consume: bool,
-  ) -> (Entity<'a>, FnCacheTrackingData) {
+  ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);

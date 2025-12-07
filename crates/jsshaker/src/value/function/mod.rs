@@ -281,6 +281,9 @@ impl<'a> FunctionValue<'a> {
     };
 
     if let Some(cache_key) = cache_key {
+      // if cache_tracking.has_outer_deps {
+      //   println!("Has outer deps: {}", self.callee.debug_name);
+      // }
       self.cache.borrow_mut().update_cache(cache_key, ret_val, cache_tracking);
     }
 

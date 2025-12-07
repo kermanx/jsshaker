@@ -75,7 +75,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
 
-    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope, true);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
 
     if !self.deps.borrow().is_empty() {
       return analyzer.factory.computed_unknown((self, dep, key));
@@ -215,7 +215,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope, true);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
 
     if !self.deps.borrow().is_empty() {
       return EnumeratedProperties {
@@ -294,7 +294,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::iterate(analyzer, dep);
     }
 
-    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope, true);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
 
     if !self.deps.borrow().is_empty() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));

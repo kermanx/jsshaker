@@ -30,7 +30,7 @@ impl<'a> Analyzer<'a> {
     variable_scopes: &'a [VariableScopeId],
     args: ArgumentsValue<'a>,
     consume: bool,
-  ) -> (Entity<'a>, FnCacheTrackingData) {
+  ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(
         callee,
