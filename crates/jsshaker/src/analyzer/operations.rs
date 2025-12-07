@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
-    if let (Some(v), m) = self.op_strict_eq(lhs, rhs)
+    if let (Some(v), m) = self.op_strict_eq(lhs, rhs, false)
       && (v || lhs.test_typeof().must_equal(rhs.test_typeof()))
     {
       return (Some(v), m);
@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit)
       && lhs_lit.test_typeof() == rhs_lit.test_typeof()
     {
-      let (eq, m) = lhs_lit.strict_eq(rhs_lit);
+      let (eq, m) = lhs_lit.strict_eq(rhs_lit, false);
       return (Some(!eq), m.map(|m| m.negate_equality(self.allocator)));
     }
 
@@ -52,6 +52,7 @@ impl<'a> Analyzer<'a> {
     &self,
     lhs: Entity<'a>,
     rhs: Entity<'a>,
+    object_is: bool,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
     if Entity::value_eq(lhs, rhs) {
       return (Some(true), Some(MangleConstraint::None));
@@ -69,15 +70,15 @@ impl<'a> Analyzer<'a> {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
         let lhs_lit = *lhs_lit.iter().next().unwrap();
         let rhs_lit = *rhs_lit.iter().next().unwrap();
-        let (eq, m) = lhs_lit.strict_eq(rhs_lit);
+        let (eq, m) = lhs_lit.strict_eq(rhs_lit, object_is);
         return (Some(eq), m);
       }
 
-      let mut constraints = Some(self.allocator.alloc(self.factory.vec()));
+      let mut constraints = Some(self.factory.vec());
       let mut all_neq = true;
       for l in &lhs_lit {
         for r in &rhs_lit {
-          let (eq, mc) = l.strict_eq(*r);
+          let (eq, mc) = l.strict_eq(*r, object_is);
           all_neq &= !eq;
           if let Some(mc) = mc {
             if let Some(constraints) = &mut constraints {
@@ -91,7 +92,7 @@ impl<'a> Analyzer<'a> {
 
       return (
         if all_neq { Some(false) } else { None },
-        constraints.map(|m| MangleConstraint::Multiple(m)),
+        constraints.map(|m| MangleConstraint::Multiple(m.into_bump_slice())),
       );
     }
 
@@ -103,7 +104,7 @@ impl<'a> Analyzer<'a> {
     lhs: Entity<'a>,
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
-    let (eq, m) = self.op_strict_eq(lhs, rhs);
+    let (eq, m) = self.op_strict_eq(lhs, rhs, false);
     (eq.map(|v| !v), m.map(|m| m.negate_equality(self.allocator)))
   }
 
@@ -333,7 +334,7 @@ impl<'a> Analyzer<'a> {
     match operator {
       BinaryOperator::Equality => to_eq_result(self.op_loose_eq(lhs, rhs)),
       BinaryOperator::Inequality => to_eq_result(self.op_loose_neq(lhs, rhs)),
-      BinaryOperator::StrictEquality => to_eq_result(self.op_strict_eq(lhs, rhs)),
+      BinaryOperator::StrictEquality => to_eq_result(self.op_strict_eq(lhs, rhs, false)),
       BinaryOperator::StrictInequality => to_eq_result(self.op_strict_neq(lhs, rhs)),
       BinaryOperator::LessThan => to_result(self.op_lt(lhs, rhs, false)),
       BinaryOperator::LessEqualThan => to_result(self.op_lt(lhs, rhs, true)),

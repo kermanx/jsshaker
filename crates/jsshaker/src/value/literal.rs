@@ -487,9 +487,9 @@ impl<'a> LiteralValue<'a> {
     }
   }
 
-  pub fn strict_eq(self, other: LiteralValue) -> (bool, Option<MangleConstraint>) {
+  pub fn strict_eq(self, other: LiteralValue, object_is: bool) -> (bool, Option<MangleConstraint>) {
     // 0.0 === -0.0
-    if let (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) = (self, other) {
+    if !object_is && let (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) = (self, other) {
       let eq = if l == 0.0.into() || l == (-0.0).into() {
         r == 0.0.into() || r == (-0.0).into()
       } else {
@@ -503,7 +503,15 @@ impl<'a> LiteralValue<'a> {
       return (eq, MangleConstraint::equality(eq, atom_l, atom_r));
     }
 
-    (self == other && self != LiteralValue::NaN, None)
+    if self != other {
+      return (false, None);
+    }
+
+    if !object_is && self == LiteralValue::NaN {
+      return (false, None);
+    }
+
+    (true, None)
   }
 }
 

@@ -80,7 +80,7 @@ pub fn check_dependencies<'a>(
     for (index, element) in elements.iter().enumerate() {
       match previous.get(index) {
         Some(Some(old)) => {
-          if analyzer.op_strict_eq(*element, *old).0 != Some(true) {
+          if analyzer.op_strict_eq(*element, *old, false).0 != Some(true) {
             changed.push(index);
             require_rerun = true;
           }

@@ -27,6 +27,7 @@ impl<'a> Builtins<'a> {
       "freeze" => self.create_object_freeze_impl(),
       "defineProperty" => self.create_object_define_property_impl(),
       "create" => self.create_object_create_impl(),
+      "is" => self.create_object_is_impl(),
     });
 
     self.globals.borrow_mut().insert("Object", object.into());
@@ -211,6 +212,24 @@ impl<'a> Builtins<'a> {
       let object = analyzer.new_empty_object(prototype, Some(mangling));
       object.add_extra_dep(deps);
       object.into()
+    })
+  }
+
+  fn create_object_is_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.is", |analyzer, _, _, args| {
+      let lhs = args.get(analyzer, 0);
+      let rhs = args.get(analyzer, 1);
+      let (equality, mangle_constraint) = analyzer.op_strict_eq(lhs, rhs, true);
+
+      if let Some(mangle_constraint) = mangle_constraint {
+        self.factory.mangable(
+          self.factory.boolean_maybe_unknown(equality),
+          (lhs, rhs),
+          mangle_constraint,
+        )
+      } else {
+        self.factory.computed(self.factory.boolean_maybe_unknown(equality), (lhs, rhs))
+      }
     })
   }
 }
