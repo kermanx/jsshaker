@@ -24,6 +24,7 @@ use crate::{
 
 pub struct Factory<'a> {
   pub allocator: &'a Allocator,
+  pub root_cf_scope: Option<CfScopeId>,
   instance_id_counter: Cell<usize>,
 
   pub r#true: Entity<'a>,
@@ -124,6 +125,7 @@ impl<'a> Factory<'a> {
 
     Factory {
       allocator,
+      root_cf_scope: None,
       instance_id_counter: Cell::new(0),
 
       r#true,
@@ -196,7 +198,7 @@ impl<'a> Factory<'a> {
       consumable,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
-      cf_scope: CfScopeId::new(0),
+      cf_scope: self.root_cf_scope.unwrap(),
       object_id,
       keyed: allocator::HashMap::new_in(self.allocator).into(),
       unknown: ObjectProperty::new_in(self.allocator).into(),

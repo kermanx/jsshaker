@@ -147,13 +147,14 @@ impl<'a> Analyzer<'a> {
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
+    let factory = self.factory;
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);
     let super_class = data.super_class.unwrap_or(self.factory.undefined);
     let variable_scope = self.variable_scope_mut();
     variable_scope.this = Some(this);
-    variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */ ]));
+    variable_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
     variable_scope.super_class = Some(super_class);
 
     if let Some(id) = &node.id {

@@ -59,9 +59,10 @@ impl<'a> Analyzer<'a> {
         consume,
       );
 
+      let factory = analyzer.factory;
       let variable_scope = analyzer.variable_scope_mut();
       variable_scope.this = Some(this);
-      variable_scope.arguments = Some((args, vec![ /* later filled by formal parameters */]));
+      variable_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
 
       let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
       if declare_in_body {

@@ -16,7 +16,7 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepAtom},
   entity::Entity,
   scope::{
-    CfScopeId, CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
+    CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
     variable_scope::VariableScope,
   },
   utils::{CalleeInfo, CalleeNode},
@@ -155,8 +155,10 @@ impl<'a> Analyzer<'a> {
     let ModuleInfo { call_id, program, .. } = self.modules.modules[module_id].clone();
     self.module_stack.push(module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
-    let root_variable_scope =
-      self.scoping.variable.push(VariableScope::new_with_this(self.factory.unknown));
+    let root_variable_scope = self
+      .scoping
+      .variable
+      .push(VariableScope::new_in_with_this(self.allocator, self.factory.unknown));
     self.scoping.call.push(CallScope::new_in(
       call_id,
       CalleeInfo {
@@ -172,7 +174,7 @@ impl<'a> Analyzer<'a> {
       true,
       false,
     ));
-    let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![CfScopeId::from(0)]);
+    let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![self.scoping.root_cf_scope]);
     self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), false));
 
     let program = unsafe { &*program.get() };

@@ -1,4 +1,5 @@
-use oxc_index::{Idx, IndexVec};
+use crate::utils::box_bump::{BoxBump, Idx};
+use oxc::allocator::Allocator;
 
 struct NodeInfo<I, T> {
   data: T,
@@ -6,20 +7,14 @@ struct NodeInfo<I, T> {
   parent: Option<I>,
 }
 
-pub struct ScopeTree<I: Idx, T> {
-  nodes: IndexVec<I, NodeInfo<I, T>>,
+pub struct ScopeTree<'a, I: Idx, T> {
+  nodes: BoxBump<'a, I, NodeInfo<I, T>>,
   pub stack: Vec<I>,
 }
 
-impl<I: Idx, T> Default for ScopeTree<I, T> {
-  fn default() -> Self {
-    Self::new()
-  }
-}
-
-impl<I: Idx, T> ScopeTree<I, T> {
-  pub fn new() -> Self {
-    ScopeTree { nodes: IndexVec::new(), stack: vec![] }
+impl<'a, I: Idx, T> ScopeTree<'a, I, T> {
+  pub fn new_in(allocator: &'a Allocator) -> Self {
+    ScopeTree { nodes: BoxBump::new(allocator), stack: vec![] }
   }
 
   pub fn current_id(&self) -> I {
@@ -31,11 +26,11 @@ impl<I: Idx, T> ScopeTree<I, T> {
   }
 
   pub fn get(&self, id: I) -> &T {
-    &self.nodes.get(id).unwrap().data
+    &self.nodes.get(id).data
   }
 
   pub fn get_mut(&mut self, id: I) -> &mut T {
-    &mut self.nodes.get_mut(id).unwrap().data
+    &mut self.nodes.get_mut(id).data
   }
 
   pub fn get_from_depth(&self, depth: usize) -> &T {
@@ -61,12 +56,15 @@ impl<I: Idx, T> ScopeTree<I, T> {
   }
 
   fn get_parent(&self, id: I) -> Option<I> {
-    self.nodes.get(id).unwrap().parent
+    self.nodes.get(id).parent
   }
 
   pub fn push(&mut self, data: T) -> I {
-    let id = I::from_usize(self.nodes.len());
-    self.nodes.push(NodeInfo { data, depth: self.stack.len(), parent: self.stack.last().copied() });
+    let id = self.nodes.alloc(NodeInfo {
+      data,
+      depth: self.stack.len(),
+      parent: self.stack.last().copied(),
+    });
     self.stack.push(id);
     id
   }
@@ -76,7 +74,7 @@ impl<I: Idx, T> ScopeTree<I, T> {
   }
 
   pub fn find_lca(&self, another: I) -> (usize, I) {
-    let another_info = self.nodes.get(another).unwrap();
+    let another_info = self.nodes.get(another);
     let current_depth = self.stack.len() - 1;
     let another_depth = another_info.depth;
     let min_depth = current_depth.min(another_depth);

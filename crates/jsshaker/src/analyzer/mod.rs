@@ -56,7 +56,8 @@ pub struct Analyzer<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_in(vfs: Box<dyn Vfs>, config: &'a TreeShakeConfig, allocator: &'a Allocator) -> Self {
-    let factory = &*allocator.alloc(Factory::new(allocator, config));
+    let factory = allocator.alloc(Factory::new(allocator, config));
+    let scoping = Scoping::new(factory);
     Analyzer {
       vfs,
       config,
@@ -68,7 +69,7 @@ impl<'a> Analyzer<'a> {
 
       module_stack: vec![],
       span_stack: vec![],
-      scoping: Scoping::new(factory),
+      scoping,
 
       data: Default::default(),
       exhausted_variables: config.remember_exhausted_variables.then(Default::default),

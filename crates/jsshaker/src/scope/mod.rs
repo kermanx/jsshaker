@@ -26,8 +26,9 @@ use crate::{
 
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
-  pub variable: ScopeTree<VariableScopeId, VariableScope<'a>>,
-  pub cf: ScopeTree<CfScopeId, CfScope<'a>>,
+  pub variable: ScopeTree<'a, VariableScopeId, VariableScope<'a>>,
+  pub cf: ScopeTree<'a, CfScopeId, CfScope<'a>>,
+  pub root_cf_scope: CfScopeId,
   pub pure: usize,
   pub try_catch_depth: Option<usize>,
 
@@ -35,11 +36,13 @@ pub struct Scoping<'a> {
 }
 
 impl<'a> Scoping<'a> {
-  pub fn new(factory: &Factory<'a>) -> Self {
-    let mut variable = ScopeTree::new();
-    variable.push(VariableScope::new_with_this(factory.unknown));
-    let mut cf = ScopeTree::new();
-    cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), false));
+  pub fn new(factory: &mut Factory<'a>) -> Self {
+    let mut variable = ScopeTree::new_in(factory.allocator);
+    let root_variable_scope =
+      variable.push(VariableScope::new_in_with_this(factory.allocator, factory.unknown));
+    let mut cf = ScopeTree::new_in(factory.allocator);
+    let root_cf_scope = cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), false));
+    factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
       call: vec![CallScope::new_in(
         DepAtom::from_counter(),
@@ -52,12 +55,13 @@ impl<'a> Scoping<'a> {
         },
         vec![],
         0,
-        VariableScopeId::from(0),
+        root_variable_scope,
         false,
         false,
       )],
       variable,
       cf,
+      root_cf_scope,
       pure: 0,
       try_catch_depth: None,
 
@@ -164,7 +168,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_variable_scope(&mut self) -> VariableScopeId {
-    self.scoping.variable.push(VariableScope::new())
+    self.scoping.variable.push(VariableScope::new_in(self.allocator))
   }
 
   pub fn pop_variable_scope(&mut self) -> VariableScopeId {

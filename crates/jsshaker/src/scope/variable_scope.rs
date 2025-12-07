@@ -1,13 +1,16 @@
 use std::{cell::RefCell, fmt};
 
-use oxc::{allocator::FromIn, semantic::SymbolId, span::Atom};
-use oxc_index::define_index_type;
-use rustc_hash::FxHashMap;
+use oxc::{
+  allocator::{self, FromIn},
+  semantic::SymbolId,
+  span::Atom,
+};
 
 use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::Analyzer,
   ast::DeclarationKind,
+  define_box_bump_idx,
   dep::{Dep, LazyDep},
   entity::Entity,
   module::NamedExport,
@@ -16,8 +19,8 @@ use crate::{
   value::{ArgumentsValue, cachable::Cachable},
 };
 
-define_index_type! {
-  pub struct VariableScopeId = u32;
+define_box_bump_idx! {
+  pub struct VariableScopeId;
 }
 
 pub type EntityOrTDZ<'a> = Option<Entity<'a>>; // None for TDZ
@@ -31,11 +34,10 @@ pub struct Variable<'a> {
   pub decl_node: AstKind2<'a>,
 }
 
-#[derive(Default)]
 pub struct VariableScope<'a> {
-  pub variables: FxHashMap<SymbolId, &'a RefCell<Variable<'a>>>,
+  pub variables: allocator::HashMap<'a, SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
-  pub arguments: Option<(ArgumentsValue<'a>, Vec<SymbolId>)>,
+  pub arguments: Option<(ArgumentsValue<'a>, allocator::Vec<'a, SymbolId>)>,
   pub super_class: Option<Entity<'a>>,
 }
 
@@ -51,14 +53,17 @@ impl fmt::Debug for VariableScope<'_> {
 }
 
 impl<'a> VariableScope<'a> {
-  pub fn new() -> Self {
-    Self::default()
+  pub fn new_in(allocator: &'a allocator::Allocator) -> Self {
+    VariableScope {
+      variables: allocator::HashMap::new_in(allocator),
+      this: None,
+      arguments: None,
+      super_class: None,
+    }
   }
 
-  pub fn new_with_this(this: Entity<'a>) -> Self {
-    let mut scope = Self::new();
-    scope.this = Some(this);
-    scope
+  pub fn new_in_with_this(allocator: &'a allocator::Allocator, this: Entity<'a>) -> Self {
+    Self { this: Some(this), ..Self::new_in(allocator) }
   }
 }
 
@@ -299,7 +304,9 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_arguments_on_scope(&mut self, id: VariableScopeId) -> bool {
-    if let Some((args_value, args_symbols)) = self.scoping.variable.get(id).arguments.clone() {
+    if let Some((args_value, args_symbols)) = &mut self.scoping.variable.get_mut(id).arguments {
+      let args_value = *args_value;
+      let args_symbols = args_symbols.drain(..).collect::<Vec<_>>();
       self.consume(args_value);
       let mut arguments_consumed = true;
       for symbol in args_symbols {

@@ -1,15 +1,15 @@
 use oxc::{ast::ast::LabeledStatement, span::Atom};
-use oxc_index::define_index_type;
 
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveData},
+  define_box_bump_idx,
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
   value::cache::FnCacheTrackingData,
 };
 
-define_index_type! {
-  pub struct CfScopeId = u32;
+define_box_bump_idx! {
+  pub struct CfScopeId;
 }
 
 #[derive(Debug)]
