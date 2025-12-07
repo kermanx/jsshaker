@@ -216,19 +216,19 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_is_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Object.is", |analyzer, _, _, args| {
+    self.factory.implemented_builtin_fn("Object.is", |analyzer, dep, _, args| {
       let lhs = args.get(analyzer, 0);
       let rhs = args.get(analyzer, 1);
       let (equality, mangle_constraint) = analyzer.op_strict_eq(lhs, rhs, true);
 
       if let Some(mangle_constraint) = mangle_constraint {
         self.factory.mangable(
-          self.factory.boolean_maybe_unknown(equality),
+          self.factory.computed(self.factory.boolean_maybe_unknown(equality), dep),
           (lhs, rhs),
           mangle_constraint,
         )
       } else {
-        self.factory.computed(self.factory.boolean_maybe_unknown(equality), (lhs, rhs))
+        self.factory.computed(self.factory.boolean_maybe_unknown(equality), (dep, lhs, rhs))
       }
     })
   }
