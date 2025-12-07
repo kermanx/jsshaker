@@ -14,7 +14,7 @@ use crate::{
   scope::VariableScopeId,
   transformer::Transformer,
   utils::{CalleeInfo, CalleeNode},
-  value::ArgumentsValue,
+  value::{ArgumentsValue, cache::FnCacheTrackingData},
 };
 
 impl<'a> Analyzer<'a> {
@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
     consume: bool,
-  ) -> Entity<'a> {
+  ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(
         callee,
@@ -88,9 +88,10 @@ impl<'a> Analyzer<'a> {
     if !consume && (node.r#async || node.generator) {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
-        runner(analyzer).consume(analyzer);
+        runner(analyzer).0.consume(analyzer);
+        analyzer.factory.never
       });
-      self.factory.unknown
+      (self.factory.unknown, FnCacheTrackingData::worst_case())
     } else {
       runner(self)
     }

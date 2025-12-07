@@ -11,21 +11,23 @@ use crate::{
   dep::{Dep, LazyDep},
   entity::Entity,
   module::NamedExport,
-  scope::rw_tracking::ReadWriteTarget,
+  scope::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   utils::ast::AstKind2,
-  value::ArgumentsValue,
+  value::{ArgumentsValue, cachable::Cachable},
 };
 
 define_index_type! {
   pub struct VariableScopeId = u32;
 }
 
+pub type EntityOrTDZ<'a> = Option<Entity<'a>>; // None for TDZ
+
 #[derive(Debug, Clone, Copy)]
 pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
   pub exhausted: Option<LazyDep<'a, Dep<'a>>>,
-  pub value: Option<Entity<'a>>,
+  pub value: EntityOrTDZ<'a>,
   pub decl_node: AstKind2<'a>,
 }
 
@@ -156,7 +158,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     id: VariableScopeId,
     symbol: SymbolId,
-  ) -> Option<Option<Entity<'a>>> {
+  ) -> Option<EntityOrTDZ<'a>> {
     self.scoping.variable.get(id).variables.get(&symbol).copied().map(|variable| {
       let variable_ref = variable.borrow();
       let value = variable_ref.value.or_else(|| {
@@ -176,8 +178,19 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         let target_cf_scope = variable_ref.cf_scope;
+        let may_change = !variable_ref.kind.is_const()
+          && !value.is_some_and(|v| v.as_cachable() == Some(Cachable::Unknown))
+          && !self.is_readonly_symbol(symbol);
         drop(variable_ref);
-        self.track_read(ReadWriteTarget::Variable(id, symbol), target_cf_scope);
+        self.track_read(
+          target_cf_scope,
+          ReadWriteTarget::Variable(id, symbol),
+          Some(if may_change {
+            TrackReadCachable::Mutable(value)
+          } else {
+            TrackReadCachable::Immutable
+          }),
+        );
         value
       };
 
@@ -341,7 +354,7 @@ impl<'a> Analyzer<'a> {
   }
 
   /// `None` for TDZ
-  pub fn read_symbol(&mut self, symbol: SymbolId) -> Option<Entity<'a>> {
+  pub fn read_symbol(&mut self, symbol: SymbolId) -> EntityOrTDZ<'a> {
     for depth in (0..self.scoping.variable.stack.len()).rev() {
       let id = self.scoping.variable.stack[depth];
       if let Some(value) = self.read_on_scope(id, symbol) {

@@ -60,6 +60,8 @@ pub struct ModuleInfo<'a> {
   pub semantic: Rc<Semantic<'a>>,
   pub call_id: DepAtom,
 
+  pub readonly_symbol_cache: FxHashMap<SymbolId, bool>,
+
   pub named_exports: FxHashMap<Atom<'a>, NamedExport<'a>>,
   pub default_export: Option<Entity<'a>>,
 
@@ -92,6 +94,13 @@ impl<'a> Analyzer<'a> {
 
   pub fn line_index(&self) -> &LineIndex {
     &self.module_info().line_index
+  }
+
+  pub fn is_readonly_symbol(&mut self, symbol_id: SymbolId) -> bool {
+    let ModuleInfo { readonly_symbol_cache, semantic, .. } = self.module_info_mut();
+    *readonly_symbol_cache
+      .entry(symbol_id)
+      .or_insert_with(|| !semantic.symbol_references(symbol_id).any(|r| r.is_write()))
   }
 
   pub fn resolve_and_import_module(&mut self, specifier: &str) -> Option<ModuleId> {
@@ -127,6 +136,8 @@ impl<'a> Analyzer<'a> {
       program,
       semantic,
       call_id: DepAtom::from_counter(),
+
+      readonly_symbol_cache: Default::default(),
 
       named_exports: Default::default(),
       default_export: Default::default(),

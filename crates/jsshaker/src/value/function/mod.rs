@@ -1,8 +1,8 @@
 mod arguments;
 mod builtin;
-mod cache;
+pub mod cache;
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 use oxc::{allocator, span::GetSpan};
 
@@ -16,6 +16,7 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
+  value::cache::FnCache,
 };
 pub use arguments::*;
 pub use builtin::*;
@@ -31,6 +32,8 @@ pub struct FunctionValue<'a> {
 
   // Workaround: The lazy dep of `this` value
   body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
+
+  cache: RefCell<FnCache<'a>>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
@@ -185,7 +188,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Object(self.statics.object_id))
+    None //  Some(Cachable::Object(self.statics.object_id))
   }
 }
 
@@ -205,7 +208,7 @@ impl<'a> FunctionValue<'a> {
     false
   }
 
-  pub fn call_impl<const IS_NEW: bool>(
+  pub fn call_impl<const IS_CTOR: bool>(
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
@@ -214,7 +217,18 @@ impl<'a> FunctionValue<'a> {
     consume: bool,
   ) -> Entity<'a> {
     let call_dep = analyzer.dep((self.callee.into_node(), dep));
-    let ret_val = match self.callee.node {
+
+    let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
+    if !consume
+      && let Some(cache_key) = cache_key
+      && let Some(cached_ret) = self.cache.borrow().get_ret(analyzer, &cache_key)
+    {
+      analyzer.refer_to_global();
+      analyzer.consume((call_dep, this, args));
+      return cached_ret;
+    }
+
+    let (ret_val, cache_tracking) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
         self.into(),
         self.callee,
@@ -251,7 +265,7 @@ impl<'a> FunctionValue<'a> {
       }
       _ => unreachable!(),
     };
-    let ret_val = if IS_NEW {
+    let ret_val = if IS_CTOR {
       let typeof_ret = ret_val.test_typeof();
       match (
         typeof_ret.intersects(TypeofResult::Object),
@@ -265,6 +279,14 @@ impl<'a> FunctionValue<'a> {
     } else {
       ret_val
     };
+
+    if let Some(cache_key) = cache_key {
+      // if cache_tracking.has_outer_deps {
+      //   println!("Has outer deps: {}", self.callee.debug_name);
+      // }
+      self.cache.borrow_mut().update_cache(cache_key, ret_val, cache_tracking);
+    }
+
     analyzer.factory.computed(ret_val, call_dep)
   }
 
@@ -323,6 +345,7 @@ impl<'a> Analyzer<'a> {
       statics,
       prototype,
       body_consumed: Cell::new(None),
+      cache: FnCache::new_in(self.allocator).into(),
     });
 
     let mut created_in_self = false;

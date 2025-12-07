@@ -16,7 +16,7 @@ simple(other1());
 export const b = simple(other2());
 export const c = simple(0, other2());
 function nested1() {
-	return simple();
+	return simple(1);
 }
 nested1(other1());
 export const d = nested1(other2());

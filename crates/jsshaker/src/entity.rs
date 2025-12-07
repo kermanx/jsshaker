@@ -40,6 +40,15 @@ impl<'a> Entity<'a> {
     std::ptr::eq(self.value, other.value) && !self.value.is_shared_value()
   }
 
+  pub fn exactly_same(self, other: Self) -> bool {
+    std::ptr::eq(self.value, other.value)
+      && match (self.dep, other.dep) {
+        (Some(d1), Some(d2)) => std::ptr::eq(d1.0, d2.0),
+        (None, None) => true,
+        _ => false,
+      }
+  }
+
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.consume(*self);
   }

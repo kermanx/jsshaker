@@ -1,3 +1,4 @@
+mod assoc;
 mod atom;
 mod collector;
 mod impls;
