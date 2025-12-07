@@ -62,10 +62,8 @@ impl<'a> Analyzer<'a> {
           target.object_read_extra().map(|id| register_deps.insert(id));
         }
       }
-      if let Some(cachable) = cachable
-        && let Some(data) = scope.fn_cache_tracking_data_mut()
-      {
-        data.track_read(target, cachable)
+      if let Some(data) = scope.fn_cache_tracking_data_mut() {
+        data.track_read(target, cachable);
       }
     }
   }

@@ -27,7 +27,15 @@ impl<'a> FnCacheTrackingData<'a> {
     Self { outer_deps: Some(allocator::HashMap::new_in(alloc)) }
   }
 
-  pub fn track_read(&mut self, target: ReadWriteTarget<'a>, cachable: TrackReadCachable<'a>) {
+  pub fn track_read(
+    &mut self,
+    target: ReadWriteTarget<'a>,
+    cachable: Option<TrackReadCachable<'a>>,
+  ) {
+    let Some(cachable) = cachable else {
+      self.outer_deps = None;
+      return;
+    };
     if let TrackReadCachable::Mutable(current_value) = cachable
       && let Some(outer_deps) = self.outer_deps.as_mut()
     {
