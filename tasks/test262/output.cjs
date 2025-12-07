@@ -56,8 +56,10 @@ process.stdin.on('end', () => {
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
 ${failedNum ? `
-## Failed Tests
+<details><summary> Failed Tests </summary>
 
 ${failedList}
+
+</details>
 ` : ''}`);
 });
