@@ -32,7 +32,7 @@ impl<'a> ReadWriteTarget<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn track_read(&mut self, id: ReadWriteTarget<'a>, target: CfScopeId) {
+  pub fn track_read(&mut self, id: ReadWriteTarget<'a>, target: CfScopeId, may_change: bool) {
     let target_depth = self.find_first_different_cf_scope(target);
     let mut registered = false;
     for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
@@ -50,9 +50,8 @@ impl<'a> Analyzer<'a> {
           id.object_read_extra().map(|id| register_deps.insert(id));
         }
       }
-      if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        // data.outer_deps.insert(id);
-        // id.object_read_extra().map(|id| data.outer_deps.insert(id));
+      if may_change && let Some(data) = scope.fn_cache_tracking_data_mut() {
+        // TODO: Only do this when: not_unknown && not_constant
         data.has_outer_deps = true;
       }
     }

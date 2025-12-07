@@ -101,7 +101,7 @@ impl<'a> ObjectValue<'a> {
 
     analyzer.pop_cf_scope();
 
-    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope);
+    analyzer.track_read(ReadWriteTarget::ObjectAll(self.object_id), self.cf_scope, true);
 
     EnumeratedProperties { known, unknown, dep: analyzer.dep((dep, context.extra_deps)) }
   }

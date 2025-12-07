@@ -216,16 +216,18 @@ impl<'a> FunctionValue<'a> {
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
+    let call_dep = analyzer.dep((self.callee.into_node(), dep));
+
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
     if !consume
       && let Some(cache_key) = cache_key
       && let Some(cached_ret) = self.cache.borrow().get_ret(analyzer, &cache_key)
     {
-      analyzer.consume((dep, this, args));
+      analyzer.refer_to_global();
+      analyzer.consume((call_dep, this, args));
       return cached_ret;
     }
 
-    let call_dep = analyzer.dep((self.callee.into_node(), dep));
     let (ret_val, cache_tracking) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
         self.into(),

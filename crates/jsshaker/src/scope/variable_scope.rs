@@ -13,7 +13,7 @@ use crate::{
   module::NamedExport,
   scope::rw_tracking::ReadWriteTarget,
   utils::ast::AstKind2,
-  value::ArgumentsValue,
+  value::{ArgumentsValue, cachable::Cachable},
 };
 
 define_index_type! {
@@ -176,8 +176,11 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         let target_cf_scope = variable_ref.cf_scope;
+        let may_change = !variable_ref.kind.is_const()
+          && !value.is_some_and(|v| v.as_cachable() == Some(Cachable::Unknown))
+          && !self.is_readonly_symbol(symbol);
         drop(variable_ref);
-        self.track_read(ReadWriteTarget::Variable(id, symbol), target_cf_scope);
+        self.track_read(ReadWriteTarget::Variable(id, symbol), target_cf_scope, may_change);
         value
       };
 
