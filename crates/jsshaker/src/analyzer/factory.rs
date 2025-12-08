@@ -231,21 +231,6 @@ impl<'a> Factory<'a> {
       .into()
   }
 
-  pub fn implemented_consumable_fn<F: BuiltinFnImplementation<'a> + 'a>(
-    &self,
-    name: &'static str,
-    implementation: F,
-  ) -> Entity<'a> {
-    self
-      .alloc(ImplementedBuiltinFnValue {
-        name,
-        implementation,
-        object: None,
-        consumed: Cell::new(false),
-      })
-      .into()
-  }
-
   pub fn dep_no_once(&self, dep: impl CustomDepTrait<'a> + 'a) -> Dep<'a> {
     Dep(self.alloc(dep))
   }

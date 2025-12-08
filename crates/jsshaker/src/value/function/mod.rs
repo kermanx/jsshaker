@@ -1,4 +1,5 @@
 mod arguments;
+pub mod bound;
 mod builtin;
 pub mod cache;
 
@@ -263,6 +264,15 @@ impl<'a> FunctionValue<'a> {
         //   analyzer.factory.unknown
         // }
       }
+      CalleeNode::BoundFunction(bound_fn) => analyzer.call_bound_function(
+        self.callee,
+        call_dep,
+        bound_fn,
+        &self.variable_scope_stack,
+        IS_CTOR.then_some(this),
+        args,
+        consume,
+      ),
       _ => unreachable!(),
     };
     let ret_val = if IS_CTOR {

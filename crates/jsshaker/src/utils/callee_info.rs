@@ -11,7 +11,7 @@ use oxc::{
 use oxc_index::define_nonmax_u32_index_type;
 
 use super::ast::AstKind2;
-use crate::{analyzer::Analyzer, module::ModuleId};
+use crate::{analyzer::Analyzer, module::ModuleId, value::bound::BoundFunction};
 
 #[derive(Debug, Clone, Copy)]
 pub enum CalleeNode<'a> {
@@ -19,6 +19,7 @@ pub enum CalleeNode<'a> {
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   ClassStatics(&'a Class<'a>),
   ClassConstructor(&'a Class<'a>),
+  BoundFunction(&'a BoundFunction<'a>),
   Root,
   Module,
 }
@@ -30,7 +31,7 @@ impl<'a> From<CalleeNode<'a>> for AstKind2<'a> {
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
       CalleeNode::ClassStatics(node) => AstKind2::Class(node),
       CalleeNode::ClassConstructor(node) => AstKind2::ClassConstructor(node),
-      CalleeNode::Root | CalleeNode::Module => AstKind2::Environment,
+      CalleeNode::BoundFunction(_) | CalleeNode::Root | CalleeNode::Module => AstKind2::Environment,
     }
   }
 }
@@ -42,6 +43,7 @@ impl GetSpan for CalleeNode<'_> {
       CalleeNode::ArrowFunctionExpression(node) => node.span(),
       CalleeNode::ClassStatics(node) => node.span(),
       CalleeNode::ClassConstructor(node) => node.span(),
+      CalleeNode::BoundFunction(f) => f.span,
       CalleeNode::Root | CalleeNode::Module => Span::default(),
     }
   }
@@ -56,6 +58,8 @@ impl PartialEq for CalleeNode<'_> {
         a.span() == b.span()
       }
       (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => a.span() == b.span(),
+      (CalleeNode::ClassConstructor(a), CalleeNode::ClassConstructor(b)) => a.span() == b.span(),
+      (CalleeNode::BoundFunction(a), CalleeNode::BoundFunction(b)) => a.span == b.span,
       _ => false,
     }
   }
@@ -111,6 +115,7 @@ impl<'a> Analyzer<'a> {
           }
           CalleeNode::ClassStatics(_) => "<ClassStatics>",
           CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+          CalleeNode::BoundFunction(_) => "<BoundFunction>",
           CalleeNode::Root => "<Root>",
           CalleeNode::Module => "<Module>",
         };

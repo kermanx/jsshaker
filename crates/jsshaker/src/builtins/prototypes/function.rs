@@ -1,5 +1,10 @@
 use super::{BuiltinPrototype, object::create_object_prototype};
-use crate::{analyzer::Factory, init_prototype, value::ArgumentsValue};
+use crate::{
+  analyzer::Factory,
+  init_prototype,
+  utils::CalleeNode,
+  value::{ArgumentsValue, bound::BoundFunction},
+};
 
 pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
@@ -18,15 +23,17 @@ pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<
       let (this_arg, args_arg) = args.split_at(analyzer, 1);
       this.call(analyzer, dep, this_arg[0], args_arg)
     }),
-    "bind" => factory.implemented_builtin_fn("Function::bind", |analyzer, dep, func, args| {
+    "bind" => factory.implemented_builtin_fn("Function::bind", |analyzer, dep, target, args| {
       let (bound_this, bound_args) = args.split_at(analyzer, 1);
       let bound_this = bound_this[0];
-      let bound_fn = analyzer.factory.implemented_consumable_fn("Function::bound_fn", move |analyzer, dep, this, args| {
-        let this = analyzer.op_undefined_or(bound_this, this);
-        let args = ArgumentsValue::from_concatenate(analyzer, bound_args, args);
-        func.call(analyzer, dep, this, args)
+      let span = analyzer.current_span();
+      let bound_fn = analyzer.factory.alloc(BoundFunction {
+        span,
+        target,
+        bound_this,
+        bound_args,
       });
-      analyzer.factory.computed(bound_fn, dep)
+      analyzer.factory.computed(analyzer.new_function(CalleeNode::BoundFunction(bound_fn)).into(), dep)
     }),
     "length" => factory.unknown_number,
     "arguments" => factory.unknown,
