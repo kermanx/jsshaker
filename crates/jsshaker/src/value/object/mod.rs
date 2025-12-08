@@ -387,9 +387,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn new_object_mangling_group(&mut self) -> ObjectManglingGroupId<'a> {
-    self.allocator.alloc(Cell::new(Some(
-      self.mangler.uniqueness_groups.alloc((allocator::Vec::new_in(self.allocator), 0)),
-    )))
+    self.allocator.alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
   }
 
   pub fn use_mangable_plain_object(

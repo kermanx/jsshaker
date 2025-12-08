@@ -4,6 +4,7 @@ use oxc::allocator::{self, Allocator};
 
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
+use crate::utils::get_two_mut_from_vec;
 use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -79,7 +80,7 @@ impl<'a> Mangler<'a> {
 
     let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
 
-    match atoms.get_two_mut(a, b) {
+    match get_two_mut_from_vec(atoms, a, b) {
       (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
         if eq {
           *x = AtomState::Preserved;
@@ -104,7 +105,7 @@ impl<'a> Mangler<'a> {
           match ((ea, ua), (eb, ub)) {
             ((Some(ia), _), (Some(ib), _)) => {
               if ia != ib {
-                let ((ga, _), (gb, _)) = identity_groups.get_two_mut(*ia, *ib);
+                let ((ga, _), (gb, _)) = get_two_mut_from_vec(identity_groups, *ia, *ib);
                 let a_is_larger = ga.len() > gb.len();
                 let (from, to) = if a_is_larger {
                   *ib = *ia;
@@ -114,7 +115,7 @@ impl<'a> Mangler<'a> {
                   (ga, gb)
                 };
                 let index = *ia;
-                for atom in from.drain(..) {
+                for atom in mem::take(from) {
                   to.push(atom);
                   let AtomState::Constrained(group, _) = &mut atoms[atom] else {
                     unreachable!();
@@ -132,15 +133,13 @@ impl<'a> Mangler<'a> {
               identity_groups[*ib].0.push(a);
             }
             ((ia @ None, _), (ib @ None, _)) => {
-              let id = identity_groups
-                .alloc((allocator::Vec::from_array_in([a, b], self.allocator), None));
+              let id = identity_groups.push((vec![a, b], None));
               *ia = Some(id);
               *ib = Some(id);
             }
           }
         } else {
-          let id =
-            uniqueness_groups.alloc((allocator::Vec::from_array_in([a, b], self.allocator), 0));
+          let id = uniqueness_groups.push((vec![a, b], 0));
           ua.insert(id);
           ub.insert(id);
         }
@@ -157,12 +156,12 @@ impl<'a> Mangler<'a> {
       mem::replace(state, AtomState::NonMangable)
     {
       if let Some(index) = identity_group {
-        for atom in self.identity_groups[index].0.drain(..).collect::<Vec<_>>() {
+        for atom in mem::take(&mut self.identity_groups[index].0) {
           self.mark_atom_non_mangable(atom);
         }
       }
       for index in uniqueness_groups {
-        for atom in self.uniqueness_groups[index].0.drain(..).collect::<Vec<_>>() {
+        for atom in mem::take(&mut self.uniqueness_groups[index].0) {
           self.mark_atom_non_mangable(atom);
         }
       }
@@ -170,7 +169,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn mark_uniqueness_group_non_mangable(&mut self, group: UniquenessGroupId) {
-    for atom in self.uniqueness_groups[group].0.drain(..).collect::<Vec<_>>() {
+    for atom in mem::take(&mut self.uniqueness_groups[group].0) {
       self.mark_atom_non_mangable(atom);
     }
   }
@@ -199,7 +198,7 @@ impl<'a> Mangler<'a> {
     let atom = mem::replace(&mut atoms[atom], AtomState::Constant(value));
 
     if let AtomState::Constrained(Some(identity_group), _) = atom {
-      for atom in identity_groups[identity_group].0.drain(..) {
+      for atom in mem::take(&mut identity_groups[identity_group].0) {
         atoms[atom] = AtomState::Constant(value);
       }
     }
