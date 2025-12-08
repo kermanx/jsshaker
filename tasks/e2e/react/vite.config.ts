@@ -13,7 +13,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'classnames', 'dayjs'],
+      external: ['react', 'react/jsx-runtime', 'classnames'],
     }
   }
 })
