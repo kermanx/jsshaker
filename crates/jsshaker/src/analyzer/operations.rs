@@ -68,8 +68,8 @@ impl<'a> Analyzer<'a> {
     let rhs_lit = rhs.get_to_literals(self);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
       if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
-        let lhs_lit = *lhs_lit.iter().next().unwrap();
-        let rhs_lit = *rhs_lit.iter().next().unwrap();
+        let lhs_lit = *lhs_lit.first().unwrap();
+        let rhs_lit = *rhs_lit.first().unwrap();
         let (eq, m) = lhs_lit.strict_eq(rhs_lit, object_is);
         return (Some(eq), m);
       }

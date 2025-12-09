@@ -80,11 +80,8 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_literals(
-    &'a self,
-    _analyzer: &Analyzer<'a>,
-  ) -> Option<rustc_hash::FxHashSet<super::LiteralValue<'a>>> {
-    Some(rustc_hash::FxHashSet::default())
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<super::LiteralValue<'a>>> {
+    None
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralValue<'a>> {
     None

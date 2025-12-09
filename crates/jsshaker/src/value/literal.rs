@@ -6,7 +6,6 @@ use oxc::{
 };
 use oxc_ecmascript::StringToNumber;
 use oxc_syntax::number::ToJsString;
-use rustc_hash::FxHashSet;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
@@ -265,10 +264,8 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralValue<'a>>> {
-    let mut result = FxHashSet::default();
-    result.insert(*self);
-    Some(result)
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
+    Some(vec![*self])
   }
 
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

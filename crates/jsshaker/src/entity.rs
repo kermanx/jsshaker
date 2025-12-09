@@ -1,5 +1,3 @@
-use rustc_hash::FxHashSet;
-
 use crate::{
   Analyzer,
   analyzer::Factory,
@@ -147,7 +145,7 @@ impl<'a> Entity<'a> {
   pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.get_to_jsx_child(analyzer), analyzer)
   }
-  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralValue<'a>>> {
+  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
     self.value.get_to_literals(analyzer)
   }
   pub fn get_literal(&self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

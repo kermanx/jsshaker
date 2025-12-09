@@ -18,7 +18,7 @@ pub use function::*;
 pub use literal::LiteralValue;
 pub use object::*;
 use oxc::{allocator, semantic::SymbolId};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
 
@@ -102,7 +102,7 @@ pub trait ValueTrait<'a>: Debug {
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<FxHashSet<LiteralValue<'a>>> {
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
     None
   }
   fn get_literal(&'a self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

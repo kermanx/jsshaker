@@ -13,7 +13,6 @@ use std::{
 use oxc::allocator;
 use oxc_index::define_index_type;
 pub use property::{ObjectProperty, ObjectPropertyValue};
-use rustc_hash::FxHashSet;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
@@ -284,11 +283,7 @@ impl<'a> ObjectValue<'a> {
     self.mangling_group.get().is_some_and(|group| group.get().is_some())
   }
 
-  fn check_mangable(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    literals: &FxHashSet<LiteralValue>,
-  ) -> bool {
+  fn check_mangable(&self, analyzer: &mut Analyzer<'a>, literals: &Vec<LiteralValue>) -> bool {
     if self.is_mangable() {
       if is_literal_mangable(literals) {
         true
