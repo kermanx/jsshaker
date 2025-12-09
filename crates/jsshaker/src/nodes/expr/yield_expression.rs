@@ -4,7 +4,7 @@ use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_yield_expression(&mut self, node: &'a YieldExpression<'a>) -> Entity<'a> {
-    self.refer_to_global();
+    self.global_effect();
 
     if let Some(argument) = &node.argument {
       let argument = self.exec_expression(argument);

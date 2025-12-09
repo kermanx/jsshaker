@@ -289,7 +289,7 @@ impl<'a> Analyzer<'a> {
   pub fn exit_by_throw(&mut self, explicit: bool) -> usize {
     let target_depth = self.scoping.try_catch_depth.unwrap_or_else(|| {
       if explicit {
-        self.refer_to_global();
+        self.global_effect();
         return 0;
       }
       let mut target_depth = 0;
@@ -305,11 +305,7 @@ impl<'a> Analyzer<'a> {
     target_depth
   }
 
-  pub fn refer_to_global(&mut self) {
-    if self.is_inside_pure() {
-      return;
-    }
-
+  pub fn global_effect(&mut self) {
     let mut deps = vec![];
 
     for depth in (0..self.scoping.cf.stack.len()).rev() {

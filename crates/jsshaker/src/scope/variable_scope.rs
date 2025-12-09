@@ -412,7 +412,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn handle_tdz(&mut self) {
     self.throw_builtin_error("Cannot access variable before initialization");
-    self.refer_to_global();
+    self.global_effect();
   }
 
   pub fn get_this(&self) -> Entity<'a> {

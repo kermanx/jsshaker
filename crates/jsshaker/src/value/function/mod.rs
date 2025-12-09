@@ -224,7 +224,7 @@ impl<'a> FunctionValue<'a> {
       && let Some(cache_key) = cache_key
       && let Some(cached_ret) = self.cache.borrow().retrive(analyzer, &cache_key)
     {
-      analyzer.refer_to_global();
+      analyzer.global_effect();
       analyzer.consume((call_dep, this, args));
       return cached_ret;
     }

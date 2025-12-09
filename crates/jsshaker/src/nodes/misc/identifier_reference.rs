@@ -31,15 +31,11 @@ impl<'a> Analyzer<'a> {
       *global
     } else {
       // Unknown global
-      if self.is_inside_pure() {
-        self.factory.computed_unknown(dep)
-      } else {
-        if self.config.unknown_global_side_effects {
-          self.consume(dep);
-          self.refer_to_global();
-        }
-        self.factory.unknown
+      if self.config.unknown_global_side_effects {
+        self.consume(dep);
+        self.global_effect();
       }
+      self.factory.unknown
     }
   }
 
@@ -64,7 +60,7 @@ impl<'a> Analyzer<'a> {
     } else {
       self.consume(dep);
       self.consume(value);
-      self.refer_to_global();
+      self.global_effect();
     }
   }
 }

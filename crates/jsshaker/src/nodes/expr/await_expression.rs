@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic("SyntaxError: await is only valid in async functions");
     }
 
-    self.refer_to_global();
+    self.global_effect();
 
     let value = self.exec_expression(&node.argument);
     value.r#await(self, AstKind2::AwaitExpression(node))

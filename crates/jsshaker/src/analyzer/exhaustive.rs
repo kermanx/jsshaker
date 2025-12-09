@@ -58,9 +58,7 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     let runner = Rc::new(move |analyzer: &mut Analyzer<'a>| {
       let ret_val = runner(analyzer);
-      if !analyzer.is_inside_pure() {
-        analyzer.consume(ret_val);
-      }
+      analyzer.consume(ret_val);
       ret_val
     });
     self.exec_exhaustively(kind, true, true, runner)

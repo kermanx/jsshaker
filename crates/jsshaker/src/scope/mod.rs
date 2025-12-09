@@ -29,7 +29,6 @@ pub struct Scoping<'a> {
   pub variable: ScopeTree<'a, VariableScopeId, VariableScope<'a>>,
   pub cf: ScopeTree<'a, CfScopeId, CfScope<'a>>,
   pub root_cf_scope: CfScopeId,
-  pub pure: usize,
   pub try_catch_depth: Option<usize>,
 
   pub object_symbol_counter: usize,
@@ -62,7 +61,6 @@ impl<'a> Scoping<'a> {
       variable,
       cf,
       root_cf_scope,
-      pure: 0,
       try_catch_depth: None,
 
       object_symbol_counter: 128,
@@ -98,11 +96,6 @@ impl<'a> Analyzer<'a> {
 
   pub fn variable_scope_mut(&mut self) -> &mut VariableScope<'a> {
     self.scoping.variable.get_current_mut()
-  }
-
-  pub fn is_inside_pure(&self) -> bool {
-    // TODO: self.scoping.pure > 0
-    false
   }
 
   pub fn replace_variable_scope_stack(
