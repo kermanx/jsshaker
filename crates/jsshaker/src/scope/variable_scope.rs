@@ -68,6 +68,14 @@ impl<'a> VariableScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  fn variable(
+    &self,
+    scope: VariableScopeId,
+    symbol: SymbolId,
+  ) -> Option<&'a RefCell<Variable<'a>>> {
+    self.scoping.variable.get(scope).variables.get(&symbol).copied()
+  }
+
   fn declare_on_scope(
     &mut self,
     scope: VariableScopeId,
@@ -76,7 +84,7 @@ impl<'a> Analyzer<'a> {
     decl_node: AstKind2<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    if let Some(variable) = self.scoping.variable.get(scope).variables.get(&symbol) {
+    if let Some(variable) = self.variable(scope, symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       let old_kind = variable.borrow().kind;
 
@@ -137,9 +145,7 @@ impl<'a> Analyzer<'a> {
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
   ) {
-    let variable = self.scoping.variable.get_mut(scope).variables.get_mut(&symbol).unwrap();
-
-    let mut variable = variable.borrow_mut();
+    let mut variable = self.variable(scope, symbol).unwrap().borrow_mut();
     if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         drop(variable);
@@ -164,7 +170,7 @@ impl<'a> Analyzer<'a> {
     scope: VariableScopeId,
     symbol: SymbolId,
   ) -> Option<EntityOrTDZ<'a>> {
-    let variable = self.scoping.variable.get(scope).variables.get(&symbol).copied()?.borrow();
+    let variable = self.variable(scope, symbol)?.borrow();
     let decl_node = variable.decl_node;
 
     let value = variable.value.or_else(|| {
@@ -222,8 +228,7 @@ impl<'a> Analyzer<'a> {
     symbol: SymbolId,
     new_val: Entity<'a>,
   ) -> bool {
-    let Some(variable_cell) = self.scoping.variable.get(scope).variables.get(&symbol).copied()
-    else {
+    let Some(variable_cell) = self.variable(scope, symbol) else {
       return false;
     };
     let variable = variable_cell.borrow();
@@ -255,17 +260,17 @@ impl<'a> Analyzer<'a> {
         };
         drop(variable);
 
-        let mut variable_ref = variable_cell.borrow_mut();
+        let mut variable = variable_cell.borrow_mut();
         if should_consume {
           let module_id = self.current_module();
           if let Some(exhausted_variables) = &mut self.exhausted_variables {
             exhausted_variables.insert((module_id, symbol));
           }
-          variable_ref.exhausted =
+          variable.exhausted =
             Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
-          variable_ref.value = Some(self.factory.unknown);
+          variable.value = Some(self.factory.unknown);
         } else {
-          variable_ref.value = Some(self.factory.computed(
+          variable.value = Some(self.factory.computed(
             if indeterminate {
               self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
             } else {
@@ -274,7 +279,7 @@ impl<'a> Analyzer<'a> {
             dep,
           ));
         };
-        drop(variable_ref);
+        drop(variable);
 
         self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
       }
@@ -283,17 +288,19 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn consume_on_scope(&mut self, scope: VariableScopeId, symbol: SymbolId) -> bool {
-    if let Some(variable) = self.scoping.variable.get(scope).variables.get(&symbol).copied() {
-      let variable_ref = *variable.borrow();
-      if let Some(dep) = variable_ref.exhausted {
+    if let Some(variable_cell) = self.variable(scope, symbol) {
+      let mut variable = variable_cell.borrow_mut();
+      if let Some(dep) = variable.exhausted {
         self.consume(dep);
       } else {
-        self.consume(variable_ref.decl_node);
-        self.consume(variable_ref.value);
+        variable.exhausted = Some(self.factory.consumed_lazy_dep);
+        variable.value = Some(self.factory.unknown);
 
-        let mut variable_ref = variable.borrow_mut();
-        variable_ref.exhausted = Some(self.factory.consumed_lazy_dep);
-        variable_ref.value = Some(self.factory.unknown);
+        let variable = *variable;
+        drop(variable);
+
+        self.consume(variable.decl_node);
+        self.consume(variable.value);
       }
       true
     } else {
