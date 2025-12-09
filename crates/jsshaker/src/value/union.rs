@@ -1,7 +1,7 @@
 use std::{array, cell::Cell, fmt::Debug, iter::Copied, slice};
 
 use oxc::allocator::{self, Allocator};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
@@ -234,9 +234,8 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
   }
 
   fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
-    let mut iter = self.values.iter();
-    let mut result = iter.next().unwrap().get_to_literals(analyzer)?;
-    for entity in iter {
+    let mut result = FxHashSet::default();
+    for entity in self.values.iter() {
       result.extend(entity.get_to_literals(analyzer)?);
     }
     Some(Vec::from_iter(result))
