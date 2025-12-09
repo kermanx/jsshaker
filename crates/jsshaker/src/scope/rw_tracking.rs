@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn track_write(&mut self, target: ReadWriteTarget, scope: usize) -> (bool, bool) {
+  pub fn track_write(&mut self, target: ReadWriteTarget<'a>, scope: usize) -> (bool, bool) {
     let mut exhaustive = false;
     let mut indeterminate = false;
     let mut need_mark = true;
@@ -90,6 +90,9 @@ impl<'a> Analyzer<'a> {
           }
           need_mark = false;
         }
+      }
+      if let Some(data) = scope.fn_cache_tracking_data_mut() {
+        data.track_read(target, None);
       }
     }
     (exhaustive, indeterminate)
