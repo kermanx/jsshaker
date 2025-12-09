@@ -293,14 +293,13 @@ impl<'a> Analyzer<'a> {
       if let Some(dep) = variable.exhausted {
         self.consume(dep);
       } else {
+        let old_variable = *variable;
         variable.exhausted = Some(self.factory.consumed_lazy_dep);
         variable.value = Some(self.factory.unknown);
-
-        let variable = *variable;
         drop(variable);
 
-        self.consume(variable.decl_node);
-        self.consume(variable.value);
+        self.consume(old_variable.decl_node);
+        self.consume(old_variable.value);
       }
       true
     } else {
