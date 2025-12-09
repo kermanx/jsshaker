@@ -183,9 +183,19 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         let target_cf_scope = variable_ref.cf_scope;
-        let may_change = !variable_ref.kind.is_const()
-          && !value.is_some_and(|v| v.as_cachable() == Some(Cachable::Unknown))
-          && !self.is_readonly_symbol(symbol);
+        let may_change = if let Some(value) = variable_ref.value {
+          if variable_ref.kind.is_const() {
+            false
+          } else if variable_ref.kind.is_var() {
+            true
+          } else if value.as_cachable() == Some(Cachable::Unknown) {
+            false
+          } else {
+            !self.is_readonly_symbol(symbol)
+          }
+        } else {
+          true
+        };
         drop(variable_ref);
         self.track_read(
           target_cf_scope,

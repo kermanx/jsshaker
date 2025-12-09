@@ -32,30 +32,32 @@ impl<'a> FnCacheTrackingData<'a> {
     target: ReadWriteTarget<'a>,
     cachable: Option<TrackReadCachable<'a>>,
   ) {
+    let Some(outer_deps) = self.outer_deps.as_mut() else {
+      return;
+    };
     let Some(cachable) = cachable else {
       self.outer_deps = None;
       return;
     };
-    if let TrackReadCachable::Mutable(current_value) = cachable
-      && let Some(outer_deps) = self.outer_deps.as_mut()
-    {
-      if outer_deps.len() > 8 {
-        self.outer_deps = None;
-        return;
+    let TrackReadCachable::Mutable(current_value) = cachable else {
+      return;
+    };
+    if outer_deps.len() > 8 {
+      self.outer_deps = None;
+      return;
+    }
+    match outer_deps.entry(target) {
+      allocator::hash_map::Entry::Occupied(v) => {
+        if match (*v.get(), current_value) {
+          (Some(e1), Some(e2)) => !e1.exactly_same(e2),
+          (None, None) => false,
+          _ => true,
+        } {
+          self.outer_deps = None;
+        }
       }
-      match outer_deps.entry(target) {
-        allocator::hash_map::Entry::Occupied(v) => {
-          if match (*v.get(), current_value) {
-            (Some(e1), Some(e2)) => !e1.exactly_same(e2),
-            (None, None) => false,
-            _ => true,
-          } {
-            self.outer_deps = None;
-          }
-        }
-        allocator::hash_map::Entry::Vacant(v) => {
-          v.insert(current_value);
-        }
+      allocator::hash_map::Entry::Vacant(v) => {
+        v.insert(current_value);
       }
     }
   }
