@@ -19,6 +19,7 @@ pub use analyzer::Analyzer;
 pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 use mangling::ManglerTransformer;
 use module::ModuleInfo;
+pub use oxc;
 use oxc::{
   allocator::Allocator,
   codegen::{Codegen, CodegenOptions, CodegenReturn},
