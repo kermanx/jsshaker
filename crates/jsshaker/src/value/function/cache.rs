@@ -10,12 +10,17 @@ use crate::{
   value::{ArgumentsValue, cachable::Cachable},
 };
 
-type FnOuterDeps<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>;
+type FnReadDeps<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>;
+type FnWriteEffects<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>;
 
 #[derive(Debug, Default)]
-pub struct FnCacheTrackingData<'a> {
-  // pub outer_deps: allocator::HashSet<'a, ReadWriteTarget<'a>>,
-  pub outer_deps: Option<FnOuterDeps<'a>>,
+pub enum FnCacheTrackingData<'a> {
+  #[default]
+  UnTrackable,
+  Tracked {
+    read_deps: FnReadDeps<'a>,
+    write_effects: FnWriteEffects<'a>,
+  },
 }
 
 impl<'a> FnCacheTrackingData<'a> {
@@ -24,7 +29,10 @@ impl<'a> FnCacheTrackingData<'a> {
   }
 
   pub fn new_in(alloc: &'a allocator::Allocator) -> Self {
-    Self { outer_deps: Some(allocator::HashMap::new_in(alloc)) }
+    Self::Tracked {
+      read_deps: allocator::HashMap::new_in(alloc),
+      write_effects: allocator::HashMap::new_in(alloc),
+    }
   }
 
   pub fn track_read(
@@ -32,34 +40,46 @@ impl<'a> FnCacheTrackingData<'a> {
     target: ReadWriteTarget<'a>,
     cachable: Option<TrackReadCachable<'a>>,
   ) {
-    let Some(outer_deps) = self.outer_deps.as_mut() else {
+    let Self::Tracked { read_deps, .. } = self else {
       return;
     };
     let Some(cachable) = cachable else {
-      self.outer_deps = None;
+      *self = Self::UnTrackable;
       return;
     };
     let TrackReadCachable::Mutable(current_value) = cachable else {
       return;
     };
-    if outer_deps.len() > 8 {
-      self.outer_deps = None;
+    if read_deps.len() > 8 {
+      *self = Self::UnTrackable;
       return;
     }
-    match outer_deps.entry(target) {
+    match read_deps.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
+        // TODO: Remove these?
         if match (*v.get(), current_value) {
           (Some(e1), Some(e2)) => !e1.exactly_same(e2),
           (None, None) => false,
           _ => true,
         } {
-          self.outer_deps = None;
+          *self = Self::UnTrackable;
         }
       }
       allocator::hash_map::Entry::Vacant(v) => {
         v.insert(current_value);
       }
     }
+  }
+
+  pub fn track_write(&mut self, target: ReadWriteTarget<'a>, cachable: Option<(bool, Entity<'a>)>) {
+    let Self::Tracked { write_effects, .. } = self else {
+      return;
+    };
+    let Some(cachable) = cachable else {
+      *self = Self::UnTrackable;
+      return;
+    };
+    write_effects.insert(target, cachable);
   }
 }
 
@@ -72,7 +92,8 @@ pub struct FnCacheEntryKey<'a> {
 
 #[derive(Debug)]
 pub struct FnCacheEntryValue<'a> {
-  pub outer_deps: FnOuterDeps<'a>,
+  pub read_deps: FnReadDeps<'a>,
+  pub write_effects: FnWriteEffects<'a>,
   pub ret: Cachable<'a>,
 }
 
@@ -106,10 +127,13 @@ impl<'a> FnCache<'a> {
     Some(FnCacheEntryKey { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
   }
 
-  pub fn get_ret(&self, analyzer: &Analyzer<'a>, key: &FnCacheEntryKey<'a>) -> Option<Entity<'a>> {
-    // self.table.get(key).map(|v| v.ret.into_entity(analyzer))
+  pub fn retrive(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    key: &FnCacheEntryKey<'a>,
+  ) -> Option<Entity<'a>> {
     if let Some(cached) = self.table.get(key) {
-      for (&target, &last_value) in &cached.outer_deps {
+      for (&target, &last_value) in &cached.read_deps {
         let current_value = analyzer.get_rw_target_current_value(target);
         if match (last_value, current_value) {
           (Some(e1), Some(e2)) => !e1.exactly_same(e2),
@@ -119,6 +143,11 @@ impl<'a> FnCache<'a> {
           return None;
         }
       }
+
+      for (&target, &(indeterminate, cachable)) in &cached.write_effects {
+        analyzer.set_rw_target_current_value(target, cachable, indeterminate);
+      }
+
       Some(cached.ret.into_entity(analyzer))
     } else {
       None
@@ -131,12 +160,12 @@ impl<'a> FnCache<'a> {
     ret: Entity<'a>,
     tracking: FnCacheTrackingData<'a>,
   ) {
-    let Some(outer_deps) = tracking.outer_deps else {
+    let FnCacheTrackingData::Tracked { read_deps, write_effects } = tracking else {
       return;
     };
     let Some(ret) = ret.as_cachable() else {
       return;
     };
-    self.table.insert(key, FnCacheEntryValue { outer_deps, ret });
+    self.table.insert(key, FnCacheEntryValue { read_deps, write_effects, ret });
   }
 }

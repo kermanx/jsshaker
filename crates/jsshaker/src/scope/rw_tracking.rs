@@ -68,31 +68,46 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn track_write(&mut self, target: ReadWriteTarget<'a>, scope: usize) -> (bool, bool) {
+  pub fn track_write(
+    &mut self,
+    scope_depth: usize,
+    target: ReadWriteTarget<'a>,
+    cachable: Option<Entity<'a>>,
+  ) -> (bool, bool) {
     let mut exhaustive = false;
     let mut indeterminate = false;
-    let mut need_mark = true;
-    for depth in scope..self.scoping.cf.stack.len() {
+    let mut must_mark = true;
+    let mut has_fn_scope = false;
+    for depth in scope_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       indeterminate |= scope.is_indeterminate();
+      has_fn_scope |= scope.kind.is_function();
       if let Some(data) = scope.exhaustive_data_mut() {
         exhaustive = true;
-        if (need_mark || data.register_deps.is_some())
+        if (must_mark || data.register_deps.is_some())
           && data.clean
           && let Some(temp_deps) = &data.temp_deps
         {
-          if temp_deps.contains(&target) {
-            data.clean = false;
-          } else if let Some(id) = target.object_write_extra()
-            && temp_deps.contains(&id)
+          if temp_deps.contains(&target)
+            || target.object_write_extra().is_some_and(|t| temp_deps.contains(&t))
           {
             data.clean = false;
           }
-          need_mark = false;
+          must_mark = false;
         }
       }
-      if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.track_read(target, None);
+    }
+    if has_fn_scope
+      && let Some(entity) = cachable
+      && entity.as_cachable().is_some()
+    {
+      let mut indeterminate = false;
+      for depth in (scope_depth..self.scoping.cf.stack.len()).rev() {
+        let scope = self.scoping.cf.get_mut_from_depth(depth);
+        indeterminate |= scope.is_indeterminate();
+        if let Some(data) = scope.fn_cache_tracking_data_mut() {
+          data.track_write(target, Some((indeterminate, entity)));
+        }
       }
     }
     (exhaustive, indeterminate)
@@ -103,6 +118,21 @@ impl<'a> Analyzer<'a> {
       ReadWriteTarget::Variable(scope, symbol) => {
         let scope = self.scoping.variable.get(scope);
         scope.variables[&symbol].borrow().value
+      }
+      _ => unreachable!(),
+    }
+  }
+
+  pub fn set_rw_target_current_value(
+    &mut self,
+    target: ReadWriteTarget<'a>,
+    value: Entity<'a>,
+    indeterminate: bool,
+  ) {
+    match target {
+      ReadWriteTarget::Variable(scope, symbol) => {
+        let written = self.write_on_scope(scope, symbol, value, indeterminate);
+        debug_assert!(written);
       }
       _ => unreachable!(),
     }

@@ -77,8 +77,9 @@ impl<'a> ObjectValue<'a> {
             &mut deferred_deps,
           ) {
             analyzer.track_write(
-              ReadWriteTarget::ObjectField(self.object_id, key_literal.into()),
               target_depth,
+              ReadWriteTarget::ObjectField(self.object_id, key_literal.into()),
+              None,
             );
             analyzer
               .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
@@ -122,7 +123,7 @@ impl<'a> ObjectValue<'a> {
       }
     } else {
       if is_exhaustive {
-        analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
+        analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
       }
       analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
 

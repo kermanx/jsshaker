@@ -47,7 +47,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     self.rest.borrow().consume(analyzer);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
+    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -389,7 +389,7 @@ impl<'a> ArrayValue<'a> {
       }
     }
 
-    analyzer.track_write(ReadWriteTarget::ObjectAll(self.object_id), target_depth);
+    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
 
     (is_exhaustive, indeterminate, exec_deps)

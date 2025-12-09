@@ -222,7 +222,7 @@ impl<'a> FunctionValue<'a> {
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
     if !consume
       && let Some(cache_key) = cache_key
-      && let Some(cached_ret) = self.cache.borrow().get_ret(analyzer, &cache_key)
+      && let Some(cached_ret) = self.cache.borrow().retrive(analyzer, &cache_key)
     {
       analyzer.refer_to_global();
       analyzer.consume((call_dep, this, args));

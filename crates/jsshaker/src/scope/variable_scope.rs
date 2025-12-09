@@ -106,7 +106,7 @@ impl<'a> Analyzer<'a> {
         variable.decl_node = decl_node;
         drop(variable);
         if let Some(new_val) = fn_value {
-          self.write_on_scope(scope, symbol, new_val);
+          self.write_on_scope(scope, symbol, new_val, false);
         }
       } else {
         // Re-declaration
@@ -122,7 +122,8 @@ impl<'a> Analyzer<'a> {
       let variable = self.allocator.alloc(RefCell::new(Variable {
         kind,
         cf_scope: if kind.is_var() {
-          self.cf_scope_id_of_call_scope()
+          let depth = self.call_scope().cf_scope_depth;
+          self.scoping.cf.stack[depth]
         } else {
           self.scoping.cf.current_id()
         },
@@ -149,7 +150,7 @@ impl<'a> Analyzer<'a> {
     if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         drop(variable);
-        self.write_on_scope(scope, symbol, self.factory.computed(value, init_node));
+        self.write_on_scope(scope, symbol, self.factory.computed(value, init_node), false);
       } else {
         // Do nothing
       }
@@ -186,7 +187,7 @@ impl<'a> Analyzer<'a> {
         None
       }
     } else {
-      let target_cf_scope = variable.cf_scope;
+      let cf_scope = variable.cf_scope;
       let may_change = if let Some(value) = variable.value {
         if variable.kind.is_const() {
           false
@@ -202,7 +203,7 @@ impl<'a> Analyzer<'a> {
       };
       drop(variable);
       self.track_read(
-        target_cf_scope,
+        cf_scope,
         ReadWriteTarget::Variable(scope, symbol),
         Some(if may_change {
           TrackReadCachable::Mutable(value)
@@ -222,11 +223,12 @@ impl<'a> Analyzer<'a> {
     Some(value)
   }
 
-  fn write_on_scope(
+  pub fn write_on_scope(
     &mut self,
     scope: VariableScopeId,
     symbol: SymbolId,
     new_val: Entity<'a>,
+    force_indeterminate: bool,
   ) -> bool {
     let Some(variable_cell) = self.variable(scope, symbol) else {
       return false;
@@ -247,12 +249,12 @@ impl<'a> Analyzer<'a> {
         deps.push(self, self.dep((dep, new_val)));
       } else {
         let old_val = variable.value;
-        let (should_consume, indeterminate) = if old_val.is_some() {
+        let (should_consume, cf_indeterminate) = if old_val.is_some() {
           // Normal write
-          self.track_write(ReadWriteTarget::Variable(scope, symbol), target_cf_scope)
+          self.track_write(target_cf_scope, ReadWriteTarget::Variable(scope, symbol), Some(new_val))
         } else if variable.kind.is_redeclarable() {
           // Write uninitialized `var`
-          self.track_write(ReadWriteTarget::Variable(scope, symbol), target_cf_scope)
+          self.track_write(target_cf_scope, ReadWriteTarget::Variable(scope, symbol), Some(new_val))
         } else {
           // TDZ write
           self.handle_tdz();
@@ -271,7 +273,7 @@ impl<'a> Analyzer<'a> {
           variable.value = Some(self.factory.unknown);
         } else {
           variable.value = Some(self.factory.computed(
-            if indeterminate {
+            if force_indeterminate || cf_indeterminate {
               self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
             } else {
               new_val
@@ -392,7 +394,7 @@ impl<'a> Analyzer<'a> {
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
     for depth in (0..self.scoping.variable.stack.len()).rev() {
       let id = self.scoping.variable.stack[depth];
-      if self.write_on_scope(id, symbol, new_val) {
+      if self.write_on_scope(id, symbol, new_val, false) {
         return;
       }
     }

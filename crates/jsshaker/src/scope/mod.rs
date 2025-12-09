@@ -92,11 +92,6 @@ impl<'a> Analyzer<'a> {
     self.scoping.cf.get_current_mut()
   }
 
-  pub fn cf_scope_id_of_call_scope(&self) -> CfScopeId {
-    let depth = self.call_scope().cf_scope_depth;
-    self.scoping.cf.stack[depth]
-  }
-
   pub fn variable_scope(&self) -> &VariableScope<'a> {
     self.scoping.variable.get_current()
   }
