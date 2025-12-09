@@ -70,13 +70,13 @@ impl<'a> VariableScope<'a> {
 impl<'a> Analyzer<'a> {
   fn declare_on_scope(
     &mut self,
-    id: VariableScopeId,
+    scope: VariableScopeId,
     kind: DeclarationKind,
     symbol: SymbolId,
     decl_node: AstKind2<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol) {
+    if let Some(variable) = self.scoping.variable.get(scope).variables.get(&symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       let old_kind = variable.borrow().kind;
 
@@ -98,7 +98,7 @@ impl<'a> Analyzer<'a> {
         variable.decl_node = decl_node;
         drop(variable);
         if let Some(new_val) = fn_value {
-          self.write_on_scope(id, symbol, new_val);
+          self.write_on_scope(scope, symbol, new_val);
         }
       } else {
         // Re-declaration
@@ -123,27 +123,27 @@ impl<'a> Analyzer<'a> {
         value: if exhausted { Some(self.factory.unknown) } else { fn_value },
         decl_node,
       }));
-      self.scoping.variable.get_mut(id).variables.insert(symbol, variable);
+      self.scoping.variable.get_mut(scope).variables.insert(symbol, variable);
       if has_fn_value {
-        self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
+        self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
       }
     }
   }
 
   fn init_on_scope(
     &mut self,
-    id: VariableScopeId,
+    scope: VariableScopeId,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
   ) {
-    let variable = self.scoping.variable.get_mut(id).variables.get_mut(&symbol).unwrap();
+    let variable = self.scoping.variable.get_mut(scope).variables.get_mut(&symbol).unwrap();
 
     let mut variable = variable.borrow_mut();
     if variable.kind.is_redeclarable() {
       if let Some(value) = value {
         drop(variable);
-        self.write_on_scope(id, symbol, self.factory.computed(value, init_node));
+        self.write_on_scope(scope, symbol, self.factory.computed(value, init_node));
       } else {
         // Do nothing
       }
@@ -152,7 +152,7 @@ impl<'a> Analyzer<'a> {
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
-      self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
+      self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
     }
   }
 
@@ -161,128 +161,129 @@ impl<'a> Analyzer<'a> {
   /// Some(Some(val)): in this scope, and val is the value
   pub fn read_on_scope(
     &mut self,
-    id: VariableScopeId,
+    scope: VariableScopeId,
     symbol: SymbolId,
   ) -> Option<EntityOrTDZ<'a>> {
-    self.scoping.variable.get(id).variables.get(&symbol).copied().map(|variable| {
-      let variable_ref = variable.borrow();
-      let value = variable_ref.value.or_else(|| {
-        variable_ref
-          .kind
-          .is_var()
-          .then(|| self.factory.computed(self.factory.undefined, variable_ref.decl_node))
-      });
+    let variable = self.scoping.variable.get(scope).variables.get(&symbol).copied()?.borrow();
+    let decl_node = variable.decl_node;
 
-      let value = if let Some(dep) = variable_ref.exhausted {
-        drop(variable_ref);
-        if let Some(value) = value {
-          Some(self.factory.computed(value, dep))
+    let value = variable.value.or_else(|| {
+      variable.kind.is_var().then(|| self.factory.computed(self.factory.undefined, decl_node))
+    });
+
+    let value = if let Some(dep) = variable.exhausted {
+      drop(variable);
+      if let Some(value) = value {
+        Some(self.factory.computed(value, dep))
+      } else {
+        self.consume(dep);
+        None
+      }
+    } else {
+      let target_cf_scope = variable.cf_scope;
+      let may_change = if let Some(value) = variable.value {
+        if variable.kind.is_const() {
+          false
+        } else if variable.kind.is_var() {
+          true
+        } else if value.as_cachable() == Some(Cachable::Unknown) {
+          false
         } else {
-          self.consume(dep);
-          None
+          !self.is_readonly_symbol(symbol)
         }
       } else {
-        let target_cf_scope = variable_ref.cf_scope;
-        let may_change = if let Some(value) = variable_ref.value {
-          if variable_ref.kind.is_const() {
-            false
-          } else if variable_ref.kind.is_var() {
-            true
-          } else if value.as_cachable() == Some(Cachable::Unknown) {
-            false
-          } else {
-            !self.is_readonly_symbol(symbol)
-          }
+        true
+      };
+      drop(variable);
+      self.track_read(
+        target_cf_scope,
+        ReadWriteTarget::Variable(scope, symbol),
+        Some(if may_change {
+          TrackReadCachable::Mutable(value)
         } else {
-          true
+          TrackReadCachable::Immutable
+        }),
+      );
+      value
+    };
+
+    if value.is_none() {
+      // TDZ
+      self.consume(decl_node);
+      self.handle_tdz();
+    }
+
+    Some(value)
+  }
+
+  fn write_on_scope(
+    &mut self,
+    scope: VariableScopeId,
+    symbol: SymbolId,
+    new_val: Entity<'a>,
+  ) -> bool {
+    let Some(variable_cell) = self.scoping.variable.get(scope).variables.get(&symbol).copied()
+    else {
+      return false;
+    };
+    let variable = variable_cell.borrow();
+    let kind = variable.kind;
+    if kind.is_untracked() {
+      self.consume(new_val);
+    } else if kind.is_const() {
+      self.throw_builtin_error("Cannot assign to const variable");
+      self.consume(variable.decl_node);
+      new_val.consume(self);
+    } else {
+      let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
+      let dep = (self.get_exec_dep(target_cf_scope), variable.decl_node);
+
+      if let Some(deps) = variable.exhausted {
+        deps.push(self, self.dep((dep, new_val)));
+      } else {
+        let old_val = variable.value;
+        let (should_consume, indeterminate) = if old_val.is_some() {
+          // Normal write
+          self.track_write(ReadWriteTarget::Variable(scope, symbol), target_cf_scope)
+        } else if variable.kind.is_redeclarable() {
+          // Write uninitialized `var`
+          self.track_write(ReadWriteTarget::Variable(scope, symbol), target_cf_scope)
+        } else {
+          // TDZ write
+          self.handle_tdz();
+          (true, false)
+        };
+        drop(variable);
+
+        let mut variable_ref = variable_cell.borrow_mut();
+        if should_consume {
+          let module_id = self.current_module();
+          if let Some(exhausted_variables) = &mut self.exhausted_variables {
+            exhausted_variables.insert((module_id, symbol));
+          }
+          variable_ref.exhausted =
+            Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
+          variable_ref.value = Some(self.factory.unknown);
+        } else {
+          variable_ref.value = Some(self.factory.computed(
+            if indeterminate {
+              self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
+            } else {
+              new_val
+            },
+            dep,
+          ));
         };
         drop(variable_ref);
-        self.track_read(
-          target_cf_scope,
-          ReadWriteTarget::Variable(id, symbol),
-          Some(if may_change {
-            TrackReadCachable::Mutable(value)
-          } else {
-            TrackReadCachable::Immutable
-          }),
-        );
-        value
-      };
 
-      if value.is_none() {
-        // TDZ
-        let variable_ref = variable.borrow();
-        self.consume(variable_ref.decl_node);
-        self.handle_tdz();
+        self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
       }
-
-      value
-    })
-  }
-
-  fn write_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId, new_val: Entity<'a>) -> bool {
-    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol).copied() {
-      let kind = variable.borrow().kind;
-      if kind.is_untracked() {
-        self.consume(new_val);
-      } else if kind.is_const() {
-        self.throw_builtin_error("Cannot assign to const variable");
-        self.consume(variable.borrow().decl_node);
-        new_val.consume(self);
-      } else {
-        let variable_ref = variable.borrow();
-        let target_cf_scope = self.find_first_different_cf_scope(variable_ref.cf_scope);
-        let dep = (self.get_exec_dep(target_cf_scope), variable_ref.decl_node);
-
-        if let Some(deps) = variable_ref.exhausted {
-          deps.push(self, self.dep((dep, new_val)));
-        } else {
-          let old_val = variable_ref.value;
-          let (should_consume, indeterminate) = if old_val.is_some() {
-            // Normal write
-            self.track_write(ReadWriteTarget::Variable(id, symbol), target_cf_scope)
-          } else if variable_ref.kind.is_redeclarable() {
-            // Write uninitialized `var`
-            self.track_write(ReadWriteTarget::Variable(id, symbol), target_cf_scope)
-          } else {
-            // TDZ write
-            self.handle_tdz();
-            (true, false)
-          };
-          drop(variable_ref);
-
-          let mut variable_ref = variable.borrow_mut();
-          if should_consume {
-            let module_id = self.current_module();
-            if let Some(exhausted_variables) = &mut self.exhausted_variables {
-              exhausted_variables.insert((module_id, symbol));
-            }
-            variable_ref.exhausted =
-              Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
-            variable_ref.value = Some(self.factory.unknown);
-          } else {
-            variable_ref.value = Some(self.factory.computed(
-              if indeterminate {
-                self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
-              } else {
-                new_val
-              },
-              dep,
-            ));
-          };
-          drop(variable_ref);
-
-          self.request_exhaustive_callbacks(ReadWriteTarget::Variable(id, symbol));
-        }
-      }
-      true
-    } else {
-      false
     }
+    true
   }
 
-  pub fn consume_on_scope(&mut self, id: VariableScopeId, symbol: SymbolId) -> bool {
-    if let Some(variable) = self.scoping.variable.get(id).variables.get(&symbol).copied() {
+  pub fn consume_on_scope(&mut self, scope: VariableScopeId, symbol: SymbolId) -> bool {
+    if let Some(variable) = self.scoping.variable.get(scope).variables.get(&symbol).copied() {
       let variable_ref = *variable.borrow();
       if let Some(dep) = variable_ref.exhausted {
         self.consume(dep);
@@ -313,14 +314,14 @@ impl<'a> Analyzer<'a> {
     assert!(old.is_none());
   }
 
-  pub fn consume_arguments_on_scope(&mut self, id: VariableScopeId) -> bool {
-    if let Some((args_value, args_symbols)) = &mut self.scoping.variable.get_mut(id).arguments {
+  pub fn consume_arguments_on_scope(&mut self, scope: VariableScopeId) -> bool {
+    if let Some((args_value, args_symbols)) = &mut self.scoping.variable.get_mut(scope).arguments {
       let args_value = *args_value;
       let args_symbols = args_symbols.drain(..).collect::<Vec<_>>();
       self.consume(args_value);
       let mut arguments_consumed = true;
       for symbol in args_symbols {
-        if !self.consume_on_scope(id, symbol) {
+        if !self.consume_on_scope(scope, symbol) {
           // Still inside parameter declaration
           arguments_consumed = false;
         }
