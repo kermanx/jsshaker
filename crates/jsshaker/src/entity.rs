@@ -17,7 +17,7 @@ pub struct Entity<'a> {
 impl<'a> Entity<'a> {
   fn forward_dep(&self, dep: impl DepTrait<'a> + 'a, analyzer: &Analyzer<'a>) -> Dep<'a> {
     if let Some(d) = self.dep {
-      analyzer.factory.dep((d, dep))
+      analyzer.factory.dep_no_once((d, dep))
     } else {
       dep.uniform(analyzer.factory.allocator)
     }
@@ -27,7 +27,7 @@ impl<'a> Entity<'a> {
     Entity {
       value: entity.value,
       dep: match (self.dep, entity.dep) {
-        (Some(d1), Some(d2)) => Some(analyzer.factory.dep((d1, d2))),
+        (Some(d1), Some(d2)) => Some(analyzer.factory.dep_no_once((d1, d2))),
         (Some(d), None) | (None, Some(d)) => Some(d),
         (None, None) => None,
       },
@@ -248,7 +248,7 @@ impl<'a> Factory<'a> {
     Entity {
       value: entity.value,
       dep: if let Some(d) = entity.dep {
-        Some((d, dep).uniform(self.allocator))
+        Some(self.dep_no_once((d, dep)))
       } else {
         Some(dep.uniform(self.allocator))
       },
