@@ -97,16 +97,13 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    if has_fn_scope
-      && let Some(entity) = cacheable
-      && entity.as_cacheable().is_some()
-    {
+    if has_fn_scope {
       let mut indeterminate = false;
       for depth in (scope_depth..self.scoping.cf.stack.len()).rev() {
         let scope = self.scoping.cf.get_mut_from_depth(depth);
         indeterminate |= scope.is_indeterminate();
         if let Some(data) = scope.fn_cache_tracking_data_mut() {
-          data.track_write(target, Some((indeterminate, entity)));
+          data.track_write(target, cacheable.map(|e| (indeterminate, e)));
         }
       }
     }
