@@ -17,8 +17,8 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, ObjectPrototype, ValueTrait, cache::FnCacheTrackingData},
+  utils::CalleeNode,
+  value::{ArgumentsValue, FunctionValue, ObjectPrototype, ValueTrait, cache::FnCacheTrackingData},
 };
 
 #[derive(Default)]
@@ -54,15 +54,6 @@ impl<'a> Analyzer<'a> {
     };
 
     // Enter class statics scope
-    let variable_scope_stack = self.scoping.variable.stack.clone();
-    self.push_call_scope(
-      self.new_callee_info(CalleeNode::ClassStatics(node)),
-      self.factory.no_dep,
-      variable_scope_stack,
-      false,
-      false,
-      false,
-    );
     self.variable_scope_mut().super_class =
       Some(data.super_class.unwrap_or(self.factory.undefined));
 
@@ -118,8 +109,6 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    self.pop_call_scope();
-
     let class = class.into();
     data.value = Some(class);
     class
@@ -139,7 +128,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_class_constructor(
     &mut self,
-    callee: CalleeInfo<'a>,
+    func: &'a FunctionValue<'a>,
     call_dep: Dep<'a>,
     node: &'a Class<'a>,
     variable_scopes: &'a [VariableScopeId],
@@ -150,7 +139,7 @@ impl<'a> Analyzer<'a> {
     let factory = self.factory;
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
-    self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);
+    self.push_call_scope(func, call_dep, variable_scopes.to_vec(), false, false, consume);
     let super_class = data.super_class.unwrap_or(self.factory.undefined);
     let variable_scope = self.variable_scope_mut();
     variable_scope.this = Some(this);

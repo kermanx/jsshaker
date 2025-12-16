@@ -222,7 +222,7 @@ impl<'a> FunctionValue<'a> {
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
     if !consume
       && let Some(cache_key) = cache_key
-      && let Some(cached_ret) = self.cache.borrow().retrive(analyzer, &cache_key)
+      && let Some(cached_ret) = self.cache.borrow().retrieve(analyzer, &cache_key)
     {
       analyzer.global_effect();
       analyzer.consume((call_dep, this, args));
@@ -231,8 +231,7 @@ impl<'a> FunctionValue<'a> {
 
     let (ret_val, cache_tracking) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(
-        self.into(),
-        self.callee,
+        self,
         call_dep,
         node,
         &self.variable_scope_stack,
@@ -241,7 +240,7 @@ impl<'a> FunctionValue<'a> {
         consume,
       ),
       CalleeNode::ArrowFunctionExpression(node) => analyzer.call_arrow_function_expression(
-        self.callee,
+        self,
         call_dep,
         node,
         &self.variable_scope_stack,
@@ -251,7 +250,7 @@ impl<'a> FunctionValue<'a> {
       CalleeNode::ClassConstructor(node) => {
         // if !CTOR {
         analyzer.call_class_constructor(
-          self.callee,
+          self,
           call_dep,
           node,
           &self.variable_scope_stack,
@@ -265,7 +264,7 @@ impl<'a> FunctionValue<'a> {
         // }
       }
       CalleeNode::BoundFunction(bound_fn) => analyzer.call_bound_function(
-        self.callee,
+        self,
         call_dep,
         bound_fn,
         &self.variable_scope_stack,

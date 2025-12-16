@@ -13,8 +13,8 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, cache::FnCacheTrackingData},
+  utils::CalleeNode,
+  value::{ArgumentsValue, FunctionValue, cache::FnCacheTrackingData},
 };
 
 impl<'a> Analyzer<'a> {
@@ -40,8 +40,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_function(
     &mut self,
-    fn_entity: Entity<'a>,
-    callee: CalleeInfo<'a>,
+    func: &'a FunctionValue<'a>,
     call_dep: Dep<'a>,
     node: &'a Function<'a>,
     variable_scopes: &'a [VariableScopeId],
@@ -51,7 +50,7 @@ impl<'a> Analyzer<'a> {
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(
-        callee,
+        func,
         call_dep,
         variable_scopes.to_vec(),
         node.r#async,
@@ -72,7 +71,7 @@ impl<'a> Analyzer<'a> {
           AstKind2::BindingIdentifier(id),
           false,
           DeclarationKind::NamedFunctionInBody,
-          Some(analyzer.factory.computed(fn_entity, AstKind2::BindingIdentifier(id))),
+          Some(analyzer.factory.computed(func.into(), AstKind2::BindingIdentifier(id))),
         );
       }
 

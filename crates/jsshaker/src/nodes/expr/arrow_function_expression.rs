@@ -10,8 +10,8 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, cache::FnCacheTrackingData},
+  utils::CalleeNode,
+  value::{ArgumentsValue, FunctionValue, cache::FnCacheTrackingData},
 };
 
 impl<'a> Analyzer<'a> {
@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_arrow_function_expression(
     &mut self,
-    callee: CalleeInfo<'a>,
+    func: &'a FunctionValue<'a>,
     call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
     variable_scopes: &'a [VariableScopeId],
@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(
-        callee,
+        func,
         call_dep,
         variable_scopes.to_vec(),
         node.r#async,

@@ -20,7 +20,7 @@ use crate::{
   entity::Entity,
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
-  value::{ObjectId, cache::FnCacheTrackingData},
+  value::{FunctionValue, ObjectId, cache::FnCacheTrackingData},
 };
 
 pub struct Scoping<'a> {
@@ -106,7 +106,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    callee: CalleeInfo<'a>,
+    func: &'a FunctionValue<'a>,
     call_dep: Dep<'a>,
     variable_scope_stack: Vec<VariableScopeId>,
     is_async: bool,
@@ -118,18 +118,20 @@ impl<'a> Analyzer<'a> {
       self.refer_dep(dep_id);
     }
 
-    self.module_stack.push(callee.module_id);
+    self.module_stack.push(func.callee.module_id);
     let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
-      CfScopeKind::Function(self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator))),
+      CfScopeKind::Function(
+        self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator, func)),
+      ),
       self.factory.vec1(self.dep((call_dep, dep_id))),
       false,
     );
 
     self.scoping.call.push(CallScope::new_in(
       dep_id,
-      callee,
+      func.callee,
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
@@ -146,7 +148,7 @@ impl<'a> Analyzer<'a> {
     let CfScopeKind::Function(tracking_data) = &mut cf_scope.kind else {
       unreachable!();
     };
-    let tracking_data = mem::take(*tracking_data);
+    let tracking_data = mem::replace(*tracking_data, FnCacheTrackingData::UnTrackable);
 
     self.pop_variable_scope();
     self.replace_variable_scope_stack(old_variable_scope_stack);

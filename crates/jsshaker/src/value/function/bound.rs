@@ -5,8 +5,7 @@ use crate::{
   dep::Dep,
   entity::Entity,
   scope::VariableScopeId,
-  utils::CalleeInfo,
-  value::{ArgumentsValue, cache::FnCacheTrackingData},
+  value::{ArgumentsValue, FunctionValue, cache::FnCacheTrackingData},
 };
 
 #[derive(Debug)]
@@ -20,7 +19,7 @@ pub struct BoundFunction<'a> {
 impl<'a> Analyzer<'a> {
   pub fn call_bound_function(
     &mut self,
-    callee: CalleeInfo<'a>,
+    func: &'a FunctionValue<'a>,
     call_dep: Dep<'a>,
     bound_fn: &'a BoundFunction<'a>,
     variable_scopes: &'a [VariableScopeId],
@@ -28,7 +27,7 @@ impl<'a> Analyzer<'a> {
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
-    self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);
+    self.push_call_scope(func, call_dep, variable_scopes.to_vec(), false, false, consume);
 
     // self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
     // if node.expression {
