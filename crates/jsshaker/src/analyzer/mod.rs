@@ -19,7 +19,16 @@ use oxc::{
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
-  TreeShakeConfig, analyzer::rw_tracking::ReadWriteTarget, builtins::Builtins, dep::ReferredDeps, folding::ConstantFolder, mangling::Mangler, module::{ModuleId, Modules}, scope::Scoping, utils::ExtraData, vfs::Vfs
+  TreeShakeConfig,
+  analyzer::rw_tracking::ReadWriteTarget,
+  builtins::Builtins,
+  dep::ReferredDeps,
+  folding::ConstantFolder,
+  mangling::Mangler,
+  module::{ModuleId, Modules},
+  scope::Scoping,
+  utils::ExtraData,
+  vfs::Vfs,
 };
 
 pub struct Analyzer<'a> {
