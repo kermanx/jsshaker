@@ -1,10 +1,10 @@
 use super::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue};
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::{Dep, DepCollector, DepVec},
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
-  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
+  scope::CfScopeKind,
   utils::Found,
   value::{PropertyKeyValue, ValueTrait, consumed_object},
 };

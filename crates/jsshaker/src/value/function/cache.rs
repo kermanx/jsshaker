@@ -2,11 +2,9 @@ use oxc::allocator;
 
 use crate::{
   Analyzer,
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   entity::Entity,
-  scope::{
-    rw_tracking::{ReadWriteTarget, TrackReadCachable},
-    variable_scope::EntityOrTDZ,
-  },
+  scope::variable_scope::EntityOrTDZ,
   value::{ArgumentsValue, cachable::Cachable},
 };
 

@@ -19,12 +19,12 @@ use super::{
   TypeofResult, ValueTrait, cachable::Cachable, consumed_object,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   builtins::BuiltinPrototype,
   dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
-  scope::{CfScopeId, rw_tracking::ReadWriteTarget},
+  scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,
 };

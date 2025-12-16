@@ -6,8 +6,9 @@ use rustc_hash::FxHashMap;
 use super::{ObjectValue, get::GetPropertyContext};
 use crate::{
   analyzer::Analyzer,
+  analyzer::rw_tracking::ReadWriteTarget,
   dep::Dep,
-  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
+  scope::CfScopeKind,
   value::{EnumeratedProperties, PropertyKeyValue, consumed_object},
 };
 

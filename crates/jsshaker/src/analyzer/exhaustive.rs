@@ -7,9 +7,9 @@ use std::{
 use oxc::allocator;
 
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   entity::Entity,
-  scope::{CfScopeKind, cf_scope::ReferredState, rw_tracking::ReadWriteTarget},
+  scope::{CfScopeKind, cf_scope::ReferredState},
 };
 
 #[derive(Debug)]

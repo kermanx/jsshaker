@@ -2,11 +2,11 @@ use oxc::allocator;
 
 use super::ObjectValue;
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::{Dep, DepVec},
   entity::Entity,
   mangling::MangleAtom,
-  scope::{CfScopeKind, rw_tracking::ReadWriteTarget},
+  scope::CfScopeKind,
   value::{PropertyKeyValue, consumed_object, object::ObjectPrototype},
 };
 

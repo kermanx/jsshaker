@@ -3,11 +3,10 @@ use std::mem;
 use oxc_index::{IndexVec, define_index_type};
 
 use crate::{
-  analyzer::{Analyzer, Factory},
+  analyzer::{Analyzer, Factory, rw_tracking::ReadWriteTarget},
   dep::{CustomDepTrait, Dep},
   entity::Entity,
   init_object,
-  scope::rw_tracking::ReadWriteTarget,
   value::{ObjectId, ObjectPrototype},
 };
 

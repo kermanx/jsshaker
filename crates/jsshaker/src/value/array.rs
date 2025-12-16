@@ -11,10 +11,10 @@ use super::{
   TypeofResult, ValueTrait, cachable::Cachable, consumed_object,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::{CustomDepTrait, Dep, DepCollector, DepVec},
   entity::Entity,
-  scope::{CfScopeId, rw_tracking::ReadWriteTarget},
+  scope::CfScopeId,
   use_consumed_flag,
 };
 

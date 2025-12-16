@@ -9,12 +9,12 @@ use oxc::{
 use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::Analyzer,
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   ast::DeclarationKind,
   define_box_bump_idx,
   dep::{Dep, LazyDep},
   entity::Entity,
   module::NamedExport,
-  scope::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   utils::ast::AstKind2,
   value::{ArgumentsValue, cachable::Cachable},
 };
