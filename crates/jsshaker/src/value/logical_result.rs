@@ -140,7 +140,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   }
 
   fn as_cachable(&self) -> Option<Cacheable<'a>> {
-    match self.value.as_cachable() {
+    match self.value.as_cacheable() {
       Some(Cacheable::Unknown) => match (self.is_coalesce, self.result) {
         (true, true) => Some(Cacheable::UnknownNullish),
         (true, false) => Some(Cacheable::UnknownNonNullish),

@@ -193,7 +193,7 @@ impl<'a> Analyzer<'a> {
           false
         } else if variable.kind.is_var() {
           true
-        } else if value.as_cachable() == Some(Cacheable::Unknown) {
+        } else if value.as_cacheable() == Some(Cacheable::Unknown) {
           false
         } else {
           !self.is_readonly_symbol(symbol)

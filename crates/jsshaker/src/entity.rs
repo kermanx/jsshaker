@@ -216,7 +216,7 @@ impl<'a> Entity<'a> {
     self.value.get_union_hint()
   }
 
-  pub fn as_cachable(&self) -> Option<Cacheable<'a>> {
+  pub fn as_cacheable(&self) -> Option<Cacheable<'a>> {
     self.value.as_cachable()
   }
 }

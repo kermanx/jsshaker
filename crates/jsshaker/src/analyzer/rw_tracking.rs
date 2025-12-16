@@ -99,7 +99,7 @@ impl<'a> Analyzer<'a> {
     }
     if has_fn_scope
       && let Some(entity) = cacheable
-      && entity.as_cachable().is_some()
+      && entity.as_cacheable().is_some()
     {
       let mut indeterminate = false;
       for depth in (scope_depth..self.scoping.cf.stack.len()).rev() {
