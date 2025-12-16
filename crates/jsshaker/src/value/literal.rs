@@ -9,7 +9,7 @@ use oxc_syntax::number::ToJsString;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
-  ValueTrait, cachable::Cachable, consumed_object, never::NeverValue,
+  ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -309,8 +309,8 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     Some(matches!(self, LiteralValue::Null | LiteralValue::Undefined))
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Literal(*self))
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    Some(Cacheable::Literal(*self))
   }
 }
 

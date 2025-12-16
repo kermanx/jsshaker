@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     scope: CfScopeId,
     target: ReadWriteTarget<'a>,
-    cachable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCachable<'a>>,
   ) {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
@@ -63,7 +63,7 @@ impl<'a> Analyzer<'a> {
         }
       }
       if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.track_read(target, cachable);
+        data.track_read(target, cacheable);
       }
     }
   }
@@ -72,7 +72,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     scope_depth: usize,
     target: ReadWriteTarget<'a>,
-    cachable: Option<Entity<'a>>,
+    cacheable: Option<Entity<'a>>,
   ) -> (bool, bool) {
     let mut exhaustive = false;
     let mut indeterminate = false;
@@ -98,7 +98,7 @@ impl<'a> Analyzer<'a> {
       }
     }
     if has_fn_scope
-      && let Some(entity) = cachable
+      && let Some(entity) = cacheable
       && entity.as_cachable().is_some()
     {
       let mut indeterminate = false;

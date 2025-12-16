@@ -2,7 +2,7 @@ use std::{cell::Cell, fmt::Debug};
 
 use super::super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
-  TypeofResult, ValueTrait, cachable::Cachable, consumed_object, never::NeverValue,
+  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
 
@@ -167,8 +167,8 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     Some(false)
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    None // Some(Cachable::BuiltinFn(self.name()))
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    None // Some(Cacheable::BuiltinFn(self.name()))
   }
 }
 

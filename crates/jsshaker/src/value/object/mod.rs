@@ -16,7 +16,7 @@ pub use property::{ObjectProperty, ObjectPropertyValue};
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
-  TypeofResult, ValueTrait, cachable::Cachable, consumed_object,
+  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
@@ -256,8 +256,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     Some(false)
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    None //  Some(Cachable::Object(self.object_id))
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    None //  Some(Cacheable::Object(self.object_id))
   }
 }
 

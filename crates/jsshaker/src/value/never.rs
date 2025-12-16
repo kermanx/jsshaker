@@ -1,4 +1,4 @@
-use super::{ArgumentsValue, UnionHint, ValueTrait, cachable::Cachable};
+use super::{ArgumentsValue, UnionHint, ValueTrait, cacheable::Cacheable};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 #[derive(Debug, Clone, Copy)]
@@ -104,7 +104,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
     UnionHint::Never
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Never)
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    Some(Cacheable::Never)
   }
 }

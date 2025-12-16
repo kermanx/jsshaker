@@ -16,7 +16,7 @@ use crate::{
   entity::Entity,
   module::NamedExport,
   utils::ast::AstKind2,
-  value::{ArgumentsValue, cachable::Cachable},
+  value::{ArgumentsValue, cacheable::Cacheable},
 };
 
 define_box_bump_idx! {
@@ -193,7 +193,7 @@ impl<'a> Analyzer<'a> {
           false
         } else if variable.kind.is_var() {
           true
-        } else if value.as_cachable() == Some(Cachable::Unknown) {
+        } else if value.as_cachable() == Some(Cacheable::Unknown) {
           false
         } else {
           !self.is_readonly_symbol(symbol)

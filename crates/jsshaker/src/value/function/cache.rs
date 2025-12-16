@@ -5,7 +5,7 @@ use crate::{
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
-  value::{ArgumentsValue, cachable::Cachable},
+  value::{ArgumentsValue, cacheable::Cacheable},
 };
 
 type FnReadDeps<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>;
@@ -36,16 +36,16 @@ impl<'a> FnCacheTrackingData<'a> {
   pub fn track_read(
     &mut self,
     target: ReadWriteTarget<'a>,
-    cachable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCachable<'a>>,
   ) {
     let Self::Tracked { read_deps, .. } = self else {
       return;
     };
-    let Some(cachable) = cachable else {
+    let Some(cacheable) = cacheable else {
       *self = Self::UnTrackable;
       return;
     };
-    let TrackReadCachable::Mutable(current_value) = cachable else {
+    let TrackReadCachable::Mutable(current_value) = cacheable else {
       return;
     };
     if read_deps.len() > 8 {
@@ -69,30 +69,34 @@ impl<'a> FnCacheTrackingData<'a> {
     }
   }
 
-  pub fn track_write(&mut self, target: ReadWriteTarget<'a>, cachable: Option<(bool, Entity<'a>)>) {
+  pub fn track_write(
+    &mut self,
+    target: ReadWriteTarget<'a>,
+    cacheable: Option<(bool, Entity<'a>)>,
+  ) {
     let Self::Tracked { write_effects, .. } = self else {
       return;
     };
-    let Some(cachable) = cachable else {
+    let Some(cacheable) = cacheable else {
       *self = Self::UnTrackable;
       return;
     };
-    write_effects.insert(target, cachable);
+    write_effects.insert(target, cacheable);
   }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FnCacheEntryKey<'a> {
   pub is_ctor: bool,
-  pub this: Cachable<'a>,
-  pub args: &'a [Cachable<'a>],
+  pub this: Cacheable<'a>,
+  pub args: &'a [Cacheable<'a>],
 }
 
 #[derive(Debug)]
 pub struct FnCacheEntryValue<'a> {
   pub read_deps: FnReadDeps<'a>,
   pub write_effects: FnWriteEffects<'a>,
-  pub ret: Cachable<'a>,
+  pub ret: Cacheable<'a>,
 }
 
 #[derive(Debug)]
@@ -142,8 +146,8 @@ impl<'a> FnCache<'a> {
         }
       }
 
-      for (&target, &(indeterminate, cachable)) in &cached.write_effects {
-        analyzer.set_rw_target_current_value(target, cachable, indeterminate);
+      for (&target, &(indeterminate, cacheable)) in &cached.write_effects {
+        analyzer.set_rw_target_current_value(target, cacheable, indeterminate);
       }
 
       Some(cached.ret.into_entity(analyzer))

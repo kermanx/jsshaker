@@ -1,6 +1,6 @@
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
-  cachable::Cachable, consumed_object, never::NeverValue,
+  cacheable::Cacheable, consumed_object, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
 
@@ -169,8 +169,8 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     true
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    Some(Cachable::Primitive(*self))
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    Some(Cacheable::Primitive(*self))
   }
 }
 

@@ -9,7 +9,7 @@ use oxc::{allocator, span::GetSpan};
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  cachable::Cachable, consumed_object,
+  cacheable::Cacheable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -188,8 +188,8 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     Some(false)
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
-    None //  Some(Cachable::Object(self.statics.object_id))
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+    None //  Some(Cacheable::Object(self.statics.object_id))
   }
 }
 

@@ -2,7 +2,7 @@ use std::cell::{Cell, RefCell};
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
-  cachable::Cachable, consumed_object,
+  cacheable::Cacheable, consumed_object,
 };
 use crate::{
   analyzer::Analyzer,
@@ -175,7 +175,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     None
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>> {
+  fn as_cachable(&self) -> Option<Cacheable<'a>> {
     None
   }
 }

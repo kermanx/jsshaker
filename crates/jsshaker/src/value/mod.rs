@@ -1,5 +1,5 @@
 pub mod array;
-pub mod cachable;
+pub mod cacheable;
 mod consumed_object;
 mod function;
 mod literal;
@@ -13,7 +13,7 @@ pub mod union;
 pub mod unknown;
 pub mod utils;
 
-use cachable::Cachable;
+use cacheable::Cacheable;
 pub use function::*;
 pub use literal::LiteralValue;
 pub use object::*;
@@ -212,7 +212,7 @@ pub trait ValueTrait<'a>: Debug {
     UnionHint::Other
   }
 
-  fn as_cachable(&self) -> Option<Cachable<'a>>;
+  fn as_cachable(&self) -> Option<Cacheable<'a>>;
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {
