@@ -12,7 +12,7 @@ use crate::{
   entity::Entity,
   transformer::Transformer,
   utils::CalleeNode,
-  value::{cache::FnCacheTrackingData, call::FunctionCallInfo},
+  value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 impl<'a> Analyzer<'a> {
@@ -39,7 +39,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_function(
     &mut self,
     node: &'a Function<'a>,
-    info: FunctionCallInfo<'a>,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(info, node.r#async, node.generator);

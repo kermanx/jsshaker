@@ -16,7 +16,7 @@ use crate::{
   entity::Entity,
   transformer::Transformer,
   utils::CalleeNode,
-  value::{ObjectPrototype, ValueTrait, cache::FnCacheTrackingData, call::FunctionCallInfo},
+  value::{ObjectPrototype, ValueTrait, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 #[derive(Default)]
@@ -127,7 +127,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_class_constructor(
     &mut self,
     node: &'a Class<'a>,
-    info: FunctionCallInfo<'a>,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let factory = self.factory;
     let data = self.load_data::<Data>(AstKind2::Class(node));

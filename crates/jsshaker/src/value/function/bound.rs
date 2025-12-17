@@ -3,7 +3,7 @@ use oxc::span::Span;
 use crate::{
   Analyzer,
   entity::Entity,
-  value::{ArgumentsValue, cache::FnCacheTrackingData, call::FunctionCallInfo},
+  value::{ArgumentsValue, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 #[derive(Debug)]
@@ -18,16 +18,9 @@ impl<'a> Analyzer<'a> {
   pub fn call_bound_function<const IS_CTOR: bool>(
     &mut self,
     bound_fn: &'a BoundFunction<'a>,
-    info: FunctionCallInfo<'a>,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     self.push_call_scope(info, false, false);
-
-    // self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
-    // if node.expression {
-    //   self.exec_function_expression_body(&node.body);
-    // } else {
-    //   self.exec_function_body(&node.body);
-    // }
 
     let args = ArgumentsValue::from_concatenate(self, bound_fn.bound_args, info.args);
     let ret = bound_fn.target.call(

@@ -9,7 +9,7 @@ use crate::{
   entity::Entity,
   transformer::Transformer,
   utils::CalleeNode,
-  value::{cache::FnCacheTrackingData, call::FunctionCallInfo},
+  value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 impl<'a> Analyzer<'a> {
@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
   pub fn call_arrow_function_expression(
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
-    info: FunctionCallInfo<'a>,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
       analyzer.push_call_scope(info, node.r#async, false);

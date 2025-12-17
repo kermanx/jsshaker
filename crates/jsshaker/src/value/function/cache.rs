@@ -5,7 +5,7 @@ use crate::{
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
-  value::{ArgumentsValue, FunctionValue, cacheable::Cacheable, call::FunctionCallInfo},
+  value::{ArgumentsValue, FunctionValue, cacheable::Cacheable, call::FnCallInfo},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -15,11 +15,28 @@ pub struct FnCachedInput<'a> {
   pub args: &'a [Cacheable<'a>],
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct FnCallEffect<'a> {
+  pub func: &'a FunctionValue<'a>,
+  pub input: FnCachedInput<'a>,
+}
+impl<'a> PartialEq for FnCallEffect<'a> {
+  fn eq(&self, other: &Self) -> bool {
+    std::ptr::eq(self.func, other.func) && self.input == other.input
+  }
+}
+impl<'a> Eq for FnCallEffect<'a> {}
+impl<'a> std::hash::Hash for FnCallEffect<'a> {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    (self.func as *const _, &self.input).hash(state);
+  }
+}
+
 #[derive(Debug)]
 pub struct FnCachedEffects<'a> {
   pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>,
   pub writes: allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>,
-  pub calls: allocator::HashSet<'a, (Entity<'a>, FnCachedInput<'a>)>,
+  pub calls: allocator::HashSet<'a, FnCallEffect<'a>>,
 }
 
 impl<'a> FnCachedEffects<'a> {
@@ -43,7 +60,7 @@ impl<'a> FnCacheTrackingData<'a> {
     FnCacheTrackingData::UnTrackable
   }
 
-  pub fn new_in(allocator: &'a allocator::Allocator, info: FunctionCallInfo<'a>) -> Self {
+  pub fn new_in(allocator: &'a allocator::Allocator, info: FnCallInfo<'a>) -> Self {
     if let Some(cache_key) = info.cache_key {
       Self::Tracked {
         func: info.func,
@@ -106,7 +123,12 @@ impl<'a> FnCacheTrackingData<'a> {
     effects.writes.insert(target, cacheable);
   }
 
-  pub fn track_call(&mut self, input: FnCachedInput<'a>) {}
+  pub fn track_call(&mut self, effect: FnCallEffect<'a>) {
+    let Self::Tracked { effects, .. } = self else {
+      return;
+    };
+    effects.calls.insert(effect);
+  }
 }
 
 #[derive(Debug)]

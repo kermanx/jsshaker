@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy)]
-pub struct FunctionCallInfo<'a> {
+pub struct FnCallInfo<'a> {
   pub func: &'a FunctionValue<'a>,
   pub call_dep: Dep<'a>,
   pub cache_key: Option<FnCachedInput<'a>>,
@@ -40,7 +40,7 @@ impl<'a> FunctionValue<'a> {
       return cached_ret;
     }
 
-    let info = FunctionCallInfo { func: self, call_dep, cache_key, this, args, consume };
+    let info = FnCallInfo { func: self, call_dep, cache_key, this, args, consume };
 
     let (ret_val, cache_tracking) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(node, info),

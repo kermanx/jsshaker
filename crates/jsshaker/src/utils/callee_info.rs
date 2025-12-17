@@ -1,4 +1,4 @@
-use std::hash;
+use std::{hash, ptr};
 
 use oxc::{
   ast::{
@@ -51,14 +51,14 @@ impl GetSpan for CalleeNode<'_> {
 
 impl PartialEq for CalleeNode<'_> {
   fn eq(&self, other: &Self) -> bool {
-    match (self, other) {
+    match (*self, *other) {
       (CalleeNode::Module, CalleeNode::Module) => true,
-      (CalleeNode::Function(a), CalleeNode::Function(b)) => a.span() == b.span(),
+      (CalleeNode::Function(a), CalleeNode::Function(b)) => ptr::eq(a, b),
       (CalleeNode::ArrowFunctionExpression(a), CalleeNode::ArrowFunctionExpression(b)) => {
-        a.span() == b.span()
+        ptr::eq(a, b)
       }
-      (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => a.span() == b.span(),
-      (CalleeNode::ClassConstructor(a), CalleeNode::ClassConstructor(b)) => a.span() == b.span(),
+      (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => ptr::eq(a, b),
+      (CalleeNode::ClassConstructor(a), CalleeNode::ClassConstructor(b)) => ptr::eq(a, b),
       (CalleeNode::BoundFunction(a), CalleeNode::BoundFunction(b)) => a.span == b.span,
       _ => false,
     }

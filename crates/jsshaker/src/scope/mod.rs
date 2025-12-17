@@ -20,7 +20,7 @@ use crate::{
   entity::Entity,
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
-  value::{ObjectId, cache::FnCacheTrackingData, call::FunctionCallInfo},
+  value::{ObjectId, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 pub struct Scoping<'a> {
@@ -104,12 +104,7 @@ impl<'a> Analyzer<'a> {
     self.scoping.variable.replace_stack(new_stack)
   }
 
-  pub fn push_call_scope(
-    &mut self,
-    info: FunctionCallInfo<'a>,
-    is_async: bool,
-    is_generator: bool,
-  ) {
+  pub fn push_call_scope(&mut self, info: FnCallInfo<'a>, is_async: bool, is_generator: bool) {
     let dep_id = DepAtom::from_counter();
     if info.consume {
       self.refer_dep(dep_id);
