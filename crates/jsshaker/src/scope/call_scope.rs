@@ -13,7 +13,7 @@ use crate::{
 pub struct CallScope<'a> {
   pub call_id: DepAtom,
   pub callee: CalleeInfo<'a>,
-  pub old_variable_scope_stack: Vec<VariableScopeId>,
+  pub old_variable_scope: Option<VariableScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: VariableScopeId,
   pub returned_values: Vec<Entity<'a>>,
@@ -29,7 +29,7 @@ impl<'a> CallScope<'a> {
   pub fn new_in(
     call_id: DepAtom,
     callee: CalleeInfo<'a>,
-    old_variable_scope_stack: Vec<VariableScopeId>,
+    old_variable_scope: Option<VariableScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: VariableScopeId,
     is_async: bool,
@@ -38,7 +38,7 @@ impl<'a> CallScope<'a> {
     CallScope {
       call_id,
       callee,
-      old_variable_scope_stack,
+      old_variable_scope,
       cf_scope_depth,
       body_variable_scope,
       returned_values: Vec::new(),
@@ -51,7 +51,7 @@ impl<'a> CallScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Vec<VariableScopeId>, Entity<'a>) {
+  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Option<VariableScopeId>, Entity<'a>) {
     let value = match &self.returned_values[..] {
       [] => analyzer.factory.never,
       [v] => *v,
@@ -64,7 +64,7 @@ impl<'a> CallScope<'a> {
     #[cfg(feature = "flame")]
     self.scope_guard.end();
 
-    (self.old_variable_scope_stack, value)
+    (self.old_variable_scope, value)
   }
 }
 

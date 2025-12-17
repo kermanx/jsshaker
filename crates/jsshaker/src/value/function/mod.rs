@@ -5,7 +5,7 @@ pub mod cache;
 
 use std::cell::{Cell, RefCell};
 
-use oxc::{allocator, span::GetSpan};
+use oxc::span::GetSpan;
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
@@ -25,7 +25,7 @@ pub use builtin::*;
 #[derive(Debug)]
 pub struct FunctionValue<'a> {
   pub callee: CalleeInfo<'a>,
-  pub variable_scope_stack: allocator::Vec<'a, VariableScopeId>,
+  pub lexical_scope: Option<VariableScopeId>,
   pub finite_recursion: bool,
   pub statics: &'a ObjectValue<'a>,
   /// The `prototype` property. Not `__proto__`.
@@ -235,7 +235,7 @@ impl<'a> FunctionValue<'a> {
         self.callee,
         call_dep,
         node,
-        &self.variable_scope_stack,
+        self.lexical_scope,
         this,
         args,
         consume,
@@ -244,7 +244,7 @@ impl<'a> FunctionValue<'a> {
         self.callee,
         call_dep,
         node,
-        &self.variable_scope_stack,
+        self.lexical_scope,
         args,
         consume,
       ),
@@ -254,7 +254,7 @@ impl<'a> FunctionValue<'a> {
           self.callee,
           call_dep,
           node,
-          &self.variable_scope_stack,
+          self.lexical_scope,
           this,
           args,
           consume,
@@ -268,7 +268,7 @@ impl<'a> FunctionValue<'a> {
         self.callee,
         call_dep,
         bound_fn,
-        &self.variable_scope_stack,
+        self.lexical_scope,
         IS_CTOR.then_some(this),
         args,
         consume,
@@ -347,10 +347,7 @@ impl<'a> Analyzer<'a> {
     let (statics, prototype) = self.new_function_object(Some(node.into()));
     let function = self.factory.alloc(FunctionValue {
       callee: self.new_callee_info(node),
-      variable_scope_stack: allocator::Vec::from_iter_in(
-        self.scoping.variable.stack.iter().copied(),
-        self.allocator,
-      ),
+      lexical_scope: self.scoping.variable.top(),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       statics,
       prototype,

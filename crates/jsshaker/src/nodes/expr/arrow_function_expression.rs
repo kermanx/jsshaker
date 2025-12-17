@@ -27,19 +27,12 @@ impl<'a> Analyzer<'a> {
     callee: CalleeInfo<'a>,
     call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
-    variable_scopes: &'a [VariableScopeId],
+    lexical_scope: Option<VariableScopeId>,
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
-      analyzer.push_call_scope(
-        callee,
-        call_dep,
-        variable_scopes.to_vec(),
-        node.r#async,
-        false,
-        consume,
-      );
+      analyzer.push_call_scope(callee, call_dep, lexical_scope, node.r#async, false, consume);
 
       analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
       if node.expression {

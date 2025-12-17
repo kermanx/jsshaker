@@ -23,12 +23,12 @@ impl<'a> Analyzer<'a> {
     callee: CalleeInfo<'a>,
     call_dep: Dep<'a>,
     bound_fn: &'a BoundFunction<'a>,
-    variable_scopes: &'a [VariableScopeId],
+    lexical_scope: Option<VariableScopeId>,
     ctor_this: Option<Entity<'a>>,
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
-    self.push_call_scope(callee, call_dep, variable_scopes.to_vec(), false, false, consume);
+    self.push_call_scope(callee, call_dep, lexical_scope, false, false, consume);
 
     // self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
     // if node.expression {
