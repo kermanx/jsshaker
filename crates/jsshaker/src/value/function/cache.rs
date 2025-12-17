@@ -48,10 +48,10 @@ impl<'a> FnCacheTrackingData<'a> {
     let TrackReadCachable::Mutable(current_value) = cacheable else {
       return;
     };
-    if read_deps.len() > 8 {
-      *self = Self::UnTrackable;
-      return;
-    }
+    // if read_deps.len() > 8 {
+    //   *self = Self::UnTrackable;
+    //   return;
+    // }
     match read_deps.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
         // TODO: Remove these?
