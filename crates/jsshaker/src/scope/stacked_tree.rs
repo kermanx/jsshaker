@@ -7,14 +7,14 @@ struct NodeInfo<I, T> {
   parent: Option<I>,
 }
 
-pub struct ScopeTree<'a, I: Idx, T> {
+pub struct StackedTree<'a, I: Idx, T> {
   nodes: BoxBump<'a, I, NodeInfo<I, T>>,
   pub stack: Vec<I>,
 }
 
-impl<'a, I: Idx, T> ScopeTree<'a, I, T> {
+impl<'a, I: Idx, T> StackedTree<'a, I, T> {
   pub fn new_in(allocator: &'a Allocator) -> Self {
-    ScopeTree { nodes: BoxBump::new(allocator), stack: vec![] }
+    StackedTree { nodes: BoxBump::new(allocator), stack: vec![] }
   }
 
   pub fn current_id(&self) -> I {
@@ -31,11 +31,6 @@ impl<'a, I: Idx, T> ScopeTree<'a, I, T> {
 
   pub fn get_mut(&mut self, id: I) -> &mut T {
     &mut self.nodes.get_mut(id).data
-  }
-
-  pub fn get_from_depth(&self, depth: usize) -> &T {
-    let id = self.stack[depth];
-    self.get(id)
   }
 
   pub fn get_mut_from_depth(&mut self, depth: usize) -> &mut T {

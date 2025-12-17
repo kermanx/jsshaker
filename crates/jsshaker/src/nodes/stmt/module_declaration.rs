@@ -61,7 +61,7 @@ impl<'a> Analyzer<'a> {
               let dep = self.dep(AstKind2::ExportSpecifier(specifier));
               let reference = self.semantic().scoping().get_reference(node.reference_id());
               if let Some(symbol) = reference.symbol_id() {
-                let scope = self.scoping.variable.current_id();
+                let scope = self.scoping.variable.top().unwrap();
                 self
                   .module_info_mut()
                   .named_exports
@@ -113,7 +113,7 @@ impl<'a> Analyzer<'a> {
       {
         // Circular dependency
         let module = self.current_module();
-        let scope = self.scoping.variable.current_id();
+        let scope = self.scoping.variable.top().unwrap();
         self.modules.modules[resolved].blocked_imports.push((module, scope, node));
         return;
       }

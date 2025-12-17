@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
     callee: CalleeInfo<'a>,
     call_dep: Dep<'a>,
     node: &'a Function<'a>,
-    variable_scopes: &'a [VariableScopeId],
+    lexical_scope: Option<VariableScopeId>,
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
     consume: bool,
@@ -53,16 +53,16 @@ impl<'a> Analyzer<'a> {
       analyzer.push_call_scope(
         callee,
         call_dep,
-        variable_scopes.to_vec(),
+        lexical_scope,
         node.r#async,
         node.generator,
         consume,
       );
 
       let factory = analyzer.factory;
-      let variable_scope = analyzer.variable_scope_mut();
-      variable_scope.this = Some(this);
-      variable_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
+      let body_scope = analyzer.variable_scope_mut();
+      body_scope.this = Some(this);
+      body_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
 
       let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
       if declare_in_body {
