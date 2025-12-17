@@ -52,7 +52,8 @@ impl<'a> FnCachedEffects<'a> {
 #[derive(Debug)]
 pub enum FnCacheTrackingData<'a> {
   UnTrackable,
-  Tracked { func: &'a FunctionValue<'a>, input: FnCachedInput<'a>, effects: FnCachedEffects<'a> },
+  Tracked { self_call_effect: FnCallEffect<'a>, effects: FnCachedEffects<'a> },
+  Failed { self_call_effect: FnCallEffect<'a> },
 }
 
 impl<'a> FnCacheTrackingData<'a> {
@@ -63,8 +64,7 @@ impl<'a> FnCacheTrackingData<'a> {
   pub fn new_in(allocator: &'a allocator::Allocator, info: FnCallInfo<'a>) -> Self {
     if let Some(cache_key) = info.cache_key {
       Self::Tracked {
-        func: info.func,
-        input: cache_key,
+        self_call_effect: FnCallEffect { func: info.func, input: cache_key },
         effects: FnCachedEffects::new_in(allocator),
       }
     } else {
@@ -72,24 +72,40 @@ impl<'a> FnCacheTrackingData<'a> {
     }
   }
 
+  pub fn failed(&mut self) {
+    let Self::Tracked { self_call_effect, .. } = self else {
+      unreachable!();
+    };
+    *self = Self::Failed { self_call_effect: *self_call_effect };
+  }
+
+  pub fn call_effect(&self) -> Option<FnCallEffect<'a>> {
+    match self {
+      Self::Tracked { self_call_effect, .. } => Some(*self_call_effect),
+      Self::Failed { self_call_effect } => Some(*self_call_effect),
+      Self::UnTrackable => None,
+    }
+  }
+
   pub fn track_read(
     &mut self,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCacheable<'a>>,
-  ) {
-    let Self::Tracked { effects, .. } = self else {
-      return;
+  ) -> Option<FnCallEffect<'a>> {
+    let Self::Tracked { self_call_effect, effects } = self else {
+      return None;
     };
+    let self_call_effect = *self_call_effect;
     let Some(cacheable) = cacheable else {
-      *self = Self::UnTrackable;
-      return;
+      self.failed();
+      return Some(self_call_effect);
     };
     let TrackReadCacheable::Mutable(current_value) = cacheable else {
-      return;
+      return None;
     };
     if effects.reads.len() > 8 {
-      *self = Self::UnTrackable;
-      return;
+      self.failed();
+      return Some(self_call_effect);
     }
     match effects.reads.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
@@ -106,6 +122,7 @@ impl<'a> FnCacheTrackingData<'a> {
         v.insert(current_value);
       }
     }
+    Some(self_call_effect)
   }
 
   pub fn track_write(
@@ -117,7 +134,7 @@ impl<'a> FnCacheTrackingData<'a> {
       return;
     };
     let Some(cacheable) = cacheable else {
-      *self = Self::UnTrackable;
+      self.failed();
       return;
     };
     effects.writes.insert(target, cacheable);
