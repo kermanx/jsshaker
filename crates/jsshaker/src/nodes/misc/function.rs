@@ -9,12 +9,10 @@ use oxc::{
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  dep::Dep,
   entity::Entity,
-  scope::VariableScopeId,
   transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, cache::FnCacheTrackingData},
+  utils::CalleeNode,
+  value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 impl<'a> Analyzer<'a> {
@@ -40,29 +38,17 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_function(
     &mut self,
-    fn_entity: Entity<'a>,
-    callee: CalleeInfo<'a>,
-    call_dep: Dep<'a>,
     node: &'a Function<'a>,
-    lexical_scope: Option<VariableScopeId>,
-    this: Entity<'a>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
-      analyzer.push_call_scope(
-        callee,
-        call_dep,
-        lexical_scope,
-        node.r#async,
-        node.generator,
-        consume,
-      );
+      analyzer.push_call_scope(info, node.r#async, node.generator);
 
       let factory = analyzer.factory;
-      let body_scope = analyzer.variable_scope_mut();
-      body_scope.this = Some(this);
-      body_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
+      let variable_scope = analyzer.variable_scope_mut();
+      variable_scope.this = Some(info.this);
+      variable_scope.arguments =
+        Some((info.args, factory.vec(/* later filled by formal parameters */)));
 
       let declare_in_body = node.r#type == FunctionType::FunctionExpression && node.id.is_some();
       if declare_in_body {
@@ -72,21 +58,21 @@ impl<'a> Analyzer<'a> {
           AstKind2::BindingIdentifier(id),
           false,
           DeclarationKind::NamedFunctionInBody,
-          Some(analyzer.factory.computed(fn_entity, AstKind2::BindingIdentifier(id))),
+          Some(analyzer.factory.computed(info.func.into(), AstKind2::BindingIdentifier(id))),
         );
       }
 
-      analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::FunctionParameter);
+      analyzer.exec_formal_parameters(&node.params, info.args, DeclarationKind::FunctionParameter);
       analyzer.exec_function_body(node.body.as_ref().unwrap());
 
-      if consume {
+      if info.consume {
         analyzer.consume_return_values();
       }
 
       analyzer.pop_call_scope()
     };
 
-    if !consume && (node.r#async || node.generator) {
+    if !info.consume && (node.r#async || node.generator) {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).0.consume(analyzer);

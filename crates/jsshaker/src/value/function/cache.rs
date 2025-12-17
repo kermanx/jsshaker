@@ -5,20 +5,38 @@ use crate::{
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
-  value::{ArgumentsValue, cacheable::Cacheable},
+  value::{ArgumentsValue, cacheable::Cacheable, call::FnCallInfo},
 };
 
-type FnReadDeps<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>;
-type FnWriteEffects<'a> = allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct FnCachedInput<'a> {
+  pub is_ctor: bool,
+  pub this: Cacheable<'a>,
+  pub args: &'a [Cacheable<'a>],
+}
+
+#[derive(Debug)]
+pub struct FnCachedEffects<'a> {
+  pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>,
+  pub writes: allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>,
+}
 
 #[derive(Debug, Default)]
 pub enum FnCacheTrackingData<'a> {
   #[default]
   UnTrackable,
   Tracked {
-    read_deps: FnReadDeps<'a>,
-    write_effects: FnWriteEffects<'a>,
+    effects: FnCachedEffects<'a>,
   },
+}
+
+impl<'a> FnCachedEffects<'a> {
+  pub fn new_in(allocator: &'a allocator::Allocator) -> Self {
+    Self {
+      reads: allocator::HashMap::new_in(allocator),
+      writes: allocator::HashMap::new_in(allocator),
+    }
+  }
 }
 
 impl<'a> FnCacheTrackingData<'a> {
@@ -26,10 +44,11 @@ impl<'a> FnCacheTrackingData<'a> {
     Self::default()
   }
 
-  pub fn new_in(alloc: &'a allocator::Allocator) -> Self {
-    Self::Tracked {
-      read_deps: allocator::HashMap::new_in(alloc),
-      write_effects: allocator::HashMap::new_in(alloc),
+  pub fn new_in(allocator: &'a allocator::Allocator, info: FnCallInfo<'a>) -> Self {
+    if let Some(_cache_key) = info.cache_key {
+      Self::Tracked { effects: FnCachedEffects::new_in(allocator) }
+    } else {
+      FnCacheTrackingData::UnTrackable
     }
   }
 
@@ -38,7 +57,7 @@ impl<'a> FnCacheTrackingData<'a> {
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCachable<'a>>,
   ) {
-    let Self::Tracked { read_deps, .. } = self else {
+    let Self::Tracked { effects, .. } = self else {
       return;
     };
     let Some(cacheable) = cacheable else {
@@ -48,11 +67,7 @@ impl<'a> FnCacheTrackingData<'a> {
     let TrackReadCachable::Mutable(current_value) = cacheable else {
       return;
     };
-    if read_deps.len() > 8 {
-      *self = Self::UnTrackable;
-      return;
-    }
-    match read_deps.entry(target) {
+    match effects.reads.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
         // TODO: Remove these?
         if match (*v.get(), current_value) {
@@ -74,34 +89,20 @@ impl<'a> FnCacheTrackingData<'a> {
     target: ReadWriteTarget<'a>,
     cacheable: Option<(bool, Entity<'a>)>,
   ) {
-    let Self::Tracked { write_effects, .. } = self else {
+    let Self::Tracked { effects, .. } = self else {
       return;
     };
     let Some(cacheable) = cacheable else {
       *self = Self::UnTrackable;
       return;
     };
-    write_effects.insert(target, cacheable);
+    effects.writes.insert(target, cacheable);
   }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FnCacheEntryKey<'a> {
-  pub is_ctor: bool,
-  pub this: Cacheable<'a>,
-  pub args: &'a [Cacheable<'a>],
-}
-
-#[derive(Debug)]
-pub struct FnCacheEntryValue<'a> {
-  pub read_deps: FnReadDeps<'a>,
-  pub write_effects: FnWriteEffects<'a>,
-  pub ret: Cacheable<'a>,
 }
 
 #[derive(Debug)]
 pub struct FnCache<'a> {
-  table: allocator::HashMap<'a, FnCacheEntryKey<'a>, FnCacheEntryValue<'a>>,
+  table: allocator::HashMap<'a, FnCachedInput<'a>, (FnCachedEffects<'a>, Cacheable<'a>)>,
 }
 
 impl<'a> FnCache<'a> {
@@ -113,7 +114,7 @@ impl<'a> FnCache<'a> {
     analyzer: &Analyzer<'a>,
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
-  ) -> Option<FnCacheEntryKey<'a>> {
+  ) -> Option<FnCachedInput<'a>> {
     if !analyzer.config.enable_fn_cache {
       return None;
     }
@@ -126,16 +127,16 @@ impl<'a> FnCache<'a> {
     for arg in args.elements {
       cargs.push(arg.as_cacheable()?);
     }
-    Some(FnCacheEntryKey { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
+    Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
   }
 
-  pub fn retrive(
+  pub fn retrieve(
     &self,
     analyzer: &mut Analyzer<'a>,
-    key: &FnCacheEntryKey<'a>,
+    key: &FnCachedInput<'a>,
   ) -> Option<Entity<'a>> {
-    if let Some(cached) = self.table.get(key) {
-      for (&target, &last_value) in &cached.read_deps {
+    if let Some((effects, ret)) = self.table.get(key) {
+      for (&target, &last_value) in &effects.reads {
         let current_value = analyzer.get_rw_target_current_value(target);
         if match (last_value, current_value) {
           (Some(e1), Some(e2)) => !e1.exactly_same(e2),
@@ -146,11 +147,11 @@ impl<'a> FnCache<'a> {
         }
       }
 
-      for (&target, &(indeterminate, cacheable)) in &cached.write_effects {
+      for (&target, &(indeterminate, cacheable)) in &effects.writes {
         analyzer.set_rw_target_current_value(target, cacheable, indeterminate);
       }
 
-      Some(cached.ret.into_entity(analyzer))
+      Some(ret.into_entity(analyzer))
     } else {
       None
     }
@@ -158,16 +159,16 @@ impl<'a> FnCache<'a> {
 
   pub fn update_cache(
     &mut self,
-    key: FnCacheEntryKey<'a>,
+    key: FnCachedInput<'a>,
     ret: Entity<'a>,
     tracking: FnCacheTrackingData<'a>,
   ) {
-    let FnCacheTrackingData::Tracked { read_deps, write_effects } = tracking else {
+    let FnCacheTrackingData::Tracked { effects } = tracking else {
       return;
     };
     let Some(ret) = ret.as_cacheable() else {
       return;
     };
-    self.table.insert(key, FnCacheEntryValue { read_deps, write_effects, ret });
+    self.table.insert(key, (effects, ret));
   }
 }

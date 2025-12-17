@@ -6,12 +6,10 @@ use oxc::ast::{
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  dep::Dep,
   entity::Entity,
-  scope::VariableScopeId,
   transformer::Transformer,
-  utils::{CalleeInfo, CalleeNode},
-  value::{ArgumentsValue, cache::FnCacheTrackingData},
+  utils::CalleeNode,
+  value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 impl<'a> Analyzer<'a> {
@@ -24,31 +22,31 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_arrow_function_expression(
     &mut self,
-    callee: CalleeInfo<'a>,
-    call_dep: Dep<'a>,
     node: &'a ArrowFunctionExpression<'a>,
-    lexical_scope: Option<VariableScopeId>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
+    info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let runner = move |analyzer: &mut Analyzer<'a>| {
-      analyzer.push_call_scope(callee, call_dep, lexical_scope, node.r#async, false, consume);
+      analyzer.push_call_scope(info, node.r#async, false);
 
-      analyzer.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
+      analyzer.exec_formal_parameters(
+        &node.params,
+        info.args,
+        DeclarationKind::ArrowFunctionParameter,
+      );
       if node.expression {
         analyzer.exec_function_expression_body(&node.body);
       } else {
         analyzer.exec_function_body(&node.body);
       }
 
-      if consume {
+      if info.consume {
         analyzer.consume_return_values();
       }
 
       analyzer.pop_call_scope()
     };
 
-    if !consume && node.r#async {
+    if !info.consume && node.r#async {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
         runner(analyzer).0.consume(analyzer);
