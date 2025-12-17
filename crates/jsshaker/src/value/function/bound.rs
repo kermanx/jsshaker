@@ -2,10 +2,8 @@ use oxc::span::Span;
 
 use crate::{
   Analyzer,
-  dep::Dep,
   entity::Entity,
-  scope::VariableScopeId,
-  value::{ArgumentsValue, FunctionValue, cache::FnCacheTrackingData},
+  value::{ArgumentsValue, cache::FnCacheTrackingData, call::FunctionCallInfo},
 };
 
 #[derive(Debug)]
@@ -17,17 +15,12 @@ pub struct BoundFunction<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn call_bound_function(
+  pub fn call_bound_function<const IS_CTOR: bool>(
     &mut self,
-    func: &'a FunctionValue<'a>,
-    call_dep: Dep<'a>,
     bound_fn: &'a BoundFunction<'a>,
-    variable_scopes: &'a [VariableScopeId],
-    ctor_this: Option<Entity<'a>>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
+    info: FunctionCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
-    self.push_call_scope(func, call_dep, variable_scopes.to_vec(), false, false, consume);
+    self.push_call_scope(info, false, false);
 
     // self.exec_formal_parameters(&node.params, args, DeclarationKind::ArrowFunctionParameter);
     // if node.expression {
@@ -36,11 +29,16 @@ impl<'a> Analyzer<'a> {
     //   self.exec_function_body(&node.body);
     // }
 
-    let args = ArgumentsValue::from_concatenate(self, bound_fn.bound_args, args);
-    let ret = bound_fn.target.call(self, call_dep, ctor_this.unwrap_or(bound_fn.bound_this), args);
+    let args = ArgumentsValue::from_concatenate(self, bound_fn.bound_args, info.args);
+    let ret = bound_fn.target.call(
+      self,
+      info.call_dep,
+      if IS_CTOR { info.this } else { bound_fn.bound_this },
+      args,
+    );
     self.return_value(ret, self.factory.no_dep);
 
-    if consume {
+    if info.consume {
       self.consume_return_values();
     }
 

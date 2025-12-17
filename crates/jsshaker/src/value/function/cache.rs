@@ -2,10 +2,10 @@ use oxc::allocator::{self, Allocator};
 
 use crate::{
   Analyzer,
-  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
-  value::{ArgumentsValue, FunctionValue, cacheable::Cacheable},
+  value::{ArgumentsValue, FunctionValue, cacheable::Cacheable, call::FunctionCallInfo},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -35,7 +35,7 @@ impl<'a> FnCachedEffects<'a> {
 #[derive(Debug)]
 pub enum FnCacheTrackingData<'a> {
   UnTrackable,
-  Tracked { callee: &'a FunctionValue<'a>, effects: FnCachedEffects<'a> },
+  Tracked { func: &'a FunctionValue<'a>, input: FnCachedInput<'a>, effects: FnCachedEffects<'a> },
 }
 
 impl<'a> FnCacheTrackingData<'a> {
@@ -43,14 +43,22 @@ impl<'a> FnCacheTrackingData<'a> {
     FnCacheTrackingData::UnTrackable
   }
 
-  pub fn new_in(allocator: &'a allocator::Allocator, callee: &'a FunctionValue<'a>) -> Self {
-    Self::Tracked { callee, effects: FnCachedEffects::new_in(allocator) }
+  pub fn new_in(allocator: &'a allocator::Allocator, info: FunctionCallInfo<'a>) -> Self {
+    if let Some(cache_key) = info.cache_key {
+      Self::Tracked {
+        func: info.func,
+        input: cache_key,
+        effects: FnCachedEffects::new_in(allocator),
+      }
+    } else {
+      FnCacheTrackingData::UnTrackable
+    }
   }
 
   pub fn track_read(
     &mut self,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCacheable<'a>>,
   ) {
     let Self::Tracked { effects, .. } = self else {
       return;
@@ -59,7 +67,7 @@ impl<'a> FnCacheTrackingData<'a> {
       *self = Self::UnTrackable;
       return;
     };
-    let TrackReadCachable::Mutable(current_value) = cacheable else {
+    let TrackReadCacheable::Mutable(current_value) = cacheable else {
       return;
     };
     if effects.reads.len() > 8 {
@@ -97,6 +105,8 @@ impl<'a> FnCacheTrackingData<'a> {
     };
     effects.writes.insert(target, cacheable);
   }
+
+  pub fn track_call(&mut self, input: FnCachedInput<'a>) {}
 }
 
 #[derive(Debug)]

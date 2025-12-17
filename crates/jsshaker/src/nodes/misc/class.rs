@@ -13,12 +13,10 @@ use oxc::{
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
-  dep::Dep,
   entity::Entity,
-  scope::VariableScopeId,
   transformer::Transformer,
   utils::CalleeNode,
-  value::{ArgumentsValue, FunctionValue, ObjectPrototype, ValueTrait, cache::FnCacheTrackingData},
+  value::{ObjectPrototype, ValueTrait, cache::FnCacheTrackingData, call::FunctionCallInfo},
 };
 
 #[derive(Default)]
@@ -128,22 +126,18 @@ impl<'a> Analyzer<'a> {
 
   pub fn call_class_constructor(
     &mut self,
-    func: &'a FunctionValue<'a>,
-    call_dep: Dep<'a>,
     node: &'a Class<'a>,
-    variable_scopes: &'a [VariableScopeId],
-    this: Entity<'a>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
+    info: FunctionCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let factory = self.factory;
     let data = self.load_data::<Data>(AstKind2::Class(node));
 
-    self.push_call_scope(func, call_dep, variable_scopes.to_vec(), false, false, consume);
+    self.push_call_scope(info, false, false);
     let super_class = data.super_class.unwrap_or(self.factory.undefined);
     let variable_scope = self.variable_scope_mut();
-    variable_scope.this = Some(this);
-    variable_scope.arguments = Some((args, factory.vec(/* later filled by formal parameters */)));
+    variable_scope.this = Some(info.this);
+    variable_scope.arguments =
+      Some((info.args, factory.vec(/* later filled by formal parameters */)));
     variable_scope.super_class = Some(super_class);
 
     if let Some(id) = &node.id {
@@ -157,7 +151,7 @@ impl<'a> Analyzer<'a> {
         && !node.r#static
       {
         let value = self.exec_property_definition(node);
-        this.set_property(self, self.factory.no_dep, key.unwrap(), value);
+        info.this.set_property(self, self.factory.no_dep, key.unwrap(), value);
       }
     }
 
@@ -166,15 +160,15 @@ impl<'a> Analyzer<'a> {
       let function = constructor.value.as_ref();
       let dep = self.factory.dep(AstKind2::Function(function));
       self.cf_scope_mut().push_dep(dep);
-      self.exec_formal_parameters(&function.params, args, DeclarationKind::FunctionParameter);
+      self.exec_formal_parameters(&function.params, info.args, DeclarationKind::FunctionParameter);
       self.exec_function_body(function.body.as_ref().unwrap());
-      if consume {
+      if info.consume {
         self.consume_return_values();
       }
       self.pop_call_scope()
     } else if let Some(super_class) = &data.super_class {
       self.pop_call_scope();
-      let ret_val = super_class.call(self, self.factory.no_dep, this, args);
+      let ret_val = super_class.call(self, self.factory.no_dep, info.this, info.args);
       (ret_val, FnCacheTrackingData::worst_case())
     } else {
       let (_, cache_tracking) = self.pop_call_scope();

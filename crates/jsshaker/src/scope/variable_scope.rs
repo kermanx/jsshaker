@@ -9,7 +9,7 @@ use oxc::{
 use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::Analyzer,
-  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   ast::DeclarationKind,
   define_box_bump_idx,
   dep::{Dep, LazyDep},
@@ -206,9 +206,9 @@ impl<'a> Analyzer<'a> {
         cf_scope,
         ReadWriteTarget::Variable(scope, symbol),
         Some(if may_change {
-          TrackReadCachable::Mutable(value)
+          TrackReadCacheable::Mutable(value)
         } else {
-          TrackReadCachable::Immutable
+          TrackReadCacheable::Immutable
         }),
       );
       value

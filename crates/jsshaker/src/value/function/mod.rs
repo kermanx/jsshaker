@@ -2,6 +2,7 @@ mod arguments;
 pub mod bound;
 mod builtin;
 pub mod cache;
+pub mod call;
 
 use std::cell::{Cell, RefCell};
 
@@ -207,110 +208,6 @@ impl<'a> FunctionValue<'a> {
       }
     }
     false
-  }
-
-  pub fn call_impl<const IS_CTOR: bool>(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    dep: Dep<'a>,
-    this: Entity<'a>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
-  ) -> Entity<'a> {
-    let call_dep = analyzer.dep((self.callee.into_node(), dep));
-
-    let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
-    if !consume
-      && let Some(cache_key) = cache_key
-      && let Some(cached_ret) = self.cache.borrow().retrieve(analyzer, &cache_key)
-    {
-      analyzer.global_effect();
-      analyzer.consume((call_dep, this, args));
-      return cached_ret;
-    }
-
-    let (ret_val, cache_tracking) = match self.callee.node {
-      CalleeNode::Function(node) => analyzer.call_function(
-        self,
-        call_dep,
-        node,
-        &self.variable_scope_stack,
-        this,
-        args,
-        consume,
-      ),
-      CalleeNode::ArrowFunctionExpression(node) => analyzer.call_arrow_function_expression(
-        self,
-        call_dep,
-        node,
-        &self.variable_scope_stack,
-        args,
-        consume,
-      ),
-      CalleeNode::ClassConstructor(node) => {
-        // if !CTOR {
-        analyzer.call_class_constructor(
-          self,
-          call_dep,
-          node,
-          &self.variable_scope_stack,
-          this,
-          args,
-          consume,
-        )
-        // } else {
-        //   analyzer.throw_builtin_error("Cannot invoke class constructor without 'new'");
-        //   analyzer.factory.unknown
-        // }
-      }
-      CalleeNode::BoundFunction(bound_fn) => analyzer.call_bound_function(
-        self,
-        call_dep,
-        bound_fn,
-        &self.variable_scope_stack,
-        IS_CTOR.then_some(this),
-        args,
-        consume,
-      ),
-      _ => unreachable!(),
-    };
-    let ret_val = if IS_CTOR {
-      let typeof_ret = ret_val.test_typeof();
-      match (
-        typeof_ret.intersects(TypeofResult::Object),
-        typeof_ret.intersects(TypeofResult::_Primitive),
-      ) {
-        (true, true) => analyzer.factory.union((ret_val, this)),
-        (true, false) => ret_val,
-        (false, true) => this,
-        (false, false) => analyzer.factory.never,
-      }
-    } else {
-      ret_val
-    };
-
-    if let Some(cache_key) = cache_key {
-      // if cache_tracking.has_outer_deps {
-      //   println!("Has outer deps: {}", self.callee.debug_name);
-      // }
-      self.cache.borrow_mut().update_cache(cache_key, ret_val, cache_tracking);
-    }
-
-    analyzer.factory.computed(ret_val, call_dep)
-  }
-
-  pub fn construct_impl(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    dep: Dep<'a>,
-    args: ArgumentsValue<'a>,
-    consume: bool,
-  ) -> Entity<'a> {
-    let target = analyzer.new_empty_object(
-      ObjectPrototype::Custom(self.prototype),
-      self.prototype.mangling_group.get(),
-    );
-    self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 
   pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>) {

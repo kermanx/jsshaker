@@ -20,7 +20,7 @@ use crate::{
   entity::Entity,
   module::ModuleId,
   utils::{CalleeInfo, CalleeNode},
-  value::{FunctionValue, ObjectId, cache::FnCacheTrackingData},
+  value::{ObjectId, cache::FnCacheTrackingData, call::FunctionCallInfo},
 };
 
 pub struct Scoping<'a> {
@@ -106,32 +106,30 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(
     &mut self,
-    func: &'a FunctionValue<'a>,
-    call_dep: Dep<'a>,
-    variable_scope_stack: Vec<VariableScopeId>,
+    info: FunctionCallInfo<'a>,
     is_async: bool,
     is_generator: bool,
-    consume: bool,
   ) {
     let dep_id = DepAtom::from_counter();
-    if consume {
+    if info.consume {
       self.refer_dep(dep_id);
     }
 
-    self.module_stack.push(func.callee.module_id);
-    let old_variable_scope_stack = self.replace_variable_scope_stack(variable_scope_stack);
+    self.module_stack.push(info.func.callee.module_id);
+    let old_variable_scope_stack =
+      self.replace_variable_scope_stack(info.func.variable_scope_stack.to_vec());
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function(
-        self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator, func)),
+        self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator, info)),
       ),
-      self.factory.vec1(self.dep((call_dep, dep_id))),
+      self.factory.vec1(self.dep((info.call_dep, dep_id))),
       false,
     );
 
     self.scoping.call.push(CallScope::new_in(
       dep_id,
-      func.callee,
+      info.func.callee,
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
