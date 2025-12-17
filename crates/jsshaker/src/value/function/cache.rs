@@ -118,13 +118,13 @@ impl<'a> FnCache<'a> {
       return None;
     }
 
-    let this = this.as_cachable()?;
+    let this = this.as_cacheable()?;
     if args.rest.is_some() {
       return None; // TODO: Support this case
     }
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
-      cargs.push(arg.as_cachable()?);
+      cargs.push(arg.as_cacheable()?);
     }
     Some(FnCacheEntryKey { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
   }
@@ -165,7 +165,7 @@ impl<'a> FnCache<'a> {
     let FnCacheTrackingData::Tracked { read_deps, write_effects } = tracking else {
       return;
     };
-    let Some(ret) = ret.as_cachable() else {
+    let Some(ret) = ret.as_cacheable() else {
       return;
     };
     self.table.insert(key, FnCacheEntryValue { read_deps, write_effects, ret });

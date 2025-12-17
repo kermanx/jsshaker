@@ -167,7 +167,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     Some(false)
   }
 
-  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
     None // Some(Cacheable::BuiltinFn(self.name()))
   }
 }
