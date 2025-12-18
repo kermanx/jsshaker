@@ -158,7 +158,7 @@ impl<'a> Analyzer<'a> {
     let mut deps = self.factory.vec();
     for id in target_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(id);
-      if let Some(dep) = scope.deps.try_collect(self.factory) {
+      if let Some(dep) = scope.deps.collect(self.factory) {
         deps.push(dep);
       }
     }
@@ -190,7 +190,7 @@ impl<'a> Analyzer<'a> {
         return Some(Some(self.factory.no_dep));
       }
 
-      let this_dep = cf_scope.deps.try_collect(self.factory);
+      let this_dep = cf_scope.deps.collect(self.factory);
 
       // Update exited state
       if must_exit {
@@ -306,23 +306,24 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn global_effect(&mut self) {
-    let mut deps = vec![];
-
     for depth in (0..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
-          deps.push(scope.deps.take(self.factory));
+          let dep = scope.deps.take(self.factory);
+          self.consume(dep);
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
           scope.referred_state = ReferredState::ReferredClean;
-          deps.push(scope.deps.take(self.factory));
+          let dep = scope.deps.take(self.factory);
+          self.consume(dep);
+
           for depth in (0..depth).rev() {
             let scope = self.scoping.cf.get_mut_from_depth(depth);
             match scope.referred_state {
-              ReferredState::Never => unreachable!("Logic error in refer_to_global"),
+              ReferredState::Never => unreachable!("Logic error in global_effect"),
               ReferredState::ReferredClean => break,
               ReferredState::ReferredDirty => {
                 scope.deps.force_clear();
@@ -334,8 +335,6 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-
-    self.consume(deps);
 
     self.call_exhaustive_callbacks();
   }

@@ -11,7 +11,7 @@ use crate::{
 
 pub struct PendingSetter<'a> {
   pub indeterminate: bool,
-  pub dep: Dep<'a>,
+  pub dep: Option<Dep<'a>>,
   pub setter: Entity<'a>,
 }
 
@@ -181,7 +181,7 @@ impl<'a> ObjectValue<'a> {
       ObjectPrototype::Unknown(dep) => {
         setters.push(PendingSetter {
           indeterminate: true,
-          dep,
+          dep: Some(dep),
           setter: analyzer.factory.computed_unknown(dep),
         });
         found = Found::Unknown;
@@ -263,7 +263,7 @@ impl<'a> ObjectValue<'a> {
       let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
       exhaustive |= scope.is_exhaustive();
       indeterminate |= scope.is_indeterminate();
-      if let Some(dep) = scope.deps.try_collect(analyzer.factory) {
+      if let Some(dep) = scope.deps.collect(analyzer.factory) {
         deps.push(dep);
       }
     }

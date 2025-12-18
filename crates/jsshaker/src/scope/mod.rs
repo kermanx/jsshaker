@@ -192,7 +192,7 @@ impl<'a> Analyzer<'a> {
     let mut exec_deps = self.factory.vec();
     for _ in 0..count {
       let id = self.scoping.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scoping.cf.get_mut(id).deps.try_collect(self.factory) {
+      if let Some(dep) = self.scoping.cf.get_mut(id).deps.collect(self.factory) {
         exec_deps.push(dep);
       }
     }

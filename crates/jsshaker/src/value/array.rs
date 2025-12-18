@@ -384,7 +384,7 @@ impl<'a> ArrayValue<'a> {
       let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
       is_exhaustive |= scope.is_exhaustive();
       indeterminate |= scope.is_indeterminate();
-      if let Some(dep) = scope.deps.try_collect(analyzer.factory) {
+      if let Some(dep) = scope.deps.collect(analyzer.factory) {
         exec_deps.push(dep);
       }
     }

@@ -105,10 +105,10 @@ pub fn check_dependencies<'a>(
     }
 
     if changed.is_empty() {
-      if let Some(rest) = rest_collector.try_collect(factory) {
+      if let Some(rest) = rest_collector.collect(factory) {
         (true, analyzer.dep((rest, extra_collector.collect(factory))))
       } else {
-        (false, extra_collector.collect(factory))
+        (false, analyzer.dep(extra_collector.collect(factory)))
       }
     } else {
       let mut deps = analyzer.factory.vec();
