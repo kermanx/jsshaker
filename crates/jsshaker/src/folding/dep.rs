@@ -1,14 +1,12 @@
-use std::{cell::RefCell, mem};
-
-use super::{FoldingData, FoldingState};
+use super::FoldingState;
 use crate::{
-  analyzer::Analyzer, dep::CustomDepTrait, entity::Entity, mangling::MangleAtom,
-  value::LiteralValue,
+  analyzer::Analyzer, dep::CustomDepTrait, entity::Entity, folding::FoldingDataId,
+  mangling::MangleAtom, value::LiteralValue,
 };
 
 #[derive(Debug)]
 pub struct FoldableDep<'a> {
-  pub data: &'a RefCell<FoldingData<'a>>,
+  pub data: FoldingDataId,
   pub literal: LiteralValue<'a>,
   pub value: Entity<'a>,
   pub mangle_atom: Option<MangleAtom>,
@@ -16,7 +14,7 @@ pub struct FoldableDep<'a> {
 
 impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    let mut data = self.data.borrow_mut();
+    let data = analyzer.folder.bump.get_mut(self.data);
 
     if data.state.is_foldable() {
       data.used_values.push(self.value);
@@ -35,21 +33,20 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
         }
       }
       FoldingState::UnFoldable => {
-        mem::drop(data);
-        self.value.consume(analyzer);
+        analyzer.consume(self.value);
       }
     }
   }
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct UnFoldableDep<'a> {
-  pub data: &'a RefCell<FoldingData<'a>>,
+pub struct UnFoldableDep {
+  pub data: FoldingDataId,
 }
 
-impl<'a> CustomDepTrait<'a> for UnFoldableDep<'a> {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {
-    let mut data = self.data.borrow_mut();
+impl<'a> CustomDepTrait<'a> for UnFoldableDep {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+    let data = analyzer.folder.bump.get_mut(self.data);
     data.state = FoldingState::UnFoldable;
   }
 }

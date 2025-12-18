@@ -1,18 +1,17 @@
 mod dep;
 
-use std::{cell::RefCell, mem};
-
 use dep::{FoldableDep, UnFoldableDep};
 use oxc::{allocator, ast::ast::Expression, span::GetSpan};
 use rustc_hash::FxHashMap;
 
 use crate::{
   analyzer::Analyzer,
+  define_box_bump_idx,
   dep::DepAtom,
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
-  utils::ast::AstKind2,
+  utils::{ast::AstKind2, box_bump::BoxBump},
   value::LiteralValue,
 };
 
@@ -46,9 +45,24 @@ pub struct FoldingData<'a> {
   pub allocated_atom: Option<MangleAtom>,
 }
 
-#[derive(Debug, Default)]
+define_box_bump_idx! {
+  pub struct FoldingDataId;
+}
+
 pub struct ConstantFolder<'a> {
-  nodes: FxHashMap<DepAtom, &'a RefCell<FoldingData<'a>>>,
+  bump: BoxBump<'a, FoldingDataId, FoldingData<'a>>,
+  nodes: FxHashMap<DepAtom, FoldingDataId>,
+}
+
+impl<'a> ConstantFolder<'a> {
+  pub fn new(allocator: &'a allocator::Allocator) -> Self {
+    Self { bump: BoxBump::new(allocator), nodes: FxHashMap::default() }
+  }
+
+  pub fn get(&self, atom: DepAtom) -> Option<&FoldingData<'a>> {
+    let data_id = self.nodes.get(&atom)?;
+    Some(self.bump.get(*data_id))
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -62,20 +76,21 @@ impl<'a> Analyzer<'a> {
 
   pub fn try_fold_node(&mut self, node: AstKind2<'a>, value: Entity<'a>) -> Entity<'a> {
     let data = *self.folder.nodes.entry(node.into()).or_insert_with(|| {
-      self.factory.alloc(RefCell::new(FoldingData {
+      self.folder.bump.alloc(FoldingData {
         state: FoldingState::Initial,
         used_values: self.factory.vec(),
         used_mangle_atoms: self.factory.vec(),
         allocated_atom: None,
-      }))
+      })
     });
-    if !data.borrow().state.is_foldable() {
+    if !self.folder.bump.get(data).state.is_foldable() {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
       let (literal_value, mangle_atom) = match literal {
         LiteralValue::String(value, atom) => {
           let atom = atom.unwrap_or_else(|| {
-            *data.borrow_mut().allocated_atom.get_or_insert_with(|| self.mangler.new_atom())
+            let data = self.folder.bump.get_mut(data);
+            *data.allocated_atom.get_or_insert_with(|| self.mangler.new_atom())
           });
           (self.factory.alloc(LiteralValue::String(value, Some(atom))).into(), Some(atom))
         }
@@ -90,7 +105,7 @@ impl<'a> Analyzer<'a> {
   pub fn post_analyze_handle_folding(&mut self) -> bool {
     let mut changed = false;
     for data in self.folder.nodes.values().copied().collect::<Vec<_>>() {
-      let mut data = data.borrow_mut();
+      let data = self.folder.bump.get_mut(data);
       if data.state.is_foldable() {
         if data.used_mangle_atoms.len() > 1 {
           let first_atom = data.used_mangle_atoms[0];
@@ -101,7 +116,6 @@ impl<'a> Analyzer<'a> {
       } else {
         let values = data.used_values.drain(..).collect::<Vec<_>>();
         let allocated_atom = data.allocated_atom.take();
-        mem::drop(data);
         for value in values {
           value.consume_mangable(self);
           changed = true;
@@ -115,7 +129,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn build_folded_expr(&self, node: AstKind2) -> Option<Expression<'a>> {
-    let data = self.folder.nodes.get(&node.into())?.borrow();
+    let data = self.folder.get(node.into())?;
     data.state.get_foldable_literal().map(|literal| {
       let span = node.span();
       let mangle_atom = data.used_mangle_atoms.first().copied();
@@ -124,6 +138,6 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn get_folded_literal(&self, node: AstKind2<'a>) -> Option<LiteralValue<'a>> {
-    self.folder.nodes.get(&node.into())?.borrow().state.get_foldable_literal()
+    self.folder.get(node.into())?.state.get_foldable_literal()
   }
 }

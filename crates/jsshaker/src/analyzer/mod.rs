@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
       referred_deps: Default::default(),
       conditional_data: Default::default(),
       // loop_data: Default::default(),
-      folder: Default::default(),
+      folder: ConstantFolder::new(allocator),
       mangler: Mangler::new(config.mangling.is_some(), allocator),
       pending_deps: Default::default(),
       diagnostics: Default::default(),
