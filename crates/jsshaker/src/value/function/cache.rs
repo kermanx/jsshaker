@@ -1,11 +1,11 @@
-use oxc::allocator;
+use oxc::allocator::{self, Allocator};
 
 use crate::{
   Analyzer,
-  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
-  value::{ArgumentsValue, cacheable::Cacheable, call::FnCallInfo},
+  value::{ArgumentsValue, FunctionValue, cacheable::Cacheable, call::FnCallInfo},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -15,19 +15,45 @@ pub struct FnCachedInput<'a> {
   pub args: &'a [Cacheable<'a>],
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct FnCallEffect<'a> {
+  pub func: &'a FunctionValue<'a>,
+  pub input: FnCachedInput<'a>,
+}
+impl<'a> PartialEq for FnCallEffect<'a> {
+  fn eq(&self, other: &Self) -> bool {
+    std::ptr::eq(self.func, other.func) && self.input == other.input
+  }
+}
+impl<'a> Eq for FnCallEffect<'a> {}
+impl<'a> std::hash::Hash for FnCallEffect<'a> {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    (self.func as *const _, &self.input).hash(state);
+  }
+}
+
 #[derive(Debug)]
 pub struct FnCachedEffects<'a> {
   pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>,
   pub writes: allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>,
+  pub calls: allocator::HashSet<'a, FnCallEffect<'a>>,
 }
 
-#[derive(Debug, Default)]
+impl<'a> FnCachedEffects<'a> {
+  pub fn new_in(allocator: &'a Allocator) -> Self {
+    Self {
+      reads: allocator::HashMap::new_in(allocator),
+      writes: allocator::HashMap::new_in(allocator),
+      calls: allocator::HashSet::new_in(allocator),
+    }
+  }
+}
+
+#[derive(Debug)]
 pub enum FnCacheTrackingData<'a> {
-  #[default]
   UnTrackable,
-  Tracked {
-    effects: FnCachedEffects<'a>,
-  },
+  Tracked { self_call_effect: FnCallEffect<'a>, effects: FnCachedEffects<'a> },
+  Failed { self_call_effect: FnCallEffect<'a> },
 }
 
 impl<'a> FnCachedEffects<'a> {
@@ -41,32 +67,55 @@ impl<'a> FnCachedEffects<'a> {
 
 impl<'a> FnCacheTrackingData<'a> {
   pub fn worst_case() -> Self {
-    Self::default()
+    FnCacheTrackingData::UnTrackable
   }
 
   pub fn new_in(allocator: &'a allocator::Allocator, info: FnCallInfo<'a>) -> Self {
-    if let Some(_cache_key) = info.cache_key {
-      Self::Tracked { effects: FnCachedEffects::new_in(allocator) }
+    if let Some(cache_key) = info.cache_key {
+      Self::Tracked {
+        self_call_effect: FnCallEffect { func: info.func, input: cache_key },
+        effects: FnCachedEffects::new_in(allocator),
+      }
     } else {
       FnCacheTrackingData::UnTrackable
+    }
+  }
+
+  pub fn failed(&mut self) {
+    let Self::Tracked { self_call_effect, .. } = self else {
+      unreachable!();
+    };
+    *self = Self::Failed { self_call_effect: *self_call_effect };
+  }
+
+  pub fn call_effect(&self) -> Option<FnCallEffect<'a>> {
+    match self {
+      Self::Tracked { self_call_effect, .. } => Some(*self_call_effect),
+      Self::Failed { self_call_effect } => Some(*self_call_effect),
+      Self::UnTrackable => None,
     }
   }
 
   pub fn track_read(
     &mut self,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<TrackReadCachable<'a>>,
-  ) {
-    let Self::Tracked { effects, .. } = self else {
-      return;
+    cacheable: Option<TrackReadCacheable<'a>>,
+  ) -> Option<FnCallEffect<'a>> {
+    let Self::Tracked { self_call_effect, effects } = self else {
+      return None;
     };
+    let self_call_effect = *self_call_effect;
     let Some(cacheable) = cacheable else {
-      *self = Self::UnTrackable;
-      return;
+      self.failed();
+      return Some(self_call_effect);
     };
-    let TrackReadCachable::Mutable(current_value) = cacheable else {
-      return;
+    let TrackReadCacheable::Mutable(current_value) = cacheable else {
+      return None;
     };
+    if effects.reads.len() > 8 {
+      self.failed();
+      return Some(self_call_effect);
+    }
     match effects.reads.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
         // TODO: Remove these?
@@ -82,6 +131,7 @@ impl<'a> FnCacheTrackingData<'a> {
         v.insert(current_value);
       }
     }
+    Some(self_call_effect)
   }
 
   pub fn track_write(
@@ -93,10 +143,17 @@ impl<'a> FnCacheTrackingData<'a> {
       return;
     };
     let Some(cacheable) = cacheable else {
-      *self = Self::UnTrackable;
+      self.failed();
       return;
     };
     effects.writes.insert(target, cacheable);
+  }
+
+  pub fn track_call(&mut self, effect: FnCallEffect<'a>) {
+    let Self::Tracked { effects, .. } = self else {
+      return;
+    };
+    effects.calls.insert(effect);
   }
 }
 
@@ -135,8 +192,8 @@ impl<'a> FnCache<'a> {
     analyzer: &mut Analyzer<'a>,
     key: &FnCachedInput<'a>,
   ) -> Option<Entity<'a>> {
-    if let Some((effects, ret)) = self.table.get(key) {
-      for (&target, &last_value) in &effects.reads {
+    if let Some((cached, ret)) = self.table.get(key) {
+      for (&target, &last_value) in &cached.reads {
         let current_value = analyzer.get_rw_target_current_value(target);
         if match (last_value, current_value) {
           (Some(e1), Some(e2)) => !e1.exactly_same(e2),
@@ -147,7 +204,7 @@ impl<'a> FnCache<'a> {
         }
       }
 
-      for (&target, &(indeterminate, cacheable)) in &effects.writes {
+      for (&target, &(indeterminate, cacheable)) in &cached.writes {
         analyzer.set_rw_target_current_value(target, cacheable, indeterminate);
       }
 
@@ -163,7 +220,7 @@ impl<'a> FnCache<'a> {
     ret: Entity<'a>,
     tracking: FnCacheTrackingData<'a>,
   ) {
-    let FnCacheTrackingData::Tracked { effects } = tracking else {
+    let FnCacheTrackingData::Tracked { effects, .. } = tracking else {
       return;
     };
     let Some(ret) = ret.as_cacheable() else {

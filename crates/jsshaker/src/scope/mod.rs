@@ -142,7 +142,7 @@ impl<'a> Analyzer<'a> {
     let CfScopeKind::Function(tracking_data) = &mut cf_scope.kind else {
       unreachable!();
     };
-    let tracking_data = mem::take(*tracking_data);
+    let tracking_data = mem::replace(*tracking_data, FnCacheTrackingData::UnTrackable);
 
     self.pop_variable_scope();
     self.replace_variable_scope(old_variable_scope);

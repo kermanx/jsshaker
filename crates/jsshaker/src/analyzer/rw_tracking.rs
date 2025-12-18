@@ -33,7 +33,7 @@ impl<'a> ReadWriteTarget<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum TrackReadCachable<'a> {
+pub enum TrackReadCacheable<'a> {
   Immutable,
   Mutable(EntityOrTDZ<'a>),
 }
@@ -43,10 +43,11 @@ impl<'a> Analyzer<'a> {
     &mut self,
     scope: CfScopeId,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCacheable<'a>>,
   ) {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
+    let mut call_effect = None;
     for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if let Some(data) = scope.exhaustive_data_mut() {
@@ -63,7 +64,11 @@ impl<'a> Analyzer<'a> {
         }
       }
       if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.track_read(target, cacheable);
+        if let Some(call_effect) = call_effect {
+          data.track_call(call_effect);
+        } else {
+          call_effect = data.track_read(target, cacheable);
+        }
       }
     }
   }
