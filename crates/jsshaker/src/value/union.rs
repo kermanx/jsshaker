@@ -241,6 +241,18 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     Some(Vec::from_iter(result))
   }
 
+  fn get_literal(&'a self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
+    let mut iter = self.values.iter();
+    let result = iter.next()?.get_literal(analyzer)?;
+    for entity in iter {
+      let lit = entity.get_literal(analyzer)?;
+      if lit != result {
+        return None;
+      }
+    }
+    Some(result)
+  }
+
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     let mut result = Vec::new();
     for entity in self.values.iter() {

@@ -310,7 +310,11 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   }
 
   fn as_cacheable(&self) -> Option<Cacheable<'a>> {
-    Some(Cacheable::Literal(*self))
+    if let LiteralValue::String(s, _) = self {
+      Some(Cacheable::Literal(LiteralValue::String(s, None)))
+    } else {
+      Some(Cacheable::Literal(*self))
+    }
   }
 }
 

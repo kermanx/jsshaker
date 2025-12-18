@@ -105,10 +105,8 @@ pub trait ValueTrait<'a>: Debug {
   fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
     None
   }
-  fn get_literal(&'a self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
-    self
-      .get_to_literals(analyzer)
-      .and_then(|set| if set.len() == 1 { set.into_iter().next() } else { None })
+  fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
+    None
   }
   /// Returns vec![(definite, key)]
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
