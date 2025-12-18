@@ -118,8 +118,8 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
                 PropertyKeyValue::String(i_str),
                 (
                   true,
-                  analyzer.factory.string(i_str),
-                  analyzer.factory.string(analyzer.allocator.alloc_str(&c.to_string())),
+                  analyzer.factory.unmangable_string(i_str),
+                  analyzer.factory.unmangable_string(analyzer.allocator.alloc_str(&c.to_string())),
                 ),
               )
             })
@@ -260,7 +260,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
       self.get_to_string(analyzer)
     } else {
-      analyzer.factory.string("")
+      analyzer.factory.builtin_string("")
     }
   }
 
@@ -477,7 +477,7 @@ impl<'a> LiteralValue<'a> {
           Some(
             value
               .get(index..index + 1)
-              .map_or(analyzer.factory.undefined, |v| analyzer.factory.string(v)),
+              .map_or(analyzer.factory.undefined, |v| analyzer.factory.unmangable_string(v)),
           )
         } else {
           None

@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
       match &node.argument {
         Expression::StaticMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
-          let key = self.factory.string(&node.property.name);
+          let key = self.exec_identifier_name(&node.property);
           object.delete_property(self, dep, key)
         }
         Expression::PrivateFieldExpression(node) => {
@@ -110,10 +110,11 @@ impl<'a> Transformer<'a> {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
+            let property = self.transform_identifier_name(&node.property);
             Expression::from(self.ast_builder.member_expression_static(
               node.span,
               object,
-              node.property.clone(),
+              property,
               node.optional,
             ))
           }

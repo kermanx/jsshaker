@@ -250,12 +250,20 @@ impl<'a> Factory<'a> {
     }
   }
 
-  pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralValue::String(value, None)).into()
+  pub fn builtin_string(&self, value: &'static str) -> Entity<'a> {
+    self.string(value, None)
   }
 
   pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.alloc(LiteralValue::String(value, Some(atom))).into()
+    self.string(value, Some(atom))
+  }
+
+  pub fn unmangable_string(&self, value: &'a str) -> Entity<'a> {
+    self.string(value, None)
+  }
+
+  pub fn string(&self, value: &'a str, atom: Option<MangleAtom>) -> Entity<'a> {
+    self.alloc(LiteralValue::String(value, atom)).into()
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {

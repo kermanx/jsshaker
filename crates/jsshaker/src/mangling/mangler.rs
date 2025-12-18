@@ -1,6 +1,5 @@
-use oxc::allocator::Allocator;
+use oxc::allocator::{self, Allocator};
 use oxc_index::IndexVec;
-use rustc_hash::FxHashSet;
 
 use crate::utils::box_bump::BoxBump;
 
@@ -18,7 +17,7 @@ oxc_index::define_index_type! {
 
 #[derive(Debug)]
 pub enum AtomState<'a> {
-  Constrained(Option<IdentityGroupId>, FxHashSet<UniquenessGroupId>),
+  Constrained(Option<IdentityGroupId>, allocator::HashSet<'a, UniquenessGroupId>),
   Constant(&'a str),
   NonMangable,
   Preserved,
@@ -53,7 +52,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn new_atom(&self) -> MangleAtom {
-    self.atoms.alloc(AtomState::Constrained(None, FxHashSet::default()))
+    self.atoms.alloc(AtomState::Constrained(None, allocator::HashSet::new_in(self.allocator)))
   }
 
   pub fn new_constant_atom(&self, str: &'a str) -> MangleAtom {

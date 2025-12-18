@@ -71,11 +71,7 @@ impl<'a> ObjectValue<'a> {
         let (key, key_entity) = if let PropertyKeyValue::String(key) = key {
           (
             PropertyKeyValue::String(key),
-            if mangable {
-              analyzer.factory.mangable_string(key, property.mangling.unwrap())
-            } else {
-              analyzer.factory.string(key)
-            },
+            analyzer.factory.string(key, mangable.then(|| property.mangling.unwrap())),
           )
         } else {
           todo!()

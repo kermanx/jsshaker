@@ -8,7 +8,7 @@ use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Tran
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_member_expression(&mut self, node: &'a JSXMemberExpression<'a>) -> Entity<'a> {
     let object = self.exec_jsx_member_expression_object(&node.object);
-    let key = self.factory.string(&node.property.name);
+    let key = self.exec_jsx_identifier(&node.property);
     object.get_property(self, AstKind2::JSXMemberExpression(node), key)
   }
 }
@@ -27,7 +27,7 @@ impl<'a> Transformer<'a> {
       Some(Expression::from(self.ast_builder.member_expression_static(
         *span,
         object,
-        self.ast_builder.identifier_name(property.span, property.name),
+        self.transform_jsx_identifier_as_identifier_name(property),
         false,
       )))
     } else {
@@ -44,7 +44,7 @@ impl<'a> Transformer<'a> {
     self.ast_builder.alloc_jsx_member_expression(
       *span,
       self.transform_jsx_member_expression_object_need_val(object),
-      self.clone_node(property),
+      self.transform_jsx_identifier(property),
     )
   }
 }

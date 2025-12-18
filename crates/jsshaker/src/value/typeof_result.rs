@@ -33,28 +33,28 @@ impl TypeofResult {
       _ => {
         let mut values = factory.vec();
         if self.contains(TypeofResult::String) {
-          values.push(factory.string("string"));
+          values.push(factory.builtin_string("string"));
         }
         if self.contains(TypeofResult::Number) {
-          values.push(factory.string("number"));
+          values.push(factory.builtin_string("number"));
         }
         if self.contains(TypeofResult::BigInt) {
-          values.push(factory.string("bigint"));
+          values.push(factory.builtin_string("bigint"));
         }
         if self.contains(TypeofResult::Boolean) {
-          values.push(factory.string("boolean"));
+          values.push(factory.builtin_string("boolean"));
         }
         if self.contains(TypeofResult::Symbol) {
-          values.push(factory.string("symbol"));
+          values.push(factory.builtin_string("symbol"));
         }
         if self.contains(TypeofResult::Undefined) {
-          values.push(factory.string("undefined"));
+          values.push(factory.builtin_string("undefined"));
         }
         if self.contains(TypeofResult::Object) {
-          values.push(factory.string("object"));
+          values.push(factory.builtin_string("object"));
         }
         if self.contains(TypeofResult::Function) {
-          values.push(factory.string("function"));
+          values.push(factory.builtin_string("function"));
         }
         factory.union(values)
       }

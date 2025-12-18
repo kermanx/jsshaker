@@ -88,7 +88,7 @@ fn create_react_context_provider_impl<'a>(
     "React::Context::Provider",
     move |analyzer, dep, _this, args| {
       let props = args.get(analyzer, 0);
-      let value = props.get_property(analyzer, dep, analyzer.factory.string("value"));
+      let value = props.get_property(analyzer, dep, analyzer.factory.builtin_string("value"));
 
       let data = &mut analyzer.builtins.react_data.contexts[context_id];
       let mut need_pop = false;
@@ -118,7 +118,7 @@ fn create_react_context_provider_impl<'a>(
         }
       }
 
-      let children = props.get_property(analyzer, dep, analyzer.factory.string("children"));
+      let children = props.get_property(analyzer, dep, analyzer.factory.builtin_string("children"));
       children.consume(analyzer);
 
       if need_pop {
@@ -151,7 +151,7 @@ pub fn create_react_use_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a>
     let context_id = context_object.get_property(
       analyzer,
       analyzer.factory.no_dep,
-      analyzer.factory.string("__#internal__context_id"),
+      analyzer.factory.builtin_string("__#internal__context_id"),
     );
     if let Some(id) = analyzer.parse_internal_symbol_id::<ContextId>(context_id) {
       let data = &analyzer.builtins.react_data.contexts[id];

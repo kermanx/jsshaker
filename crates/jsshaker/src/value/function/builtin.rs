@@ -144,7 +144,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
 
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
-    analyzer.factory.string("")
+    analyzer.factory.builtin_string("")
   }
 
   fn get_constructor_prototype(

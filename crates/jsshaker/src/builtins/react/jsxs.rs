@@ -6,7 +6,12 @@ pub fn create_react_jsxs_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
     let props = args.get(analyzer, 1);
     let key = args.get(analyzer, 2);
     analyzer.consume(props.get_shallow_dep(analyzer));
-    props.set_property(analyzer, analyzer.factory.no_dep, analyzer.factory.string("key"), key);
+    props.set_property(
+      analyzer,
+      analyzer.factory.no_dep,
+      analyzer.factory.builtin_string("key"),
+      key,
+    );
     let props = analyzer.factory.computed(props, dep);
     let element = analyzer.factory.react_element(tag, props);
     analyzer.factory.computed(element, dep)

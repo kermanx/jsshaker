@@ -1,6 +1,7 @@
 use oxc::{
   ast::ast::{
     AssignmentTargetProperty, AssignmentTargetPropertyIdentifier, AssignmentTargetPropertyProperty,
+    SimpleAssignmentTarget,
   },
   span::{GetSpan, SPAN},
 };
@@ -17,7 +18,7 @@ impl<'a> Analyzer<'a> {
     let dep = AstKind2::AssignmentTargetProperty(node);
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
-        let key = self.factory.string(node.binding.name.as_str());
+        let key = self.exec_identifier_reference_as_key(&node.binding);
 
         let value = value.get_property(self, dep, key);
 
@@ -51,19 +52,18 @@ impl<'a> Transformer<'a> {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let AssignmentTargetPropertyIdentifier { span, binding, init } = node.as_ref();
 
-        let binding_span = binding.span();
-        let binding_name = binding.name.as_str();
-        let binding = self.transform_identifier_reference_write(binding);
+        let binding_write = self.transform_identifier_reference_write(binding);
+        let binding_key = self.transform_identifier_reference_as_key(binding);
         let init = if let Some(init) = init {
-          self.transform_with_default(init, binding.is_some())
+          self.transform_with_default(init, binding_write.is_some())
         } else {
           None
         };
 
-        if need_binding && binding.is_none() {
+        if need_binding && binding_write.is_none() {
           Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
-            self.ast_builder.property_key_static_identifier(binding_span, binding_name),
+            binding_key,
             if let Some(init) = init {
               self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
                 *span,
@@ -75,14 +75,24 @@ impl<'a> Transformer<'a> {
             },
             false,
           ))
-        } else if binding.is_some() || init.is_some() {
-          Some(self.ast_builder.assignment_target_property_assignment_target_property_identifier(
+        } else if binding_write.is_some() || init.is_some() {
+          let binding_write = binding_write.map_or_else(
+            || self.build_unused_assignment_target(SPAN),
+            |b| SimpleAssignmentTarget::AssignmentTargetIdentifier(b).into(),
+          );
+          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
             *span,
-            binding.map_or_else(
-              || self.build_unused_identifier_reference_write(binding_span),
-              |binding| binding.unbox(),
-            ),
-            init,
+            binding_key,
+            if let Some(init) = init {
+              self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
+                *span,
+                binding_write,
+                init,
+              )
+            } else {
+              binding_write.into()
+            },
+            false,
           ))
         } else {
           None

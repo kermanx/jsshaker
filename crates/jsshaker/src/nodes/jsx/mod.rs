@@ -6,6 +6,7 @@ mod jsx_element;
 mod jsx_element_name;
 mod jsx_expression_container;
 mod jsx_fragment;
+mod jsx_identifier;
 mod jsx_member_expression;
 mod jsx_member_expression_object;
 mod jsx_spread_child;

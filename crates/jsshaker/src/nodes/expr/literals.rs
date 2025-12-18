@@ -7,7 +7,7 @@ use crate::{Analyzer, entity::Entity};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {
-    self.factory.string(node.value.as_str())
+    self.factory.mangable_string(node.value.as_str(), self.mangler.new_atom())
   }
 
   pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
