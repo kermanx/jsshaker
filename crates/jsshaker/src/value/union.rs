@@ -289,7 +289,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     Some(result)
   }
 
-  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
     None // TODO: implement cacheable for union values
   }
 }

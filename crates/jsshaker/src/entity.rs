@@ -217,7 +217,7 @@ impl<'a> Entity<'a> {
   }
 
   pub fn as_cacheable(&self) -> Option<Cacheable<'a>> {
-    self.value.as_cachable()
+    self.value.as_cacheable()
   }
 }
 

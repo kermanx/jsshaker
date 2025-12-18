@@ -41,7 +41,7 @@ impl<'a> Analyzer<'a> {
       } else {
         both_exit = false;
       }
-      acc_dep_1 = conditional_scope.deps.try_collect(factory);
+      acc_dep_1 = conditional_scope.deps.collect(factory);
     }
     if maybe_alternate {
       self.push_if_like_branch_cf_scope(
@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
         } else {
           both_exit = false;
         }
-        acc_dep_2 = conditional_scope.deps.try_collect(factory);
+        acc_dep_2 = conditional_scope.deps.collect(factory);
       } else {
         self.pop_cf_scope();
         both_exit = false;

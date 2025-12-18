@@ -154,7 +154,7 @@ impl<'a> Analyzer<'a> {
   fn exec_module(&mut self, module_id: ModuleId) {
     let ModuleInfo { call_id, program, .. } = self.modules.modules[module_id].clone();
     self.module_stack.push(module_id);
-    let old_variable_scope_stack = self.replace_variable_scope_stack(vec![]);
+    let old_variable_scope = self.replace_variable_scope(None);
     let root_variable_scope = self
       .scoping
       .variable
@@ -168,7 +168,7 @@ impl<'a> Analyzer<'a> {
         #[cfg(feature = "flame")]
         debug_name: "<Module>",
       },
-      vec![],
+      None,
       0,
       root_variable_scope,
       true,
@@ -192,14 +192,14 @@ impl<'a> Analyzer<'a> {
 
     self.scoping.cf.replace_stack(old_cf_scope_stack);
     self.scoping.call.pop();
-    self.replace_variable_scope_stack(old_variable_scope_stack);
+    self.replace_variable_scope(old_variable_scope);
     self.module_stack.pop();
 
     for (module, scope, node) in mem::take(&mut self.modules.modules[module_id].blocked_imports) {
       self.module_stack.push(module);
-      self.scoping.variable.stack.push(scope);
+      let old_top = self.scoping.variable.replace_top(Some(scope));
       self.init_import_declaration(node);
-      self.scoping.variable.stack.pop();
+      self.scoping.variable.replace_top(old_top);
       self.module_stack.pop();
     }
   }

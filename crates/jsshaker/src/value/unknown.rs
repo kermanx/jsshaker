@@ -127,7 +127,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     UnionHint::Unknown
   }
 
-  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
     Some(Cacheable::Unknown)
   }
 }

@@ -75,7 +75,7 @@ impl<'a> ObjectProperty<'a> {
     } else {
       self.get_unmangable(analyzer, context);
     }
-    if let Some(dep) = self.non_existent.try_collect(analyzer.factory) {
+    if let Some(dep) = self.non_existent.collect(analyzer.factory) {
       context.extra_deps.push(dep);
     }
   }

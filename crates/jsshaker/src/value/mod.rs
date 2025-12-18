@@ -212,7 +212,7 @@ pub trait ValueTrait<'a>: Debug {
     UnionHint::Other
   }
 
-  fn as_cachable(&self) -> Option<Cacheable<'a>>;
+  fn as_cacheable(&self) -> Option<Cacheable<'a>>;
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {

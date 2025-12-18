@@ -169,7 +169,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     true
   }
 
-  fn as_cachable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
     Some(Cacheable::Primitive(*self))
   }
 }

@@ -1,8 +1,9 @@
 pub mod call_scope;
 pub mod cf_scope;
 // pub mod r#loop;
-mod scope_tree;
+mod stacked_tree;
 // mod utils;
+mod linked_tree;
 pub mod variable_scope;
 
 use std::mem;
@@ -10,7 +11,7 @@ use std::mem;
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
-use scope_tree::ScopeTree;
+use stacked_tree::StackedTree;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;
 
@@ -19,14 +20,15 @@ use crate::{
   dep::{Dep, DepAtom, DepTrait, DepVec},
   entity::Entity,
   module::ModuleId,
+  scope::linked_tree::LinkedTree,
   utils::{CalleeInfo, CalleeNode},
   value::{ObjectId, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
-  pub variable: ScopeTree<'a, VariableScopeId, VariableScope<'a>>,
-  pub cf: ScopeTree<'a, CfScopeId, CfScope<'a>>,
+  pub variable: LinkedTree<'a, VariableScopeId, VariableScope<'a>>,
+  pub cf: StackedTree<'a, CfScopeId, CfScope<'a>>,
   pub root_cf_scope: CfScopeId,
   pub try_catch_depth: Option<usize>,
 
@@ -35,10 +37,10 @@ pub struct Scoping<'a> {
 
 impl<'a> Scoping<'a> {
   pub fn new(factory: &mut Factory<'a>) -> Self {
-    let mut variable = ScopeTree::new_in(factory.allocator);
+    let mut variable = LinkedTree::new_in(factory.allocator);
     let root_variable_scope =
       variable.push(VariableScope::new_in_with_this(factory.allocator, factory.unknown));
-    let mut cf = ScopeTree::new_in(factory.allocator);
+    let mut cf = StackedTree::new_in(factory.allocator);
     let root_cf_scope = cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), false));
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
@@ -51,7 +53,7 @@ impl<'a> Scoping<'a> {
           #[cfg(feature = "flame")]
           debug_name: "<Root>",
         },
-        vec![],
+        None,
         0,
         root_variable_scope,
         false,
@@ -97,11 +99,11 @@ impl<'a> Analyzer<'a> {
     self.scoping.variable.get_current_mut()
   }
 
-  pub fn replace_variable_scope_stack(
+  pub fn replace_variable_scope(
     &mut self,
-    new_stack: Vec<VariableScopeId>,
-  ) -> Vec<VariableScopeId> {
-    self.scoping.variable.replace_stack(new_stack)
+    new_top: Option<VariableScopeId>,
+  ) -> Option<VariableScopeId> {
+    self.scoping.variable.replace_top(new_top)
   }
 
   pub fn push_call_scope(&mut self, info: FnCallInfo<'a>, is_async: bool, is_generator: bool) {
@@ -111,8 +113,7 @@ impl<'a> Analyzer<'a> {
     }
 
     self.module_stack.push(info.func.callee.module_id);
-    let old_variable_scope_stack =
-      self.replace_variable_scope_stack(info.func.variable_scope_stack.to_vec());
+    let old_variable_scope_stack = self.replace_variable_scope(info.func.lexical_scope);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function(
@@ -135,7 +136,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let scope = self.scoping.call.pop().unwrap();
-    let (old_variable_scope_stack, ret_val) = scope.finalize(self);
+    let (old_variable_scope, ret_val) = scope.finalize(self);
     let cf_scope_id = self.pop_cf_scope();
     let cf_scope = self.scoping.cf.get_mut(cf_scope_id);
     let CfScopeKind::Function(tracking_data) = &mut cf_scope.kind else {
@@ -144,7 +145,7 @@ impl<'a> Analyzer<'a> {
     let tracking_data = mem::replace(*tracking_data, FnCacheTrackingData::UnTrackable);
 
     self.pop_variable_scope();
-    self.replace_variable_scope_stack(old_variable_scope_stack);
+    self.replace_variable_scope(old_variable_scope);
     self.module_stack.pop();
     (ret_val, tracking_data)
   }
@@ -191,7 +192,7 @@ impl<'a> Analyzer<'a> {
     let mut exec_deps = self.factory.vec();
     for _ in 0..count {
       let id = self.scoping.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scoping.cf.get_mut(id).deps.try_collect(self.factory) {
+      if let Some(dep) = self.scoping.cf.get_mut(id).deps.collect(self.factory) {
         exec_deps.push(dep);
       }
     }

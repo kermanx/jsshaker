@@ -350,7 +350,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
   ) {
-    let variable_scope = self.scoping.variable.current_id();
+    let variable_scope = self.scoping.variable.top().unwrap();
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if exporting {
@@ -375,28 +375,30 @@ impl<'a> Analyzer<'a> {
     value: Option<Entity<'a>>,
     init_node: AstKind2<'a>,
   ) {
-    let variable_scope = self.scoping.variable.current_id();
+    let variable_scope = self.scoping.variable.top().unwrap();
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 
   /// `None` for TDZ
   pub fn read_symbol(&mut self, symbol: SymbolId) -> EntityOrTDZ<'a> {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let id = self.scoping.variable.stack[depth];
-      if let Some(value) = self.read_on_scope(id, symbol) {
+    let mut scope = self.scoping.variable.top();
+    while let Some(s) = scope {
+      if let Some(value) = self.read_on_scope(s, symbol) {
         return value;
       }
+      scope = self.scoping.variable.get_parent(s);
     }
     self.mark_unresolved_reference(symbol);
     Some(self.factory.unknown)
   }
 
   pub fn write_symbol(&mut self, symbol: SymbolId, new_val: Entity<'a>) {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let id = self.scoping.variable.stack[depth];
-      if self.write_on_scope(id, symbol, new_val, false) {
+    let mut scope = self.scoping.variable.top();
+    while let Some(s) = scope {
+      if self.write_on_scope(s, symbol, new_val, false) {
         return;
       }
+      scope = self.scoping.variable.get_parent(s);
     }
     self.consume(new_val);
     self.mark_unresolved_reference(symbol);
@@ -416,8 +418,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn get_this(&self) -> Entity<'a> {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let scope = self.scoping.variable.get_from_depth(depth);
+    for scope in self.scoping.variable.iter_rev() {
       if let Some(this) = scope.this {
         return this;
       }
@@ -426,8 +427,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn get_super(&mut self) -> Entity<'a> {
-    for depth in (0..self.scoping.variable.stack.len()).rev() {
-      let scope = self.scoping.variable.get_from_depth(depth);
+    for scope in self.scoping.variable.iter_rev() {
       if let Some(super_class) = scope.super_class {
         return super_class;
       }

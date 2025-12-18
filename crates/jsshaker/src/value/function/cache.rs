@@ -56,6 +56,15 @@ pub enum FnCacheTrackingData<'a> {
   Failed { self_call_effect: FnCallEffect<'a> },
 }
 
+impl<'a> FnCachedEffects<'a> {
+  pub fn new_in(allocator: &'a allocator::Allocator) -> Self {
+    Self {
+      reads: allocator::HashMap::new_in(allocator),
+      writes: allocator::HashMap::new_in(allocator),
+    }
+  }
+}
+
 impl<'a> FnCacheTrackingData<'a> {
   pub fn worst_case() -> Self {
     FnCacheTrackingData::UnTrackable
