@@ -44,31 +44,25 @@ impl<'a> MangleConstraint<'a> {
       _ => unreachable!(),
     }
   }
-
-  pub fn add_to_mangler(&self, mangler: &mut Mangler) {
-    match self {
-      MangleConstraint::None => {}
-      MangleConstraint::Eq(a, b) => {
-        mangler.mark_equality(true, *a, *b);
-      }
-      MangleConstraint::Neq(a, b) => {
-        mangler.mark_equality(false, *a, *b);
-      }
-      MangleConstraint::Unique(g, a) => {
-        mangler.add_to_uniqueness_group(*g, *a);
-      }
-      MangleConstraint::Multiple(cs) => {
-        for constraint in *cs {
-          constraint.add_to_mangler(mangler);
-        }
-      }
-    }
-  }
 }
 
 impl<'a> CustomDepTrait<'a> for MangleConstraint<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.add_to_mangler(&mut analyzer.mangler);
+    match self {
+      MangleConstraint::None => {}
+      MangleConstraint::Eq(a, b) => {
+        analyzer.mangler.mark_equality(true, *a, *b);
+      }
+      MangleConstraint::Neq(a, b) => {
+        analyzer.mangler.mark_equality(false, *a, *b);
+      }
+      MangleConstraint::Unique(g, a) => {
+        analyzer.mangler.add_to_uniqueness_group(*g, *a);
+      }
+      MangleConstraint::Multiple(cs) => {
+        analyzer.consume(*cs);
+      }
+    }
   }
 }
 

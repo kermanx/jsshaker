@@ -13,6 +13,7 @@ pub trait Idx: Debug + Clone + Copy + PartialEq + Eq + Hash {
 macro_rules! define_box_bump_idx {
   ($v:vis struct $type:ident;) => {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[repr(transparent)]
     $v struct $type {
       ptr: std::ptr::NonNull<u8>,
     }

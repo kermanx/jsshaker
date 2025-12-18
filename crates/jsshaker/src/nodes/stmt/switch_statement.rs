@@ -38,10 +38,7 @@ impl<'a> Analyzer<'a> {
           }
           Some(false) => {}
           None => {
-            self.consume((discriminant, test_val));
-            if let Some(m) = m {
-              m.add_to_mangler(&mut self.mangler);
-            }
+            self.consume((discriminant, test_val, m));
             // data.need_test.insert(index);
             maybe_default_case = None;
             if !indeterminate {
