@@ -2,6 +2,8 @@ use oxc::allocator::Allocator;
 use oxc_index::IndexVec;
 use rustc_hash::FxHashSet;
 
+use crate::utils::box_bump::BoxBump;
+
 use super::{MangleAtom, utils::get_mangled_name};
 
 oxc_index::define_index_type! {
@@ -27,7 +29,7 @@ pub struct Mangler<'a> {
 
   pub allocator: &'a Allocator,
 
-  pub atoms: IndexVec<MangleAtom, AtomState<'a>>,
+  pub atoms: BoxBump<'a, MangleAtom, AtomState<'a>>,
   pub builtin_atom: MangleAtom,
 
   /// (atoms, resolved_name)[]
@@ -38,8 +40,8 @@ pub struct Mangler<'a> {
 
 impl<'a> Mangler<'a> {
   pub fn new(enabled: bool, allocator: &'a Allocator) -> Self {
-    let mut atoms = IndexVec::new();
-    let builtin_atom = atoms.push(AtomState::Preserved);
+    let atoms = BoxBump::new(allocator);
+    let builtin_atom = atoms.alloc(AtomState::Preserved);
     Self {
       enabled,
       allocator,
@@ -50,12 +52,12 @@ impl<'a> Mangler<'a> {
     }
   }
 
-  pub fn new_atom(&mut self) -> MangleAtom {
-    self.atoms.push(AtomState::Constrained(None, FxHashSet::default()))
+  pub fn new_atom(&self) -> MangleAtom {
+    self.atoms.alloc(AtomState::Constrained(None, FxHashSet::default()))
   }
 
-  pub fn new_constant_atom(&mut self, str: &'a str) -> MangleAtom {
-    self.atoms.push(AtomState::Constant(str))
+  pub fn new_constant_atom(&self, str: &'a str) -> MangleAtom {
+    self.atoms.alloc(AtomState::Constant(str))
   }
 
   pub fn resolve(&mut self, atom: MangleAtom) -> Option<&'a str> {

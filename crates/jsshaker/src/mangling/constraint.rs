@@ -74,7 +74,7 @@ impl<'a> Mangler<'a> {
 
     let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
 
-    match get_two_mut_from_vec(atoms, a, b) {
+    match atoms.get_two_mut(a, b) {
       (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
         if eq {
           *x = AtomState::Preserved;

@@ -239,7 +239,9 @@ impl<'a> Analyzer<'a> {
       match (lhs_str_lit, rhs_str_lit) {
         (Some(LiteralValue::String(l, _)), Some(LiteralValue::String(r, _))) => {
           let val = l.to_string() + r;
-          values.push(self.factory.string(self.allocator.alloc_str(&val)));
+          values.push(
+            self.factory.mangable_string(self.allocator.alloc_str(&val), self.mangler.new_atom()),
+          );
         }
         _ => {
           values.push(self.factory.unknown_string);
