@@ -26,7 +26,7 @@ impl<'a> CustomDepTrait<'a> for DepAtom {
 
 impl<'a> From<AstKind2<'a>> for DepAtom {
   fn from(node: AstKind2<'a>) -> Self {
-    DepAtom((node.discriminant(), node.raw_value()))
+    DepAtom(unsafe { std::mem::transmute(node) })
   }
 }
 
