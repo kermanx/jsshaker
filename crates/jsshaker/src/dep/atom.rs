@@ -10,7 +10,7 @@ use rustc_hash::FxHashSet;
 use crate::{analyzer::Analyzer, ast::AstKind2, dep::CustomDepTrait, transformer::Transformer};
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct DepAtom((usize, usize));
+pub struct DepAtom((u8, usize));
 
 impl Debug for DepAtom {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -26,13 +26,13 @@ impl<'a> CustomDepTrait<'a> for DepAtom {
 
 impl<'a> From<AstKind2<'a>> for DepAtom {
   fn from(node: AstKind2<'a>) -> Self {
-    DepAtom(unsafe { std::mem::transmute::<AstKind2<'_>, (usize, usize)>(node) })
+    DepAtom((node.discriminant(), node.raw_value()))
   }
 }
 
 impl From<DepAtom> for AstKind2<'_> {
   fn from(val: DepAtom) -> Self {
-    unsafe { std::mem::transmute::<(usize, usize), AstKind2<'_>>(val.0) }
+    unsafe { std::mem::transmute(val.0) }
   }
 }
 

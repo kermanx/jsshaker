@@ -14,6 +14,7 @@ macro_rules! ast_kind_2 {
   ($($x:ident($t:ty)),+ $(,)?) => {
     #[allow(dead_code)]
     #[derive(Clone, Copy)]
+    #[repr(u8)]
     pub enum AstKind2<'a> {
       Environment,
       Index(usize),
@@ -40,6 +41,20 @@ macro_rules! ast_kind_2 {
             let name = stringify!($x);
             write!(f, "{}({}-{})", name, span.start, span.end)
           })+
+        }
+      }
+    }
+
+    impl AstKind2<'_> {
+      pub fn discriminant(&self) -> u8 {
+        unsafe { *<*const _>::from(self).cast::<u8>() }
+      }
+
+      pub fn raw_value(&self) -> usize {
+        match *self {
+          AstKind2::Environment => 0,
+          AstKind2::Index(i) => i,
+          $( AstKind2::$x(node) => node as *const _ as usize, )+
         }
       }
     }
