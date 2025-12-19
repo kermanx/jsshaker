@@ -18,7 +18,6 @@ impl<'a> Analyzer<'a> {
     let mut rest = self.factory.vec();
 
     for element in node {
-      let dep = AstKind2::Argument(element);
       let mut push_element = |element: Entity<'a>| {
         if rest.is_empty() {
           elements.push(element);
@@ -30,13 +29,14 @@ impl<'a> Analyzer<'a> {
         Argument::SpreadElement(node) => {
           let (els, r, d) = self.exec_spread_element(node);
           for el in els {
-            push_element(self.factory.computed(el, (dep, d)));
+            push_element(self.factory.computed(el, d));
           }
           if let Some(r) = r {
-            rest.push(self.factory.computed(r, (dep, d)));
+            rest.push(self.factory.computed(r, d));
           }
         }
         _ => {
+          let dep = AstKind2::Argument(element);
           let element = self.exec_expression(element.to_expression());
           push_element(self.factory.computed(element, dep));
         }
@@ -68,7 +68,7 @@ impl<'a> Transformer<'a> {
     let is_referred = self.is_referred(AstKind2::Argument(node));
     let span = node.span();
     match node {
-      Argument::SpreadElement(node) => self.transform_arguments_spread_element(node, is_referred),
+      Argument::SpreadElement(node) => self.transform_arguments_spread_element(node),
       _ => self
         .transform_expression(node.to_expression(), is_referred)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))

@@ -5,7 +5,10 @@ use crate::{analyzer::Analyzer, ast::AstKind2, transformer::Transformer, value::
 impl<'a> Analyzer<'a> {
   pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> IteratedElements<'a> {
     let argument = self.exec_expression(&node.argument);
-    argument.iterate(self, AstKind2::SpreadElement(node))
+    let base = AstKind2::SpreadElement(node);
+    let (elements, rest, dep) = argument.iterate(self, base);
+    self.add_assoc_dep(base, dep);
+    (elements, rest, dep)
   }
 }
 
@@ -13,11 +16,10 @@ impl<'a> Transformer<'a> {
   pub fn transform_array_spread_element(
     &self,
     node: &'a SpreadElement<'a>,
-    need_val: bool,
   ) -> Option<ArrayExpressionElement<'a>> {
     let SpreadElement { span, argument } = node;
 
-    let need_spread = need_val || self.is_referred(AstKind2::SpreadElement(node));
+    let need_spread = self.is_referred(AstKind2::SpreadElement(node));
 
     let argument = self.transform_expression(argument, need_spread);
 
@@ -33,11 +35,10 @@ impl<'a> Transformer<'a> {
   pub fn transform_arguments_spread_element(
     &self,
     node: &'a SpreadElement<'a>,
-    need_val: bool,
   ) -> Option<Argument<'a>> {
     let SpreadElement { span, argument } = node;
 
-    let need_spread = need_val || self.is_referred(AstKind2::SpreadElement(node));
+    let need_spread = self.is_referred(AstKind2::SpreadElement(node));
 
     let argument = self.transform_expression(argument, need_spread);
 

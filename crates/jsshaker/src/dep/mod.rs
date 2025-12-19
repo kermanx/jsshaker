@@ -11,6 +11,7 @@ pub use atom::*;
 pub use collector::*;
 pub use lazy::*;
 pub use once::*;
+pub use assoc::*;
 use oxc::allocator::{self, Allocator};
 
 use crate::analyzer::Analyzer;
