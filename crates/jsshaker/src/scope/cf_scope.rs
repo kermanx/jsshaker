@@ -306,19 +306,18 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn global_effect(&mut self) {
+    let mut deps = vec![];
     for depth in (0..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       match scope.referred_state {
         ReferredState::Never => {
           scope.referred_state = ReferredState::ReferredClean;
-          let dep = scope.deps.take(self.factory);
-          self.consume(dep);
+          deps.push(scope.deps.take(self.factory));
         }
         ReferredState::ReferredClean => break,
         ReferredState::ReferredDirty => {
           scope.referred_state = ReferredState::ReferredClean;
-          let dep = scope.deps.take(self.factory);
-          self.consume(dep);
+          deps.push(scope.deps.take(self.factory));
 
           for depth in (0..depth).rev() {
             let scope = self.scoping.cf.get_mut_from_depth(depth);
@@ -335,7 +334,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-
+    self.consume(deps);
     self.call_exhaustive_callbacks();
   }
 }
