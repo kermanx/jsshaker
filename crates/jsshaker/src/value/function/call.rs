@@ -31,13 +31,14 @@ impl<'a> FunctionValue<'a> {
     let call_dep = analyzer.dep((self.callee.into_node(), dep));
 
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
-    if !consume
-      && let Some(cache_key) = cache_key
-      && let Some(cached_ret) = self.cache.borrow().retrieve(analyzer, &cache_key)
-    {
-      analyzer.global_effect();
-      analyzer.consume((call_dep, this, args));
-      return cached_ret;
+    if !consume && let Some(cache_key) = cache_key {
+      let cache = self.cache.borrow();
+      if let Some(cached_ret) = cache.retrieve(analyzer, &cache_key) {
+        drop(cache);
+        analyzer.global_effect();
+        analyzer.consume((call_dep, this, args));
+        return cached_ret;
+      }
     }
 
     let info = FnCallInfo { func: self, call_dep, cache_key, this, args, consume };
