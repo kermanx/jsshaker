@@ -19,7 +19,6 @@ impl Analyzer<'_> {
       dirty |= self.call_exhaustive_callbacks();
       dirty |= self.post_analyze_handle_conditional();
       // dirty |= self.post_analyze_handle_loops();
-      dirty |= self.post_analyze_handle_folding();
       if !dirty {
         break;
       }

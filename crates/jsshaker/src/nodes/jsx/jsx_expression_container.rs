@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
     node: &'a JSXExpressionContainer<'a>,
   ) -> Entity<'a> {
     let value = match &node.expression {
-      JSXExpression::EmptyExpression(_node) => self.factory.string(""),
+      JSXExpression::EmptyExpression(_node) => self.factory.builtin_string(""),
       node => self.exec_expression(node.to_expression()).get_to_jsx_child(self),
     };
     self.try_fold_node(AstKind2::JsxExpressionContainer(node), value)

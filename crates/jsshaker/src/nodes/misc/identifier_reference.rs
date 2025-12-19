@@ -1,4 +1,7 @@
-use oxc::{allocator, ast::ast::IdentifierReference};
+use oxc::{
+  allocator,
+  ast::ast::{IdentifierReference, PropertyKey},
+};
 
 use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
 
@@ -63,6 +66,13 @@ impl<'a> Analyzer<'a> {
       self.global_effect();
     }
   }
+
+  pub fn exec_identifier_reference_as_key(
+    &mut self,
+    node: &'a IdentifierReference<'a>,
+  ) -> Entity<'a> {
+    self.exec_mangable_static_string(AstKind2::IdentifierReference(node), node.name.as_str())
+  }
 }
 
 impl<'a> Transformer<'a> {
@@ -98,5 +108,16 @@ impl<'a> Transformer<'a> {
     } else {
       None
     }
+  }
+
+  pub fn transform_identifier_reference_as_key(
+    &self,
+    node: &'a IdentifierReference<'a>,
+  ) -> PropertyKey<'a> {
+    let IdentifierReference { span, name, .. } = node;
+    self.ast_builder.property_key_static_identifier(
+      *span,
+      self.transform_mangable_static_string(AstKind2::IdentifierReference(node), name),
+    )
   }
 }

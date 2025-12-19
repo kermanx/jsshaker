@@ -136,7 +136,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     if matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String | PrimitiveValue::Number) {
       analyzer.factory.unknown_string
     } else {
-      analyzer.factory.string("")
+      analyzer.factory.builtin_string("")
     }
   }
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {

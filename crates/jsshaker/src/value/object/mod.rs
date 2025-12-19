@@ -214,7 +214,11 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     let mut keys = Vec::new();
     for (key, property) in self.keyed.borrow_mut().iter_mut() {
       let key_entity = property.key.unwrap_or_else(|| {
-        if let PropertyKeyValue::String(key) = key { analyzer.factory.string(key) } else { todo!() }
+        if let PropertyKeyValue::String(key) = key {
+          analyzer.factory.string(key, property.mangling)
+        } else {
+          todo!()
+        }
       });
       let key_entity = if property.non_existent.is_empty() {
         key_entity
@@ -374,7 +378,7 @@ impl<'a> Analyzer<'a> {
         enumerable: false,
         possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),
         non_existent: DepCollector::new(self.factory.vec()),
-        key: Some(self.factory.string("prototype")),
+        key: Some(self.factory.builtin_string("prototype")),
         mangling: Some(self.mangler.builtin_atom),
       },
     );

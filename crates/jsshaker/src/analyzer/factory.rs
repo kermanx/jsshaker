@@ -25,6 +25,7 @@ use crate::{
 pub struct Factory<'a> {
   pub allocator: &'a Allocator,
   pub root_cf_scope: Option<CfScopeId>,
+  pub builtin_atom: Option<MangleAtom>,
   instance_id_counter: Cell<usize>,
 
   pub r#true: Entity<'a>,
@@ -126,6 +127,7 @@ impl<'a> Factory<'a> {
     Factory {
       allocator,
       root_cf_scope: None,
+      builtin_atom: None,
       instance_id_counter: Cell::new(0),
 
       r#true,
@@ -250,12 +252,20 @@ impl<'a> Factory<'a> {
     }
   }
 
-  pub fn string(&self, value: &'a str) -> Entity<'a> {
-    self.alloc(LiteralValue::String(value, None)).into()
+  pub fn builtin_string(&self, value: &'static str) -> Entity<'a> {
+    self.string(value, self.builtin_atom)
   }
 
   pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
-    self.alloc(LiteralValue::String(value, Some(atom))).into()
+    self.string(value, Some(atom))
+  }
+
+  pub fn unmangable_string(&self, value: &'a str) -> Entity<'a> {
+    self.string(value, None)
+  }
+
+  pub fn string(&self, value: &'a str, atom: Option<MangleAtom>) -> Entity<'a> {
+    self.alloc(LiteralValue::String(value, atom)).into()
   }
 
   pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {

@@ -17,11 +17,11 @@ export const result = {
 	s13: typeof (unknown ? "_" : 1)
 };
 export function deletion() {
-	const obj1 = { c: 3 };
+	const obj1 = { a: 3 };
 	if (unknown) {
-		delete obj1.c;
+		delete obj1.a;
 	}
 	const c = unknown;
 	delete unknown[c];
-	effect(void 0, void 0, obj1.c, 4);
+	effect(void 0, void 0, obj1.a, 4);
 }

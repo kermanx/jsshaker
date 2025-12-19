@@ -12,11 +12,12 @@ use crate::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_template_literal(&mut self, node: &'a TemplateLiteral<'a>) -> Entity<'a> {
-    let mut result = self.factory.string(node.quasis[0].value.cooked.unwrap().as_str());
+    let mut result = self.factory.unmangable_string(node.quasis[0].value.cooked.unwrap().as_str());
     for (index, expression) in node.expressions.iter().enumerate() {
       let expression = self.exec_expression(expression);
-      let quasi =
-        self.factory.string(node.quasis.get(index + 1).unwrap().value.cooked.as_ref().unwrap());
+      let quasi = self
+        .factory
+        .unmangable_string(node.quasis.get(index + 1).unwrap().value.cooked.as_ref().unwrap());
       result = self.op_add(result, expression);
       result = self.op_add(result, quasi);
     }

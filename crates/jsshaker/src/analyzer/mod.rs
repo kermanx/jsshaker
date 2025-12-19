@@ -60,6 +60,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_in(vfs: Box<dyn Vfs>, config: &'a TreeShakeConfig, allocator: &'a Allocator) -> Self {
     let factory = allocator.alloc(Factory::new(allocator, config));
     let scoping = Scoping::new(factory);
+    let mangler = Mangler::new(config.mangling.is_some(), factory);
     Analyzer {
       vfs,
       config,
@@ -80,7 +81,7 @@ impl<'a> Analyzer<'a> {
       conditional_data: Default::default(),
       // loop_data: Default::default(),
       folder: ConstantFolder::new(allocator),
-      mangler: Mangler::new(config.mangling.is_some(), allocator),
+      mangler,
       pending_deps: Default::default(),
       diagnostics: Default::default(),
     }

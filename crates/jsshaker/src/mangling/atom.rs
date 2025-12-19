@@ -1,10 +1,7 @@
-use oxc_index::define_index_type;
+use crate::{analyzer::Analyzer, define_box_bump_idx, dep::CustomDepTrait};
 
-use crate::{analyzer::Analyzer, dep::CustomDepTrait};
-
-define_index_type! {
-  pub struct MangleAtom = u32;
-  DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
+define_box_bump_idx! {
+  pub struct MangleAtom;
 }
 
 impl<'a> CustomDepTrait<'a> for MangleAtom {

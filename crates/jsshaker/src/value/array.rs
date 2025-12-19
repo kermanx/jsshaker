@@ -228,8 +228,10 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     let mut known = FxHashMap::default();
     for (i, element) in self.elements.borrow().iter().enumerate() {
       let i_str = analyzer.allocator.alloc_str(&i.to_string());
-      known
-        .insert(PropertyKeyValue::String(i_str), (true, analyzer.factory.string(i_str), *element));
+      known.insert(
+        PropertyKeyValue::String(i_str),
+        (true, analyzer.factory.unmangable_string(i_str), *element),
+      );
     }
     let rest = self.rest.borrow();
     let unknown = (!rest.is_empty()).then(|| {

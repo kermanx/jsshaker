@@ -13,6 +13,7 @@ pub trait Idx: Debug + Clone + Copy + PartialEq + Eq + Hash {
 macro_rules! define_box_bump_idx {
   ($v:vis struct $type:ident;) => {
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+    #[repr(transparent)]
     $v struct $type {
       ptr: std::ptr::NonNull<u8>,
     }
@@ -53,5 +54,27 @@ impl<'a, I: Idx, T> BoxBump<'a, I, T> {
   #[inline(always)]
   pub fn get_mut(&mut self, idx: I) -> &mut T {
     unsafe { &mut *(idx.as_ptr().as_ptr() as *mut T) }
+  }
+
+  #[inline(always)]
+  pub fn get_two_mut(&mut self, idx1: I, idx2: I) -> (&mut T, &mut T) {
+    debug_assert_ne!(idx1, idx2);
+    unsafe { (&mut *(idx1.as_ptr().as_ptr() as *mut T), &mut *(idx2.as_ptr().as_ptr() as *mut T)) }
+  }
+}
+
+impl<'a, I: Idx, T> std::ops::Index<I> for BoxBump<'a, I, T> {
+  type Output = T;
+
+  #[inline(always)]
+  fn index(&self, index: I) -> &Self::Output {
+    self.get(index)
+  }
+}
+
+impl<'a, I: Idx, T> std::ops::IndexMut<I> for BoxBump<'a, I, T> {
+  #[inline(always)]
+  fn index_mut(&mut self, index: I) -> &mut Self::Output {
+    self.get_mut(index)
   }
 }
