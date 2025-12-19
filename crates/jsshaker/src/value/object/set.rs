@@ -56,7 +56,7 @@ impl<'a> ObjectValue<'a> {
 
       for key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
-        if let Some(property) = keyed.get_mut(&key_str) {
+        let exists = if let Some(property) = keyed.get_mut(&key_str) {
           let value = if mangable {
             let prev_key = property.key.unwrap();
             let prev_atom = property.mangling.unwrap();
@@ -87,10 +87,12 @@ impl<'a> ObjectValue<'a> {
           if property.definite {
             continue;
           }
+          true
         } else {
           analyzer
             .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
-        }
+          false
+        };
 
         if let Some(rest) = &self.rest {
           rest.borrow_mut().set(analyzer, false, true, value, &mut setters, &mut deferred_deps);
@@ -98,7 +100,7 @@ impl<'a> ObjectValue<'a> {
         }
 
         let found = self.lookup_keyed_setters_on_proto(analyzer, key_str, key_atom, &mut setters);
-        if found.must_found() {
+        if exists || found.must_found() {
           continue;
         }
 

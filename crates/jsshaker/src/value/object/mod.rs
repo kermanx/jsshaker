@@ -54,6 +54,7 @@ define_index_type! {
   pub struct ObjectId = u32;
 }
 
+#[derive(Debug)]
 pub struct ObjectValue<'a> {
   /// A built-in object is usually non-consumable
   pub consumable: bool,
@@ -73,12 +74,6 @@ pub struct ObjectValue<'a> {
   pub unknown: RefCell<ObjectProperty<'a>>,
   /// Properties keyed by unknown value, but not included in `keyed`
   pub rest: Option<allocator::Box<'a, RefCell<ObjectProperty<'a>>>>,
-}
-
-impl Debug for ObjectValue<'_> {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("ObjectValue").finish()
-  }
 }
 
 impl<'a> ValueTrait<'a> for ObjectValue<'a> {
