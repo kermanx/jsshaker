@@ -91,6 +91,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -103,6 +104,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let (should_consume, _) =
       analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
     if should_consume {
       self.consume(analyzer);
     }

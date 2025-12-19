@@ -1,7 +1,4 @@
-use std::{
-  cell::{Cell, RefCell},
-  fmt,
-};
+use std::cell::{Cell, RefCell};
 
 use oxc::allocator;
 use rustc_hash::FxHashMap;
@@ -18,6 +15,7 @@ use crate::{
   use_consumed_flag,
 };
 
+#[derive(Debug)]
 pub struct ArrayValue<'a> {
   pub consumed: Cell<bool>,
   pub deps: RefCell<DepCollector<'a>>,
@@ -25,17 +23,6 @@ pub struct ArrayValue<'a> {
   pub object_id: ObjectId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
   pub rest: RefCell<allocator::Vec<'a, Entity<'a>>>,
-}
-
-impl fmt::Debug for ArrayValue<'_> {
-  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-    f.debug_struct("ArrayValue")
-      .field("consumed", &self.consumed.get())
-      .field("deps", &self.deps.borrow())
-      .field("elements", &self.elements.borrow())
-      .field("rest", &self.rest.borrow())
-      .finish()
-  }
 }
 
 impl<'a> ValueTrait<'a> for ArrayValue<'a> {
@@ -48,6 +35,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
