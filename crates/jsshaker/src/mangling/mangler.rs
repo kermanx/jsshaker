@@ -1,7 +1,7 @@
 use oxc::allocator::{self, Allocator};
 use oxc_index::IndexVec;
 
-use crate::utils::box_bump::BoxBump;
+use crate::{analyzer::Factory, utils::box_bump::BoxBump};
 
 use super::{MangleAtom, utils::get_mangled_name};
 
@@ -38,9 +38,11 @@ pub struct Mangler<'a> {
 }
 
 impl<'a> Mangler<'a> {
-  pub fn new(enabled: bool, allocator: &'a Allocator) -> Self {
+  pub fn new(enabled: bool, factory: &mut Factory<'a>) -> Self {
+    let allocator = factory.allocator;
     let atoms = BoxBump::new(allocator);
     let builtin_atom = atoms.alloc(AtomState::Preserved);
+    factory.builtin_atom = Some(builtin_atom);
     Self {
       enabled,
       allocator,
