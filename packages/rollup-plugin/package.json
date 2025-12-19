@@ -1,0 +1,31 @@
+{
+  "name": "rollup-plugin-jsshaker",
+  "version": "0.1.1",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kermanx/jsshaker"
+  },
+  "keywords": [
+    "rollup-plugin",
+    "vite-plugin"
+  ],
+  "exports": {
+    ".": {
+      "types": "./main.ts",
+      "default": "./main.ts",
+      "import": "./main.ts"
+    }
+  },
+  "files": [
+    "index.ts",
+    "README.md"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "jsshaker": "workspace:*"
+  },
+  "devDependencies": {
+    "rollup": "^4.53.5"
+  }
+}

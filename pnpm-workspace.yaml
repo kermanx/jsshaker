@@ -1,8 +1,10 @@
 packages:
-  - 'packages/*'
-  - 'packages/napi/npm/*'
-  - 'tasks/*'
+  - packages/*
+  - packages/napi/npm/*
+  - tasks/*
+
+onlyBuiltDependencies:
+  - esbuild
+
 supportedArchitectures:
-  cpu:
-    - current
-    - wasm32
+  cpu: [current, wasm32]

@@ -136,6 +136,7 @@ jobs:
         run: |
           pnpm -r --filter "./packages/napi/npm/**" publish --access public --no-git-checks
           pnpm publish ./packages/napi --access public --no-git-checks
+          pnpm publish ./packages/rollup-plugin --access public --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
           NPM_CONFIG_PROVENANCE: true
