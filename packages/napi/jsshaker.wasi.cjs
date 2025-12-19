@@ -108,5 +108,6 @@ const { instance: __napiInstance, module: __wasiModule, napiModule: __napiModule
   },
 })
 module.exports = __napiModule.exports
+module.exports.shakeFsModule = __napiModule.exports.shakeFsModule
 module.exports.shakeMultiModule = __napiModule.exports.shakeMultiModule
 module.exports.shakeSingleModule = __napiModule.exports.shakeSingleModule

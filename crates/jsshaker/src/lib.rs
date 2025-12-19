@@ -38,6 +38,7 @@ pub struct JsShakerOptions<F: Vfs> {
   pub config: TreeShakeConfig,
   pub minify_options: Option<MinifierOptions>,
   pub codegen_options: CodegenOptions,
+  pub source_map: bool,
 }
 
 pub struct JsShakerReturn {
@@ -46,7 +47,7 @@ pub struct JsShakerReturn {
 }
 
 pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) -> JsShakerReturn {
-  let JsShakerOptions { vfs, config, minify_options, codegen_options } = options;
+  let JsShakerOptions { vfs, config, minify_options, codegen_options, source_map } = options;
 
   if config.enabled {
     let allocator = Allocator::default();
@@ -100,7 +101,10 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
 
       // Step 4: Generate output
       let codegen = Codegen::new()
-        .with_options(codegen_options.clone())
+        .with_options(CodegenOptions {
+          source_map_path: source_map.then(|| std::path::PathBuf::from(path.as_str())),
+          ..codegen_options.clone()
+        })
         .with_scoping(minifier_return.and_then(|r| r.scoping));
       codegen_return.insert(path.to_string(), codegen.build(program));
     }

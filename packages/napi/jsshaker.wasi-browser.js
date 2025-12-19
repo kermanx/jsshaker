@@ -56,5 +56,6 @@ const {
   },
 })
 export default __napiModule.exports
+export const shakeFsModule = __napiModule.exports.shakeFsModule
 export const shakeMultiModule = __napiModule.exports.shakeMultiModule
 export const shakeSingleModule = __napiModule.exports.shakeSingleModule

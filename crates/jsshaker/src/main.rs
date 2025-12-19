@@ -103,6 +103,7 @@ fn main() {
         config: shake_disabled.clone(),
         minify_options: None,
         codegen_options: CodegenOptions::default(),
+        source_map: false,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -113,6 +114,7 @@ fn main() {
         config: shake_disabled.clone(),
         minify_options: Some(minify_options.clone()),
         codegen_options: min_codegen_options.clone(),
+        source_map: false,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -123,6 +125,7 @@ fn main() {
         config: shake_enabled,
         minify_options: None,
         codegen_options: CodegenOptions::default(),
+        source_map: false,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -133,6 +136,7 @@ fn main() {
         config: shake_disabled.clone(),
         minify_options: Some(minify_options.clone()),
         codegen_options: min_codegen_options,
+        source_map: false,
       },
       SingleFileFs::ENTRY_PATH.to_string(),
     );
@@ -209,6 +213,7 @@ fn main() {
         } else {
           CodegenOptions::default()
         },
+        source_map: false,
       },
       args.path.clone(),
     );
@@ -263,6 +268,7 @@ fn main() {
           } else {
             CodegenOptions::default()
           },
+          source_map: false,
         },
         SingleFileFs::ENTRY_PATH.to_string(),
       );

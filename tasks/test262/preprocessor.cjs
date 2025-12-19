@@ -73,12 +73,12 @@ module.exports = function(test) {
     let minified = shakeSingleModule(main, {
       preset: 'disabled',
       minify: do_minify,
-    }).output;
+    }).output.code;
     let startTime = Date.now();
     let treeShaked = shakeSingleModule(main, {
       preset: 'safest',
       minify: do_minify,
-    }).output;
+    }).output.code;
     let endTime = Date.now();
 
     minifiedTotal += minified.length;

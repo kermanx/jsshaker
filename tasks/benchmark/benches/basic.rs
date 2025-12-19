@@ -10,6 +10,7 @@ fn run_jsshaker(source_text: String) -> String {
       config: TreeShakeConfig::recommended(),
       minify_options: None,
       codegen_options: Default::default(),
+      source_map: false,
     },
     SingleFileFs::ENTRY_PATH.to_string(),
   );

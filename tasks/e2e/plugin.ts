@@ -1,21 +1,23 @@
 import { createLogger, Plugin } from "vite";
 import pico from "picocolors";
 
-export default function (options: {
-  pre?: (code: string) => string,
-  post?: (code: string) => string,
-} = {}): Plugin | false {
+export default function (
+  options: {
+    pre?: (code: string) => string;
+    post?: (code: string) => string;
+  } = {},
+): Plugin | false {
   const logger = createLogger("info", {
-    prefix: "jsshaker"
-  })
+    prefix: "jsshaker",
+  });
 
   const disabled = +(process.env.DISABLE_TREE_SHAKE ?? 0);
   const treeShake = disabled ? null : import("jsshaker");
 
   return {
     name: "jsshaker",
-    enforce: 'post',
-    apply: 'build',
+    enforce: "post",
+    apply: "build",
     config(config) {
       return {
         build: {
@@ -23,18 +25,20 @@ export default function (options: {
           // rollupOptions: {
           //   treeshake: false
           // },
-          outDir: './dist',
+          outDir: "./dist",
           emptyOutDir: false,
           ...config?.build,
           lib: {
-            entry: './main.ts',
-            formats: ['es'],
-            fileName: disabled ? 'bundled' : 'shaken',
+            entry: "./main.ts",
+            formats: ["es"],
+            fileName: disabled ? "bundled" : "shaken",
             ...config?.build?.lib,
           },
           modulePreload: {
             polyfill: false,
-            ...(typeof config?.build?.modulePreload === 'object' ? config.build.modulePreload : {}),
+            ...(typeof config?.build?.modulePreload === "object"
+              ? config.build.modulePreload
+              : {}),
           },
         },
         esbuild: {
@@ -42,18 +46,21 @@ export default function (options: {
           minifyWhitespace: false,
           minifySyntax: false,
         },
-      }
+      };
     },
     renderChunk: {
-      order: 'post',
+      order: "post",
       async handler(code) {
         if (disabled) {
           return code;
         }
         code = options.pre?.(code) ?? code;
         const startTime = Date.now();
-        const { output, diagnostics } = (await treeShake).shakeSingleModule(code, {
-          preset: 'recommended',
+        const {
+          output: { code: output },
+          diagnostics,
+        } = (await treeShake).shakeSingleModule(code, {
+          preset: "recommended",
         });
         const duration = `${Date.now() - startTime}ms`;
         logger.info(pico.yellowBright(`\ntree-shake duration: ${duration}`));
@@ -61,7 +68,7 @@ export default function (options: {
           logger.error(diagnostic);
         }
         return options.post?.(output) ?? output;
-      }
-    }
-  }
+      },
+    },
+  };
 }

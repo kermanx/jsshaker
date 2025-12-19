@@ -16,6 +16,7 @@ fn do_tree_shake(input: String) -> String {
       config: TreeShakeConfig::recommended().with_react_jsx(react_jsx),
       minify_options: do_minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions { comments: CommentOptions::default(), ..Default::default() },
+      source_map: false,
     },
     SingleFileFs::ENTRY_PATH.to_string(),
   );

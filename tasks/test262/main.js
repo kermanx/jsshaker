@@ -11,5 +11,5 @@ const result = shakeSingleModule(input, {
 });
 console.log('Time:', Date.now() - start + 'ms');
 
-writeFileSync('./output.js', result.output);
+writeFileSync('./output.js', result.output.code);
 writeFileSync('./diagnostics.txt', result.diagnostics.join('\n'));

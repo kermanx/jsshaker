@@ -45,6 +45,7 @@ pub fn tree_shake(
         comments: if do_minify { CommentOptions::disabled() } else { CommentOptions::default() },
         ..Default::default()
       },
+      source_map: false,
     },
     SingleFileFs::ENTRY_PATH.to_string(),
   );

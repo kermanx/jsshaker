@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 pub trait Vfs {
   fn resolve_module(&self, importer: &str, specifier: &str) -> Option<String>;
   fn read_file(&self, path: &str) -> String;
@@ -67,6 +69,59 @@ impl Vfs for SingleFileFs {
 
   fn normalize_path(&self, path: String) -> String {
     path
+  }
+}
+
+pub struct MultiModuleFs(pub HashMap<String, String>);
+
+impl MultiModuleFs {
+  fn exists(&self, path: &std::path::Path) -> bool {
+    self.0.contains_key(path.to_str().unwrap())
+  }
+}
+
+impl Vfs for MultiModuleFs {
+  fn resolve_module(&self, importer: &str, specifier: &str) -> Option<String> {
+    if !specifier.starts_with(".") {
+      return None;
+    }
+
+    let mut path = std::path::PathBuf::from(importer);
+    path.pop();
+    path.push(specifier.strip_prefix("./").unwrap_or(specifier));
+    Some(
+      self
+        .exists(&path)
+        .then(|| path.to_string_lossy().into_owned())
+        .or_else(|| {
+          path.set_extension("js");
+          self.exists(&path).then(|| path.to_string_lossy().into_owned())
+        })
+        .or_else(|| {
+          path.set_extension("mjs");
+          self.exists(&path).then(|| path.to_string_lossy().into_owned())
+        })
+        .or_else(|| {
+          path.set_extension("cjs");
+          self.exists(&path).then(|| path.to_string_lossy().into_owned())
+        })
+        .unwrap_or_else(|| {
+          panic!(
+            "Cannot resolve module: {} from {}. {}",
+            specifier,
+            importer,
+            path.to_string_lossy()
+          );
+        }),
+    )
+  }
+
+  fn read_file(&self, path: &str) -> String {
+    self.0.get(path).cloned().unwrap()
+  }
+
+  fn normalize_path(&self, path: String) -> String {
+    normalize_path::normalize(std::path::Path::new(&path)).to_string_lossy().into_owned()
   }
 }
 
