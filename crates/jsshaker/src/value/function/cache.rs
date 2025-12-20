@@ -102,7 +102,7 @@ impl<'a> FnCacheTrackingData<'a> {
 
 #[derive(Debug)]
 pub struct FnCache<'a> {
-  table: allocator::HashMap<'a, FnCachedInput<'a>, (FnCachedEffects<'a>, Cacheable<'a>)>,
+  table: allocator::HashMap<'a, FnCachedInput<'a>, (FnCachedEffects<'a>, Entity<'a>)>,
 }
 
 impl<'a> FnCache<'a> {
@@ -151,7 +151,7 @@ impl<'a> FnCache<'a> {
         analyzer.set_rw_target_current_value(target, cacheable, indeterminate);
       }
 
-      Some(ret.into_entity(analyzer))
+      Some(*ret)
     } else {
       None
     }
@@ -166,7 +166,7 @@ impl<'a> FnCache<'a> {
     let FnCacheTrackingData::Tracked { effects } = tracking else {
       return;
     };
-    let Some(ret) = ret.as_cacheable() else {
+    if ret.as_cacheable().is_none() {
       return;
     };
     self.table.insert(key, (effects, ret));
