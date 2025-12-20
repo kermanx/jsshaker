@@ -137,8 +137,6 @@ jobs:
           pnpm -r --filter "./packages/napi/npm/**" publish --access public --no-git-checks
           pnpm publish ./packages/napi --access public --no-git-checks
           pnpm publish ./packages/rollup-plugin --access public --no-git-checks
-        env:
-          NPM_CONFIG_PROVENANCE: true
 
       # - run: node ./scripts/patch.mjs
       #   working-directory: ./packages/napi
