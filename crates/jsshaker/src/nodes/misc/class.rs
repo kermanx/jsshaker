@@ -57,7 +57,7 @@ impl<'a> Analyzer<'a> {
 
     // 2. Execute keys and find constructor
     for element in &node.body.body {
-      let key = element.property_key().map(|key| self.exec_property_key(key));
+      let key = element.property_key().map(|key| self.exec_property_key(key, None));
       data.keys.push(key);
 
       if let ClassElement::MethodDefinition(method) = element

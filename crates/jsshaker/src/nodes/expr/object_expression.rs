@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     for property in &node.properties {
       match property {
         ObjectPropertyKind::ObjectProperty(node) => {
-          let key = self.exec_property_key(&node.key);
+          let key = self.exec_property_key(&node.key, None);
           let value = self.exec_expression(&node.value);
           if node.key.is_specific_id("__proto__") {
             let dep = self.dep((key, value, AstKind2::ObjectProperty(node)));

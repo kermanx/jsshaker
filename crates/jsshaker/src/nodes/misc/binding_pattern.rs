@@ -74,9 +74,7 @@ impl<'a> Analyzer<'a> {
         for property in &node.properties {
           let dep = AstKind2::BindingProperty(property);
 
-          self.push_dependent_cf_scope(init);
-          let key = self.exec_property_key(&property.key);
-          self.pop_cf_scope();
+          let key = self.exec_property_key(&property.key, Some(init));
 
           enumerated.push(key);
           let init = init.get_property(self, dep, key);

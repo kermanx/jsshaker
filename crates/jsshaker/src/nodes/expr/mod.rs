@@ -31,7 +31,8 @@ use oxc::{
 use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
 
 use crate::{
-  analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer, utils::ast::AstKind2,
+  analyzer::Analyzer, build_effect, dep::DepTrait, entity::Entity, transformer::Transformer,
+  utils::ast::AstKind2,
 };
 
 impl<'a> Analyzer<'a> {
@@ -86,6 +87,23 @@ impl<'a> Analyzer<'a> {
     };
     self.pop_span();
     self.try_fold_node(AstKind2::Expression(node), value)
+  }
+
+  pub fn exec_expression_with_dependency(
+    &mut self,
+    node: &'a Expression<'a>,
+    dep: Option<impl DepTrait<'a> + 'a>,
+  ) -> Entity<'a> {
+    if let Some(dep) = dep
+      && !node.is_literal()
+    {
+      self.push_dependent_cf_scope(dep);
+      let value = self.exec_expression(node);
+      self.pop_cf_scope();
+      value
+    } else {
+      self.exec_expression(node)
+    }
   }
 }
 

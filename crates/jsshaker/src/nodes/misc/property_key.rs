@@ -3,11 +3,17 @@ use oxc::{ast::ast::PropertyKey, span::GetSpan};
 use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_property_key(&mut self, node: &'a PropertyKey<'a>) -> Entity<'a> {
+  pub fn exec_property_key(
+    &mut self,
+    node: &'a PropertyKey<'a>,
+    dep: Option<Entity<'a>>,
+  ) -> Entity<'a> {
     match node {
       PropertyKey::StaticIdentifier(node) => self.exec_identifier_name(node),
       PropertyKey::PrivateIdentifier(node) => self.exec_private_identifier(node),
-      node => self.exec_expression(node.to_expression()).get_to_property_key(self),
+      node => {
+        self.exec_expression_with_dependency(node.to_expression(), dep).get_to_property_key(self)
+      }
     }
   }
 }

@@ -61,13 +61,7 @@ impl<'a> Analyzer<'a> {
       scope_count += 1;
     }
 
-    if will_write {
-      self.push_dependent_cf_scope(object);
-    }
-    let key = self.exec_key(node);
-    if will_write {
-      self.pop_cf_scope();
-    }
+    let key = self.exec_key(node, will_write.then_some(object));
 
     let value = object.get_property(self, dep_id, key);
 
@@ -82,21 +76,17 @@ impl<'a> Analyzer<'a> {
   ) {
     let (object, key) = cache.unwrap_or_else(|| {
       let object = self.exec_expression(node.object());
-
-      self.push_dependent_cf_scope(object);
-      let key = self.exec_key(node);
-      self.pop_cf_scope();
-
+      let key = self.exec_key(node, Some(object));
       (object, key)
     });
 
     object.set_property(self, AstKind2::MemberExpression(node), key, value);
   }
 
-  fn exec_key(&mut self, node: &'a MemberExpression<'a>) -> Entity<'a> {
+  fn exec_key(&mut self, node: &'a MemberExpression<'a>, dep: Option<Entity<'a>>) -> Entity<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
-        self.exec_expression(&node.expression).get_to_property_key(self)
+        self.exec_expression_with_dependency(&node.expression, dep).get_to_property_key(self)
       }
       MemberExpression::StaticMemberExpression(node) => self.exec_identifier_name(&node.property),
       MemberExpression::PrivateFieldExpression(node) => self.exec_private_identifier(&node.field),
