@@ -8,17 +8,18 @@
   },
   "keywords": [
     "rollup-plugin",
-    "vite-plugin"
+    "vite-plugin",
+    "jsshaker"
   ],
   "exports": {
     ".": {
-      "types": "./main.ts",
-      "default": "./main.ts",
-      "import": "./main.ts"
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs",
+      "import": "./dist/index.mjs"
     }
   },
   "files": [
-    "index.ts",
+    "dist",
     "README.md"
   ],
   "license": "MIT",
@@ -26,6 +27,12 @@
     "jsshaker": "workspace:*"
   },
   "devDependencies": {
-    "rollup": "^4.53.5"
+    "rollup": "^4.53.5",
+    "tsdown": "^0.18.1"
+  },
+  "scripts": {
+    "build": "tsdown ./index.ts",
+    "dev": "tsdown ./index.ts --watch",
+    "prepublishOnly": "pnpm build"
   }
 }

@@ -1,4 +1,4 @@
-import { Plugin } from "vite";
+import { Plugin } from "rollup";
 import { Options as JsShakerOptions, shakeMultiModule } from "jsshaker";
 
 export interface Options {
@@ -6,45 +6,11 @@ export interface Options {
   alwaysInlineLiteral?: boolean;
 }
 
-export default function vitePluginJsShaker(
+export default function rollupPluginJsShaker(
   pluginOptions: Options = {},
 ): Plugin {
   return {
-    name: "vite-plugin-jsshaker",
-    enforce: "post",
-    apply: "build",
-    // config() {
-    //   return {
-    //     build: {
-    //       rolldownOptions: {
-    //         output: {
-    //           advancedChunks: {
-    //             groups: [
-    //               {
-    //                 name: "@@react@@",
-    //                 test: /node_modules[\\/]react[\\/]cjs[\\/]react\./,
-    //                 priority: 2,
-    //               },
-    //               {
-    //                 name: "@@react/jsx-runtime@@",
-    //                 test: /node_modules[\\/]react[\\/]cjs[\\/]react-jsx-runtime\./,
-    //                 priority: 1,
-    //               },
-    //               {
-    //                 name: "@@react-dom@@",
-    //                 test: /node_modules[\\/]react-dom/,
-    //               },
-    //               {
-    //                 name: "@@classnames@@",
-    //                 test: /node_modules[\\/]classnames/,
-    //               },
-    //             ],
-    //           },
-    //         },
-    //       },
-    //     },
-    //   };
-    // },
+    name: "rollup-plugin-jsshaker",
     generateBundle: {
       order: "post",
       handler(outputOptions, bundle) {
@@ -54,7 +20,9 @@ export default function vitePluginJsShaker(
           jsx: "react",
           sourceMap: !!outputOptions.sourcemap,
           minify:
-            outputOptions.minify && typeof outputOptions.minify === "object",
+            "minify" in outputOptions &&
+            !!outputOptions.minify &&
+            typeof outputOptions.minify === "object",
         };
 
         const entrySource = Object.values(bundle)
@@ -76,11 +44,11 @@ export default function vitePluginJsShaker(
         }
 
         const startTime = Date.now();
-        this.info(`[jsshaker] Optimizing chunks...`);
+        this.info(`Optimizing chunks...`);
         const shaken = shakeMultiModule(sources, entryFileName, options);
-        this.info(`[jsshaker] Completed in ${Date.now() - startTime} ms`);
+        this.info(`Completed in ${Date.now() - startTime} ms`);
         for (const diag of shaken.diagnostics) {
-          this.warn(`[jsshaker] ${diag}`);
+          this.warn(`${diag}`);
         }
         delete shaken.output[entryFileName];
 
@@ -97,7 +65,7 @@ export default function vitePluginJsShaker(
               100
             ).toFixed(2);
             this.info(
-              `[jsshaker] ${fileName.padEnd(maxFileNameLength)} ${percentage}% (${module.code.length} -> ${chunk.code.length} bytes)`,
+              `- ${fileName.padEnd(maxFileNameLength)}  ${percentage}% (${module.code.length} -> ${chunk.code.length} bytes)`,
             );
             totalOriginalSize += module.code.length;
             totalShakenSize += chunk.code.length;
@@ -117,7 +85,7 @@ export default function vitePluginJsShaker(
           100
         ).toFixed(2);
         this.info(
-          `[jsshaker] Total: ${totalPercentage}% (${totalOriginalSize} -> ${totalShakenSize} bytes)`,
+          `${"-".repeat(maxFileNameLength - 4)} Total  ${totalPercentage}% (${totalOriginalSize} -> ${totalShakenSize} bytes)`,
         );
       },
     },
