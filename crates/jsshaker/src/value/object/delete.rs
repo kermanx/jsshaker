@@ -9,7 +9,7 @@ use crate::{
 
 impl<'a> ObjectValue<'a> {
   pub fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    if self.consumed.get() {
+    if self.is_self_or_proto_consumed() {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 

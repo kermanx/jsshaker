@@ -203,8 +203,12 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+    if self.is_self_or_proto_consumed() {
+      return None;
+    }
+
     let mut unknown = self.unknown.borrow_mut();
-    if self.consumed.get() || self.rest.is_some() || !unknown.possible_values.is_empty() {
+    if self.rest.is_some() || !unknown.possible_values.is_empty() {
       return None;
     }
 
@@ -322,6 +326,18 @@ impl<'a> ObjectValue<'a> {
 
   pub fn add_extra_dep(&self, dep: Dep<'a>) {
     self.unknown.borrow_mut().non_existent.push(dep);
+  }
+
+  pub fn is_self_or_proto_consumed(&self) -> bool {
+    if self.consumed.get() {
+      return true;
+    }
+    match self.prototype.get() {
+      ObjectPrototype::Custom(object) => object.is_self_or_proto_consumed(),
+      ObjectPrototype::Builtin(_) => false,
+      ObjectPrototype::Unknown(_) => true,
+      ObjectPrototype::ImplicitOrNull => false,
+    }
   }
 }
 

@@ -18,7 +18,7 @@ impl<'a> ObjectValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if self.consumed.get() {
+    if self.is_self_or_proto_consumed() {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 

@@ -24,7 +24,7 @@ impl<'a> ObjectValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.consumed.get() {
+    if self.is_self_or_proto_consumed() {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
 

@@ -23,7 +23,7 @@ impl<'a> ObjectValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    if self.consumed.get() {
+    if self.is_self_or_proto_consumed() {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
