@@ -100,7 +100,7 @@ impl Vfs for MultiModuleFs {
         })
         .unwrap_or_else(|| {
           panic!(
-            "Cannot resolve module: {} from {}. {}",
+            "Cannot resolve module: {} from {}. (concated path: {})",
             specifier,
             importer,
             path.to_string_lossy()

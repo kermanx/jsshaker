@@ -145,19 +145,15 @@ impl<'a> Analyzer<'a> {
     });
     self.modules.paths.insert(path.clone(), module_id);
 
+    let old_module = self.set_current_module(module_id);
     for specifier in parsed.module_record.requested_modules.keys() {
       if let Some(id) = self.resolve_and_parse_module(specifier) {
-        self.modules.modules[module_id].resolved_imports.insert(*specifier, id);
+        self.module_info_mut().resolved_imports.insert(*specifier, id);
       }
     }
+    self.set_current_module(old_module);
 
     module_id
-  }
-
-  pub fn import_module(&mut self, specifier: &str) -> Option<ModuleId> {
-    let module_id = self.resolve_and_parse_module(specifier)?;
-    self.exec_module(module_id);
-    Some(module_id)
   }
 
   pub fn exec_module(&mut self, module_id: ModuleId) {
@@ -232,7 +228,7 @@ impl<'a> Analyzer<'a> {
     match named_export {
       ExportedValue::Variable(scope, symbol, dep) => {
         let old_module = self.set_current_module(module_id);
-        let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
+        let value = self.read_on_scope(scope, symbol).unwrap().unwrap_or(self.factory.unknown);
         self.set_current_module(old_module);
         self.factory.computed(value, dep)
       }
