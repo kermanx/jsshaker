@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     self.push_indeterminate_cf_scope();
 
     if let Some(param) = &node.param {
-      self.declare_binding_pattern(&param.pattern, false, DeclarationKind::Caught);
+      self.declare_binding_pattern(&param.pattern, None, DeclarationKind::Caught);
       self.init_binding_pattern(&param.pattern, Some(value));
     }
 

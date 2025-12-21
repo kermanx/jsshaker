@@ -1,12 +1,13 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/module_declaration.js
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/module_declaration.js
 ---
 import { foo } from "source" with { type: "json" };
 import "side-effect-only";
+import {} from "default-export-unused";
 import de from "default-export";
-export * as t from "export-all";
+export * as ns from "export-all";
 export function f0() {
 	foo(() => 1);
 	return de + "1";

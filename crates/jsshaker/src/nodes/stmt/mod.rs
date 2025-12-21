@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
     match node {
       match_declaration!(Statement) => {
         let node = node.to_declaration();
-        self.declare_declaration(node, false);
+        self.declare_declaration(node, None);
       }
       match_module_declaration!(Statement) => {
         let node = node.to_module_declaration();
@@ -93,7 +93,7 @@ impl<'a> Transformer<'a> {
         self.transform_declaration(node.to_declaration()).map(Statement::from)
       }
       match_module_declaration!(Statement) => {
-        self.transform_module_declaration(node.to_module_declaration()).map(Statement::from)
+        self.transform_module_declaration(node.to_module_declaration())
       }
       Statement::ExpressionStatement(node) => {
         let ExpressionStatement { expression, .. } = node.as_ref();

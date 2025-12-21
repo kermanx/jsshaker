@@ -162,7 +162,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn exec_module(&mut self, module_id: ModuleId) {
     let module = &mut self.modules.modules[module_id];
-    if module.initialized {
+    if module.initialized || module.initializing {
       return;
     }
     module.initializing = true;
@@ -173,26 +173,41 @@ impl<'a> Analyzer<'a> {
       self.declare_statement(node);
     }
     for node in &program.body {
-      if let Statement::ImportDeclaration(node) = node {
-        self.init_import_declaration(node);
+      match node {
+        Statement::ImportDeclaration(node) => {
+          self.init_import_declaration(node);
+        }
+        Statement::ExportAllDeclaration(node) => {
+          if let Some(resolved) = self.module_info().resolved_imports.get(&node.source.value) {
+            self.exec_module(*resolved);
+          }
+        }
+        Statement::ExportNamedDeclaration(node) => {
+          if let Some(source) = &node.source
+            && let Some(resolved) = self.module_info().resolved_imports.get(&source.value)
+          {
+            self.exec_module(*resolved);
+          }
+        }
+        _ => {}
       }
     }
     for node in &program.body {
       self.init_statement(node);
     }
-    self.set_current_module(old_module);
 
     let module = self.module_info_mut();
     module.initializing = false;
     module.initialized = true;
 
     for (module, scope, node) in mem::take(&mut module.blocked_imports) {
-      let old_module = self.set_current_module(module);
+      self.set_current_module(module);
       let old_scope = self.replace_variable_scope(Some(scope));
       self.init_import_declaration(node);
       self.replace_variable_scope(old_scope);
-      self.set_current_module(old_module);
     }
+
+    self.set_current_module(old_module);
   }
 
   pub fn consume_exports(&mut self, module_id: ModuleId) {

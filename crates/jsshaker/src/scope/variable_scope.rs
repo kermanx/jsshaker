@@ -8,11 +8,13 @@ use oxc::{
 
 use super::cf_scope::CfScopeId;
 use crate::{
-  analyzer::Analyzer,
-  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  analyzer::{
+    Analyzer,
+    rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  },
   ast::DeclarationKind,
   define_box_bump_idx,
-  dep::{Dep, LazyDep},
+  dep::{Dep, DepAtom, LazyDep},
   entity::Entity,
   module::ExportedValue,
   utils::ast::AstKind2,
@@ -346,21 +348,21 @@ impl<'a> Analyzer<'a> {
     &mut self,
     symbol: SymbolId,
     decl_node: AstKind2<'a>,
-    exporting: bool,
+    exporting: Option<DepAtom>,
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
   ) {
     let variable_scope = self.scoping.variable.top().unwrap();
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
-    if exporting {
+    if let Some(exporting) = exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
       self.module_info_mut().named_exports.insert(
         name,
         if let Some(fn_value) = fn_value {
-          ExportedValue::Function(fn_value, decl_node.into())
+          ExportedValue::Function(fn_value, exporting)
         } else {
-          ExportedValue::Variable(variable_scope, symbol, decl_node.into())
+          ExportedValue::Variable(variable_scope, symbol, exporting)
         },
       );
     }

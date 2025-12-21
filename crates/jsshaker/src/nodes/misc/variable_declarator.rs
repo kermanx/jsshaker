@@ -3,6 +3,7 @@ use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
+  dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
 };
@@ -11,7 +12,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
-    exporting: bool,
+    exporting: Option<DepAtom>,
     kind: DeclarationKind,
   ) {
     self.declare_binding_pattern(&node.id, exporting, kind);

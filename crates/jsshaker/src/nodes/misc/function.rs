@@ -9,6 +9,7 @@ use oxc::{
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
+  dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
   utils::CalleeNode,
@@ -23,7 +24,11 @@ impl<'a> Analyzer<'a> {
     self.new_function(CalleeNode::Function(node)).into()
   }
 
-  pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
+  pub fn declare_function(
+    &mut self,
+    node: &'a Function<'a>,
+    exporting: Option<DepAtom>,
+  ) -> Entity<'a> {
     let entity = self.exec_function(node);
 
     if let Some(id) = node.id.as_ref() {
@@ -59,7 +64,7 @@ impl<'a> Analyzer<'a> {
         analyzer.declare_symbol(
           id.symbol_id(),
           AstKind2::BindingIdentifier(id),
-          false,
+          None,
           DeclarationKind::NamedFunctionInBody,
           Some(analyzer.factory.computed(info.func.into(), AstKind2::BindingIdentifier(id))),
         );

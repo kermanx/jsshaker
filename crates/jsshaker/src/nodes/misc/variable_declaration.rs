@@ -3,13 +3,15 @@ use oxc::{
   ast::ast::{VariableDeclaration, VariableDeclarationKind},
 };
 
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, dep::DepAtom, entity::Entity, transformer::Transformer,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declaration(
     &mut self,
     node: &'a VariableDeclaration<'a>,
-    exporting: bool,
+    exporting: Option<DepAtom>,
   ) {
     let kind = match &node.kind {
       VariableDeclarationKind::Var => DeclarationKind::Var,

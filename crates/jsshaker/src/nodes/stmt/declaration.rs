@@ -1,9 +1,9 @@
 use oxc::ast::ast::Declaration;
 
-use crate::{analyzer::Analyzer, transformer::Transformer};
+use crate::{analyzer::Analyzer, dep::DepAtom, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
-  pub fn declare_declaration(&mut self, node: &'a Declaration<'a>, exporting: bool) {
+  pub fn declare_declaration(&mut self, node: &'a Declaration<'a>, exporting: Option<DepAtom>) {
     match node {
       Declaration::VariableDeclaration(node) => {
         self.declare_variable_declaration(node, exporting);

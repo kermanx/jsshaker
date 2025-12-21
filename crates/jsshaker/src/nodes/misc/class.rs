@@ -13,6 +13,7 @@ use oxc::{
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
+  dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
   utils::CalleeNode,
@@ -90,7 +91,7 @@ impl<'a> Analyzer<'a> {
 
     // 4. Execute static blocks
     if let Some(id) = &node.id {
-      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
       self.init_binding_identifier(id, Some(class.into()));
     }
 
@@ -112,7 +113,7 @@ impl<'a> Analyzer<'a> {
     class
   }
 
-  pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: bool) {
+  pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: Option<DepAtom>) {
     self.declare_binding_identifier(node.id.as_ref().unwrap(), exporting, DeclarationKind::Class);
   }
 
@@ -141,7 +142,7 @@ impl<'a> Analyzer<'a> {
     variable_scope.super_class = Some(super_class);
 
     if let Some(id) = &node.id {
-      self.declare_binding_identifier(id, false, DeclarationKind::NamedFunctionInBody);
+      self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
       self.init_binding_identifier(id, data.value);
     }
 

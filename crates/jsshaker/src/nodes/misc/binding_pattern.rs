@@ -12,6 +12,7 @@ use oxc::{
 use crate::{
   Analyzer,
   ast::{AstKind2, DeclarationKind},
+  dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
 };
@@ -20,7 +21,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_binding_pattern(
     &mut self,
     node: &'a BindingPattern<'a>,
-    exporting: bool,
+    exporting: Option<DepAtom>,
     kind: DeclarationKind,
   ) {
     match &node.kind {

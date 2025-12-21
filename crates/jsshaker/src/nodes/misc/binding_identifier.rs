@@ -3,6 +3,7 @@ use oxc::ast::ast::BindingIdentifier;
 use crate::{
   analyzer::Analyzer,
   ast::{AstKind2, DeclarationKind},
+  dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
 };
@@ -11,7 +12,7 @@ impl<'a> Analyzer<'a> {
   pub fn declare_binding_identifier(
     &mut self,
     node: &'a BindingIdentifier<'a>,
-    exporting: bool,
+    exporting: Option<DepAtom>,
     kind: DeclarationKind,
   ) {
     let symbol = node.symbol_id.get().unwrap();

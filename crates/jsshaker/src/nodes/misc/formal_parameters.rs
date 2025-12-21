@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
   ) {
     for param in &node.items {
-      self.declare_binding_pattern(&param.pattern, false, kind);
+      self.declare_binding_pattern(&param.pattern, None, kind);
     }
 
     for (param, init) in node.items.iter().zip(args.elements) {
@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
         arr.init_rest(rest);
       }
 
-      self.declare_binding_rest_element(rest, false, kind);
+      self.declare_binding_rest_element(rest, None, kind);
       self.init_binding_rest_element(rest, arr.into());
     }
   }

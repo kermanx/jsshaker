@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     if let Some(init) = &node.init {
       match init {
         ForStatementInit::VariableDeclaration(node) => {
-          self.declare_variable_declaration(node, false);
+          self.declare_variable_declaration(node, None);
           self.init_variable_declaration(node, None);
         }
         node => {
