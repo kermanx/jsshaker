@@ -4,13 +4,22 @@ import { Options as JsShakerOptions, shakeMultiModule } from "jsshaker";
 export interface Options {
   preset?: "safest" | "recommended" | "smallest" | "disabled";
   alwaysInlineLiteral?: boolean;
+  minify?: boolean;
+  showWarnings?: boolean;
 }
 
 export default function rollupPluginJsShaker(
   pluginOptions: Options = {},
 ): Plugin {
+  let minify = pluginOptions.minify;
   return {
     name: "rollup-plugin-jsshaker",
+    // @ts-expect-error Vite-specific hook
+    apply: "build",
+    // @ts-expect-error Vite-specific hook
+    configResolved(config) {
+      minify ??= config.build?.minify !== false;
+    },
     generateBundle: {
       order: "post",
       handler(outputOptions, bundle) {
@@ -20,17 +29,19 @@ export default function rollupPluginJsShaker(
           jsx: "react",
           sourceMap: !!outputOptions.sourcemap,
           minify:
-            "minify" in outputOptions &&
-            !!outputOptions.minify &&
-            typeof outputOptions.minify === "object",
+            "minify" in outputOptions
+              ? !!outputOptions.minify &&
+                typeof outputOptions.minify === "object"
+              : !!minify,
         };
 
         const entrySource = Object.values(bundle)
           .filter((module) => module.type === "chunk" && module.isEntry)
           .map((b) => b.fileName)
-          .map((name) => {
-            return `export * from "./${name}";\nexport { default } from "./${name}";`;
-          })
+          .flatMap((name, i) => [
+            `export * as e${i.toString(36)} from "./${name}";`,
+            `export { default as d${i.toString(36)} } from "./${name}";`,
+          ])
           .join("\n");
 
         const entryFileName = "___entry___";
@@ -47,11 +58,14 @@ export default function rollupPluginJsShaker(
         this.info(`Optimizing chunks...`);
         const shaken = shakeMultiModule(sources, entryFileName, options);
         this.info(`Completed in ${Date.now() - startTime} ms`);
-        for (const diag of shaken.diagnostics) {
-          this.warn(`${diag}`);
-        }
-        delete shaken.output[entryFileName];
 
+        if (pluginOptions.showWarnings) {
+          for (const diag of shaken.diagnostics) {
+            this.warn(`${diag}`);
+          }
+        }
+
+        delete shaken.output[entryFileName];
         const maxFileNameLength = Math.max(
           ...Object.keys(shaken.output).map((n) => n.length),
         );
