@@ -4,6 +4,7 @@ mod consumed_object;
 mod function;
 mod literal;
 pub mod logical_result;
+pub mod module_object;
 pub mod never;
 mod object;
 pub mod primitive;

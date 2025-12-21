@@ -14,7 +14,7 @@ use crate::{
   define_box_bump_idx,
   dep::{Dep, LazyDep},
   entity::Entity,
-  module::NamedExport,
+  module::ExportedValue,
   utils::ast::AstKind2,
   value::{ArgumentsValue, cacheable::Cacheable},
 };
@@ -114,7 +114,7 @@ impl<'a> Analyzer<'a> {
     } else {
       let has_fn_value = fn_value.is_some();
       let exhausted = if let Some(exhausted_variables) = &self.exhausted_variables {
-        !has_fn_value && exhausted_variables.contains(&(self.current_module(), symbol))
+        !has_fn_value && exhausted_variables.contains(&(self.current_module, symbol))
       } else {
         false
       };
@@ -264,7 +264,7 @@ impl<'a> Analyzer<'a> {
 
         let mut variable = variable_cell.borrow_mut();
         if should_consume {
-          let module_id = self.current_module();
+          let module_id = self.current_module;
           if let Some(exhausted_variables) = &mut self.exhausted_variables {
             exhausted_variables.insert((module_id, symbol));
           }
@@ -355,11 +355,14 @@ impl<'a> Analyzer<'a> {
 
     if exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
-      let dep = self.factory.no_dep;
-      self
-        .module_info_mut()
-        .named_exports
-        .insert(name, NamedExport::Variable(variable_scope, symbol, dep));
+      self.module_info_mut().named_exports.insert(
+        name,
+        if let Some(fn_value) = fn_value {
+          ExportedValue::Function(fn_value, decl_node.into())
+        } else {
+          ExportedValue::Variable(variable_scope, symbol, decl_node.into())
+        },
+      );
     }
 
     if kind == DeclarationKind::FunctionParameter

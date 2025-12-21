@@ -7,12 +7,14 @@ use crate::{
   analyzer::Analyzer,
   dep::{DepAtom, DepTrait},
   entity::Entity,
+  module::ModuleId,
   utils::CalleeInfo,
 };
 
 pub struct CallScope<'a> {
   pub call_id: DepAtom,
   pub callee: CalleeInfo<'a>,
+  pub old_module: ModuleId,
   pub old_variable_scope: Option<VariableScopeId>,
   pub cf_scope_depth: usize,
   pub body_variable_scope: VariableScopeId,
@@ -29,6 +31,7 @@ impl<'a> CallScope<'a> {
   pub fn new_in(
     call_id: DepAtom,
     callee: CalleeInfo<'a>,
+    old_module: ModuleId,
     old_variable_scope: Option<VariableScopeId>,
     cf_scope_depth: usize,
     body_variable_scope: VariableScopeId,
@@ -38,6 +41,7 @@ impl<'a> CallScope<'a> {
     CallScope {
       call_id,
       callee,
+      old_module,
       old_variable_scope,
       cf_scope_depth,
       body_variable_scope,
@@ -51,20 +55,15 @@ impl<'a> CallScope<'a> {
     }
   }
 
-  pub fn finalize(self, analyzer: &mut Analyzer<'a>) -> (Option<VariableScopeId>, Entity<'a>) {
-    let value = match &self.returned_values[..] {
+  pub fn ret_val(&self, analyzer: &mut Analyzer<'a>) -> Entity<'a> {
+    match &self.returned_values[..] {
       [] => analyzer.factory.never,
       [v] => *v,
       [v1, v2] => analyzer.factory.union((*v1, *v2)),
       values => analyzer
         .factory
         .union(allocator::Vec::from_iter_in(values.iter().copied(), analyzer.allocator)),
-    };
-
-    #[cfg(feature = "flame")]
-    self.scope_guard.end();
-
-    (self.old_variable_scope, value)
+    }
   }
 }
 

@@ -34,7 +34,7 @@ pub fn check_dependencies<'a>(
   let factory = analyzer.factory;
   let (elements, rest, iterate_dep) = current.iterate(analyzer, dep);
 
-  let span = (analyzer.current_module(), analyzer.current_span());
+  let span = (analyzer.current_module, analyzer.current_span());
   let data = analyzer
     .builtins
     .react_data

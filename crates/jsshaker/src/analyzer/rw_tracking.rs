@@ -3,6 +3,7 @@ use oxc::semantic::SymbolId;
 use crate::{
   Analyzer,
   entity::Entity,
+  module::ModuleId,
   scope::{CfScopeId, VariableScopeId, variable_scope::EntityOrTDZ},
   value::{ObjectId, PropertyKeyValue},
 };
@@ -10,6 +11,7 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ReadWriteTarget<'a> {
   Variable(VariableScopeId, SymbolId),
+  DefaultExport(ModuleId),
   ObjectAll(ObjectId),
   ObjectField(ObjectId, PropertyKeyValue<'a>),
   __Object(ObjectId),

@@ -53,6 +53,7 @@ impl<'a> Scoping<'a> {
           #[cfg(feature = "flame")]
           debug_name: "<Root>",
         },
+        ModuleId::from(0),
         None,
         0,
         root_variable_scope,
@@ -112,7 +113,7 @@ impl<'a> Analyzer<'a> {
       self.refer_dep(dep_id);
     }
 
-    self.module_stack.push(info.func.callee.module_id);
+    let old_module = self.set_current_module(info.func.callee.module_id);
     let old_variable_scope_stack = self.replace_variable_scope(info.func.lexical_scope);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
@@ -126,6 +127,7 @@ impl<'a> Analyzer<'a> {
     self.scoping.call.push(CallScope::new_in(
       dep_id,
       info.func.callee,
+      old_module,
       old_variable_scope_stack,
       cf_scope_depth,
       body_variable_scope,
@@ -136,7 +138,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn pop_call_scope(&mut self) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let scope = self.scoping.call.pop().unwrap();
-    let (old_variable_scope, ret_val) = scope.finalize(self);
+    let ret_val = scope.ret_val(self);
     let cf_scope_id = self.pop_cf_scope();
     let cf_scope = self.scoping.cf.get_mut(cf_scope_id);
     let CfScopeKind::Function(tracking_data) = &mut cf_scope.kind else {
@@ -145,8 +147,8 @@ impl<'a> Analyzer<'a> {
     let tracking_data = mem::take(*tracking_data);
 
     self.pop_variable_scope();
-    self.replace_variable_scope(old_variable_scope);
-    self.module_stack.pop();
+    self.replace_variable_scope(scope.old_variable_scope);
+    self.set_current_module(scope.old_module);
     (ret_val, tracking_data)
   }
 

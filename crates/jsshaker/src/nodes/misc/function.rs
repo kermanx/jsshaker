@@ -23,17 +23,20 @@ impl<'a> Analyzer<'a> {
     self.new_function(CalleeNode::Function(node)).into()
   }
 
-  pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) {
+  pub fn declare_function(&mut self, node: &'a Function<'a>, exporting: bool) -> Entity<'a> {
     let entity = self.exec_function(node);
 
-    let id = node.id.as_ref().unwrap();
-    self.declare_symbol(
-      id.symbol_id(),
-      AstKind2::BindingIdentifier(id),
-      exporting,
-      DeclarationKind::Function,
-      Some(self.factory.computed(entity, AstKind2::BindingIdentifier(id))),
-    );
+    if let Some(id) = node.id.as_ref() {
+      self.declare_symbol(
+        id.symbol_id(),
+        AstKind2::BindingIdentifier(id),
+        exporting,
+        DeclarationKind::Function,
+        Some(self.factory.computed(entity, AstKind2::BindingIdentifier(id))),
+      );
+    }
+
+    entity
   }
 
   pub fn call_function(

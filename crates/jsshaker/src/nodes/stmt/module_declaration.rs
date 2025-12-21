@@ -1,16 +1,17 @@
 use oxc::ast::ast::{
   ExportDefaultDeclaration, ExportDefaultDeclarationKind, ExportNamedDeclaration,
   ImportDeclaration, ImportDeclarationSpecifier, ImportDefaultSpecifier, ImportNamespaceSpecifier,
-  ImportSpecifier, ModuleDeclaration, ModuleExportName, PropertyKind,
+  ImportSpecifier, ModuleDeclaration, ModuleExportName,
 };
 
 use crate::{
-  Analyzer, ast::DeclarationKind, module::NamedExport, transformer::Transformer,
-  utils::ast::AstKind2, value::ObjectPrototype,
+  Analyzer, ast::DeclarationKind, module::ExportedValue, transformer::Transformer,
+  utils::ast::AstKind2,
 };
 
 impl<'a> Analyzer<'a> {
   pub fn declare_module_declaration(&mut self, node: &'a ModuleDeclaration<'a>) {
+    let module = self.module_info_mut();
     match node {
       ModuleDeclaration::ImportDeclaration(node) => {
         if let Some(specifiers) = &node.specifiers {
@@ -19,84 +20,95 @@ impl<'a> Analyzer<'a> {
           }
         }
       }
-      ModuleDeclaration::ExportNamedDeclaration(node) => {
-        if let Some(source) = &node.source {
-          if let Some(known) = self.builtins.get_known_module(&source.value) {
-            for specifier in &node.specifiers {
-              let value = known.namespace.get_property(
-                self,
-                AstKind2::ExportSpecifier(specifier),
-                self.factory.unmangable_string(specifier.local.name().as_str()),
-              );
-              self
-                .module_info_mut()
-                .named_exports
-                .insert(specifier.exported.name(), NamedExport::Value(value));
-            }
-          } else if let Some(module) = self.resolve_and_import_module(&source.value) {
-            for specifier in &node.specifiers {
-              let dep = self.dep(AstKind2::ExportSpecifier(specifier));
-              self.module_info_mut().named_exports.insert(
-                specifier.exported.name(),
-                NamedExport::ReExport(module, specifier.local.name(), dep),
-              );
-            }
+      ModuleDeclaration::ExportAllDeclaration(node) => {
+        if let Some(exported) = &node.exported {
+          // export * as exported from 'module'
+          let dep = AstKind2::ExportAllDeclaration(node);
+          let value =
+            if let Some(module_id) = module.resolved_imports.get(&node.source.value).copied() {
+              ExportedValue::Namespace(self.modules.modules[module_id].module_object, dep.into())
+            } else {
+              ExportedValue::Unknown(dep.into())
+            };
+          self.module_info_mut().named_exports.insert(exported.name(), value);
+        } else {
+          // export * from 'module'
+          if let Some(module_id) = module.resolved_imports.get(&node.source.value) {
+            module.reexport_all.insert(*module_id);
           } else {
-            for specifier in &node.specifiers {
-              let value = self.factory.computed_unknown(AstKind2::ExportSpecifier(specifier));
-              self
-                .module_info_mut()
-                .named_exports
-                .insert(specifier.exported.name(), NamedExport::Value(value));
-            }
-          }
-          return;
-        }
-        if let Some(declaration) = &node.declaration {
-          self.declare_declaration(declaration, true);
-        }
-        for specifier in &node.specifiers {
-          match &specifier.local {
-            ModuleExportName::IdentifierReference(node) => {
-              let dep = self.dep(AstKind2::ExportSpecifier(specifier));
-              let reference = self.semantic().scoping().get_reference(node.reference_id());
-              if let Some(symbol) = reference.symbol_id() {
-                let scope = self.scoping.variable.top().unwrap();
-                self
-                  .module_info_mut()
-                  .named_exports
-                  .insert(specifier.exported.name(), NamedExport::Variable(scope, symbol, dep));
-              } else {
-                self.consume(dep);
-              }
-            }
-            _ => unreachable!(),
+            module.reexport_unknown = true;
           }
         }
       }
       ModuleDeclaration::ExportDefaultDeclaration(node) => {
         match &node.declaration {
           ExportDefaultDeclarationKind::FunctionDeclaration(node) => {
-            if node.id.is_none() {
-              // Patch `export default function(){}`
-              return;
-            }
-            // Pass `exporting` as `false` because it is actually used as an expression
-            self.declare_function(node, false);
+            let value = if node.id.is_some() {
+              // Pass `exporting` as `false` because it is actually used as an expression
+              self.declare_function(node, false)
+            } else {
+              self.exec_function(node)
+            };
+            self.module_info_mut().default_export = Some(Some(value));
           }
           ExportDefaultDeclarationKind::ClassDeclaration(node) => {
-            if node.id.is_none() {
-              // Patch `export default class{}`
-              return;
+            if node.id.is_some() {
+              // Pass `exporting` as `false` because it is actually used as an expression
+              self.declare_class(node, false);
             }
-            // Pass `exporting` as `false` because it is actually used as an expression
-            self.declare_class(node, false);
           }
-          _expr => {}
-        };
+          _ => {}
+        }
       }
-      ModuleDeclaration::ExportAllDeclaration(_node) => {
-        // Nothing to do
+      ModuleDeclaration::ExportNamedDeclaration(node) => {
+        if let Some(source) = &node.source {
+          // export { ... } from 'module'
+          if let Some(module_id) = module.resolved_imports.get(&source.value) {
+            for specifier in &node.specifiers {
+              let exported = specifier.exported.name();
+              let local = specifier.local.name();
+              module.named_exports.insert(
+                exported,
+                ExportedValue::ReExport(
+                  *module_id,
+                  local,
+                  AstKind2::ExportSpecifier(specifier).into(),
+                ),
+              );
+            }
+          } else {
+            for specifier in &node.specifiers {
+              let exported = specifier.exported.name();
+              module.named_exports.insert(
+                exported,
+                ExportedValue::Unknown(AstKind2::ExportSpecifier(specifier).into()),
+              );
+            }
+          }
+        } else if let Some(declaration) = &node.declaration {
+          // export let a = 1;
+          self.declare_declaration(declaration, true);
+        } else {
+          // export { ... };
+          for specifier in &node.specifiers {
+            match &specifier.local {
+              ModuleExportName::IdentifierReference(node) => {
+                let dep = AstKind2::ExportSpecifier(specifier);
+                let reference = self.semantic().scoping().get_reference(node.reference_id());
+                if let Some(symbol) = reference.symbol_id() {
+                  let scope = self.scoping.variable.top().unwrap();
+                  self.module_info_mut().named_exports.insert(
+                    specifier.exported.name(),
+                    ExportedValue::Variable(scope, symbol, dep.into()),
+                  );
+                } else {
+                  self.consume(dep);
+                }
+              }
+              _ => unreachable!(),
+            }
+          }
+        }
       }
       _ => unreachable!(),
     }
@@ -106,16 +118,21 @@ impl<'a> Analyzer<'a> {
     if let Some(specifiers) = &node.specifiers {
       let name = node.source.value.as_str();
       let known = self.builtins.get_known_module(name);
-      let resolved = if known.is_none() { self.resolve_and_import_module(name) } else { None };
+      let resolved = if known.is_none() {
+        self.module_info().resolved_imports.get(&node.source.value).copied()
+      } else {
+        None
+      };
 
-      if let Some(resolved) = resolved
-        && self.module_stack.contains(&resolved)
-      {
-        // Circular dependency
-        let module = self.current_module();
-        let scope = self.scoping.variable.top().unwrap();
-        self.modules.modules[resolved].blocked_imports.push((module, scope, node));
-        return;
+      if let Some(resolved) = resolved {
+        if self.modules.modules[resolved].initializing {
+          // Circular dependency
+          let module = self.current_module;
+          let scope = self.scoping.variable.top().unwrap();
+          self.modules.modules[resolved].blocked_imports.push((module, scope, node));
+          return;
+        }
+        self.exec_module(resolved);
       }
 
       for specifier in specifiers {
@@ -129,32 +146,14 @@ impl<'a> Analyzer<'a> {
             }
           }
         } else if let Some(resolved) = resolved {
-          let module_info = &self.modules.modules[resolved];
+          let module = &self.modules.modules[resolved];
           match specifier {
             ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => {
-              module_info.default_export.unwrap_or(self.factory.unknown)
+              module.default_export.flatten().unwrap_or(self.factory.unknown)
             }
-            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => {
-              // FIXME: This is not accurate
-              let named_exports = module_info.named_exports.clone();
-              let object = self
-                .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.null), None);
-              for (key, named_export) in named_exports {
-                let value = self.get_named_export_value(resolved, named_export);
-                object.init_property(
-                  self,
-                  PropertyKind::Init,
-                  self.factory.unmangable_string(key.as_str()),
-                  value,
-                  true,
-                );
-              }
-              object.into()
-            }
+            ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => module.module_object,
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
-              if let Some(named_export) =
-                module_info.named_exports.get(&node.imported.name()).copied()
-              {
+              if let Some(named_export) = module.named_exports.get(&node.imported.name()).copied() {
                 self.get_named_export_value(resolved, named_export)
               } else {
                 self.factory.unknown
@@ -176,7 +175,6 @@ impl<'a> Analyzer<'a> {
       }
       ModuleDeclaration::ExportNamedDeclaration(node) => {
         if node.source.is_some() {
-          // Re-exports. Nothing to do.
           return;
         }
         if let Some(declaration) = &node.declaration {
@@ -196,16 +194,9 @@ impl<'a> Analyzer<'a> {
           }
           node => self.exec_expression(node.to_expression()),
         };
-        if self.module_info_mut().default_export.is_some() {
-          self.add_diagnostic("Duplicate default export");
-        }
-        self.module_info_mut().default_export = Some(value);
+        self.module_info_mut().default_export = Some(Some(value));
       }
-      ModuleDeclaration::ExportAllDeclaration(_node) => {
-        if self.module_stack.len() > 1 {
-          todo!("ExportAllDeclaration");
-        }
-      }
+      ModuleDeclaration::ExportAllDeclaration(_node) => {}
       _ => unreachable!(),
     }
   }

@@ -69,7 +69,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return analyzer.factory.computed_unknown((self, dep, key));
     }
 
-    let dep = analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep, key));
+    let dep = analyzer.dep((dep, key));
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = analyzer.factory.vec();
       let mut rest_added = false;

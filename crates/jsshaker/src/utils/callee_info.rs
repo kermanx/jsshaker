@@ -95,7 +95,7 @@ impl<'a> CalleeInfo<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_callee_info(&self, node: CalleeNode<'a>) -> CalleeInfo<'a> {
     CalleeInfo {
-      module_id: self.current_module(),
+      module_id: self.current_module,
       node,
       instance_id: self.factory.alloc_instance_id(),
       #[cfg(feature = "flame")]

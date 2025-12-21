@@ -12,9 +12,10 @@ impl<'a> Analyzer<'a> {
     let dep = self.dep((AstKind2::ImportExpression(node), specifier, options));
 
     if let Some(LiteralValue::String(specifier, _m)) = specifier.get_literal(self)
-      && let Some(module_id) = self.resolve_and_import_module(specifier)
+      && let Some(module_id) = self.resolve_and_parse_module(specifier)
     {
-      return self.factory.computed_unknown((module_id, dep));
+      self.exec_module(module_id);
+      return self.factory.computed(self.modules.modules[module_id].module_object, dep);
     }
 
     self.factory.computed_unknown(dep)

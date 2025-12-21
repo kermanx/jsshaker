@@ -1,4 +1,4 @@
-use std::{cell::UnsafeCell, mem, rc::Rc};
+use std::mem;
 
 use line_index::LineIndex;
 use oxc::{
@@ -9,62 +9,56 @@ use oxc::{
   span::{Atom, SourceType},
 };
 use oxc_index::{IndexVec, define_index_type};
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
   analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep, DepAtom},
+  dep::{CustomDepTrait, DepAtom},
   entity::Entity,
-  scope::{
-    CfScopeKind, VariableScopeId, call_scope::CallScope, cf_scope::CfScope,
-    variable_scope::VariableScope,
-  },
-  utils::{CalleeInfo, CalleeNode},
+  scope::{VariableScopeId, variable_scope::EntityOrTDZ},
+  value::module_object::ModuleObjectValue,
 };
 
 #[derive(Debug, Clone, Copy)]
-pub enum NamedExport<'a> {
-  Variable(VariableScopeId, SymbolId, Dep<'a>),
-  ReExport(ModuleId, Atom<'a>, Dep<'a>),
-  Value(Entity<'a>),
+pub enum ExportedValue<'a> {
+  Variable(VariableScopeId, SymbolId, DepAtom),
+  Function(Entity<'a>, DepAtom),
+  Namespace(Entity<'a>, DepAtom),
+  ReExport(ModuleId, Atom<'a>, DepAtom),
+  Unknown(DepAtom),
 }
 
-impl<'a> CustomDepTrait<'a> for NamedExport<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    match *self {
-      NamedExport::Variable(scope, symbol, dep) => {
-        let value = analyzer.read_on_scope(scope, symbol);
-        analyzer.consume((value, dep));
-      }
-      NamedExport::ReExport(module_id, name, dep) => {
-        if name == "default" {
-          analyzer.consume(analyzer.modules.modules[module_id].default_export);
-        } else {
-          let export = analyzer.modules.modules[module_id].named_exports.get(&name).copied();
-          analyzer.consume(export);
-        }
-        analyzer.consume(dep);
-      }
-      NamedExport::Value(entity) => {
-        analyzer.consume(entity);
-      }
+impl<'a> ExportedValue<'a> {
+  pub fn dep(&self) -> DepAtom {
+    match self {
+      ExportedValue::Variable(_, _, dep)
+      | ExportedValue::Function(_, dep)
+      | ExportedValue::Namespace(_, dep)
+      | ExportedValue::ReExport(_, _, dep)
+      | ExportedValue::Unknown(dep) => *dep,
     }
   }
 }
 
-#[derive(Clone)]
 pub struct ModuleInfo<'a> {
+  pub id: ModuleId,
   pub path: Atom<'a>,
   pub line_index: LineIndex,
-  pub program: &'a UnsafeCell<Program<'a>>,
-  pub semantic: Rc<Semantic<'a>>,
+  pub program: &'a Program<'a>,
+  pub semantic: Semantic<'a>,
   pub call_id: DepAtom,
 
   pub readonly_symbol_cache: FxHashMap<SymbolId, bool>,
 
-  pub named_exports: FxHashMap<Atom<'a>, NamedExport<'a>>,
-  pub default_export: Option<Entity<'a>>,
+  pub resolved_imports: FxHashMap<Atom<'a>, ModuleId>,
+  pub named_exports: FxHashMap<Atom<'a>, ExportedValue<'a>>,
+  pub default_export: Option<EntityOrTDZ<'a>>,
+  pub reexport_all: FxHashSet<ModuleId>,
+  pub reexport_unknown: bool,
 
+  pub module_object: Entity<'a>,
+  pub initializing: bool,
+  pub initialized: bool,
   pub blocked_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
 }
 
@@ -79,13 +73,16 @@ pub struct Modules<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn set_current_module(&mut self, module_id: ModuleId) -> ModuleId {
+    mem::replace(&mut self.current_module, module_id)
+  }
+
   pub fn module_info(&self) -> &ModuleInfo<'a> {
-    &self.modules.modules[self.current_module()]
+    &self.modules.modules[self.current_module]
   }
 
   pub fn module_info_mut(&mut self) -> &mut ModuleInfo<'a> {
-    let module_id = self.current_module();
-    &mut self.modules.modules[module_id]
+    &mut self.modules.modules[self.current_module]
   }
 
   pub fn semantic<'b>(&'b self) -> &'b Semantic<'a> {
@@ -103,13 +100,13 @@ impl<'a> Analyzer<'a> {
       .or_insert_with(|| !semantic.symbol_references(symbol_id).any(|r| r.is_write()))
   }
 
-  pub fn resolve_and_import_module(&mut self, specifier: &str) -> Option<ModuleId> {
+  pub fn resolve_and_parse_module(&mut self, specifier: &str) -> Option<ModuleId> {
     let importer = &self.module_info().path;
     let path = self.vfs.resolve_module(importer, specifier)?;
-    Some(self.import_module(path))
+    Some(self.parse_module(path))
   }
 
-  pub fn import_module(&mut self, path: String) -> ModuleId {
+  pub fn parse_module(&mut self, path: String) -> ModuleId {
     if let Some(module_id) = self.modules.paths.get(path.as_str()) {
       return *module_id;
     }
@@ -122,60 +119,56 @@ impl<'a> Analyzer<'a> {
       SourceType::mjs().with_jsx(self.config.jsx.is_enabled()),
     );
     let parsed = parser.parse();
-    let program = self.allocator.alloc(UnsafeCell::new(parsed.program));
+    let program = &*self.allocator.alloc(parsed.program);
     for error in parsed.errors {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
-    let semantic = SemanticBuilder::new().build(unsafe { &*program.get() }).semantic;
-    let semantic = Rc::new(semantic);
-    let module_id = self.modules.modules.push(ModuleInfo {
+    let semantic = SemanticBuilder::new().build(program).semantic;
+    let module_id: ModuleId = ModuleId::from_usize(self.modules.modules.len());
+    self.modules.modules.push(ModuleInfo {
+      id: module_id,
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
       program,
       semantic,
       call_id: DepAtom::from_counter(),
-
       readonly_symbol_cache: Default::default(),
-
+      resolved_imports: Default::default(),
       named_exports: Default::default(),
-      default_export: Default::default(),
-
-      blocked_imports: Vec::new(),
+      default_export: None,
+      reexport_all: Default::default(),
+      reexport_unknown: false,
+      module_object: self.factory.alloc(ModuleObjectValue::new(module_id)).into(),
+      initializing: false,
+      initialized: false,
+      blocked_imports: Default::default(),
     });
     self.modules.paths.insert(path.clone(), module_id);
 
-    self.exec_module(module_id);
+    for specifier in parsed.module_record.requested_modules.keys() {
+      if let Some(id) = self.resolve_and_parse_module(specifier) {
+        self.modules.modules[module_id].resolved_imports.insert(*specifier, id);
+      }
+    }
 
     module_id
   }
 
-  fn exec_module(&mut self, module_id: ModuleId) {
-    let ModuleInfo { call_id, program, .. } = self.modules.modules[module_id].clone();
-    self.module_stack.push(module_id);
-    let old_variable_scope = self.replace_variable_scope(None);
-    let root_variable_scope = self
-      .scoping
-      .variable
-      .push(VariableScope::new_in_with_this(self.allocator, self.factory.unknown));
-    self.scoping.call.push(CallScope::new_in(
-      call_id,
-      CalleeInfo {
-        module_id,
-        node: CalleeNode::Module,
-        instance_id: self.factory.alloc_instance_id(),
-        #[cfg(feature = "flame")]
-        debug_name: "<Module>",
-      },
-      None,
-      0,
-      root_variable_scope,
-      true,
-      false,
-    ));
-    let old_cf_scope_stack = self.scoping.cf.replace_stack(vec![self.scoping.root_cf_scope]);
-    self.scoping.cf.push(CfScope::new(CfScopeKind::Module, self.factory.vec(), false));
+  pub fn import_module(&mut self, specifier: &str) -> Option<ModuleId> {
+    let module_id = self.resolve_and_parse_module(specifier)?;
+    self.exec_module(module_id);
+    Some(module_id)
+  }
 
-    let program = unsafe { &*program.get() };
+  pub fn exec_module(&mut self, module_id: ModuleId) {
+    let module = &mut self.modules.modules[module_id];
+    if module.initialized {
+      return;
+    }
+    module.initializing = true;
+    let program = module.program;
+
+    let old_module = self.set_current_module(module_id);
     for node in &program.body {
       self.declare_statement(node);
     }
@@ -187,48 +180,130 @@ impl<'a> Analyzer<'a> {
     for node in &program.body {
       self.init_statement(node);
     }
+    self.set_current_module(old_module);
 
-    self.scoping.cf.replace_stack(old_cf_scope_stack);
-    self.scoping.call.pop();
-    self.replace_variable_scope(old_variable_scope);
-    self.module_stack.pop();
+    let module = self.module_info_mut();
+    module.initializing = false;
+    module.initialized = true;
 
-    for (module, scope, node) in mem::take(&mut self.modules.modules[module_id].blocked_imports) {
-      self.module_stack.push(module);
-      let old_top = self.scoping.variable.replace_top(Some(scope));
+    for (module, scope, node) in mem::take(&mut module.blocked_imports) {
+      let old_module = self.set_current_module(module);
+      let old_scope = self.replace_variable_scope(Some(scope));
       self.init_import_declaration(node);
-      self.scoping.variable.replace_top(old_top);
-      self.module_stack.pop();
+      self.replace_variable_scope(old_scope);
+      self.set_current_module(old_module);
     }
   }
 
   pub fn consume_exports(&mut self, module_id: ModuleId) {
-    let ModuleInfo { call_id, named_exports, default_export, .. } =
-      self.modules.modules[module_id].clone();
-    self.refer_dep(call_id);
-    for named_export in named_exports.into_values() {
-      self.consume(named_export);
+    let module = &self.modules.modules[module_id];
+    let call_id = module.call_id;
+    let mut values = vec![];
+    if let Some(Some(default_export)) = module.default_export {
+      values.push(default_export);
     }
-    if let Some(entity) = default_export {
-      self.consume(entity);
+    let named_exports = module.named_exports.values().copied().collect::<Vec<_>>();
+    for named_export in named_exports {
+      values.push(self.get_named_export_value(module_id, named_export));
     }
+    self.consume((call_id, values));
   }
 
   pub fn get_named_export_value(
     &mut self,
     module_id: ModuleId,
-    named_export: NamedExport<'a>,
+    named_export: ExportedValue<'a>,
   ) -> Entity<'a> {
     match named_export {
-      NamedExport::Variable(scope, symbol, dep) => {
-        self.module_stack.push(module_id);
+      ExportedValue::Variable(scope, symbol, dep) => {
+        let old_module = self.set_current_module(module_id);
         let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
-        self.module_stack.pop();
+        self.set_current_module(old_module);
         self.factory.computed(value, dep)
       }
-      NamedExport::ReExport(_, _, _) => todo!(),
-      NamedExport::Value(entity) => entity,
+      ExportedValue::Function(entity, dep) => self.factory.computed(entity, dep),
+      ExportedValue::Namespace(entity, dep) => self.factory.computed(entity, dep),
+      ExportedValue::ReExport(module, name, dep) => {
+        let value = self
+          .get_export_value_by_name(module, name, &mut FxHashSet::default())
+          .unwrap_or(self.factory.unknown);
+        self.factory.computed(value, dep)
+      }
+      ExportedValue::Unknown(dep) => self.factory.computed_unknown(dep),
     }
+  }
+
+  pub fn get_export_value_by_name(
+    &mut self,
+    module_id: ModuleId,
+    name: Atom<'a>,
+    searched: &mut FxHashSet<ModuleId>,
+  ) -> Option<Entity<'a>> {
+    if !searched.insert(module_id) {
+      return None;
+    }
+    let module = &self.modules.modules[module_id];
+    if name == "default" {
+      module.default_export.map(|e| e.unwrap_or(self.factory.unknown))
+    } else if let Some(exported_value) = module.named_exports.get(&name) {
+      Some(self.get_named_export_value(module_id, *exported_value))
+    } else {
+      for reexport_module_id in module.reexport_all.clone() {
+        if let Some(entity) = self.get_export_value_by_name(reexport_module_id, name, searched) {
+          return Some(entity);
+        }
+      }
+      None
+    }
+  }
+
+  pub fn does_module_reexport_unknown(
+    &self,
+    module_id: ModuleId,
+    searched: &mut FxHashSet<ModuleId>,
+  ) -> bool {
+    if !searched.insert(module_id) {
+      return false;
+    }
+    let module = &self.modules.modules[module_id];
+    if module.reexport_unknown {
+      return true;
+    }
+    for reexport_module_id in module.reexport_all.iter() {
+      if self.does_module_reexport_unknown(*reexport_module_id, searched) {
+        return true;
+      }
+    }
+    false
+  }
+
+  pub fn get_exported_keys(
+    &self,
+    module_id: ModuleId,
+    searched: &mut FxHashSet<ModuleId>,
+  ) -> Vec<Entity<'a>> {
+    if !searched.insert(module_id) {
+      return vec![];
+    }
+    let module = &self.modules.modules[module_id];
+    let mut keys = vec![];
+    for reexport_module_id in module.reexport_all.iter() {
+      let reexported_keys = self.get_exported_keys(*reexport_module_id, searched);
+      for key in reexported_keys {
+        keys.push(key);
+      }
+    }
+    for (name, value) in &module.named_exports {
+      keys.push(self.factory.computed(self.factory.unmangable_string(name.as_str()), value.dep()));
+    }
+    if searched.is_empty()
+      && let Some(default_export) = &module.default_export
+      && default_export.is_some()
+    {
+      keys.push(self.factory.computed(self.factory.builtin_string("default"), *default_export));
+    }
+
+    keys
   }
 }
 

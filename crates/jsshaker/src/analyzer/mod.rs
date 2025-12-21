@@ -40,7 +40,7 @@ pub struct Analyzer<'a> {
   pub modules: Modules<'a>,
   pub builtins: Builtins<'a>,
 
-  pub module_stack: Vec<ModuleId>,
+  pub current_module: ModuleId,
   pub span_stack: Vec<Span>,
   pub scoping: Scoping<'a>,
 
@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
       modules: Modules::default(),
       builtins: Builtins::new(config, factory),
 
-      module_stack: vec![],
+      current_module: ModuleId::new(0),
       span_stack: vec![],
       scoping,
 
@@ -101,10 +101,6 @@ impl<'a> Analyzer<'a> {
     } else {
       self.diagnostics.insert(message.into());
     }
-  }
-
-  pub fn current_module(&self) -> ModuleId {
-    *self.module_stack.last().unwrap()
   }
 
   pub fn current_span(&self) -> Span {

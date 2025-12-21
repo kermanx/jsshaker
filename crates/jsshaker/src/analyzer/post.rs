@@ -4,7 +4,7 @@ use super::Analyzer;
 
 impl Analyzer<'_> {
   pub fn post_analysis(&mut self) {
-    self.module_stack.push(ModuleId::new(0));
+    self.set_current_module(ModuleId::new(0));
 
     self.consume_exports(ModuleId::new(0));
 
@@ -24,8 +24,6 @@ impl Analyzer<'_> {
         break;
       }
     }
-
-    self.module_stack.pop();
 
     #[cfg(feature = "flame")]
     {

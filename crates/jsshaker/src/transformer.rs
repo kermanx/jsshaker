@@ -33,7 +33,7 @@ pub struct Transformer<'a> {
   pub conditional_data: &'a ConditionalDataMap<'a>,
   pub folder: &'a ConstantFolder<'a>,
   pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
-  pub semantic: Rc<Semantic<'a>>,
+  pub semantic: Semantic<'a>,
 
   pub ast_builder: AstBuilder<'a>,
 
@@ -54,7 +54,7 @@ impl<'a> Transformer<'a> {
     conditional_data: &'a ConditionalDataMap<'a>,
     folder: &'a ConstantFolder<'a>,
     mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
-    semantic: Rc<Semantic<'a>>,
+    semantic: Semantic<'a>,
   ) -> Self {
     Transformer {
       config,

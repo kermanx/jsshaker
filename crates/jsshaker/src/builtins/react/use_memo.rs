@@ -13,7 +13,7 @@ pub fn create_react_use_memo_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
 
     let (changed, dep) = check_dependencies(analyzer, dep, dependencies);
 
-    let span = (analyzer.current_module(), analyzer.current_span());
+    let span = (analyzer.current_module, analyzer.current_span());
     if changed {
       let result =
         calculate.call(analyzer, dep, analyzer.factory.unknown, analyzer.factory.empty_arguments);
