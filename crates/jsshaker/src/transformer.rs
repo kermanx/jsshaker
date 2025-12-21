@@ -16,7 +16,7 @@ use oxc::{
     },
   },
   semantic::{ScopeId, Semantic, SymbolId},
-  span::{GetSpan, SPAN, Span},
+  span::{Atom, GetSpan, SPAN, Span},
 };
 use rustc_hash::FxHashMap;
 
@@ -28,6 +28,7 @@ use crate::{
 pub struct Transformer<'a> {
   pub config: &'a TreeShakeConfig,
   pub allocator: &'a Allocator,
+  pub path: Atom<'a>,
   pub data: &'a ExtraData<'a>,
   pub referred_deps: &'a ReferredDeps,
   pub conditional_data: &'a ConditionalDataMap<'a>,
@@ -49,6 +50,7 @@ impl<'a> Transformer<'a> {
   pub fn new(
     config: &'a TreeShakeConfig,
     allocator: &'a Allocator,
+    path: Atom<'a>,
     data: &'a ExtraData<'a>,
     referred_deps: &'a ReferredDeps,
     conditional_data: &'a ConditionalDataMap<'a>,
@@ -59,6 +61,7 @@ impl<'a> Transformer<'a> {
     Transformer {
       config,
       allocator,
+      path,
       data,
       referred_deps,
       conditional_data,

@@ -116,26 +116,25 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn init_import_declaration(&mut self, node: &'a ImportDeclaration<'a>) {
-    if let Some(specifiers) = &node.specifiers {
-      let name = node.source.value.as_str();
-      let known = self.builtins.get_known_module(name);
-      let resolved = if known.is_none() {
-        self.module_info().resolved_imports.get(&node.source.value).copied()
-      } else {
-        None
-      };
+    let name = node.source.value.as_str();
+    let known = self.builtins.get_known_module(name);
+    let resolved = if known.is_none() {
+      self.module_info().resolved_imports.get(&node.source.value).copied()
+    } else {
+      None
+    };
 
-      if let Some(resolved) = resolved {
-        if self.modules.modules[resolved].initializing {
-          // Circular dependency
-          let module = self.current_module;
-          let scope = self.scoping.variable.top().unwrap();
-          self.modules.modules[resolved].blocked_imports.push((module, scope, node));
-          return;
-        }
-        self.exec_module(resolved);
+    if let Some(resolved) = resolved {
+      if self.modules.modules[resolved].initializing {
+        // Circular dependency
+        let module = self.current_module;
+        let scope = self.scoping.variable.top().unwrap();
+        self.modules.modules[resolved].circular_imports.push((module, scope, node));
       }
+      self.exec_module(resolved);
+    }
 
+    if let Some(specifiers) = &node.specifiers {
       for specifier in specifiers {
         let value = if let Some(known) = known {
           match specifier {

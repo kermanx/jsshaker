@@ -115,10 +115,14 @@ impl Vfs for MultiModuleFs {
 }
 
 // Credit: https://github.com/rust-lang/rfcs/issues/2208#issuecomment-342679694
-mod normalize_path {
+pub mod normalize_path {
   use std::path::Component;
   use std::path::Path;
   use std::path::PathBuf;
+
+  pub fn normalize_str(p: &str) -> String {
+    normalize(&PathBuf::from(p)).to_string_lossy().into_owned()
+  }
 
   pub fn normalize(p: &Path) -> PathBuf {
     let mut stack: Vec<Component> = vec![];

@@ -59,7 +59,7 @@ pub struct ModuleInfo<'a> {
   pub module_object: Entity<'a>,
   pub initializing: bool,
   pub initialized: bool,
-  pub blocked_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
+  pub circular_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
 }
 
 define_index_type! {
@@ -141,11 +141,14 @@ impl<'a> Analyzer<'a> {
       module_object: self.factory.alloc(ModuleObjectValue::new(module_id)).into(),
       initializing: false,
       initialized: false,
-      blocked_imports: Default::default(),
+      circular_imports: Default::default(),
     });
     self.modules.paths.insert(path.clone(), module_id);
 
     let old_module = self.set_current_module(module_id);
+    for node in &program.body {
+      self.declare_statement(node);
+    }
     for specifier in parsed.module_record.requested_modules.keys() {
       if let Some(id) = self.resolve_and_parse_module(specifier) {
         self.module_info_mut().resolved_imports.insert(*specifier, id);
@@ -165,9 +168,6 @@ impl<'a> Analyzer<'a> {
     let program = module.program;
 
     let old_module = self.set_current_module(module_id);
-    for node in &program.body {
-      self.declare_statement(node);
-    }
     for node in &program.body {
       match node {
         Statement::ImportDeclaration(node) => {
@@ -196,7 +196,7 @@ impl<'a> Analyzer<'a> {
     module.initializing = false;
     module.initialized = true;
 
-    for (module, scope, node) in mem::take(&mut module.blocked_imports) {
+    for (module, scope, node) in mem::take(&mut module.circular_imports) {
       self.set_current_module(module);
       let old_scope = self.replace_variable_scope(Some(scope));
       self.init_import_declaration(node);
@@ -220,7 +220,7 @@ impl<'a> Analyzer<'a> {
     self.consume((call_id, values));
   }
 
-  pub fn get_named_export_value(
+  fn get_named_export_value(
     &mut self,
     module_id: ModuleId,
     named_export: ExportedValue<'a>,
@@ -228,7 +228,9 @@ impl<'a> Analyzer<'a> {
     match named_export {
       ExportedValue::Variable(scope, symbol, dep) => {
         let old_module = self.set_current_module(module_id);
-        let value = self.read_on_scope(scope, symbol).unwrap().unwrap_or(self.factory.unknown);
+        let value = self.read_on_scope(scope, symbol).unwrap();
+        // TODO: handle TDZ
+        let value = value.unwrap_or(self.factory.unknown);
         self.set_current_module(old_module);
         self.factory.computed(value, dep)
       }
@@ -250,6 +252,7 @@ impl<'a> Analyzer<'a> {
     name: Atom<'a>,
     searched: &mut FxHashSet<ModuleId>,
   ) -> Option<Entity<'a>> {
+    // println!("module_id: {:?}, name: {}, module_opa", module_id, name);
     if !searched.insert(module_id) {
       return None;
     }

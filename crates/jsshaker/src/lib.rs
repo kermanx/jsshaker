@@ -33,6 +33,8 @@ use transformer::Transformer;
 use utils::ast;
 use vfs::Vfs;
 
+use crate::vfs::normalize_path;
+
 pub struct JsShakerOptions<F: Vfs> {
   pub vfs: F,
   pub config: TreeShakeConfig,
@@ -55,7 +57,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
 
     // Step 1: Analyze
     let mut analyzer = Analyzer::new_in(Box::new(vfs), config, &allocator);
-    let module_id = analyzer.parse_module(entry);
+    let module_id = analyzer.parse_module(normalize_path::normalize_str(&entry));
     analyzer.exec_module(module_id);
     analyzer.post_analysis();
     let Analyzer {
@@ -77,6 +79,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
       let transformer = Transformer::new(
         config,
         &allocator,
+        path,
         data,
         referred_deps,
         conditional_data,

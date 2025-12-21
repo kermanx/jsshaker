@@ -210,7 +210,7 @@ impl Transformer<'_> {
   pub fn get_conditional_result(&self, id: impl Into<DepAtom>) -> (bool, bool, bool) {
     let id = id.into();
     let Some(data) = &self.conditional_data.node_to_data.get(&id) else {
-      debug_assert!(false, "Conditional result not found for {:?}", id);
+      debug_assert!(false, "Conditional result not found for {:?} {}", id, self.path);
       return (true, true, true);
     };
 
