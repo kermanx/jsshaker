@@ -3,7 +3,6 @@ use std::collections::HashMap;
 pub trait Vfs {
   fn resolve_module(&self, importer: &str, specifier: &str) -> Option<String>;
   fn read_file(&self, path: &str) -> String;
-  fn normalize_path(&self, path: String) -> String;
 }
 
 pub struct StdFs;
@@ -17,6 +16,7 @@ impl Vfs for StdFs {
     let mut path = std::path::PathBuf::from(importer);
     path.pop();
     path.push(specifier);
+    path = normalize_path::normalize(&path);
     Some(
       path
         .exists()
@@ -42,10 +42,6 @@ impl Vfs for StdFs {
   fn read_file(&self, path: &str) -> String {
     std::fs::read_to_string(path).unwrap()
   }
-
-  fn normalize_path(&self, path: String) -> String {
-    normalize_path::normalize(std::path::Path::new(&path)).to_string_lossy().into_owned()
-  }
 }
 
 pub struct SingleFileFs(pub String);
@@ -66,10 +62,6 @@ impl Vfs for SingleFileFs {
       unreachable!("Unexpected path: {}", path);
     }
   }
-
-  fn normalize_path(&self, path: String) -> String {
-    path
-  }
 }
 
 pub struct MultiModuleFs(pub HashMap<String, String>);
@@ -88,7 +80,8 @@ impl Vfs for MultiModuleFs {
 
     let mut path = std::path::PathBuf::from(importer);
     path.pop();
-    path.push(specifier.strip_prefix("./").unwrap_or(specifier));
+    path.push(specifier);
+    path = normalize_path::normalize(&path);
     Some(
       self
         .exists(&path)
@@ -118,10 +111,6 @@ impl Vfs for MultiModuleFs {
 
   fn read_file(&self, path: &str) -> String {
     self.0.get(path).cloned().unwrap()
-  }
-
-  fn normalize_path(&self, path: String) -> String {
-    normalize_path::normalize(std::path::Path::new(&path)).to_string_lossy().into_owned()
   }
 }
 

@@ -110,8 +110,6 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn import_module(&mut self, path: String) -> ModuleId {
-    let path = self.vfs.normalize_path(path);
-
     if let Some(module_id) = self.modules.paths.get(path.as_str()) {
       return *module_id;
     }
