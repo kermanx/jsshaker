@@ -60,6 +60,7 @@ pub struct ModuleInfo<'a> {
   pub initializing: bool,
   pub initialized: bool,
   pub circular_imports: Vec<(ModuleId, VariableScopeId, &'a ImportDeclaration<'a>)>,
+  pub variable_scope: VariableScopeId,
 }
 
 define_index_type! {
@@ -125,6 +126,7 @@ impl<'a> Analyzer<'a> {
     }
     let semantic = SemanticBuilder::new().build(program).semantic;
     let module_id: ModuleId = ModuleId::from_usize(self.modules.modules.len());
+    let variable_scope = self.push_variable_scope();
     self.modules.modules.push(ModuleInfo {
       id: module_id,
       path: Atom::from_in(path.clone(), self.allocator),
@@ -142,6 +144,7 @@ impl<'a> Analyzer<'a> {
       initializing: false,
       initialized: false,
       circular_imports: Default::default(),
+      variable_scope,
     });
     self.modules.paths.insert(path.clone(), module_id);
 
@@ -154,6 +157,7 @@ impl<'a> Analyzer<'a> {
         self.module_info_mut().resolved_imports.insert(*specifier, id);
       }
     }
+    self.pop_variable_scope();
     self.set_current_module(old_module);
 
     module_id
@@ -166,8 +170,10 @@ impl<'a> Analyzer<'a> {
     }
     module.initializing = true;
     let program = module.program;
+    let variable_scope = module.variable_scope;
 
     let old_module = self.set_current_module(module_id);
+    let old_variable_scope = self.replace_variable_scope(Some(variable_scope));
     for node in &program.body {
       match node {
         Statement::ImportDeclaration(node) => {
@@ -198,11 +204,11 @@ impl<'a> Analyzer<'a> {
 
     for (module, scope, node) in mem::take(&mut module.circular_imports) {
       self.set_current_module(module);
-      let old_scope = self.replace_variable_scope(Some(scope));
+      self.replace_variable_scope(Some(scope));
       self.init_import_declaration(node);
-      self.replace_variable_scope(old_scope);
     }
 
+    self.replace_variable_scope(old_variable_scope);
     self.set_current_module(old_module);
   }
 
