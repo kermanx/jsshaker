@@ -89,6 +89,9 @@ importers:
       tsdown:
         specifier: ^0.18.1
         version: 0.18.1(typescript@5.9.2)
+      unplugin-utils:
+        specifier: ^0.3.1
+        version: 0.3.1
 
   tasks/e2e:
     devDependencies:
@@ -3841,6 +3844,10 @@ packages:
         optional: true
       vite:
         optional: true
+
+  unplugin-utils@0.3.1:
+    resolution: {integrity: sha512-5lWVjgi6vuHhJ526bI4nlCOmkCIF3nnfXkCMDeMJrtdvxTs6ZFCM8oNufGTsDbKv/tJ/xj8RpvXjRuPBZJuJog==}
+    engines: {node: '>=20.19.0'}
 
   unrun@0.2.20:
     resolution: {integrity: sha512-YhobStTk93HYRN/4iBs3q3/sd7knvju1XrzwwrVVfRujyTG1K88hGONIxCoJN0PWBuO+BX7fFiHH0sVDfE3MWw==}
@@ -7791,6 +7798,11 @@ snapshots:
       - postcss
       - rollup
       - supports-color
+
+  unplugin-utils@0.3.1:
+    dependencies:
+      pathe: 2.0.3
+      picomatch: 4.0.3
 
   unrun@0.2.20:
     dependencies:
