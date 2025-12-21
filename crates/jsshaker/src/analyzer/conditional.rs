@@ -208,9 +208,14 @@ impl<'a> Analyzer<'a> {
 
 impl Transformer<'_> {
   pub fn get_conditional_result(&self, id: impl Into<DepAtom>) -> (bool, bool, bool) {
-    let data = &self.conditional_data.node_to_data[&id.into()];
+    let id = id.into();
+    let Some(data) = &self.conditional_data.node_to_data.get(&id) else {
+      debug_assert!(false, "Conditional result not found for {:?}", id);
+      return (true, true, true);
+    };
+
     if data.maybe_true && data.maybe_false {
-      assert!(data.tests_to_consume.is_empty());
+      debug_assert!(data.tests_to_consume.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }
