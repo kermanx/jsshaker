@@ -1,16 +1,24 @@
 import { Plugin } from "rollup";
 import { Options as JsShakerOptions, shakeMultiModule } from "jsshaker";
+import { createFilter, FilterPattern } from "unplugin-utils";
 
 export interface Options {
   preset?: "safest" | "recommended" | "smallest" | "disabled";
   alwaysInlineLiteral?: boolean;
   minify?: boolean;
   showWarnings?: boolean;
+  include?: FilterPattern;
+  exclude?: FilterPattern;
 }
 
 export default function rollupPluginJsShaker(
   pluginOptions: Options = {},
 ): Plugin {
+  const filter = createFilter(
+    pluginOptions.include ?? /\.[mc]?js$/,
+    pluginOptions.exclude,
+  );
+
   let minify = pluginOptions.minify;
   return {
     name: "rollup-plugin-jsshaker",
@@ -36,7 +44,12 @@ export default function rollupPluginJsShaker(
         };
 
         const entrySource = Object.values(bundle)
-          .filter((module) => module.type === "chunk" && module.isEntry)
+          .filter(
+            (module) =>
+              module.type === "chunk" &&
+              module.isEntry &&
+              filter(module.fileName),
+          )
           .map((b) => b.fileName)
           .flatMap((name, i) => [
             `export * as e${i.toString(36)} from "./${name}";`,
