@@ -140,7 +140,7 @@ impl<'a> Analyzer<'a> {
               let object = self
                 .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.null), None);
               for (key, named_export) in named_exports {
-                let value = self.get_named_export_value(named_export);
+                let value = self.get_named_export_value(resolved, named_export);
                 object.init_property(
                   self,
                   PropertyKind::Init,
@@ -155,7 +155,7 @@ impl<'a> Analyzer<'a> {
               if let Some(named_export) =
                 module_info.named_exports.get(&node.imported.name()).copied()
               {
-                self.get_named_export_value(named_export)
+                self.get_named_export_value(resolved, named_export)
               } else {
                 self.factory.unknown
               }

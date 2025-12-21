@@ -216,10 +216,16 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn get_named_export_value(&mut self, named_export: NamedExport<'a>) -> Entity<'a> {
+  pub fn get_named_export_value(
+    &mut self,
+    module_id: ModuleId,
+    named_export: NamedExport<'a>,
+  ) -> Entity<'a> {
     match named_export {
       NamedExport::Variable(scope, symbol, dep) => {
+        self.module_stack.push(module_id);
         let value = self.read_on_scope(scope, symbol).unwrap().unwrap();
+        self.module_stack.pop();
         self.factory.computed(value, dep)
       }
       NamedExport::ReExport(_, _, _) => todo!(),
