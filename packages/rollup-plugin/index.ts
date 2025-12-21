@@ -1,4 +1,4 @@
-import { Plugin } from "rollup";
+import { OutputChunk, Plugin } from "rollup";
 import { Options as JsShakerOptions, shakeMultiModule } from "jsshaker";
 import { createFilter, FilterPattern } from "unplugin-utils";
 
@@ -30,7 +30,13 @@ export default function rollupPluginJsShaker(
     },
     generateBundle: {
       order: "post",
-      handler(outputOptions, bundle) {
+      handler(outputOptions, rawBundle) {
+        const bundle = Object.fromEntries(
+          Object.entries(rawBundle).filter(
+            ([fileName, module]) => module.type === "chunk" && filter(fileName),
+          ),
+        ) as Record<string, OutputChunk>;
+
         const options: JsShakerOptions = {
           preset: pluginOptions.preset,
           alwaysInlineLiteral: pluginOptions.alwaysInlineLiteral,
@@ -44,12 +50,7 @@ export default function rollupPluginJsShaker(
         };
 
         const entrySource = Object.values(bundle)
-          .filter(
-            (module) =>
-              module.type === "chunk" &&
-              module.isEntry &&
-              filter(module.fileName),
-          )
+          .filter((module) => module.isEntry)
           .map((b) => b.fileName)
           .flatMap((name, i) => [
             `export * as e${i.toString(36)} from "./${name}";`,
@@ -57,14 +58,12 @@ export default function rollupPluginJsShaker(
           ])
           .join("\n");
 
-        const entryFileName = "___entry___";
+        const entryFileName = "___entry___.js";
         const sources: Record<string, string> = {
           [entryFileName]: entrySource,
         };
         for (const [fileName, module] of Object.entries(bundle)) {
-          if (module.type === "chunk") {
-            sources[fileName] = module.code;
-          }
+          sources[fileName] = module.code;
         }
 
         const startTime = Date.now();
