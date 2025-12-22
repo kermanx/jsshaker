@@ -80,7 +80,7 @@ impl<'a> FunctionValue<'a> {
       // if cache_tracking.has_outer_deps {
       //   println!("Has outer deps: {}", self.callee.debug_name);
       // }
-      self.cache.borrow_mut().update_cache(cache_key, ret_val, cache_tracking);
+      self.cache.borrow_mut().update_cache(analyzer, cache_key, ret_val, cache_tracking);
     }
 
     analyzer.factory.computed(ret_val, call_dep)

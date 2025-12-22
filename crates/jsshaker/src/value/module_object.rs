@@ -171,7 +171,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     Some(false)
   }
 
-  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     None //  Some(Cacheable::Object(self.object_id))
   }
 }

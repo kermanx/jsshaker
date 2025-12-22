@@ -104,7 +104,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
     UnionHint::Never
   }
 
-  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Never)
   }
 }

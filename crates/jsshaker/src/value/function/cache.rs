@@ -11,7 +11,7 @@ use crate::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FnCachedInput<'a> {
   pub is_ctor: bool,
-  pub this: Cacheable<'a>,
+  pub this: &'a Cacheable<'a>,
   pub args: &'a [Cacheable<'a>],
 }
 
@@ -119,13 +119,13 @@ impl<'a> FnCache<'a> {
       return None;
     }
 
-    let this = this.as_cacheable()?;
+    let this = analyzer.factory.alloc(this.as_cacheable(analyzer)?);
     if args.rest.is_some() {
       return None; // TODO: Support this case
     }
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
-      cargs.push(arg.as_cacheable()?);
+      cargs.push(arg.as_cacheable(analyzer)?);
     }
     Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
   }
@@ -159,6 +159,7 @@ impl<'a> FnCache<'a> {
 
   pub fn update_cache(
     &mut self,
+    analyzer: &mut Analyzer<'a>,
     key: FnCachedInput<'a>,
     ret: Entity<'a>,
     tracking: FnCacheTrackingData<'a>,
@@ -166,7 +167,7 @@ impl<'a> FnCache<'a> {
     let FnCacheTrackingData::Tracked { effects } = tracking else {
       return;
     };
-    if ret.as_cacheable().is_none() {
+    if ret.as_cacheable(analyzer).is_none() {
       return;
     };
     self.table.insert(key, (effects, ret));

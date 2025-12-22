@@ -309,7 +309,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     Some(matches!(self, LiteralValue::Null | LiteralValue::Undefined))
   }
 
-  fn as_cacheable(&self) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     if let LiteralValue::String(s, _) = self {
       Some(Cacheable::Literal(LiteralValue::String(s, None)))
     } else {
