@@ -136,22 +136,35 @@ impl<'a> FnCache<'a> {
     key: &FnCachedInput<'a>,
   ) -> Option<Entity<'a>> {
     if let Some((effects, ret)) = self.table.get(key) {
+      let mut deps = None;
       for (&target, &last_value) in &effects.reads {
         let current_value = analyzer.get_rw_target_current_value(target);
-        if match (last_value, current_value) {
-          (Some(e1), Some(e2)) => !e1.exactly_same(e2),
-          (None, None) => false,
-          _ => true,
-        } {
-          return None;
+        match (last_value, current_value) {
+          (Some(e1), Some(e2)) => {
+            let c1 = e1.as_cacheable(analyzer)?;
+            let c2 = e2.as_cacheable(analyzer)?;
+            if c1 != c2 {
+              return None;
+            }
+            if !e1.exactly_same(e2) {
+              deps.get_or_insert_with(|| analyzer.factory.vec()).push(e2);
+            }
+          }
+          (None, None) => {}
+          _ => return None,
         }
       }
+      let dep = deps.map(|deps| analyzer.factory.dep(deps));
 
       for (&target, &(indeterminate, cacheable)) in &effects.writes {
-        analyzer.set_rw_target_current_value(target, cacheable, indeterminate);
+        analyzer.set_rw_target_current_value(
+          target,
+          analyzer.factory.optional_computed(cacheable, dep),
+          indeterminate,
+        );
       }
 
-      Some(*ret)
+      Some(analyzer.factory.optional_computed(*ret, dep))
     } else {
       None
     }

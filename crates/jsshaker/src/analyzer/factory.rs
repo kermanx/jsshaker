@@ -245,7 +245,11 @@ impl<'a> Factory<'a> {
     self.dep_once(dep)
   }
 
-  pub fn optional_computed(&self, val: Entity<'a>, dep: Option<Dep<'a>>) -> Entity<'a> {
+  pub fn optional_computed(
+    &self,
+    val: Entity<'a>,
+    dep: Option<impl DepTrait<'a> + 'a>,
+  ) -> Entity<'a> {
     match dep {
       Some(dep) => self.computed(val, dep),
       None => val,
