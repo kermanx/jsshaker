@@ -98,7 +98,7 @@ impl<'a> Transformer<'a> {
         *span,
         if operator.is_logical() {
           let (_, maybe_left, _) =
-            self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node));
+            self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node), false);
 
           if maybe_left { *operator } else { AssignmentOperator::Assign }
         } else {
@@ -111,7 +111,7 @@ impl<'a> Transformer<'a> {
         if need_val && *operator != AssignmentOperator::Assign {
           if operator.is_logical() {
             let (need_left_test_val, maybe_left, maybe_right) =
-              self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node));
+              self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node), false);
 
             let maybe_left = (need_val && maybe_left) || need_left_test_val;
             let left = self.transform_assignment_target_read(left, maybe_left);

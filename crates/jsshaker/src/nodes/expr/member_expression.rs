@@ -110,7 +110,8 @@ impl<'a> Transformer<'a> {
   ) -> Result<Option<Expression<'a>>, Option<Expression<'a>>> {
     let dep_id = AstKind2::MemberExpression(node);
 
-    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, node.optional());
+    let (need_optional, must_short_circuit) =
+      self.get_chain_result(dep_id, node.optional(), need_val);
 
     if must_short_circuit {
       let object = self.transform_expression_in_chain(node.object(), false)?;

@@ -77,7 +77,7 @@ impl<'a> Transformer<'a> {
 
     let CallExpression { span, callee, arguments, optional, .. } = node;
 
-    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, *optional);
+    let (need_optional, must_short_circuit) = self.get_chain_result(dep_id, *optional, need_val);
 
     if must_short_circuit {
       let callee = self.transform_expression_in_chain(callee, false)?;

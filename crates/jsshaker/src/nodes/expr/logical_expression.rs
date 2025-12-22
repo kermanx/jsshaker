@@ -72,7 +72,7 @@ impl<'a> Transformer<'a> {
     let LogicalExpression { span, left, operator, right } = node;
 
     let (need_left_test_val, maybe_left, maybe_right) =
-      self.get_conditional_result(AstKind2::LogicalExpressionLeft(node));
+      self.get_conditional_result(AstKind2::LogicalExpressionLeft(node), false);
 
     let need_left_val = (need_val && maybe_left) || need_left_test_val;
     let left = self.transform_expression(left, need_left_val);

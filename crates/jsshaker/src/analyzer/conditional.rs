@@ -207,11 +207,15 @@ impl<'a> Analyzer<'a> {
 }
 
 impl Transformer<'_> {
-  pub fn get_conditional_result(&self, id: impl Into<DepAtom>) -> (bool, bool, bool) {
+  pub fn get_conditional_result(
+    &self,
+    id: impl Into<DepAtom>,
+    accept_not_found: bool,
+  ) -> (bool, bool, bool) {
     let id = id.into();
     let Some(data) = &self.conditional_data.node_to_data.get(&id) else {
-      debug_assert!(false, "Conditional result not found for {:?} {}", id, self.path);
-      return (true, true, true);
+      debug_assert!(accept_not_found, "Conditional result not found for {:?} {}", id, self.path);
+      return (false, false, false);
     };
 
     if data.maybe_true && data.maybe_false {
@@ -220,9 +224,14 @@ impl Transformer<'_> {
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }
 
-  pub fn get_chain_result(&self, id: impl Into<DepAtom>, optional: bool) -> (bool, bool) {
+  pub fn get_chain_result(
+    &self,
+    id: impl Into<DepAtom>,
+    optional: bool,
+    need_val: bool,
+  ) -> (bool, bool) {
     if optional {
-      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(id);
+      let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(id, !need_val);
       (need_optional, !may_not_short_circuit)
     } else {
       (false, false)

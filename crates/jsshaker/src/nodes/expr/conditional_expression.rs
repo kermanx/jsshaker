@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
     let ConditionalExpression { span, test, consequent, alternate } = node;
 
     let (need_test_val, maybe_true, maybe_false) =
-      self.get_conditional_result(AstKind2::ConditionalExpression(node));
+      self.get_conditional_result(AstKind2::ConditionalExpression(node), false);
 
     let test = self.transform_expression(test, need_test_val);
     let consequent = maybe_true.then(|| self.transform_expression(consequent, need_val)).flatten();

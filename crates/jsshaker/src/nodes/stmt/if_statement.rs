@@ -87,7 +87,7 @@ impl<'a> Transformer<'a> {
     let IfStatement { span, test, consequent, alternate } = node;
 
     let (need_test_val, maybe_consequent, maybe_alternate) =
-      self.get_conditional_result(AstKind2::IfStatement(node));
+      self.get_conditional_result(AstKind2::IfStatement(node), false);
 
     let test = self.transform_expression(test, need_test_val);
     let consequent = if maybe_consequent { self.transform_statement(consequent) } else { None };

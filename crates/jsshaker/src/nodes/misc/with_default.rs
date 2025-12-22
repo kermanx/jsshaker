@@ -59,7 +59,7 @@ impl<'a> Transformer<'a> {
     default: &'a Expression<'a>,
     need_val: bool,
   ) -> Option<Expression<'a>> {
-    let (_, _, maybe_fallback) = self.get_conditional_result(AstKind2::WithDefault(default));
+    let (_, _, maybe_fallback) = self.get_conditional_result(AstKind2::WithDefault(default), false);
     if maybe_fallback { self.transform_expression(default, need_val) } else { None }
   }
 }
