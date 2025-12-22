@@ -62,8 +62,8 @@ impl TreeShakeConfig {
       preserve_writablity: true,
       preserve_exceptions: true,
 
-      min_simple_number_value: -999,
-      max_simple_number_value: 999,
+      min_simple_number_value: -1_000_000,
+      max_simple_number_value: 1_000_000,
       max_simple_string_length: 12,
     }
   }
