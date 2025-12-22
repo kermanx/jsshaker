@@ -141,12 +141,12 @@ impl<'a> FnCache<'a> {
         let current_value = analyzer.get_rw_target_current_value(target);
         match (last_value, current_value) {
           (Some(e1), Some(e2)) => {
-            let c1 = e1.as_cacheable(analyzer)?;
-            let c2 = e2.as_cacheable(analyzer)?;
-            if c1 != c2 {
-              return None;
-            }
             if !e1.exactly_same(e2) {
+              let c1 = e1.as_cacheable(analyzer)?;
+              let c2 = e2.as_cacheable(analyzer)?;
+              if c1 != c2 {
+                return None;
+              }
               deps.get_or_insert_with(|| analyzer.factory.vec()).push(e2);
             }
           }
