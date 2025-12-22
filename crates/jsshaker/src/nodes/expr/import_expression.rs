@@ -14,8 +14,10 @@ impl<'a> Analyzer<'a> {
     if let Some(LiteralValue::String(specifier, _m)) = specifier.get_literal(self)
       && let Some(module_id) = self.resolve_and_parse_module(specifier)
     {
+      self.push_indeterminate_cf_scope();
       self.exec_module(module_id);
-      return self.factory.computed(self.modules.modules[module_id].module_object, dep);
+      self.pop_cf_scope();
+      return self.factory.computed_unknown((module_id, dep));
     }
 
     self.factory.computed_unknown(dep)
