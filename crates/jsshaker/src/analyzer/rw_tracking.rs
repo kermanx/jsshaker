@@ -5,7 +5,7 @@ use crate::{
   entity::Entity,
   module::ModuleId,
   scope::{CfScopeId, VariableScopeId, variable_scope::EntityOrTDZ},
-  value::{ObjectId, PropertyKeyValue},
+  value::{ObjectId, PropertyKeyValue, array::ArrayId},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -15,6 +15,7 @@ pub enum ReadWriteTarget<'a> {
   ObjectAll(ObjectId),
   ObjectField(ObjectId, PropertyKeyValue<'a>),
   __Object(ObjectId),
+  Array(ArrayId),
 }
 
 impl<'a> ReadWriteTarget<'a> {

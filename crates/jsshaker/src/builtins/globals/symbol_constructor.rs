@@ -1,5 +1,5 @@
 use crate::{
-  builtins::{Builtins, constants::SYMBOL_CONSTRUCTOR_OBJECT_ID},
+  builtins::Builtins,
   init_namespace,
   value::{ObjectPropertyValue, ObjectPrototype},
 };
@@ -8,11 +8,7 @@ impl Builtins<'_> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(
-      SYMBOL_CONSTRUCTOR_OBJECT_ID,
-      ObjectPrototype::Builtin(&self.prototypes.function),
-      false,
-    );
+    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
     object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_namespace!(object, factory, {

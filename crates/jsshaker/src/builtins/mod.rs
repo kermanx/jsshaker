@@ -1,4 +1,3 @@
-mod constants;
 mod globals;
 mod import_meta;
 mod known_modules;

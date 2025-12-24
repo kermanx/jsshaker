@@ -15,7 +15,7 @@ use crate::{
   scope::CfScopeId,
   utils::{CalleeInstanceId, F64WithEq},
   value::{
-    ArgumentsValue, BuiltinFnImplementation, ImplementedBuiltinFnValue, LiteralValue, ObjectId,
+    ArgumentsValue, BuiltinFnImplementation, ImplementedBuiltinFnValue, LiteralValue,
     ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue,
     logical_result::LogicalResultValue, never::NeverValue, primitive::PrimitiveValue,
     react_element::ReactElementValue, union::UnionValues, unknown::UnknownValue,
@@ -192,7 +192,6 @@ impl<'a> Factory<'a> {
 
   pub fn builtin_object(
     &self,
-    object_id: ObjectId,
     prototype: ObjectPrototype<'a>,
     consumable: bool,
   ) -> &'a mut ObjectValue<'a> {
@@ -201,7 +200,6 @@ impl<'a> Factory<'a> {
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
       cf_scope: self.root_cf_scope.unwrap(),
-      object_id,
       keyed: allocator::HashMap::new_in(self.allocator).into(),
       unknown: ObjectProperty::new_in(self.allocator).into(),
       rest: Default::default(),

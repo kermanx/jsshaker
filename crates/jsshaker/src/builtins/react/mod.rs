@@ -18,10 +18,7 @@ use jsxs::create_react_jsxs_impl;
 use memo::create_react_memo_impl;
 use use_memo::{ReactUseMemos, create_react_use_memo_impl};
 
-use super::{
-  constants::{REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID, REACT_NAMESPACE_OBJECT_ID},
-  prototypes::BuiltinPrototypes,
-};
+use super::prototypes::BuiltinPrototypes;
 use crate::{
   analyzer::Factory,
   entity::Entity,
@@ -41,8 +38,7 @@ pub fn create_react_namespace<'a>(
   factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let namespace =
-    factory.builtin_object(REACT_NAMESPACE_OBJECT_ID, ObjectPrototype::ImplicitOrNull, false);
+  let namespace = factory.builtin_object(ObjectPrototype::ImplicitOrNull, false);
   namespace.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(namespace, factory, {
@@ -61,11 +57,7 @@ pub fn create_react_jsx_runtime_namespace<'a>(
   factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let object = factory.builtin_object(
-    REACT_JSX_RUNTIME_NAMESPACE_OBJECT_ID,
-    ObjectPrototype::ImplicitOrNull,
-    false,
-  );
+  let object = factory.builtin_object(ObjectPrototype::ImplicitOrNull, false);
   object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(object, factory, {

@@ -78,11 +78,13 @@ impl<'a> ObjectValue<'a> {
           ) {
             analyzer.track_write(
               target_depth,
-              ReadWriteTarget::ObjectField(self.object_id, key_literal.into()),
+              ReadWriteTarget::ObjectField(self.object_id(), key_literal.into()),
               None,
             );
-            analyzer
-              .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
+            analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectField(
+              self.object_id(),
+              key_str,
+            ));
           }
           if property.definite {
             continue;
@@ -90,7 +92,7 @@ impl<'a> ObjectValue<'a> {
           true
         } else {
           analyzer
-            .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id, key_str));
+            .request_exhaustive_callbacks(ReadWriteTarget::ObjectField(self.object_id(), key_str));
           false
         };
 
@@ -125,9 +127,9 @@ impl<'a> ObjectValue<'a> {
       }
     } else {
       if is_exhaustive {
-        analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
+        analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
       }
-      analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
+      analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
 
       self.disable_mangling(analyzer);
 

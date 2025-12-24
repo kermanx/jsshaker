@@ -192,7 +192,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    Some(Cacheable::Object(self.statics.object_id))
+    Some(Cacheable::Function(self.callee.instance_id))
   }
 }
 

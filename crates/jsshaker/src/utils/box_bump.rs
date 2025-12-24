@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::hash::Hash;
+use std::mem;
 use std::ptr::NonNull;
 
 use oxc::allocator::Allocator;
@@ -7,6 +8,11 @@ use oxc::allocator::Allocator;
 pub trait Idx: Debug + Clone + Copy + PartialEq + Eq + Hash {
   fn from_ptr(ptr: NonNull<u8>) -> Self;
   fn as_ptr(&self) -> NonNull<u8>;
+
+  unsafe fn from_any_ref<T>(r: &T) -> Self {
+    let ptr = NonNull::from(r);
+    Self::from_ptr(unsafe { mem::transmute(ptr) })
+  }
 }
 
 #[macro_export]

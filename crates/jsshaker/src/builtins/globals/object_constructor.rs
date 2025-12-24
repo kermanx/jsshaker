@@ -1,7 +1,7 @@
 use std::borrow::BorrowMut;
 
 use crate::{
-  builtins::{Builtins, constants::OBJECT_CONSTRUCTOR_OBJECT_ID},
+  builtins::Builtins,
   entity::Entity,
   init_namespace,
   value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
@@ -11,11 +11,7 @@ impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(
-      OBJECT_CONSTRUCTOR_OBJECT_ID,
-      ObjectPrototype::Builtin(&self.prototypes.function),
-      false,
-    );
+    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
     object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_namespace!(object, factory, {

@@ -83,10 +83,14 @@ impl<'a> ObjectValue<'a> {
 
     if let Some(exhaustive_deps) = exhaustive_deps {
       for key in exhaustive_deps {
-        analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectField(self.object_id, key), None);
+        analyzer.track_read(
+          self.cf_scope,
+          ReadWriteTarget::ObjectField(self.object_id(), key),
+          None,
+        );
       }
     } else {
-      analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
+      analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id()), None);
     }
 
     let value = analyzer

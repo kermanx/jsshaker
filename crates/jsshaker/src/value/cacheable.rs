@@ -2,7 +2,8 @@ use oxc::allocator::{self, Allocator};
 
 use crate::{
   module::ModuleId,
-  value::{ObjectId, primitive::PrimitiveValue},
+  utils::CalleeInstanceId,
+  value::{ObjectId, array::ArrayId, primitive::PrimitiveValue},
 };
 
 use super::LiteralValue;
@@ -16,7 +17,9 @@ pub enum Cacheable<'a> {
   Primitive(PrimitiveValue),
   Union(allocator::Vec<'a, Cacheable<'a>>),
   Object(ObjectId),
+  Array(ArrayId),
   ModuleObject(ModuleId),
+  Function(CalleeInstanceId),
   BuiltinFn(&'static str),
 }
 

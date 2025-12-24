@@ -22,7 +22,7 @@ use crate::{
   module::ModuleId,
   scope::linked_tree::LinkedTree,
   utils::{CalleeInfo, CalleeNode},
-  value::{ObjectId, cache::FnCacheTrackingData, call::FnCallInfo},
+  value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 pub struct Scoping<'a> {
@@ -67,11 +67,6 @@ impl<'a> Scoping<'a> {
 
       object_symbol_counter: 128,
     }
-  }
-
-  pub fn alloc_object_id(&mut self) -> ObjectId {
-    self.object_symbol_counter += 1;
-    ObjectId::from_usize(self.object_symbol_counter)
   }
 }
 

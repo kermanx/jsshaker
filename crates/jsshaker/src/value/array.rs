@@ -4,11 +4,12 @@ use oxc::allocator;
 use rustc_hash::FxHashMap;
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectId, PropertyKeyValue,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
   TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
+  define_ptr_idx,
   dep::{CustomDepTrait, Dep, DepCollector, DepVec},
   entity::Entity,
   scope::CfScopeId,
@@ -20,9 +21,12 @@ pub struct ArrayValue<'a> {
   pub consumed: Cell<bool>,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
-  pub object_id: ObjectId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
   pub rest: RefCell<allocator::Vec<'a, Entity<'a>>>,
+}
+
+define_ptr_idx! {
+  pub struct ArrayId for ArrayValue<'a>;
 }
 
 impl<'a> ValueTrait<'a> for ArrayValue<'a> {
@@ -34,8 +38,8 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     self.rest.borrow().consume(analyzer);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
-    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
+    analyzer.track_write(target_depth, ReadWriteTarget::Array(self.array_id()), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::Array(self.array_id()));
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -63,7 +67,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::get_property(self, analyzer, dep, key);
     }
 
-    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
     if !self.deps.borrow().is_empty() {
       return analyzer.factory.computed_unknown((self, dep, key));
@@ -203,7 +207,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::enumerate_properties(self, analyzer, dep);
     }
 
-    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
     if !self.deps.borrow().is_empty() {
       return EnumeratedProperties {
@@ -284,7 +288,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::iterate(analyzer, dep);
     }
 
-    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id), None);
+    analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
     if !self.deps.borrow().is_empty() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
@@ -339,11 +343,15 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    Some(Cacheable::Object(self.object_id))
+    Some(Cacheable::Array(self.array_id()))
   }
 }
 
 impl<'a> ArrayValue<'a> {
+  pub fn array_id(&self) -> ArrayId {
+    ArrayId::from_ref(self)
+  }
+
   pub fn push_element(&self, element: Entity<'a>) {
     if self.rest.borrow().is_empty() {
       self.elements.borrow_mut().push(element);
@@ -379,8 +387,8 @@ impl<'a> ArrayValue<'a> {
       }
     }
 
-    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
-    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
+    analyzer.track_write(target_depth, ReadWriteTarget::Array(self.array_id()), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::Array(self.array_id()));
 
     (is_exhaustive, indeterminate, exec_deps)
   }
@@ -389,12 +397,10 @@ impl<'a> ArrayValue<'a> {
 impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&mut self) -> &'a mut ArrayValue<'a> {
     let cf_scope = self.scoping.cf.current_id();
-    let object_id = self.scoping.alloc_object_id();
     self.factory.alloc(ArrayValue {
       consumed: Cell::new(false),
       deps: RefCell::new(DepCollector::new(self.factory.vec())),
       cf_scope,
-      object_id,
       elements: RefCell::new(self.factory.vec()),
       rest: RefCell::new(self.factory.vec()),
     })

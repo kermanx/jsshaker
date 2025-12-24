@@ -1,4 +1,4 @@
-use super::{Builtins, constants::IMPORT_META_OBJECT_ID, prototypes::BuiltinPrototypes};
+use super::{Builtins, prototypes::BuiltinPrototypes};
 use crate::{
   analyzer::Factory,
   dep::DepCollector,
@@ -11,8 +11,7 @@ impl<'a> Builtins<'a> {
     factory: &'a Factory<'a>,
     _prototypes: &'a BuiltinPrototypes<'a>,
   ) -> Entity<'a> {
-    let object =
-      factory.builtin_object(IMPORT_META_OBJECT_ID, ObjectPrototype::ImplicitOrNull, true);
+    let object = factory.builtin_object(ObjectPrototype::ImplicitOrNull, true);
     object.init_rest(
       factory,
       ObjectPropertyValue::Property(Some(factory.unknown), Some(factory.unknown)),

@@ -11,7 +11,6 @@ use std::{
 };
 
 use oxc::allocator;
-use oxc_index::define_index_type;
 pub use property::{ObjectProperty, ObjectPropertyValue};
 
 use super::{
@@ -21,6 +20,7 @@ use super::{
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   builtins::BuiltinPrototype,
+  define_ptr_idx,
   dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
@@ -48,8 +48,8 @@ impl<'a> ObjectPrototype<'a> {
   }
 }
 
-define_index_type! {
-  pub struct ObjectId = u32;
+define_ptr_idx! {
+  pub struct ObjectId for ObjectValue<'a>;
 }
 
 #[derive(Debug)]
@@ -60,7 +60,6 @@ pub struct ObjectValue<'a> {
   pub consumed_as_prototype: Cell<bool>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
-  pub object_id: ObjectId,
   pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
@@ -88,8 +87,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
-    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
+    analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -101,8 +100,8 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let (should_consume, _) =
-      analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id), None);
-    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id));
+      analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
+    analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
     if should_consume {
       self.consume(analyzer);
     }
@@ -260,11 +259,15 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    Some(Cacheable::Object(self.object_id))
+    Some(Cacheable::Object(self.object_id()))
   }
 }
 
 impl<'a> ObjectValue<'a> {
+  pub fn object_id(&self) -> ObjectId {
+    ObjectId::from_ref(self)
+  }
+
   fn consume_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
     if self.consumed_as_prototype.replace(true) {
       return;
@@ -347,7 +350,6 @@ impl<'a> Analyzer<'a> {
       consumed_as_prototype: Cell::new(false),
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
-      object_id: self.scoping.alloc_object_id(),
       keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
       unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
       rest: None,

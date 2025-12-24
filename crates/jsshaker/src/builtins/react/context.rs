@@ -47,7 +47,7 @@ pub fn create_react_create_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<
       .new_empty_object(ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object), None);
 
     let context_id = analyzer.builtins.react_data.contexts.push(ReactContextData {
-      object_id: context.object_id,
+      object_id: context.object_id(),
       consumed: false,
       default_value,
       stack: Vec::new(),
