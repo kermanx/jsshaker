@@ -3,13 +3,14 @@ pub mod bound;
 mod builtin;
 pub mod cache;
 pub mod call;
+mod objects;
 
 use std::cell::Cell;
 
 use oxc::span::GetSpan;
 
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
+  EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult, ValueTrait,
   cacheable::Cacheable, consumed_object,
 };
 use crate::{
@@ -18,7 +19,7 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
-  value::cache::FnCache,
+  value::{cache::FnCache, function::objects::FnObjects},
 };
 pub use arguments::*;
 pub use builtin::*;
@@ -28,9 +29,7 @@ pub struct FunctionValue<'a> {
   pub callee: CalleeInfo<'a>,
   pub lexical_scope: Option<VariableScopeId>,
   pub finite_recursion: bool,
-  pub statics: &'a ObjectValue<'a>,
-  /// The `prototype` property. Not `__proto__`.
-  pub prototype: &'a ObjectValue<'a>,
+  pub objects: FnObjects<'a>,
 
   // Workaround: The lazy dep of `this` value
   body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
@@ -41,8 +40,7 @@ pub struct FunctionValue<'a> {
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.consume_body(analyzer, analyzer.factory.unknown);
-    self.statics.consume(analyzer);
-    self.prototype.consume(analyzer);
+    self.objects.consume(analyzer);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -56,7 +54,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.statics.get_property(analyzer, dep, key)
+    self.objects.statics(analyzer).get_property(analyzer, dep, key)
   }
 
   fn set_property(
@@ -73,11 +71,11 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    self.statics.set_property(analyzer, dep, key, value);
+    self.objects.statics(analyzer).set_property(analyzer, dep, key, value);
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    self.statics.delete_property(analyzer, dep, key);
+    self.objects.statics(analyzer).delete_property(analyzer, dep, key);
   }
 
   fn enumerate_properties(
@@ -168,15 +166,15 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    self.statics.get_own_keys(analyzer)
+    self.objects.statics(analyzer).get_own_keys(analyzer)
   }
 
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    analyzer: &Analyzer<'a>,
     dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
-    Some((dep, ObjectPrototype::Custom(self.statics), ObjectPrototype::Custom(self.prototype)))
+    Some(self.objects.get_constructor_prototype(analyzer, dep))
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -192,7 +190,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    Some(Cacheable::Object(self.statics.object_id))
+    Some(Cacheable::Function(self.callee.instance_id))
   }
 }
 
@@ -242,13 +240,11 @@ impl<'a> FunctionValue<'a> {
 
 impl<'a> Analyzer<'a> {
   pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
-    let (statics, prototype) = self.new_function_object(Some(node.into()));
     let function = self.factory.alloc(FunctionValue {
       callee: self.new_callee_info(node),
       lexical_scope: self.scoping.variable.top(),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
-      statics,
-      prototype,
+      objects: FnObjects::new(self, Some(node.into())),
       body_consumed: Cell::new(None),
       cache: FnCache::new_in(self.allocator),
     });

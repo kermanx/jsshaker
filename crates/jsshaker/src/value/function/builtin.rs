@@ -1,14 +1,20 @@
 use std::{cell::Cell, fmt::Debug};
 
 use super::super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
-  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
+use crate::{
+  analyzer::Analyzer,
+  dep::Dep,
+  entity::Entity,
+  use_consumed_flag,
+  value::{Value, function::objects::FnObjects},
+};
 
 trait BuiltinFnImpl<'a>: Debug {
   fn name(&self) -> &'static str;
-  fn object(&self) -> Option<&'a ObjectValue<'a>> {
+  fn object(&self, _analyzer: &Analyzer<'a>) -> Option<Value<'a>> {
     None
   }
   fn call_impl(
@@ -23,7 +29,7 @@ trait BuiltinFnImpl<'a>: Debug {
 
 impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    if let Some(object) = self.object() {
+    if let Some(object) = self.object(analyzer) {
       object.consume(analyzer);
     }
     self.consume(analyzer);
@@ -39,7 +45,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if let Some(object) = self.object() {
+    if let Some(object) = self.object(analyzer) {
       object.get_property(analyzer, dep, key)
     } else {
       analyzer.builtins.prototypes.function.get_property(analyzer, self.into(), key, dep)
@@ -53,7 +59,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    if let Some(object) = self.object() {
+    if let Some(object) = self.object(analyzer) {
       object.set_property(analyzer, dep, key, value)
     } else {
       analyzer.add_diagnostic(
@@ -67,7 +73,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    if let Some(object) = self.object() {
+    if let Some(object) = self.object(analyzer) {
       object.delete_property(analyzer, dep, key)
     } else {
       analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
@@ -181,11 +187,10 @@ impl<'a, T: Fn(&mut Analyzer<'a>, Dep<'a>, Entity<'a>, ArgumentsValue<'a>) -> En
 {
 }
 
-#[derive(Clone)]
 pub struct ImplementedBuiltinFnValue<'a, F: BuiltinFnImplementation<'a> + 'a> {
   pub name: &'static str,
   pub implementation: F,
-  pub object: Option<&'a ObjectValue<'a>>,
+  pub object: Option<FnObjects<'a>>,
   pub consumed: Cell<bool>,
 }
 
@@ -201,8 +206,8 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
   fn name(&self) -> &'static str {
     self.name
   }
-  fn object(&self) -> Option<&'a ObjectValue<'a>> {
-    self.object
+  fn object(&self, analyzer: &Analyzer<'a>) -> Option<Value<'a>> {
+    self.object.as_ref().map(|obj| obj.statics(analyzer))
   }
   fn call_impl(
     &self,
@@ -240,7 +245,7 @@ impl<'a> Analyzer<'a> {
       .alloc(ImplementedBuiltinFnValue {
         name,
         implementation,
-        object: Some(self.new_function_object(None).0),
+        object: Some(FnObjects::new(self, None)),
         consumed: Cell::new(false),
       })
       .into()
