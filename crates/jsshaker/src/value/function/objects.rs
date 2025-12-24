@@ -3,11 +3,11 @@ use std::cell::Cell;
 use crate::{
   Analyzer,
   dep::{Dep, DepCollector},
+  mangling::UniquenessGroupId,
   scope::CfScopeId,
   utils::ast::AstKind2,
   value::{
-    ObjectManglingGroupId, ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue,
-    PropertyKeyValue, Value,
+    ObjectProperty, ObjectPropertyValue, ObjectPrototype, ObjectValue, PropertyKeyValue, Value,
   },
 };
 
@@ -15,7 +15,7 @@ use crate::{
 enum FnObjectsState<'a> {
   Uninit {
     cf_scope: CfScopeId,
-    mangling_group: (Option<ObjectManglingGroupId<'a>>, Option<ObjectManglingGroupId<'a>>),
+    mangling_group: (Option<UniquenessGroupId>, Option<UniquenessGroupId>),
   },
   Init {
     statics: &'a ObjectValue<'a>,
@@ -33,7 +33,7 @@ impl<'a> FnObjects<'a> {
       cf_scope: analyzer.scoping.cf.current_id(),
       mangling_group: if let Some(mangle_node) = mangle_node {
         let (m1, m2) = *analyzer
-          .load_data::<Option<(ObjectManglingGroupId, ObjectManglingGroupId)>>(mangle_node)
+          .load_data::<Option<(UniquenessGroupId, UniquenessGroupId)>>(mangle_node)
           .get_or_insert_with(|| {
             (analyzer.new_object_mangling_group(), analyzer.new_object_mangling_group())
           });
@@ -51,7 +51,7 @@ impl<'a> FnObjects<'a> {
   fn force_init(
     analyzer: &Analyzer<'a>,
     cf_scope: CfScopeId,
-    mangling_group: (Option<ObjectManglingGroupId<'a>>, Option<ObjectManglingGroupId<'a>>),
+    mangling_group: (Option<UniquenessGroupId>, Option<UniquenessGroupId>),
   ) -> (&'a ObjectValue<'a>, &'a ObjectValue<'a>) {
     let prototype = analyzer.factory.alloc(ObjectValue::new_in(
       analyzer.allocator,

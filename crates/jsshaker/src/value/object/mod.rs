@@ -28,8 +28,6 @@ use crate::{
   use_consumed_flag,
 };
 
-pub type ObjectManglingGroupId<'a> = &'a Cell<Option<UniquenessGroupId>>;
-
 #[derive(Debug, Clone, Copy)]
 pub enum ObjectPrototype<'a> {
   ImplicitOrNull,
@@ -65,7 +63,7 @@ pub struct ObjectValue<'a> {
   pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
-  pub mangling_group: Cell<Option<ObjectManglingGroupId<'a>>>,
+  pub mangling_group: Cell<Option<UniquenessGroupId>>,
 
   /// Properties keyed by known string
   pub keyed: RefCell<allocator::HashMap<'a, PropertyKeyValue<'a>, ObjectProperty<'a>>>,
@@ -271,7 +269,7 @@ impl<'a> ObjectValue<'a> {
     cf_scope: CfScopeId,
     object_id: ObjectId,
     prototype: ObjectPrototype<'a>,
-    mangling_group: Option<ObjectManglingGroupId<'a>>,
+    mangling_group: Option<UniquenessGroupId>,
   ) -> Self {
     Self {
       consumable: true,
@@ -306,7 +304,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   pub fn is_mangable(&self) -> bool {
-    self.mangling_group.get().is_some_and(|group| group.get().is_some())
+    self.mangling_group.get().is_some()
   }
 
   fn check_mangable(&self, analyzer: &mut Analyzer<'a>, literals: &Vec<LiteralValue>) -> bool {
@@ -323,17 +321,13 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn disable_mangling(&self, analyzer: &mut Analyzer<'a>) {
-    if let Some(group) = self.mangling_group.get()
-      && let Some(group) = group.replace(None)
-    {
+    if let Some(group) = self.mangling_group.replace(None) {
       analyzer.mangler.mark_uniqueness_group_non_mangable(group);
     }
   }
 
   fn add_to_mangling_group(&self, analyzer: &mut Analyzer<'a>, key_atom: MangleAtom) {
-    analyzer
-      .mangler
-      .add_to_uniqueness_group(self.mangling_group.get().unwrap().get().unwrap(), key_atom);
+    analyzer.mangler.add_to_uniqueness_group(self.mangling_group.get().unwrap(), key_atom);
   }
 
   pub fn set_prototype(&self, prototype: ObjectPrototype<'a>) {
@@ -366,7 +360,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_empty_object(
     &mut self,
     prototype: ObjectPrototype<'a>,
-    mangling_group: Option<ObjectManglingGroupId<'a>>,
+    mangling_group: Option<UniquenessGroupId>,
   ) -> &'a mut ObjectValue<'a> {
     self.allocator.alloc(ObjectValue::new_in(
       self.allocator,
@@ -377,8 +371,8 @@ impl<'a> Analyzer<'a> {
     ))
   }
 
-  pub fn new_object_mangling_group(&mut self) -> ObjectManglingGroupId<'a> {
-    self.allocator.alloc(Cell::new(Some(self.mangler.uniqueness_groups.push(Default::default()))))
+  pub fn new_object_mangling_group(&mut self) -> UniquenessGroupId {
+    self.mangler.uniqueness_groups.push(Default::default())
   }
 
   pub fn use_mangable_plain_object(
@@ -386,7 +380,7 @@ impl<'a> Analyzer<'a> {
     dep_id: impl Into<DepAtom>,
   ) -> &'a mut ObjectValue<'a> {
     let mangling_group = self
-      .load_data::<Option<ObjectManglingGroupId>>(dep_id)
+      .load_data::<Option<UniquenessGroupId>>(dep_id)
       .get_or_insert_with(|| self.new_object_mangling_group());
     self.new_empty_object(
       ObjectPrototype::Builtin(&self.builtins.prototypes.object),
