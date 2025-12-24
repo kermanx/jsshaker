@@ -12,11 +12,6 @@ pub enum Cacheable<'a> {
   Unknown,
   Never,
 
-  UnknownTruthy,
-  UnknownFalsy,
-  UnknownNullish,
-  UnknownNonNullish,
-
   Literal(LiteralValue<'a>),
   Primitive(PrimitiveValue),
   Union(allocator::Vec<'a, Cacheable<'a>>),
