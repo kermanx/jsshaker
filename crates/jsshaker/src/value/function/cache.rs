@@ -1,8 +1,11 @@
+use std::cell::RefCell;
+
 use oxc::allocator;
 
 use crate::{
   Analyzer,
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  dep::{Dep, DepAtom},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
   value::{ArgumentsValue, cacheable::Cacheable, call::FnCallInfo},
@@ -101,13 +104,58 @@ impl<'a> FnCacheTrackingData<'a> {
 }
 
 #[derive(Debug)]
+pub struct FnCacheTrackDeps<'a> {
+  call_id: DepAtom,
+  this: DepAtom,
+  args: &'a [DepAtom],
+  rest: Option<DepAtom>,
+}
+
+impl<'a> FnCacheTrackDeps<'a> {
+  pub fn wrap(
+    analyzer: &Analyzer<'a>,
+    call_id: DepAtom,
+    this: &mut Entity<'a>,
+    args: &mut ArgumentsValue<'a>,
+  ) -> Self {
+    let factory = analyzer.factory;
+    let this_dep = DepAtom::from_counter();
+    *this = factory.computed(*this, this_dep);
+    let mut arg_deps = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
+    let mut new_args = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
+    for arg in args.elements {
+      let arg_dep = DepAtom::from_counter();
+      arg_deps.push(arg_dep);
+      new_args.push(factory.computed(*arg, arg_dep));
+    }
+    args.elements = new_args.into_bump_slice();
+    let rest_dep = if let Some(rest) = &mut args.rest {
+      let rdep = DepAtom::from_counter();
+      *rest = factory.computed(*rest, rdep);
+      Some(rdep)
+    } else {
+      None
+    };
+    Self { call_id, this: this_dep, args: arg_deps.into_bump_slice(), rest: rest_dep }
+  }
+}
+
+#[derive(Debug)]
+pub struct FnCachedInfo<'a> {
+  track_deps: FnCacheTrackDeps<'a>,
+  effects: FnCachedEffects<'a>,
+  has_global_effects: bool,
+  ret: Entity<'a>,
+}
+
+#[derive(Debug)]
 pub struct FnCache<'a> {
-  table: allocator::HashMap<'a, FnCachedInput<'a>, (FnCachedEffects<'a>, Entity<'a>)>,
+  table: RefCell<allocator::HashMap<'a, FnCachedInput<'a>, FnCachedInfo<'a>>>,
 }
 
 impl<'a> FnCache<'a> {
   pub fn new_in(alloc: &'a allocator::Allocator) -> Self {
-    Self { table: allocator::HashMap::new_in(alloc) }
+    Self { table: allocator::HashMap::new_in(alloc).into() }
   }
 
   pub fn get_key<const IS_CTOR: bool>(
@@ -134,10 +182,14 @@ impl<'a> FnCache<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     key: &FnCachedInput<'a>,
+    call_dep: Dep<'a>,
+    this: Entity<'a>,
+    args: ArgumentsValue<'a>,
   ) -> Option<Entity<'a>> {
-    if let Some((effects, ret)) = self.table.get(key) {
-      let mut deps = None;
-      for (&target, &last_value) in &effects.reads {
+    let table = self.table.borrow();
+    if let Some(cached) = table.get(key) {
+      let mut read_deps = None;
+      for (&target, &last_value) in &cached.effects.reads {
         let current_value = analyzer.get_rw_target_current_value(target);
         match (last_value, current_value) {
           (Some(e1), Some(e2)) => {
@@ -147,42 +199,68 @@ impl<'a> FnCache<'a> {
               if c1 != c2 {
                 return None;
               }
-              deps.get_or_insert_with(|| analyzer.factory.vec()).push(e2);
+              read_deps
+                .get_or_insert_with(|| analyzer.factory.vec())
+                .push(e2.get_shallow_dep(analyzer));
             }
           }
           (None, None) => {}
           _ => return None,
         }
       }
-      let dep = deps.map(|deps| analyzer.factory.dep(deps));
+      let dep = analyzer.factory.dep((call_dep, read_deps));
 
-      for (&target, &(indeterminate, cacheable)) in &effects.writes {
+      for (&target, &(indeterminate, cacheable)) in &cached.effects.writes {
         analyzer.set_rw_target_current_value(
           target,
-          analyzer.factory.optional_computed(cacheable, dep),
+          analyzer.factory.computed(cacheable, dep),
           indeterminate,
         );
       }
 
-      Some(analyzer.factory.optional_computed(*ret, dep))
+      analyzer.add_assoc_dep(cached.track_deps.call_id, dep);
+
+      analyzer.add_assoc_entity_dep(cached.track_deps.this, this);
+      for (dep, arg) in cached.track_deps.args.iter().zip(args.elements.iter()) {
+        analyzer.add_assoc_entity_dep(*dep, *arg);
+      }
+      for (dep, rest) in cached.track_deps.rest.iter().zip(args.rest.iter()) {
+        analyzer.add_assoc_entity_dep(*dep, *rest);
+      }
+
+      let ret = analyzer.factory.computed(cached.ret, dep);
+
+      let has_global_effects = cached.has_global_effects;
+      drop(table);
+      if has_global_effects {
+        analyzer.global_effect();
+      }
+
+      Some(ret)
     } else {
       None
     }
   }
 
-  pub fn update_cache(
-    &mut self,
-    analyzer: &mut Analyzer<'a>,
+  pub fn update(
+    &self,
+    analyzer: &Analyzer<'a>,
     key: FnCachedInput<'a>,
     ret: Entity<'a>,
-    tracking: FnCacheTrackingData<'a>,
+    track_deps: FnCacheTrackDeps<'a>,
+    tracking_data: FnCacheTrackingData<'a>,
+    has_global_effects: bool,
   ) {
-    let FnCacheTrackingData::Tracked { effects } = tracking else {
+    let FnCacheTrackingData::Tracked { effects } = tracking_data else {
       return;
     };
     if ret.as_cacheable(analyzer).is_none() {
       return;
     };
-    self.table.insert(key, (effects, ret));
+
+    self
+      .table
+      .borrow_mut()
+      .insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
   }
 }

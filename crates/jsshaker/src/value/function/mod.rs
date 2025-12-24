@@ -4,7 +4,7 @@ mod builtin;
 pub mod cache;
 pub mod call;
 
-use std::cell::{Cell, RefCell};
+use std::cell::Cell;
 
 use oxc::span::GetSpan;
 
@@ -35,7 +35,7 @@ pub struct FunctionValue<'a> {
   // Workaround: The lazy dep of `this` value
   body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
 
-  cache: RefCell<FnCache<'a>>,
+  cache: FnCache<'a>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
@@ -192,7 +192,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    None //  Some(Cacheable::Object(self.statics.object_id))
+    Some(Cacheable::Object(self.statics.object_id))
   }
 }
 
@@ -250,7 +250,7 @@ impl<'a> Analyzer<'a> {
       statics,
       prototype,
       body_consumed: Cell::new(None),
-      cache: FnCache::new_in(self.allocator).into(),
+      cache: FnCache::new_in(self.allocator),
     });
 
     let mut created_in_self = false;

@@ -1,7 +1,7 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/recursion.js
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/recursion.js
 ---
 export function simple() {
 	let t = 0;
@@ -30,7 +30,9 @@ export function complex2() {
 	function resolveTransitionHooks(postClone) {
 		const hooks = { clone() {
 			const hooks2 = resolveTransitionHooks(postClone);
-			if (postClone) postClone(hooks2);
+			{
+				postClone(hooks2);
+			}
 			return hooks2;
 		} };
 		return hooks;

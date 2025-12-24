@@ -262,7 +262,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    None //  Some(Cacheable::Object(self.object_id))
+    Some(Cacheable::Object(self.object_id))
   }
 }
 

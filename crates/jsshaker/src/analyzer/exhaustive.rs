@@ -89,6 +89,8 @@ impl<'a> Analyzer<'a> {
     let mut round_counter = 0;
     let mut first_ret = None;
     loop {
+      // println!("_kind: {}", _kind);
+
       self.cf_scope_mut().exited = None;
       #[cfg(feature = "flame")]
       let _scope_guard = flame::start_guard(format!(

@@ -1,11 +1,11 @@
 use crate::{
   Analyzer,
-  dep::Dep,
+  dep::{Dep, DepAtom},
   entity::Entity,
   utils::CalleeNode,
   value::{
     ArgumentsValue, FunctionValue, ObjectPrototype, TypeofResult,
-    cache::{FnCache, FnCachedInput},
+    cache::{FnCache, FnCacheTrackDeps, FnCachedInput},
   },
 };
 
@@ -13,6 +13,7 @@ use crate::{
 pub struct FnCallInfo<'a> {
   pub func: &'a FunctionValue<'a>,
   pub call_dep: Dep<'a>,
+  pub call_id: DepAtom,
   pub cache_key: Option<FnCachedInput<'a>>,
   pub this: Entity<'a>,
   pub args: ArgumentsValue<'a>,
@@ -24,26 +25,27 @@ impl<'a> FunctionValue<'a> {
     &'a self,
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
-    this: Entity<'a>,
-    args: ArgumentsValue<'a>,
+    mut this: Entity<'a>,
+    mut args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let call_dep = analyzer.dep((self.callee.into_node(), dep));
+    let call_id = DepAtom::from_counter();
+    let call_dep = analyzer.dep((self.callee.into_node(), dep, call_id));
 
     let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
-    if !consume && let Some(cache_key) = cache_key {
-      let cache = self.cache.borrow();
-      if let Some(cached_ret) = cache.retrieve(analyzer, &cache_key) {
-        drop(cache);
-        analyzer.global_effect();
-        analyzer.consume((call_dep, this, args));
+    let track_deps = if let Some(cache_key) = cache_key {
+      if let Some(cached_ret) = self.cache.retrieve(analyzer, &cache_key, call_dep, this, args) {
         return cached_ret;
+      } else {
+        Some(FnCacheTrackDeps::wrap(analyzer, call_id, &mut this, &mut args))
       }
-    }
+    } else {
+      None
+    };
 
-    let info = FnCallInfo { func: self, call_dep, cache_key, this, args, consume };
+    let info = FnCallInfo { func: self, call_id, call_dep, cache_key, this, args, consume };
 
-    let (ret_val, cache_tracking) = match self.callee.node {
+    let (ret_val, tracking_data) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(node, info),
       CalleeNode::ArrowFunctionExpression(node) => {
         analyzer.call_arrow_function_expression(node, info)
@@ -77,10 +79,15 @@ impl<'a> FunctionValue<'a> {
     };
 
     if let Some(cache_key) = cache_key {
-      // if cache_tracking.has_outer_deps {
-      //   println!("Has outer deps: {}", self.callee.debug_name);
-      // }
-      self.cache.borrow_mut().update_cache(analyzer, cache_key, ret_val, cache_tracking);
+      let has_global_effects = analyzer.is_referred(call_id);
+      self.cache.update(
+        analyzer,
+        cache_key,
+        ret_val,
+        track_deps.unwrap(),
+        tracking_data,
+        has_global_effects,
+      );
     }
 
     analyzer.factory.computed(ret_val, call_dep)

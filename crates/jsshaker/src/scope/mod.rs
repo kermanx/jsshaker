@@ -108,9 +108,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_call_scope(&mut self, info: FnCallInfo<'a>, is_async: bool, is_generator: bool) {
-    let dep_id = DepAtom::from_counter();
     if info.consume {
-      self.refer_dep(dep_id);
+      self.refer_dep(info.call_id);
     }
 
     let old_module = self.set_current_module(info.func.callee.module_id);
@@ -120,12 +119,12 @@ impl<'a> Analyzer<'a> {
       CfScopeKind::Function(
         self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator, info)),
       ),
-      self.factory.vec1(self.dep((info.call_dep, dep_id))),
+      self.factory.vec1(info.call_dep),
       false,
     );
 
     self.scoping.call.push(CallScope::new_in(
-      dep_id,
+      info.call_id,
       info.func.callee,
       old_module,
       old_variable_scope_stack,
