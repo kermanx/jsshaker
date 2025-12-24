@@ -16,7 +16,7 @@ use crate::{
   utils::{CalleeInstanceId, F64WithEq},
   value::{
     ArgumentsValue, BuiltinFnImplementation, ImplementedBuiltinFnValue, LiteralValue, ObjectId,
-    ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue, Value,
+    ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue,
     logical_result::LogicalResultValue, never::NeverValue, primitive::PrimitiveValue,
     react_element::ReactElementValue, union::UnionValues, unknown::UnknownValue,
   },
@@ -36,7 +36,6 @@ pub struct Factory<'a> {
 
   pub never: Entity<'a>,
   pub unknown: Entity<'a>,
-  pub unknown_value: Value<'a>,
 
   pub unknown_primitive: Entity<'a>,
   pub unknown_string: Entity<'a>,
@@ -77,8 +76,7 @@ impl<'a> Factory<'a> {
     let undefined = allocator.alloc(LiteralValue::Undefined).into();
 
     let never = allocator.alloc(NeverValue).into();
-    let unknown_value = &*allocator.alloc(UnknownValue::new());
-    let immutable_unknown = unknown_value.into();
+    let immutable_unknown = allocator.alloc(UnknownValue::new()).into();
     let unknown_primitive = allocator.alloc(PrimitiveValue::Mixed).into();
     let unknown_string = allocator.alloc(PrimitiveValue::String).into();
     let unknown_number = allocator.alloc(PrimitiveValue::Number).into();
@@ -140,7 +138,6 @@ impl<'a> Factory<'a> {
 
       never,
       unknown: immutable_unknown,
-      unknown_value,
 
       unknown_primitive,
       unknown_string,

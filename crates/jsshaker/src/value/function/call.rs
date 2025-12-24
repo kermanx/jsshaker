@@ -100,11 +100,10 @@ impl<'a> FunctionValue<'a> {
     args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
-    let target = if let Some(prototype) = self.objects.prototype_object(analyzer) {
-      analyzer.new_empty_object(ObjectPrototype::Custom(prototype), prototype.mangling_group.get())
-    } else {
-      analyzer.new_empty_object(ObjectPrototype::Unknown(dep), None)
-    };
+    let target = analyzer.new_empty_object(
+      ObjectPrototype::Custom(self.prototype),
+      self.prototype.mangling_group.get(),
+    );
     self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
   }
 }

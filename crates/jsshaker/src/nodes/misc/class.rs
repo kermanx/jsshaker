@@ -32,7 +32,6 @@ impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let data = self.load_data::<Data>(AstKind2::Class(node));
     let class = self.new_function(CalleeNode::ClassConstructor(node));
-    let (statics, prototype) = class.objects.get_objects(self);
 
     // 1. Execute super class
     data.super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
@@ -41,16 +40,16 @@ impl<'a> Analyzer<'a> {
       if let Some((prototype_dep, super_statics, super_prototype)) =
         super_class.get_constructor_prototype(self, self.factory.no_dep)
       {
-        statics.set_prototype(super_statics);
-        prototype.set_prototype(super_prototype);
-        prototype.unknown_mutate(self, prototype_dep);
+        class.statics.set_prototype(super_statics);
+        class.prototype.set_prototype(super_prototype);
+        class.prototype.unknown_mutate(self, prototype_dep);
       } else {
         let dep = self.factory.dep(*super_class);
-        statics.set_prototype(ObjectPrototype::Unknown(dep));
-        prototype.set_prototype(ObjectPrototype::Unknown(dep));
+        class.statics.set_prototype(ObjectPrototype::Unknown(dep));
+        class.prototype.set_prototype(ObjectPrototype::Unknown(dep));
       }
     } else {
-      prototype.set_prototype(ObjectPrototype::ImplicitOrNull);
+      class.prototype.set_prototype(ObjectPrototype::ImplicitOrNull);
     };
 
     // Enter class statics scope
@@ -83,9 +82,9 @@ impl<'a> Analyzer<'a> {
         };
         let value = self.exec_function(&node.value);
         if node.r#static {
-          statics.init_property(self, kind, key.unwrap(), value, true);
+          class.statics.init_property(self, kind, key.unwrap(), value, true);
         } else {
-          prototype.init_property(self, kind, key.unwrap(), value, true);
+          class.prototype.init_property(self, kind, key.unwrap(), value, true);
         }
       }
     }
@@ -103,7 +102,7 @@ impl<'a> Analyzer<'a> {
         ClassElement::PropertyDefinition(node) if node.r#static => {
           let key = data.keys[index].unwrap();
           let value = self.exec_property_definition(node);
-          statics.init_property(self, PropertyKind::Init, key, value, true);
+          class.statics.init_property(self, PropertyKind::Init, key, value, true);
         }
         _ => {}
       }

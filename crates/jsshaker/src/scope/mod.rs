@@ -6,7 +6,7 @@ mod stacked_tree;
 mod linked_tree;
 pub mod variable_scope;
 
-use std::{cell::Cell, mem};
+use std::mem;
 
 use call_scope::CallScope;
 use cf_scope::CfScope;
@@ -32,7 +32,7 @@ pub struct Scoping<'a> {
   pub root_cf_scope: CfScopeId,
   pub try_catch_depth: Option<usize>,
 
-  pub object_symbol_counter: Cell<usize>,
+  pub object_symbol_counter: usize,
 }
 
 impl<'a> Scoping<'a> {
@@ -65,14 +65,13 @@ impl<'a> Scoping<'a> {
       root_cf_scope,
       try_catch_depth: None,
 
-      object_symbol_counter: 128.into(),
+      object_symbol_counter: 128,
     }
   }
 
-  pub fn alloc_object_id(&self) -> ObjectId {
-    let id = self.object_symbol_counter.get();
-    self.object_symbol_counter.set(id + 1);
-    ObjectId::from_usize(id)
+  pub fn alloc_object_id(&mut self) -> ObjectId {
+    self.object_symbol_counter += 1;
+    ObjectId::from_usize(self.object_symbol_counter)
   }
 }
 

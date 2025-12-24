@@ -21,11 +21,12 @@ use super::{
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   builtins::BuiltinPrototype,
-  dep::{Dep, DepAtom},
+  dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
+  utils::ast::AstKind2,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -264,28 +265,6 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 }
 
 impl<'a> ObjectValue<'a> {
-  pub fn new_in(
-    allocator: &'a allocator::Allocator,
-    cf_scope: CfScopeId,
-    object_id: ObjectId,
-    prototype: ObjectPrototype<'a>,
-    mangling_group: Option<UniquenessGroupId>,
-  ) -> Self {
-    Self {
-      consumable: true,
-      consumed: Cell::new(false),
-      consumed_as_prototype: Cell::new(false),
-      // deps: Default::default(),
-      cf_scope,
-      object_id,
-      keyed: RefCell::new(allocator::HashMap::new_in(allocator)),
-      unknown: RefCell::new(ObjectProperty::new_in(allocator)),
-      rest: None,
-      prototype: Cell::new(prototype),
-      mangling_group: Cell::new(mangling_group),
-    }
-  }
-
   fn consume_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
     if self.consumed_as_prototype.replace(true) {
       return;
@@ -362,13 +341,55 @@ impl<'a> Analyzer<'a> {
     prototype: ObjectPrototype<'a>,
     mangling_group: Option<UniquenessGroupId>,
   ) -> &'a mut ObjectValue<'a> {
-    self.allocator.alloc(ObjectValue::new_in(
-      self.allocator,
-      self.scoping.cf.current_id(),
-      self.scoping.alloc_object_id(),
-      prototype,
-      mangling_group,
-    ))
+    self.allocator.alloc(ObjectValue {
+      consumable: true,
+      consumed: Cell::new(false),
+      consumed_as_prototype: Cell::new(false),
+      // deps: Default::default(),
+      cf_scope: self.scoping.cf.current_id(),
+      object_id: self.scoping.alloc_object_id(),
+      keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
+      unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
+      rest: None,
+      prototype: Cell::new(prototype),
+      mangling_group: Cell::new(mangling_group),
+    })
+  }
+
+  pub fn new_function_object(
+    &mut self,
+    mangle_node: Option<AstKind2<'a>>,
+  ) -> (&'a ObjectValue<'a>, &'a ObjectValue<'a>) {
+    let mangling_group = if let Some(mangle_node) = mangle_node {
+      let (m1, m2) = *self
+        .load_data::<Option<(UniquenessGroupId, UniquenessGroupId)>>(mangle_node)
+        .get_or_insert_with(|| {
+          (self.new_object_mangling_group(), self.new_object_mangling_group())
+        });
+      (Some(m1), Some(m2))
+    } else {
+      (None, None)
+    };
+    let prototype = self.new_empty_object(
+      ObjectPrototype::Builtin(&self.builtins.prototypes.object),
+      mangling_group.0,
+    );
+    let statics = self.new_empty_object(
+      ObjectPrototype::Builtin(&self.builtins.prototypes.function),
+      mangling_group.1,
+    );
+    statics.keyed.borrow_mut().insert(
+      PropertyKeyValue::String("prototype"),
+      ObjectProperty {
+        definite: true,
+        enumerable: false,
+        possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),
+        non_existent: DepCollector::new(self.factory.vec()),
+        key: Some(self.factory.builtin_string("prototype")),
+        mangling: Some(self.mangler.builtin_atom),
+      },
+    );
+    (statics, prototype)
   }
 
   pub fn new_object_mangling_group(&mut self) -> UniquenessGroupId {
