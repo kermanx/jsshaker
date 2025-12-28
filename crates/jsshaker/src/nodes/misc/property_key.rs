@@ -33,11 +33,11 @@ impl<'a> Transformer<'a> {
     match node {
       // Reuse the node
       PropertyKey::StaticIdentifier(node) => need_val.then(|| {
-        PropertyKey::StaticIdentifier(self.ast_builder.alloc(self.transform_identifier_name(node)))
+        PropertyKey::StaticIdentifier(self.ast.alloc(self.transform_identifier_name(node)))
       }),
       PropertyKey::PrivateIdentifier(private_identifier) => self
         .transform_private_identifier(private_identifier, need_val)
-        .map(|k| PropertyKey::PrivateIdentifier(self.ast_builder.alloc(k))),
+        .map(|k| PropertyKey::PrivateIdentifier(self.ast.alloc(k))),
       _ => {
         let node = node.to_expression();
         if need_val || self.transform_expression(node, false).is_some() {

@@ -23,7 +23,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<PrivateIdentifier<'a>> {
     if need_val || self.is_referred(AstKind2::PrivateIdentifier(node)) {
       let PrivateIdentifier { span, name } = node;
-      Some(self.ast_builder.private_identifier(
+      Some(self.ast.private_identifier(
         *span,
         self.transform_mangable_static_string(AstKind2::PrivateIdentifier(node), name),
       ))

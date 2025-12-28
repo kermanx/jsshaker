@@ -11,7 +11,7 @@ impl<'a> Analyzer<'a> {
 impl<'a> Transformer<'a> {
   pub fn transform_identifier_name(&self, node: &'a IdentifierName<'a>) -> IdentifierName<'a> {
     let IdentifierName { span, name } = node;
-    self.ast_builder.identifier_name(
+    self.ast.identifier_name(
       *span,
       self.transform_mangable_static_string(AstKind2::IdentifierName(node), name),
     )

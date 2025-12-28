@@ -31,7 +31,7 @@ impl<'a> Transformer<'a> {
         self.transform_jsx_member_expression_effect_only(node, need_val)
       }
       JSXMemberExpressionObject::ThisExpression(node) => {
-        need_val.then_some(self.ast_builder.expression_this(node.span))
+        need_val.then_some(self.ast.expression_this(node.span))
       }
     }
   }

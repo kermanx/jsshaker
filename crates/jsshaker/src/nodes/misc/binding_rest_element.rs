@@ -29,6 +29,6 @@ impl<'a> Transformer<'a> {
 
     let argument = self.transform_binding_pattern(argument, need_binding);
 
-    argument.map(|argument| self.ast_builder.binding_rest_element(*span, argument))
+    argument.map(|argument| self.ast.binding_rest_element(*span, argument))
   }
 }

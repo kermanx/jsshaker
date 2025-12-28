@@ -45,7 +45,7 @@ impl<'a> Transformer<'a> {
 
     self.patch_var_declarations(scope_id, &mut statements);
 
-    self.ast_builder.function_body(*span, self.clone_node(directives), statements)
+    self.ast.function_body(*span, self.clone_node(directives), statements)
   }
 
   pub fn transform_function_expression_body(&self, node: &'a FunctionBody<'a>) -> FunctionBody<'a> {
@@ -62,12 +62,12 @@ impl<'a> Transformer<'a> {
       None
     };
 
-    self.ast_builder.function_body(
+    self.ast.function_body(
       *span,
       self.clone_node(directives),
-      self.ast_builder.vec1(
+      self.ast.vec1(
         self
-          .ast_builder
+          .ast
           .statement_expression(*span, expr.unwrap_or_else(|| self.build_unused_expression(*span))),
       ),
     )

@@ -30,7 +30,7 @@ impl<'a> Transformer<'a> {
       if let Some(value) = value { self.transform_expression(value, need_value) } else { None };
     let key = self.transform_property_key(key, value.is_some())?;
 
-    Some(self.ast_builder.class_element_property_definition(
+    Some(self.ast.class_element_property_definition(
       *span,
       *r#type,
       self.clone_node(decorators),

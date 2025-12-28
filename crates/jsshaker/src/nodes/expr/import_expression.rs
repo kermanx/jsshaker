@@ -37,7 +37,7 @@ impl<'a> Transformer<'a> {
     let source = self.transform_expression(source, need_import);
 
     if need_import {
-      Some(self.ast_builder.expression_import(
+      Some(self.ast.expression_import(
         *span,
         source.unwrap(),
         options.as_ref().map(|option| self.transform_expression(option, true).unwrap()),
@@ -45,7 +45,7 @@ impl<'a> Transformer<'a> {
       ))
     } else {
       build_effect!(
-        &self.ast_builder,
+        &self.ast,
         *span,
         source,
         options.as_ref().map(|option| self.transform_expression(option, false)),

@@ -18,7 +18,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Statement<'a>> {
     let ContinueStatement { span, label } = node;
 
-    Some(self.ast_builder.statement_continue(
+    Some(self.ast.statement_continue(
       *span,
       if self.is_referred(AstKind2::ContinueStatement(node)) { label.clone() } else { None },
     ))

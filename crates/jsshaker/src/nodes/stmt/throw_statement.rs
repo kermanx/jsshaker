@@ -14,6 +14,6 @@ impl<'a> Transformer<'a> {
   pub fn transform_throw_statement(&self, node: &'a ThrowStatement<'a>) -> Option<Statement<'a>> {
     let ThrowStatement { span, argument } = node;
     let argument = self.transform_expression(argument, true).unwrap();
-    Some(self.ast_builder.statement_throw(*span, argument))
+    Some(self.ast.statement_throw(*span, argument))
   }
 }

@@ -15,7 +15,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_break_statement(&self, node: &'a BreakStatement<'a>) -> Option<Statement<'a>> {
     let BreakStatement { span, label } = node;
 
-    Some(self.ast_builder.statement_break(
+    Some(self.ast.statement_break(
       *span,
       if self.is_referred(AstKind2::BreakStatement(node)) { label.clone() } else { None },
     ))

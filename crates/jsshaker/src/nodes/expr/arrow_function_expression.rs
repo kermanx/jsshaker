@@ -75,7 +75,7 @@ impl<'a> Transformer<'a> {
         self.transform_function_body(node.scope_id.get().unwrap(), body)
       };
 
-      Some(self.ast_builder.expression_arrow_function(
+      Some(self.ast.expression_arrow_function(
         *span,
         *expression,
         *r#async,
@@ -85,30 +85,21 @@ impl<'a> Transformer<'a> {
         body,
       ))
     } else if need_val {
-      Some(
-        self.ast_builder.expression_arrow_function(
-          *span,
-          true,
-          false,
-          NONE,
-          self.ast_builder.formal_parameters(
-            params.span,
-            params.kind,
-            self.ast_builder.vec(),
-            NONE,
-          ),
-          NONE,
-          self.ast_builder.function_body(
-            body.span,
-            self.ast_builder.vec(),
-            self.ast_builder.vec1(
-              self
-                .ast_builder
-                .statement_expression(body.span, self.build_unused_expression(body.span)),
-            ),
+      Some(self.ast.expression_arrow_function(
+        *span,
+        true,
+        false,
+        NONE,
+        self.ast.formal_parameters(params.span, params.kind, self.ast.vec(), NONE),
+        NONE,
+        self.ast.function_body(
+          body.span,
+          self.ast.vec(),
+          self.ast.vec1(
+            self.ast.statement_expression(body.span, self.build_unused_expression(body.span)),
           ),
         ),
-      )
+      ))
     } else {
       None
     }

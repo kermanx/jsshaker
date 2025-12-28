@@ -24,6 +24,6 @@ impl<'a> Transformer<'a> {
 
     let argument = argument.as_ref().map(|node| self.transform_expression(node, true).unwrap());
 
-    Some(self.ast_builder.expression_yield(*span, *delegate, argument))
+    Some(self.ast.expression_yield(*span, *delegate, argument))
   }
 }

@@ -23,9 +23,9 @@ impl<'a> Transformer<'a> {
     let right = self.transform_expression(right, need_val);
 
     if need_val {
-      Some(self.ast_builder.expression_binary(*span, left.unwrap(), *operator, right.unwrap()))
+      Some(self.ast.expression_binary(*span, left.unwrap(), *operator, right.unwrap()))
     } else {
-      build_effect!(self.ast_builder, *span, left, right)
+      build_effect!(self.ast, *span, left, right)
     }
   }
 }

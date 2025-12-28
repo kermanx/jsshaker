@@ -46,7 +46,7 @@ impl<'a> Transformer<'a> {
     node: &'a VariableDeclaration<'a>,
   ) -> Option<allocator::Box<'a, VariableDeclaration<'a>>> {
     let VariableDeclaration { span, kind, declarations, .. } = node;
-    let mut transformed_decls = self.ast_builder.vec();
+    let mut transformed_decls = self.ast.vec();
     for declarator in declarations {
       let declarator = self.transform_variable_declarator(declarator);
       if let Some(declarator) = declarator {
@@ -56,7 +56,7 @@ impl<'a> Transformer<'a> {
     if transformed_decls.is_empty() {
       None
     } else {
-      Some(self.ast_builder.alloc_variable_declaration(*span, *kind, transformed_decls, false))
+      Some(self.ast.alloc_variable_declaration(*span, *kind, transformed_decls, false))
     }
   }
 }

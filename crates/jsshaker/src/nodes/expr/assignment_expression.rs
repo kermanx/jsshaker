@@ -94,7 +94,7 @@ impl<'a> Transformer<'a> {
     let transformed_right = self.transform_expression(right, need_val || !left_is_empty);
 
     match (transformed_left, transformed_right) {
-      (Some(left), right) => Some(self.ast_builder.expression_assignment(
+      (Some(left), right) => Some(self.ast.expression_assignment(
         *span,
         if operator.is_logical() {
           let (_, maybe_left, _) =
@@ -120,7 +120,7 @@ impl<'a> Transformer<'a> {
             if need_left_test_val {
               let left = left.unwrap();
               if let Some(right) = right {
-                Some(self.ast_builder.expression_logical(
+                Some(self.ast.expression_logical(
                   *span,
                   left,
                   operator.to_logical_operator().unwrap(),
@@ -130,11 +130,11 @@ impl<'a> Transformer<'a> {
                 Some(left)
               }
             } else {
-              build_effect!(self.ast_builder, *span, left, right)
+              build_effect!(self.ast, *span, left, right)
             }
           } else {
             let left = self.transform_assignment_target_read(left, true).unwrap();
-            Some(self.ast_builder.expression_binary(
+            Some(self.ast.expression_binary(
               *span,
               left,
               operator.to_binary_operator().unwrap(),

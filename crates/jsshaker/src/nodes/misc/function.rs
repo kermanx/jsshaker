@@ -100,7 +100,7 @@ impl<'a> Transformer<'a> {
     need_val: bool,
   ) -> Option<allocator::Box<'a, Function<'a>>> {
     if self.is_referred(AstKind2::FunctionNoShake(node)) {
-      return Some(self.ast_builder.alloc(self.clone_node(node)));
+      return Some(self.ast.alloc(self.clone_node(node)));
     }
 
     let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
@@ -121,7 +121,7 @@ impl<'a> Transformer<'a> {
 
       self.declaration_only.set(old_declaration_only);
 
-      Some(self.ast_builder.alloc_function(
+      Some(self.ast.alloc_function(
         *span,
         *r#type,
         if need_id { id.clone() } else { None },
@@ -135,7 +135,7 @@ impl<'a> Transformer<'a> {
         body,
       ))
     } else if need_val || need_id {
-      Some(self.ast_builder.alloc_function(
+      Some(self.ast.alloc_function(
         *span,
         *r#type,
         if need_id { id.clone() } else { None },
@@ -144,13 +144,9 @@ impl<'a> Transformer<'a> {
         false,
         NONE,
         NONE,
-        self.ast_builder.formal_parameters(params.span, params.kind, self.ast_builder.vec(), NONE),
+        self.ast.formal_parameters(params.span, params.kind, self.ast.vec(), NONE),
         NONE,
-        Some(self.ast_builder.function_body(
-          params.span,
-          self.ast_builder.vec(),
-          self.ast_builder.vec(),
-        )),
+        Some(self.ast.function_body(params.span, self.ast.vec(), self.ast.vec())),
       ))
     } else {
       None

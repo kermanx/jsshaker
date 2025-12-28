@@ -27,11 +27,11 @@ impl<'a> Transformer<'a> {
       let callee = self.transform_expression(callee, true);
       let arguments = self.transform_arguments_need_call(arguments);
 
-      Some(self.ast_builder.expression_new(*span, callee.unwrap(), NONE, arguments))
+      Some(self.ast.expression_new(*span, callee.unwrap(), NONE, arguments))
     } else {
       let callee = self.transform_expression(callee, false);
       let arguments = self.transform_arguments_no_call(arguments);
-      build_effect!(self.ast_builder, *span, callee, arguments)
+      build_effect!(self.ast, *span, callee, arguments)
     }
   }
 }

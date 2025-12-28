@@ -132,7 +132,7 @@ impl<'a> Transformer<'a> {
       return Ok(if need_optional {
         Some(self.build_chain_expression_mock(node.span(), object.unwrap(), key_effect.unwrap()))
       } else {
-        build_effect!(&self.ast_builder, node.span(), object, key_effect)
+        build_effect!(&self.ast, node.span(), object, key_effect)
       });
     }
 
@@ -144,14 +144,14 @@ impl<'a> Transformer<'a> {
         let key = self.transform_expression(expression, need_read);
 
         if need_read {
-          Some(Expression::from(self.ast_builder.member_expression_computed(
+          Some(Expression::from(self.ast.member_expression_computed(
             *span,
             object,
             key.unwrap(),
             need_optional,
           )))
         } else {
-          build_effect!(&self.ast_builder, *span, object, key)
+          build_effect!(&self.ast, *span, object, key)
         }
       }
       MemberExpression::StaticMemberExpression(node) => {
@@ -160,7 +160,7 @@ impl<'a> Transformer<'a> {
         let object = self.transform_expression(object, need_read);
 
         if need_read {
-          Some(Expression::from(self.ast_builder.member_expression_static(
+          Some(Expression::from(self.ast.member_expression_static(
             *span,
             object.unwrap(),
             self.transform_identifier_name(property),
@@ -178,7 +178,7 @@ impl<'a> Transformer<'a> {
         if need_read {
           Some(
             self
-              .ast_builder
+              .ast
               .member_expression_private_field_expression(
                 *span,
                 object.unwrap(),
@@ -210,14 +210,14 @@ impl<'a> Transformer<'a> {
         let transformed_key = self.transform_expression(expression, need_key_value);
 
         if need_key_value {
-          Some(self.ast_builder.member_expression_computed(
+          Some(self.ast.member_expression_computed(
             *span,
             transformed_object.unwrap(),
             transformed_key.unwrap(),
             false,
           ))
         } else if transformed_key.is_some() {
-          Some(self.ast_builder.member_expression_computed(
+          Some(self.ast.member_expression_computed(
             *span,
             self.transform_expression(object, true).unwrap(),
             self.transform_expression(expression, true).unwrap(),
@@ -234,14 +234,14 @@ impl<'a> Transformer<'a> {
         let property = self.transform_identifier_name(property);
 
         if need_write {
-          Some(self.ast_builder.member_expression_static(
+          Some(self.ast.member_expression_static(
             *span,
             transformed_object.unwrap(),
             property,
             false,
           ))
         } else if transformed_object.is_some() {
-          Some(self.ast_builder.member_expression_static(
+          Some(self.ast.member_expression_static(
             *span,
             self.transform_expression(object, true).unwrap(),
             property,
@@ -259,14 +259,14 @@ impl<'a> Transformer<'a> {
           self.transform_private_identifier(field, need_write || transformed_object.is_some());
 
         if need_write {
-          Some(self.ast_builder.member_expression_private_field_expression(
+          Some(self.ast.member_expression_private_field_expression(
             *span,
             transformed_object.unwrap(),
             field.unwrap(),
             false,
           ))
         } else if transformed_object.is_some() {
-          Some(self.ast_builder.member_expression_private_field_expression(
+          Some(self.ast.member_expression_private_field_expression(
             *span,
             self.transform_expression(object, true).unwrap(),
             field.unwrap(),

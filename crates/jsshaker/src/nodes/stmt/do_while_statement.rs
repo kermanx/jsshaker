@@ -73,23 +73,23 @@ impl<'a> Transformer<'a> {
     if !data.need_loop && body.is_none() {
       // match (body, test) {
       //   (Some(body), Some(test)) => {
-      //     let mut statements = self.ast_builder.vec();
+      //     let mut statements = self.ast.vec();
       //     statements.push(body);
-      //     statements.push(self.ast_builder.statement_expression(*span, test));
-      //     Some(self.ast_builder.statement_block(*span, statements))
+      //     statements.push(self.ast.statement_expression(*span, test));
+      //     Some(self.ast.statement_block(*span, statements))
       //   }
-      //   (None, Some(test)) => Some(self.ast_builder.statement_expression(*span, test)),
+      //   (None, Some(test)) => Some(self.ast.statement_expression(*span, test)),
       //   (Some(body), None) => Some(body),
       //   (None, None) => None,
       // }
       let test = data.need_test.then(|| self.transform_expression(test, false)).flatten();
-      test.map(|test| self.ast_builder.statement_expression(*span, test))
+      test.map(|test| self.ast.statement_expression(*span, test))
     } else {
-      Some(self.ast_builder.statement_do_while(
+      Some(self.ast.statement_do_while(
         *span,
-        body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
+        body.unwrap_or_else(|| self.ast.statement_empty(body_span)),
         if !data.need_test {
-          self.ast_builder.expression_numeric_literal(
+          self.ast.expression_numeric_literal(
             test.span(),
             0.0,
             Some("0".into()),
@@ -99,7 +99,7 @@ impl<'a> Transformer<'a> {
           self.transform_expression(test, true).unwrap()
         } else {
           build_effect!(
-            self.ast_builder,
+            self.ast,
             test_span,
             self.transform_expression(test, false);
             self.build_unused_expression(test_span)

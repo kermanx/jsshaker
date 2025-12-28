@@ -34,7 +34,7 @@ impl<'a> Transformer<'a> {
     let TemplateLiteral { span, expressions, quasis } = node;
     if need_val {
       let mut quasis_iter = quasis.into_iter();
-      let mut transformed_exprs = self.ast_builder.vec();
+      let mut transformed_exprs = self.ast.vec();
       let mut transformed_quasis = vec![];
       let mut pending_effects = vec![];
       transformed_quasis
@@ -50,7 +50,7 @@ impl<'a> Transformer<'a> {
           }
           if !pending_effects.is_empty() && is_last {
             transformed_exprs.push(build_effect!(
-              &self.ast_builder,
+              &self.ast,
               expr_span,
               mem::take(&mut pending_effects);
               literal.build_expr(self, SPAN, None)
@@ -64,7 +64,7 @@ impl<'a> Transformer<'a> {
         } else {
           let expr = self.transform_expression(expr, true).unwrap();
           transformed_exprs.push(build_effect!(
-            &self.ast_builder,
+            &self.ast,
             expr_span,
             mem::take(&mut pending_effects);
             expr
@@ -75,17 +75,17 @@ impl<'a> Transformer<'a> {
       if transformed_exprs.is_empty() {
         let s = transformed_quasis.pop().unwrap();
         Some(build_effect!(
-          &self.ast_builder,
+          &self.ast,
           *span,
           pending_effects;
-          self.ast_builder.expression_string_literal(*span, self.ast_builder.atom(&s), None)
+          self.ast.expression_string_literal(*span, self.ast.atom(&s), None)
         ))
       } else {
         assert!(pending_effects.is_empty());
-        let mut quasis = self.ast_builder.vec();
+        let mut quasis = self.ast.vec();
         let quasis_len = transformed_quasis.len();
         for (index, quasi) in transformed_quasis.into_iter().enumerate() {
-          quasis.push(self.ast_builder.template_element(
+          quasis.push(self.ast.template_element(
             *span,
             TemplateElementValue {
               // FIXME: escape
@@ -95,11 +95,11 @@ impl<'a> Transformer<'a> {
             index == quasis_len - 1,
           ));
         }
-        Some(self.ast_builder.expression_template_literal(*span, quasis, transformed_exprs))
+        Some(self.ast.expression_template_literal(*span, quasis, transformed_exprs))
       }
     } else {
       build_effect!(
-        &self.ast_builder,
+        &self.ast,
         *span,
         expressions.into_iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
       )

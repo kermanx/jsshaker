@@ -45,10 +45,10 @@ impl<'a> Transformer<'a> {
     let body = if need_loop { self.transform_statement(body) } else { None };
 
     match (test, body) {
-      (Some(test), body) => Some(self.ast_builder.statement_while(
+      (Some(test), body) => Some(self.ast.statement_while(
         *span,
         test,
-        body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
+        body.unwrap_or_else(|| self.ast.statement_empty(body_span)),
       )),
       (None, Some(_)) => unreachable!(),
       (None, None) => None,

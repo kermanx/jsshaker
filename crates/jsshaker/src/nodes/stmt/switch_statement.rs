@@ -130,7 +130,7 @@ impl<'a> Transformer<'a> {
       let consequent = if need_consequent {
         self.transform_statement_vec(data, consequent)
       } else {
-        self.ast_builder.vec()
+        self.ast.vec()
       };
 
       match test {
@@ -158,14 +158,14 @@ impl<'a> Transformer<'a> {
     if transformed_cases.is_empty() {
       self
         .transform_expression(discriminant, false)
-        .map(|expr| self.ast_builder.statement_expression(*span, expr))
+        .map(|expr| self.ast.statement_expression(*span, expr))
     } else {
       let discriminant = self.transform_expression(discriminant, true).unwrap();
 
-      Some(self.ast_builder.statement_switch(*span, discriminant, {
-        let mut cases = self.ast_builder.vec();
+      Some(self.ast.statement_switch(*span, discriminant, {
+        let mut cases = self.ast.vec();
         for (span, test, consequent) in transformed_cases {
-          cases.push(self.ast_builder.switch_case(span, test, consequent));
+          cases.push(self.ast.switch_case(span, test, consequent));
         }
         cases
       }))

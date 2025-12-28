@@ -41,7 +41,7 @@ impl<'a> Transformer<'a> {
     let JSXElement { span, opening_element, children, .. } = node;
 
     build_effect!(
-      self.ast_builder,
+      self.ast,
       *span,
       vec![self.transform_jsx_element_name_effect_only(&opening_element.name)],
       self.transform_jsx_attributes_effect_only(&opening_element.attributes),
@@ -60,15 +60,15 @@ impl<'a> Transformer<'a> {
     let closing_element = closing_element.as_ref().map(|closing_element| {
       let JSXClosingElement { span, .. } = closing_element.as_ref();
 
-      self.ast_builder.jsx_closing_element(*span, self.clone_node(&name))
+      self.ast.jsx_closing_element(*span, self.clone_node(&name))
     });
 
-    self.ast_builder.alloc_jsx_element(
+    self.ast.alloc_jsx_element(
       *span,
       {
         let JSXOpeningElement { span, name, attributes, .. } = opening_element.as_ref();
 
-        self.ast_builder.jsx_opening_element(
+        self.ast.jsx_opening_element(
           *span,
           self.clone_node(name),
           NONE,

@@ -58,11 +58,11 @@ impl<'a> Transformer<'a> {
         };
 
         if need_binding && binding_write.is_none() {
-          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
+          Some(self.ast.assignment_target_property_assignment_target_property_property(
             *span,
             binding_key,
             if let Some(init) = init {
-              self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
+              self.ast.assignment_target_maybe_default_assignment_target_with_default(
                 *span,
                 self.build_unused_assignment_target(SPAN),
                 init,
@@ -77,11 +77,11 @@ impl<'a> Transformer<'a> {
             || self.build_unused_assignment_target(SPAN),
             |b| SimpleAssignmentTarget::AssignmentTargetIdentifier(b).into(),
           );
-          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
+          Some(self.ast.assignment_target_property_assignment_target_property_property(
             *span,
             binding_key,
             if let Some(init) = init {
-              self.ast_builder.assignment_target_maybe_default_assignment_target_with_default(
+              self.ast.assignment_target_maybe_default_assignment_target_with_default(
                 *span,
                 binding_write,
                 init,
@@ -102,12 +102,12 @@ impl<'a> Transformer<'a> {
         let binding = self.transform_assignment_target_maybe_default(binding, need_binding);
         if let Some(binding) = binding {
           let name = self.transform_property_key(name, true).unwrap();
-          Some(self.ast_builder.assignment_target_property_assignment_target_property_property(
+          Some(self.ast.assignment_target_property_assignment_target_property_property(
             *span, name, binding, *computed,
           ))
         } else {
           self.transform_property_key(name, false).map(|name| {
-            self.ast_builder.assignment_target_property_assignment_target_property_property(
+            self.ast.assignment_target_property_assignment_target_property_property(
               *span,
               name,
               self.build_unused_assignment_target(name_span).into(),

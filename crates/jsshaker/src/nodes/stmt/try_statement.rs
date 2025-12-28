@@ -43,17 +43,17 @@ impl<'a> Transformer<'a> {
     match (block, finalizer) {
       (None, None) => None,
       (None, Some(finalizer)) => Some(Statement::BlockStatement(finalizer)),
-      (Some(block), finalizer) => Some(self.ast_builder.statement_try(
+      (Some(block), finalizer) => Some(self.ast.statement_try(
         *span,
         block,
         if finalizer.is_some() {
           handler
         } else {
           Some(handler.unwrap_or_else(|| {
-            self.ast_builder.catch_clause(
+            self.ast.catch_clause(
               handler_span,
               None,
-              self.ast_builder.block_statement(handler_span, self.ast_builder.vec()),
+              self.ast.block_statement(handler_span, self.ast.vec()),
             )
           }))
         },

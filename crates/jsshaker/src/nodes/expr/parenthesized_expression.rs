@@ -20,6 +20,6 @@ impl<'a> Transformer<'a> {
     let ParenthesizedExpression { span, expression } = node;
     self
       .transform_expression(expression, need_val)
-      .map(|expression| self.ast_builder.expression_parenthesized(*span, expression))
+      .map(|expression| self.ast.expression_parenthesized(*span, expression))
   }
 }

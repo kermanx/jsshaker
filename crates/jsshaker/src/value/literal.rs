@@ -325,49 +325,49 @@ impl<'a> LiteralValue<'a> {
     span: Span,
     atom: Option<MangleAtom>,
   ) -> Expression<'a> {
-    let ast_builder = transformer.ast_builder;
+    let ast = transformer.ast;
     match self {
       LiteralValue::String(value, _) => {
         let mut mangler = transformer.mangler.borrow_mut();
         let mangled = atom.and_then(|a| mangler.resolve(a)).unwrap_or(value);
-        ast_builder.expression_string_literal(span, mangled, None)
+        ast.expression_string_literal(span, mangled, None)
       }
       LiteralValue::Number(value, raw) => {
         let negated = value.0.is_sign_negative();
-        let absolute = ast_builder.expression_numeric_literal(
+        let absolute = ast.expression_numeric_literal(
           span,
           value.0.abs(),
           raw.map(Atom::from),
           NumberBase::Decimal,
         );
         if negated {
-          ast_builder.expression_unary(span, UnaryOperator::UnaryNegation, absolute)
+          ast.expression_unary(span, UnaryOperator::UnaryNegation, absolute)
         } else {
           absolute
         }
       }
       LiteralValue::BigInt(value) => {
-        ast_builder.expression_big_int_literal(span, *value, None, BigintBase::Decimal)
+        ast.expression_big_int_literal(span, *value, None, BigintBase::Decimal)
       }
-      LiteralValue::Boolean(value) => ast_builder.expression_boolean_literal(span, *value),
+      LiteralValue::Boolean(value) => ast.expression_boolean_literal(span, *value),
       LiteralValue::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
       LiteralValue::Infinity(positive) => {
         if *positive {
-          ast_builder.expression_identifier(span, "Infinity")
+          ast.expression_identifier(span, "Infinity")
         } else {
-          ast_builder.expression_unary(
+          ast.expression_unary(
             span,
             UnaryOperator::UnaryNegation,
-            ast_builder.expression_identifier(span, "Infinity"),
+            ast.expression_identifier(span, "Infinity"),
           )
         }
       }
-      LiteralValue::NaN => ast_builder.expression_identifier(span, "NaN"),
-      LiteralValue::Null => ast_builder.expression_null_literal(span),
-      LiteralValue::Undefined => ast_builder.expression_unary(
+      LiteralValue::NaN => ast.expression_identifier(span, "NaN"),
+      LiteralValue::Null => ast.expression_null_literal(span),
+      LiteralValue::Undefined => ast.expression_unary(
         span,
         UnaryOperator::Void,
-        ast_builder.expression_numeric_literal(SPAN, 0.0, Some("0".into()), NumberBase::Decimal),
+        ast.expression_numeric_literal(SPAN, 0.0, Some("0".into()), NumberBase::Decimal),
       ),
     }
   }

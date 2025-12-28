@@ -36,7 +36,7 @@ pub struct Transformer<'a> {
   pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
   pub semantic: Semantic<'a>,
 
-  pub ast_builder: AstBuilder<'a>,
+  pub ast: AstBuilder<'a>,
 
   pub var_decls: RefCell<FxHashMap<SymbolId, bool>>,
   /// The block statement has already exited, so we can and only can transform declarations themselves
@@ -69,7 +69,7 @@ impl<'a> Transformer<'a> {
       mangler,
       semantic,
 
-      ast_builder: AstBuilder::new(allocator),
+      ast: AstBuilder::new(allocator),
 
       var_decls: Default::default(),
       declaration_only: Cell::new(false),
@@ -82,7 +82,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_program(&self, node: &'a Program<'a>) -> Program<'a> {
     let Program { span, source_type, source_text, comments, hashbang, directives, body, .. } = node;
 
-    let mut transformed_body = self.ast_builder.vec();
+    let mut transformed_body = self.ast.vec();
 
     for statement in body {
       if let Some(statement) = self.transform_statement(statement) {
@@ -99,7 +99,7 @@ impl<'a> Transformer<'a> {
       transformed_body.push(self.build_non_nullish_helper_definition());
     }
 
-    self.ast_builder.program(
+    self.ast.program(
       *span,
       *source_type,
       source_text,
@@ -134,31 +134,27 @@ impl<'a> Transformer<'a> {
     }
 
     let var_decls = self.var_decls.borrow();
-    let mut declarations = self.ast_builder.vec();
+    let mut declarations = self.ast.vec();
     for symbol_id in bindings.values() {
       if var_decls.get(symbol_id) == Some(&true) {
         let name = self.semantic.scoping().symbol_name(*symbol_id);
         let span = self.semantic.scoping().symbol_span(*symbol_id);
-        declarations.push(
-          self.ast_builder.variable_declarator(
-            span,
-            VariableDeclarationKind::Var,
-            self.ast_builder.binding_pattern(
-              self
-                .ast_builder
-                .binding_pattern_kind_binding_identifier(span, self.ast_builder.atom(name)),
-              NONE,
-              false,
-            ),
-            None,
+        declarations.push(self.ast.variable_declarator(
+          span,
+          VariableDeclarationKind::Var,
+          self.ast.binding_pattern(
+            self.ast.binding_pattern_kind_binding_identifier(span, self.ast.atom(name)),
+            NONE,
             false,
           ),
-        );
+          None,
+          false,
+        ));
       }
     }
 
     if !declarations.is_empty() {
-      statements.push(Statement::from(self.ast_builder.declaration_variable(
+      statements.push(Statement::from(self.ast.declaration_variable(
         SPAN,
         VariableDeclarationKind::Var,
         declarations,
@@ -188,13 +184,13 @@ impl<'a> Transformer<'a> {
     } else {
       format!("__unused_{:04X}_{}", hash, index - 1)
     };
-    self.ast_builder.binding_identifier(span, self.ast_builder.atom(&name))
+    self.ast.binding_identifier(span, self.ast.atom(&name))
   }
 
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    self.ast_builder.binding_pattern(
+    self.ast.binding_pattern(
       BindingPatternKind::BindingIdentifier(
-        self.ast_builder.alloc(self.build_unused_binding_identifier(span)),
+        self.ast.alloc(self.build_unused_binding_identifier(span)),
       ),
       NONE,
       false,
@@ -202,8 +198,8 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_assignment_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    self.ast_builder.binding_pattern(
-      self.ast_builder.binding_pattern_kind_assignment_pattern(
+    self.ast.binding_pattern(
+      self.ast.binding_pattern_kind_assignment_pattern(
         span,
         self.build_unused_binding_pattern(SPAN),
         self.build_unused_expression(SPAN),
@@ -215,21 +211,21 @@ impl<'a> Transformer<'a> {
 
   pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
     self.need_unused_assignment_target.set(true);
-    self.ast_builder.identifier_reference(span, "__unused__")
+    self.ast.identifier_reference(span, "__unused__")
   }
 
   pub fn build_unused_simple_assignment_target(&self, span: Span) -> SimpleAssignmentTarget<'a> {
     SimpleAssignmentTarget::AssignmentTargetIdentifier(
-      self.ast_builder.alloc(self.build_unused_identifier_reference_write(span)),
+      self.ast.alloc(self.build_unused_identifier_reference_write(span)),
     )
   }
 
   pub fn build_unused_assignment_target(&self, span: Span) -> AssignmentTarget<'a> {
     // The commented doesn't work because nullish value can't be destructured
-    // self.ast_builder.assignment_target_assignment_target_pattern(
-    //   self.ast_builder.assignment_target_pattern_object_assignment_target(
+    // self.ast.assignment_target_assignment_target_pattern(
+    //   self.ast.assignment_target_pattern_object_assignment_target(
     //     span,
-    //     self.ast_builder.vec(),
+    //     self.ast.vec(),
     //     None,
     //   ),
     // )
@@ -245,33 +241,33 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_expression(&self, span: Span) -> Expression<'a> {
-    self.ast_builder.expression_numeric_literal(span, 0.0f64, None, NumberBase::Decimal)
+    self.ast.expression_numeric_literal(span, 0.0f64, None, NumberBase::Decimal)
   }
 
   pub fn build_undefined(&self, span: Span) -> Expression<'a> {
-    self.ast_builder.expression_identifier(span, "undefined")
+    self.ast.expression_identifier(span, "undefined")
   }
 
   pub fn build_negate_expression(&self, expression: Expression<'a>) -> Expression<'a> {
-    self.ast_builder.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
+    self.ast.expression_unary(expression.span(), UnaryOperator::LogicalNot, expression)
   }
 
   pub fn build_object_spread_effect(&self, span: Span, argument: Expression<'a>) -> Expression<'a> {
-    self.ast_builder.expression_object(
+    self.ast.expression_object(
       span,
-      self.ast_builder.vec1(self.ast_builder.object_property_kind_spread_property(span, argument)),
+      self.ast.vec1(self.ast.object_property_kind_spread_property(span, argument)),
     )
   }
 
   pub fn build_unused_assignment_target_definition(&self) -> Statement<'a> {
-    Statement::from(self.ast_builder.declaration_variable(
+    Statement::from(self.ast.declaration_variable(
       SPAN,
       VariableDeclarationKind::Var,
-      self.ast_builder.vec1(self.ast_builder.variable_declarator(
+      self.ast.vec1(self.ast.variable_declarator(
         SPAN,
         VariableDeclarationKind::Var,
-        self.ast_builder.binding_pattern(
-          self.ast_builder.binding_pattern_kind_binding_identifier(SPAN, "__unused__"),
+        self.ast.binding_pattern(
+          self.ast.binding_pattern_kind_binding_identifier(SPAN, "__unused__"),
           NONE,
           false,
         ),
@@ -283,30 +279,30 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_non_nullish_helper_definition(&self) -> Statement<'a> {
-    Statement::from(self.ast_builder.declaration_variable(
+    Statement::from(self.ast.declaration_variable(
       SPAN,
       VariableDeclarationKind::Var,
-      self.ast_builder.vec1(self.ast_builder.variable_declarator(
+      self.ast.vec1(self.ast.variable_declarator(
         SPAN,
         VariableDeclarationKind::Var,
-        self.ast_builder.binding_pattern(
-          self.ast_builder.binding_pattern_kind_binding_identifier(SPAN, "__non_nullish__"),
+        self.ast.binding_pattern(
+          self.ast.binding_pattern_kind_binding_identifier(SPAN, "__non_nullish__"),
           NONE,
           false,
         ),
-        Some(self.ast_builder.expression_arrow_function(
+        Some(self.ast.expression_arrow_function(
           SPAN,
           true,
           false,
           NONE,
-          self.ast_builder.formal_parameters(
+          self.ast.formal_parameters(
             SPAN,
             FormalParameterKind::ArrowFormalParameters,
-            self.ast_builder.vec1(self.ast_builder.formal_parameter(
+            self.ast.vec1(self.ast.formal_parameter(
               SPAN,
-              self.ast_builder.vec(),
-              self.ast_builder.binding_pattern(
-                self.ast_builder.binding_pattern_kind_binding_identifier(SPAN, "v"),
+              self.ast.vec(),
+              self.ast.binding_pattern(
+                self.ast.binding_pattern_kind_binding_identifier(SPAN, "v"),
                 NONE,
                 false,
               ),
@@ -317,25 +313,25 @@ impl<'a> Transformer<'a> {
             NONE,
           ),
           NONE,
-          self.ast_builder.function_body(
+          self.ast.function_body(
             SPAN,
-            self.ast_builder.vec(),
-            self.ast_builder.vec1(self.ast_builder.statement_expression(
+            self.ast.vec(),
+            self.ast.vec1(self.ast.statement_expression(
               SPAN,
-              self.ast_builder.expression_logical(
+              self.ast.expression_logical(
                 SPAN,
-                self.ast_builder.expression_binary(
+                self.ast.expression_binary(
                   SPAN,
-                  self.ast_builder.expression_identifier(SPAN, "v"),
+                  self.ast.expression_identifier(SPAN, "v"),
                   BinaryOperator::StrictInequality,
-                  self.ast_builder.expression_null_literal(SPAN),
+                  self.ast.expression_null_literal(SPAN),
                 ),
                 LogicalOperator::And,
-                self.ast_builder.expression_binary(
+                self.ast.expression_binary(
                   SPAN,
-                  self.ast_builder.expression_identifier(SPAN, "v"),
+                  self.ast.expression_identifier(SPAN, "v"),
                   BinaryOperator::StrictInequality,
-                  self.ast_builder.expression_identifier(SPAN, "undefined"),
+                  self.ast.expression_identifier(SPAN, "undefined"),
                 ),
               ),
             )),
@@ -354,13 +350,13 @@ impl<'a> Transformer<'a> {
     right: Expression<'a>,
   ) -> Expression<'a> {
     self.need_non_nullish_helper.set(true);
-    self.ast_builder.expression_logical(
+    self.ast.expression_logical(
       span,
-      self.ast_builder.expression_call(
+      self.ast.expression_call(
         left.span(),
-        self.ast_builder.expression_identifier(span, "__non_nullish__"),
+        self.ast.expression_identifier(span, "__non_nullish__"),
         NONE,
-        self.ast_builder.vec1(left.into()),
+        self.ast.vec1(left.into()),
         false,
       ),
       LogicalOperator::And,

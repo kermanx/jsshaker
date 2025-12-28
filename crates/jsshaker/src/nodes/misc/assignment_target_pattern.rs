@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
 
         let is_referred = self.is_referred(AstKind2::ArrayAssignmentTarget(node));
 
-        let mut transformed_elements = self.ast_builder.vec();
+        let mut transformed_elements = self.ast.vec();
         for element in elements {
           transformed_elements.push(
             element
@@ -88,7 +88,7 @@ impl<'a> Transformer<'a> {
         if !is_referred && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast_builder.assignment_target_pattern_array_assignment_target(
+          Some(self.ast.assignment_target_pattern_array_assignment_target(
             *span,
             transformed_elements,
             rest,
@@ -107,7 +107,7 @@ impl<'a> Transformer<'a> {
           )
         });
 
-        let mut transformed_properties = self.ast_builder.vec();
+        let mut transformed_properties = self.ast.vec();
         for property in properties {
           if let Some(property) = self.transform_assignment_target_property(property) {
             transformed_properties.push(property);
@@ -116,7 +116,7 @@ impl<'a> Transformer<'a> {
         if !is_referred && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast_builder.assignment_target_pattern_object_assignment_target(
+          Some(self.ast.assignment_target_pattern_object_assignment_target(
             *span,
             transformed_properties,
             rest,

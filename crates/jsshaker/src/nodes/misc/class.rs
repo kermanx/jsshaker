@@ -207,7 +207,7 @@ impl<'a> Transformer<'a> {
       let body = {
         let ClassBody { span, body } = body.as_ref();
 
-        let mut transformed_body = self.ast_builder.vec();
+        let mut transformed_body = self.ast.vec();
 
         for element in body {
           if let Some(element) = match element {
@@ -223,10 +223,10 @@ impl<'a> Transformer<'a> {
           } else if let Some(key) =
             element.property_key().and_then(|key| self.transform_property_key(key, false))
           {
-            transformed_body.push(self.ast_builder.class_element_property_definition(
+            transformed_body.push(self.ast.class_element_property_definition(
               element.span(),
               PropertyDefinitionType::PropertyDefinition,
-              self.ast_builder.vec(),
+              self.ast.vec(),
               key,
               NONE,
               None,
@@ -242,18 +242,18 @@ impl<'a> Transformer<'a> {
           }
         }
 
-        self.ast_builder.class_body(*span, transformed_body)
+        self.ast.class_body(*span, transformed_body)
       };
 
-      Some(self.ast_builder.alloc_class(
+      Some(self.ast.alloc_class(
         *span,
         *r#type,
-        self.ast_builder.vec(),
+        self.ast.vec(),
         id,
         NONE,
         super_class,
         NONE,
-        self.ast_builder.vec(),
+        self.ast.vec(),
         body,
         false,
         false,
@@ -261,12 +261,12 @@ impl<'a> Transformer<'a> {
     } else {
       // Side-effect only
 
-      let mut statements = self.ast_builder.vec();
+      let mut statements = self.ast.vec();
 
       if let Some(super_class) = super_class {
         let span = super_class.span();
         if let Some(super_class) = self.transform_expression(super_class, false) {
-          statements.push(self.ast_builder.statement_expression(span, super_class));
+          statements.push(self.ast.statement_expression(span, super_class));
         }
       }
 
@@ -275,7 +275,7 @@ impl<'a> Transformer<'a> {
           && key.is_expression()
           && let Some(element) = self.transform_expression(key.to_expression(), false)
         {
-          statements.push(self.ast_builder.statement_expression(element.span(), element));
+          statements.push(self.ast.statement_expression(element.span(), element));
         }
       }
 
@@ -284,14 +284,14 @@ impl<'a> Transformer<'a> {
           ClassElement::StaticBlock(node) => {
             if let Some(node) = self.transform_static_block(node) {
               let StaticBlock { span, body, .. } = node.unbox();
-              statements.push(self.ast_builder.statement_block(span, body));
+              statements.push(self.ast.statement_block(span, body));
             }
           }
           ClassElement::PropertyDefinition(node) if node.r#static => {
             if let Some(value) = &node.value {
               let span = value.span();
               if let Some(value) = self.transform_expression(value, false) {
-                statements.push(self.ast_builder.statement_expression(span, value));
+                statements.push(self.ast.statement_expression(span, value));
               }
             }
           }
@@ -303,21 +303,19 @@ impl<'a> Transformer<'a> {
         None
       } else {
         Some(
-          self.ast_builder.alloc_class(
+          self.ast.alloc_class(
             *span,
             *r#type,
-            self.ast_builder.vec(),
+            self.ast.vec(),
             (node.r#type == ClassType::ClassDeclaration)
               .then(|| self.build_unused_binding_identifier(id.as_ref().unwrap().span)),
             NONE,
             None,
             NONE,
-            self.ast_builder.vec(),
-            self.ast_builder.class_body(
+            self.ast.vec(),
+            self.ast.class_body(
               body.span(),
-              self
-                .ast_builder
-                .vec1(self.ast_builder.class_element_static_block(body.span(), statements)),
+              self.ast.vec1(self.ast.class_element_static_block(body.span(), statements)),
             ),
             false,
             false,

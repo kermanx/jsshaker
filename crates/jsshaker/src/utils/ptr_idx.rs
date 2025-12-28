@@ -13,7 +13,7 @@ macro_rules! define_ptr_idx {
         Self { ptr: std::ptr::NonNull::from(r).cast() }
       }
       #[inline(always)]
-      fn as_ref<'a>(&self) -> &'a $target {
+      pub fn as_ref<'a>(&self) -> &'a $target {
         unsafe { self.ptr.cast().as_ref() }
       }
     }

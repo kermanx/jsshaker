@@ -21,6 +21,6 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement_vec(data, body);
 
-    (!body.is_empty()).then(|| self.ast_builder.alloc_static_block(*span, body))
+    (!body.is_empty()).then(|| self.ast.alloc_static_block(*span, body))
   }
 }

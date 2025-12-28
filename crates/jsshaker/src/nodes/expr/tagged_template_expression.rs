@@ -50,7 +50,7 @@ impl<'a> Transformer<'a> {
     let tag = self.transform_callee(tag, need_call).unwrap();
 
     if need_call {
-      Some(self.ast_builder.expression_tagged_template(
+      Some(self.ast.expression_tagged_template(
         *span,
         tag.unwrap(),
         NONE,
@@ -58,7 +58,7 @@ impl<'a> Transformer<'a> {
       ))
     } else {
       build_effect!(
-        &self.ast_builder,
+        &self.ast,
         *span,
         tag,
         quasi.expressions.iter().map(|x| self.transform_expression(x, false)).collect::<Vec<_>>()
@@ -69,7 +69,7 @@ impl<'a> Transformer<'a> {
   fn transform_quasi(&self, node: &'a TemplateLiteral<'a>) -> TemplateLiteral<'a> {
     let TemplateLiteral { span, quasis, expressions } = node;
 
-    let mut transformed_expressions = self.ast_builder.vec();
+    let mut transformed_expressions = self.ast.vec();
     for expr in expressions {
       let expr_span = expr.span();
       let referred = self.is_referred(AstKind2::ExpressionInTaggedTemplate(expr));
@@ -80,6 +80,6 @@ impl<'a> Transformer<'a> {
       );
     }
 
-    self.ast_builder.template_literal(*span, self.clone_node(quasis), transformed_expressions)
+    self.ast.template_literal(*span, self.clone_node(quasis), transformed_expressions)
   }
 }

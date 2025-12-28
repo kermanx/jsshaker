@@ -31,7 +31,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let JSXFragment { span, children, .. } = node;
 
-    build_effect!(self.ast_builder, *span, self.transform_jsx_children_effect_only(children),)
+    build_effect!(self.ast, *span, self.transform_jsx_children_effect_only(children),)
   }
 
   pub fn transform_jsx_fragment_need_val(
@@ -40,7 +40,7 @@ impl<'a> Transformer<'a> {
   ) -> allocator::Box<'a, JSXFragment<'a>> {
     let JSXFragment { span, opening_fragment, closing_fragment, children } = node;
 
-    self.ast_builder.alloc_jsx_fragment(
+    self.ast.alloc_jsx_fragment(
       *span,
       self.clone_node(opening_fragment),
       self.transform_jsx_children_need_val(children),

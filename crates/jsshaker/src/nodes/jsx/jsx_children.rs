@@ -46,7 +46,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a allocator::Vec<'a, JSXChild<'a>>,
   ) -> allocator::Vec<'a, JSXChild<'a>> {
-    let mut transformed = self.ast_builder.vec_with_capacity(node.len());
+    let mut transformed = self.ast.vec_with_capacity(node.len());
 
     for child in node.iter() {
       transformed.push(match child {

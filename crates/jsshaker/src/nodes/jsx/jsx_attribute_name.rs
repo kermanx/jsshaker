@@ -14,7 +14,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a JSXAttributeName<'a>,
   ) -> JSXAttributeName<'a> {
-    self.ast_builder.jsx_attribute_name_identifier(
+    self.ast.jsx_attribute_name_identifier(
       node.span(),
       self.transform_mangable_static_string(
         AstKind2::JSXAttributeName(node),

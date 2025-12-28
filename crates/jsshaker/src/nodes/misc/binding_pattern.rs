@@ -132,8 +132,8 @@ impl<'a> Transformer<'a> {
     match kind {
       BindingPatternKind::BindingIdentifier(node) => {
         let result = self.transform_binding_identifier(node).map(|identifier| {
-          self.ast_builder.binding_pattern(
-            BindingPatternKind::BindingIdentifier(self.ast_builder.alloc(identifier)),
+          self.ast.binding_pattern(
+            BindingPatternKind::BindingIdentifier(self.ast.alloc(identifier)),
             NONE,
             false,
           )
@@ -157,7 +157,7 @@ impl<'a> Transformer<'a> {
           )
         });
 
-        let mut transformed_properties = self.ast_builder.vec();
+        let mut transformed_properties = self.ast.vec();
         for property in properties {
           let dep = AstKind2::BindingProperty(property);
           let need_property = self.is_referred(dep);
@@ -179,7 +179,7 @@ impl<'a> Transformer<'a> {
             if let Some(value) = value {
               let transformed_key =
                 transformed_key.unwrap_or_else(|| self.transform_property_key(key, true).unwrap());
-              transformed_properties.push(self.ast_builder.binding_property(
+              transformed_properties.push(self.ast.binding_property(
                 *span,
                 transformed_key,
                 value,
@@ -193,12 +193,8 @@ impl<'a> Transformer<'a> {
         if !need_binding && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_object_pattern(
-              *span,
-              transformed_properties,
-              rest,
-            ),
+          Some(self.ast.binding_pattern(
+            self.ast.binding_pattern_kind_object_pattern(*span, transformed_properties, rest),
             NONE,
             false,
           ))
@@ -209,7 +205,7 @@ impl<'a> Transformer<'a> {
 
         let is_referred = self.is_referred(AstKind2::ArrayPattern(node));
 
-        let mut transformed_elements = self.ast_builder.vec();
+        let mut transformed_elements = self.ast.vec();
         for element in elements {
           transformed_elements.push(
             element.as_ref().and_then(|element| self.transform_binding_pattern(element, false)),
@@ -228,8 +224,8 @@ impl<'a> Transformer<'a> {
         if !need_binding && !is_referred && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),
+          Some(self.ast.binding_pattern(
+            self.ast.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),
             NONE,
             false,
           ))
@@ -247,8 +243,8 @@ impl<'a> Transformer<'a> {
         };
 
         if let Some(right) = transformed_right {
-          Some(self.ast_builder.binding_pattern(
-            self.ast_builder.binding_pattern_kind_assignment_pattern(
+          Some(self.ast.binding_pattern(
+            self.ast.binding_pattern_kind_assignment_pattern(
               *span,
               transformed_left.unwrap_or(self.build_unused_binding_pattern(left_span)),
               right,

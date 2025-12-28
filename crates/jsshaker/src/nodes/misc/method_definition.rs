@@ -38,7 +38,7 @@ impl<'a> Transformer<'a> {
         self.patch_method_definition_params(value, &mut transformed_value);
       }
 
-      Some(self.ast_builder.class_element_method_definition(
+      Some(self.ast.class_element_method_definition(
         *span,
         *r#type,
         self.clone_node(decorators),
@@ -54,10 +54,10 @@ impl<'a> Transformer<'a> {
     } else {
       let key = self.transform_property_key(key, false);
       key.map(|key| {
-        self.ast_builder.class_element_property_definition(
+        self.ast.class_element_property_definition(
           *span,
           PropertyDefinitionType::PropertyDefinition,
-          self.ast_builder.vec(),
+          self.ast.vec(),
           key,
           NONE,
           None,
@@ -84,9 +84,9 @@ impl<'a> Transformer<'a> {
     if !transformed_node.params.has_parameter() {
       let span = original_node.span;
       let original_param = &original_node.params.items[0];
-      transformed_node.params.items.push(self.ast_builder.formal_parameter(
+      transformed_node.params.items.push(self.ast.formal_parameter(
         span,
-        self.ast_builder.vec(),
+        self.ast.vec(),
         if self.config.preserve_function_length
           && matches!(original_param.pattern.kind, BindingPatternKind::AssignmentPattern(_))
         {

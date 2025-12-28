@@ -28,16 +28,16 @@ impl<'a> Transformer<'a> {
       let CatchParameter { span, pattern } = param;
       self
         .transform_binding_pattern(pattern, false)
-        .map(|pattern| self.ast_builder.catch_parameter(*span, pattern))
+        .map(|pattern| self.ast.catch_parameter(*span, pattern))
     });
 
     let body_span = body.span();
     let body = self.transform_block_statement(body);
 
-    self.ast_builder.catch_clause(
+    self.ast.catch_clause(
       *span,
       param,
-      body.unwrap_or(self.ast_builder.alloc_block_statement(body_span, self.ast_builder.vec())),
+      body.unwrap_or(self.ast.alloc_block_statement(body_span, self.ast.vec())),
     )
   }
 }

@@ -22,6 +22,6 @@ impl<'a> Transformer<'a> {
 
     let target = self.transform_assignment_target_write(target, need_binding, true);
 
-    target.1.map(|target| self.ast_builder.assignment_target_rest(*span, target))
+    target.1.map(|target| self.ast.assignment_target_rest(*span, target))
   }
 }

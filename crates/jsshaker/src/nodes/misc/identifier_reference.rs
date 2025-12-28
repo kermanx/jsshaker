@@ -104,7 +104,7 @@ impl<'a> Transformer<'a> {
         self.update_var_decl_state(symbol, false);
       }
 
-      Some(self.ast_builder.alloc_identifier_reference(*span, *name))
+      Some(self.ast.alloc_identifier_reference(*span, *name))
     } else {
       None
     }
@@ -115,7 +115,7 @@ impl<'a> Transformer<'a> {
     node: &'a IdentifierReference<'a>,
   ) -> PropertyKey<'a> {
     let IdentifierReference { span, name, .. } = node;
-    self.ast_builder.property_key_static_identifier(
+    self.ast.property_key_static_identifier(
       *span,
       self.transform_mangable_static_string(AstKind2::IdentifierReference(node), name),
     )

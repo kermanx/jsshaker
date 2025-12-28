@@ -55,7 +55,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let ArrayExpression { span, elements } = node;
 
-    let mut transformed_elements = self.ast_builder.vec();
+    let mut transformed_elements = self.ast.vec();
 
     for element in elements {
       let span = element.span();
@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
         }
         ArrayExpressionElement::Elision(_) => {
           if need_val {
-            transformed_elements.push(self.ast_builder.array_expression_element_elision(span));
+            transformed_elements.push(self.ast.array_expression_element_elision(span));
           }
         }
         _ => {
@@ -76,7 +76,7 @@ impl<'a> Transformer<'a> {
           if let Some(inner) = element {
             transformed_elements.push(inner.into());
           } else if need_val {
-            transformed_elements.push(self.ast_builder.array_expression_element_elision(span));
+            transformed_elements.push(self.ast.array_expression_element_elision(span));
           }
         }
       }
@@ -90,9 +90,9 @@ impl<'a> Transformer<'a> {
         return Some(match transformed_elements.pop().unwrap() {
           ArrayExpressionElement::SpreadElement(inner) => {
             if self.config.iterate_side_effects {
-              self.ast_builder.expression_array(
+              self.ast.expression_array(
                 *span,
-                self.ast_builder.vec1(ArrayExpressionElement::SpreadElement(inner)),
+                self.ast.vec1(ArrayExpressionElement::SpreadElement(inner)),
               )
             } else {
               let SpreadElement { argument, .. } = inner.unbox();
@@ -104,6 +104,6 @@ impl<'a> Transformer<'a> {
       }
     }
 
-    Some(self.ast_builder.expression_array(*span, transformed_elements))
+    Some(self.ast.expression_array(*span, transformed_elements))
   }
 }

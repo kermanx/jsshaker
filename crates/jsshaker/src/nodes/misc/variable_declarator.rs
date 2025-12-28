@@ -60,7 +60,7 @@ impl<'a> Transformer<'a> {
 
     match (id, transformed_init) {
       (None, None) => None,
-      (id, transformed_init) => Some(self.ast_builder.variable_declarator(
+      (id, transformed_init) => Some(self.ast.variable_declarator(
         *span,
         *kind,
         id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),

@@ -52,7 +52,7 @@ impl<'a> Transformer<'a> {
     let ObjectExpression { span, properties } = node;
 
     if need_val {
-      let mut transformed_properties = self.ast_builder.vec();
+      let mut transformed_properties = self.ast.vec();
       for property in properties {
         transformed_properties.push(match property {
           ObjectPropertyKind::ObjectProperty(node) => {
@@ -77,7 +77,7 @@ impl<'a> Transformer<'a> {
               }
 
               let key = self.transform_property_key(key, true).unwrap();
-              self.ast_builder.object_property_kind_object_property(
+              self.ast.object_property_kind_object_property(
                 *span,
                 *kind,
                 key,
@@ -87,7 +87,7 @@ impl<'a> Transformer<'a> {
                 *computed,
               )
             } else if let Some(key) = self.transform_property_key(key, false) {
-              self.ast_builder.object_property_kind_object_property(
+              self.ast.object_property_kind_object_property(
                 *span,
                 *kind,
                 key,
@@ -108,16 +108,16 @@ impl<'a> Transformer<'a> {
             let argument = self.transform_expression(argument, referred);
 
             if let Some(argument) = argument {
-              self.ast_builder.object_property_kind_spread_property(
+              self.ast.object_property_kind_spread_property(
                 *span,
                 if referred {
                   argument
                 } else {
                   build_effect!(
-                    &self.ast_builder,
+                    &self.ast,
                     *span,
                     Some(argument);
-                    self.ast_builder.expression_object(SPAN, self.ast_builder.vec())
+                    self.ast.expression_object(SPAN, self.ast.vec())
                   )
                 },
               )
@@ -127,7 +127,7 @@ impl<'a> Transformer<'a> {
           }
         });
       }
-      Some(self.ast_builder.expression_object(*span, transformed_properties))
+      Some(self.ast.expression_object(*span, transformed_properties))
     } else {
       let mut effects = vec![];
       for property in properties {
@@ -158,7 +158,7 @@ impl<'a> Transformer<'a> {
           }
         }
       }
-      build_effect!(&self.ast_builder, *span, effects)
+      build_effect!(&self.ast, *span, effects)
     }
   }
 }

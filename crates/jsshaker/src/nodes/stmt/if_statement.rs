@@ -100,20 +100,20 @@ impl<'a> Transformer<'a> {
     if need_test_val {
       match (consequent, alternate) {
         (Some(consequent), alternate) => {
-          Some(self.ast_builder.statement_if(*span, test.unwrap(), consequent, alternate))
+          Some(self.ast.statement_if(*span, test.unwrap(), consequent, alternate))
         }
-        (None, Some(alternate)) => Some(self.ast_builder.statement_if(
+        (None, Some(alternate)) => Some(self.ast.statement_if(
           *span,
           self.build_negate_expression(test.unwrap()),
           alternate,
           None,
         )),
-        (None, None) => test.map(|test| self.ast_builder.statement_expression(test.span(), test)),
+        (None, None) => test.map(|test| self.ast.statement_expression(test.span(), test)),
       }
     } else {
-      let mut statements = self.ast_builder.vec();
+      let mut statements = self.ast.vec();
       if let Some(test) = test {
-        statements.push(self.ast_builder.statement_expression(test.span(), test));
+        statements.push(self.ast.statement_expression(test.span(), test));
       }
       if let Some(consequent) = consequent {
         statements.push(consequent);
@@ -122,11 +122,7 @@ impl<'a> Transformer<'a> {
         statements.push(alternate);
       }
 
-      if statements.is_empty() {
-        None
-      } else {
-        Some(self.ast_builder.statement_block(*span, statements))
-      }
+      if statements.is_empty() { None } else { Some(self.ast.statement_block(*span, statements)) }
     }
   }
 }

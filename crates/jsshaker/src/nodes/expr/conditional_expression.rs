@@ -78,18 +78,18 @@ impl<'a> Transformer<'a> {
 
       match (consequent, alternate) {
         (Some(consequent), Some(alternate)) => {
-          Some(self.ast_builder.expression_conditional(*span, test, consequent, alternate))
+          Some(self.ast.expression_conditional(*span, test, consequent, alternate))
         }
         (Some(consequent), None) => {
-          Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::And, consequent))
+          Some(self.ast.expression_logical(*span, test, LogicalOperator::And, consequent))
         }
         (None, Some(alternate)) => {
-          Some(self.ast_builder.expression_logical(*span, test, LogicalOperator::Or, alternate))
+          Some(self.ast.expression_logical(*span, test, LogicalOperator::Or, alternate))
         }
         (None, None) => unreachable!("node {}, {} @{:?}", maybe_true, maybe_false, span),
       }
     } else {
-      build_effect!(self.ast_builder, *span, test, consequent, alternate)
+      build_effect!(self.ast, *span, test, consequent, alternate)
     }
   }
 }

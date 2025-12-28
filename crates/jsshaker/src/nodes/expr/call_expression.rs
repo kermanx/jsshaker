@@ -95,16 +95,16 @@ impl<'a> Transformer<'a> {
         Some(self.build_chain_expression_mock(
           *span,
           callee.unwrap(),
-          build_effect!(&self.ast_builder, args_span, args_effect).unwrap(),
+          build_effect!(&self.ast, args_span, args_effect).unwrap(),
         ))
       } else {
-        build_effect!(&self.ast_builder, *span, callee, args_effect)
+        build_effect!(&self.ast, *span, callee, args_effect)
       });
     }
 
     let callee = self.transform_callee(callee, true)?.unwrap();
     let arguments = self.transform_arguments_need_call(arguments);
 
-    Ok(Some(self.ast_builder.expression_call(*span, callee, NONE, arguments, need_optional)))
+    Ok(Some(self.ast.expression_call(*span, callee, NONE, arguments, need_optional)))
   }
 }

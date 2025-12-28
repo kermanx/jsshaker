@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
     let body = self.transform_statement(body);
 
     if self.is_referred(AstKind2::LabeledStatement(node)) {
-      body.map(|body| self.ast_builder.statement_labeled(*span, label.clone(), body))
+      body.map(|body| self.ast.statement_labeled(*span, label.clone(), body))
     } else {
       body
     }

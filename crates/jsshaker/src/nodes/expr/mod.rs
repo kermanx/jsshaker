@@ -200,7 +200,7 @@ impl<'a> Transformer<'a> {
           return Some(inner);
         }
 
-        Some(build_effect!(&self.ast_builder, span, inner; literal))
+        Some(build_effect!(&self.ast, span, inner; literal))
       } else {
         Some(literal)
       }

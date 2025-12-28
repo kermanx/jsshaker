@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
     let need_access = need_val || self.is_referred(AstKind2::JSXMemberExpression(node));
     if need_access {
       let object = self.transform_jsx_member_expression_object_effect_only(object, true).unwrap();
-      Some(Expression::from(self.ast_builder.member_expression_static(
+      Some(Expression::from(self.ast.member_expression_static(
         *span,
         object,
         self.transform_jsx_identifier_as_identifier_name(property),
@@ -41,7 +41,7 @@ impl<'a> Transformer<'a> {
   ) -> allocator::Box<'a, JSXMemberExpression<'a>> {
     let JSXMemberExpression { span, object, property } = node;
 
-    self.ast_builder.alloc_jsx_member_expression(
+    self.ast.alloc_jsx_member_expression(
       *span,
       self.transform_jsx_member_expression_object_need_val(object),
       self.transform_jsx_identifier(property),

@@ -78,8 +78,8 @@ impl<'a> Transformer<'a> {
       let was_member_expression = unwrap_to_member_expression(node).is_some();
       let is_member_expression = unwrap_to_member_expression(&transformed_expr).is_some();
       Ok(Some(if is_referred && !was_member_expression && is_member_expression {
-        self.ast_builder.expression_sequence(transformed_expr.span(), {
-          let mut seq = self.ast_builder.vec_with_capacity(2);
+        self.ast.expression_sequence(transformed_expr.span(), {
+          let mut seq = self.ast.vec_with_capacity(2);
           seq.push(self.build_unused_expression(SPAN));
           seq.push(transformed_expr);
           seq

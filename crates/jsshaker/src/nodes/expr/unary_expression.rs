@@ -111,7 +111,7 @@ impl<'a> Transformer<'a> {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
             let property = self.transform_identifier_name(&node.property);
-            Expression::from(self.ast_builder.member_expression_static(
+            Expression::from(self.ast.member_expression_static(
               node.span,
               object,
               property,
@@ -120,7 +120,7 @@ impl<'a> Transformer<'a> {
           }
           Expression::PrivateFieldExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            Expression::from(self.ast_builder.member_expression_private_field_expression(
+            Expression::from(self.ast.member_expression_private_field_expression(
               node.span,
               object,
               node.field.clone(),
@@ -130,7 +130,7 @@ impl<'a> Transformer<'a> {
           Expression::ComputedMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
             let property = self.transform_expression(&node.expression, true).unwrap();
-            Expression::from(self.ast_builder.member_expression_computed(
+            Expression::from(self.ast.member_expression_computed(
               node.span,
               object,
               property,
@@ -140,15 +140,15 @@ impl<'a> Transformer<'a> {
           Expression::Identifier(node) => Expression::Identifier(self.clone_node(node)),
           _ => unreachable!(),
         };
-        Some(self.ast_builder.expression_unary(*span, *operator, argument))
+        Some(self.ast.expression_unary(*span, *operator, argument))
       } else {
         let expr = self.transform_expression(argument, false);
         if need_val {
           Some(build_effect!(
-            &self.ast_builder,
+            &self.ast,
             *span,
             self.transform_expression(argument, false);
-            self.ast_builder.expression_boolean_literal(SPAN, true)
+            self.ast.expression_boolean_literal(SPAN, true)
           ))
         } else {
           expr
@@ -170,13 +170,13 @@ impl<'a> Transformer<'a> {
         let should_preserve_typeof = transformed_argument.is_some() && *operator == UnaryOperator::Typeof && is_wrapped_identifier_reference(argument);
 
         if need_val || should_preserve_typeof {
-          Some(self.ast_builder.expression_unary(*span, *operator, transformed_argument.unwrap()))
+          Some(self.ast.expression_unary(*span, *operator, transformed_argument.unwrap()))
         } else {
           transformed_argument
         }
       }
       UnaryOperator::Void => match (need_val, transformed_argument) {
-        (true, Some(argument)) => Some(self.ast_builder.expression_unary(*span, *operator, argument)),
+        (true, Some(argument)) => Some(self.ast.expression_unary(*span, *operator, argument)),
         (true, None) => Some(self.build_undefined(*span)),
         (false, argument) => argument,
       },

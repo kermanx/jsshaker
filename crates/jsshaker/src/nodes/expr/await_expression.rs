@@ -28,7 +28,7 @@ impl<'a> Transformer<'a> {
 
     if has_effect {
       let argument = self.transform_expression(argument, true).unwrap();
-      Some(self.ast_builder.expression_await(*span, argument))
+      Some(self.ast.expression_await(*span, argument))
     } else {
       self.transform_expression(argument, need_val)
     }

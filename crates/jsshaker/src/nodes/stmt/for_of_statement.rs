@@ -53,32 +53,28 @@ impl<'a> Transformer<'a> {
       return if self.is_referred(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();
-        Some(
-          self.ast_builder.statement_expression(
+        Some(self.ast.statement_expression(
+          *span,
+          self.ast.expression_array(
             *span,
-            self.ast_builder.expression_array(
-              *span,
-              self
-                .ast_builder
-                .vec1(self.ast_builder.array_expression_element_spread_element(right_span, right)),
-            ),
+            self.ast.vec1(self.ast.array_expression_element_spread_element(right_span, right)),
           ),
-        )
+        ))
       } else {
         self
           .transform_expression(right, false)
-          .map(|expr| self.ast_builder.statement_expression(*span, expr))
+          .map(|expr| self.ast.statement_expression(*span, expr))
       };
     }
 
     let right = self.transform_expression(right, true).unwrap();
 
-    Some(self.ast_builder.statement_for_of(
+    Some(self.ast.statement_for_of(
       *span,
       *r#await,
       left.unwrap_or_else(|| self.build_unused_for_statement_left(left_span)),
       right,
-      body.unwrap_or_else(|| self.ast_builder.statement_empty(body_span)),
+      body.unwrap_or_else(|| self.ast.statement_empty(body_span)),
     ))
   }
 }

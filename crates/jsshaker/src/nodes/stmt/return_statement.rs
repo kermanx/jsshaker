@@ -16,7 +16,7 @@ impl<'a> Transformer<'a> {
 
     let ReturnStatement { span, argument } = node;
 
-    Some(self.ast_builder.statement_return(
+    Some(self.ast.statement_return(
       *span,
       argument.as_ref().and_then(|arg| self.transform_expression(arg, need_val)),
     ))
