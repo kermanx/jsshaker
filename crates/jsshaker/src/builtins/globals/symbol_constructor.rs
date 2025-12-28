@@ -13,20 +13,23 @@ impl Builtins<'_> {
 
     init_namespace!(object, factory, {
       "prototype" => factory.unknown,
-      // "asyncIterator" => factory.string("__#asyncIterator__"),
-      // "hasInstance" => factory.string("__#hasInstance__"),
-      // "isConcatSpreadable" => factory.string("__#isConcatSpreadable__"),
-      // "iterator" => factory.string("__#iterator__"),
-      // "match" => factory.string("__#match__"),
-      // "matchAll" => factory.string("__#matchAll__"),
-      // "replace" => factory.string("__#replace__"),
-      // "search" => factory.string("__#search__"),
-      // "species" => factory.string("__#species__"),
-      // "split" => factory.string("__#split__"),
-      // "toPrimitive" => factory.string("__#toPrimitive__"),
-      // "toStringTag" => factory.string("__#toStringTag__"),
-      // "unscopables" => factory.string("__#unscopables__"),
-      // "toString" => factory.string("__#toString__"),
+      // Well-known symbols
+      "asyncIterator" => factory.unknown_symbol,
+      "hasInstance" => factory.unknown_symbol,
+      "isConcatSpreadable" => factory.unknown_symbol,
+      "iterator" => factory.unknown_symbol,
+      "match" => factory.unknown_symbol,
+      "matchAll" => factory.unknown_symbol,
+      "replace" => factory.unknown_symbol,
+      "search" => factory.unknown_symbol,
+      "species" => factory.unknown_symbol,
+      "split" => factory.unknown_symbol,
+      "toPrimitive" => factory.unknown_symbol,
+      "toStringTag" => factory.unknown_symbol,
+      "unscopables" => factory.unknown_symbol,
+      // Static methods
+      "for" => factory.pure_fn_returns_symbol,
+      "keyFor" => factory.pure_fn_returns_string,
     });
 
     self.globals.insert("Symbol", object.into());

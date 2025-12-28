@@ -1,4 +1,6 @@
+mod array_constructor;
 mod constants;
+mod json_object;
 mod object_constructor;
 mod symbol_constructor;
 
@@ -9,5 +11,7 @@ impl Builtins<'_> {
     self.init_global_constants();
     self.init_object_constructor();
     self.init_symbol_constructor();
+    self.init_array_constructor();
+    self.init_json_object();
   }
 }
