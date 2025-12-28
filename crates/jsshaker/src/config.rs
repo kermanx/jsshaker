@@ -20,6 +20,7 @@ pub struct TreeShakeConfig {
   pub max_recursion_depth: usize,
   pub remember_exhausted_variables: bool,
   pub enable_fn_cache: bool,
+  pub fn_cache_size_limit: usize,
 
   pub mangling: Option<bool>,
   pub unknown_global_side_effects: bool,
@@ -51,6 +52,7 @@ impl TreeShakeConfig {
       max_recursion_depth: 2,
       remember_exhausted_variables: true,
       enable_fn_cache: true,
+      fn_cache_size_limit: 8,
 
       mangling: Some(false),
       unknown_global_side_effects: true,

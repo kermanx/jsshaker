@@ -258,9 +258,9 @@ impl<'a> FnCache<'a> {
       return;
     };
 
-    self
-      .table
-      .borrow_mut()
-      .insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+    let mut table = self.table.borrow_mut();
+    if table.len() < analyzer.config.fn_cache_size_limit {
+      table.insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+    }
   }
 }
