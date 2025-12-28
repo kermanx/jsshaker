@@ -63,8 +63,13 @@ impl DepAtom {
   }
 }
 
-#[derive(Default)]
 pub struct ReferredDeps(FxHashSet<DepAtom>);
+
+impl Default for ReferredDeps {
+  fn default() -> Self {
+    Self(FxHashSet::from_iter([AstKind2::Environment.into()]))
+  }
+}
 
 impl ReferredDeps {
   pub fn refer_dep(&mut self, dep: impl Into<DepAtom>) {
