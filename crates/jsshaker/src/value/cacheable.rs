@@ -15,13 +15,12 @@ pub enum Cacheable<'a> {
 
   Literal(LiteralValue<'a>),
   Primitive(PrimitiveValue),
+  Union(allocator::Vec<'a, Cacheable<'a>>),
   Object(ObjectId),
   Array(ArrayId),
   ModuleObject(ModuleId),
   Function(CalleeInstanceId),
   BuiltinFn(&'static str),
-
-  Union(allocator::Vec<'a, Cacheable<'a>>),
 }
 
 impl<'a> Cacheable<'a> {
