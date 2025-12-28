@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
 
   pub fn push_call_scope(&mut self, info: FnCallInfo<'a>, is_async: bool, is_generator: bool) {
     if info.consume {
-      self.refer_dep(info.call_id);
+      self.deoptimize_atom(info.call_id);
     }
 
     let old_module = self.set_current_module(info.func.callee.module_id);

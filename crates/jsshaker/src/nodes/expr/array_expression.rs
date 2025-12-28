@@ -71,8 +71,8 @@ impl<'a> Transformer<'a> {
           }
         }
         _ => {
-          let referred = self.is_referred(AstKind2::ArrayExpressionElement(element));
-          let element = self.transform_expression(element.to_expression(), need_val && referred);
+          let deoptimized = self.is_deoptimized(AstKind2::ArrayExpressionElement(element));
+          let element = self.transform_expression(element.to_expression(), need_val && deoptimized);
           if let Some(inner) = element {
             transformed_elements.push(inner.into());
           } else if need_val {

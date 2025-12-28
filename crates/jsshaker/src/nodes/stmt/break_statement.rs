@@ -17,7 +17,7 @@ impl<'a> Transformer<'a> {
 
     Some(self.ast.statement_break(
       *span,
-      if self.is_referred(AstKind2::BreakStatement(node)) { label.clone() } else { None },
+      if self.is_deoptimized(AstKind2::BreakStatement(node)) { label.clone() } else { None },
     ))
   }
 }

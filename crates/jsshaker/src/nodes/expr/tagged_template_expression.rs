@@ -45,7 +45,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 
-    let need_call = need_val || self.is_referred(AstKind2::TaggedTemplateExpression(node));
+    let need_call = need_val || self.is_deoptimized(AstKind2::TaggedTemplateExpression(node));
 
     let tag = self.transform_callee(tag, need_call).unwrap();
 
@@ -72,10 +72,10 @@ impl<'a> Transformer<'a> {
     let mut transformed_expressions = self.ast.vec();
     for expr in expressions {
       let expr_span = expr.span();
-      let referred = self.is_referred(AstKind2::ExpressionInTaggedTemplate(expr));
+      let deoptimized = self.is_deoptimized(AstKind2::ExpressionInTaggedTemplate(expr));
       transformed_expressions.push(
         self
-          .transform_expression(expr, referred)
+          .transform_expression(expr, deoptimized)
           .unwrap_or_else(|| self.build_unused_expression(expr_span)),
       );
     }

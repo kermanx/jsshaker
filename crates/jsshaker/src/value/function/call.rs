@@ -79,7 +79,7 @@ impl<'a> FunctionValue<'a> {
     };
 
     if let Some(cache_key) = cache_key {
-      let has_global_effects = analyzer.is_referred(call_id);
+      let has_global_effects = analyzer.is_deoptimized(call_id);
       self.cache.update(
         analyzer,
         cache_key,

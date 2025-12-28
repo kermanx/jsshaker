@@ -60,7 +60,7 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
     self.node = None;
   }
 
-  pub fn may_not_referred(&self) -> bool {
+  pub fn may_not_deoptimized(&self) -> bool {
     !self.current.is_empty() || self.node.is_some()
   }
 }

@@ -112,8 +112,8 @@ impl<'a> Transformer<'a> {
       oxc::allocator::Vec<'a, Statement<'a>>,
     )> = vec![];
     for case in cases {
-      let need_test = self.is_referred(AstKind2::SwitchCaseTest(case));
-      let need_consequent = self.is_referred(AstKind2::SwitchCase(case));
+      let need_test = self.is_deoptimized(AstKind2::SwitchCaseTest(case));
+      let need_consequent = self.is_deoptimized(AstKind2::SwitchCase(case));
 
       let data = self.get_data::<StatementVecData>(AstKind2::SwitchCase(case));
 

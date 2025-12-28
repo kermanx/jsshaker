@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
 
 impl<'a> Transformer<'a> {
   pub fn transform_return_statement(&self, node: &'a ReturnStatement<'a>) -> Option<Statement<'a>> {
-    let need_val = self.is_referred(AstKind2::ReturnStatement(node));
+    let need_val = self.is_deoptimized(AstKind2::ReturnStatement(node));
 
     let ReturnStatement { span, argument } = node;
 

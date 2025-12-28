@@ -148,19 +148,20 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest } = node.as_ref();
 
-        let need_binding = need_binding || self.is_referred(AstKind2::ObjectPattern(node.as_ref()));
+        let need_binding =
+          need_binding || self.is_deoptimized(AstKind2::ObjectPattern(node.as_ref()));
 
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_binding_rest_element(
             rest,
-            self.is_referred(AstKind2::BindingRestElement(rest.as_ref())),
+            self.is_deoptimized(AstKind2::BindingRestElement(rest.as_ref())),
           )
         });
 
         let mut transformed_properties = self.ast.vec();
         for property in properties {
           let dep = AstKind2::BindingProperty(property);
-          let need_property = self.is_referred(dep);
+          let need_property = self.is_deoptimized(dep);
 
           let BindingProperty { span, key, value, shorthand, computed } = property;
 
@@ -203,7 +204,7 @@ impl<'a> Transformer<'a> {
       BindingPatternKind::ArrayPattern(node) => {
         let ArrayPattern { span, elements, rest } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind2::ArrayPattern(node));
+        let deoptimized = self.is_deoptimized(AstKind2::ArrayPattern(node));
 
         let mut transformed_elements = self.ast.vec();
         for element in elements {
@@ -213,15 +214,15 @@ impl<'a> Transformer<'a> {
         }
 
         let rest =
-          rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, is_referred));
+          rest.as_ref().and_then(|rest| self.transform_binding_rest_element(rest, deoptimized));
 
-        if !is_referred && rest.is_none() {
+        if !deoptimized && rest.is_none() {
           while transformed_elements.last().is_some_and(Option::is_none) {
             transformed_elements.pop();
           }
         }
 
-        if !need_binding && !is_referred && transformed_elements.is_empty() && rest.is_none() {
+        if !need_binding && !deoptimized && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast.binding_pattern(

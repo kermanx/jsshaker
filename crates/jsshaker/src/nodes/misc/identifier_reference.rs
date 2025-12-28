@@ -96,7 +96,7 @@ impl<'a> Transformer<'a> {
     node: &'a IdentifierReference<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, IdentifierReference<'a>>> {
-    if need_val || self.is_referred(AstKind2::IdentifierReference(node)) {
+    if need_val || self.is_deoptimized(AstKind2::IdentifierReference(node)) {
       let IdentifierReference { span, name, .. } = node;
 
       let reference = self.semantic.scoping().get_reference(node.reference_id());

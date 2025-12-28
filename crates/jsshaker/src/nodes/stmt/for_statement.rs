@@ -56,7 +56,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_for_statement(&self, node: &'a ForStatement<'a>) -> Option<Statement<'a>> {
     let ForStatement { span, init, test, update, body, .. } = node;
 
-    if self.is_referred(AstKind2::ForStatement(node)) {
+    if self.is_deoptimized(AstKind2::ForStatement(node)) {
       let init = init.as_ref().and_then(|init| match init {
         ForStatementInit::VariableDeclaration(node) => {
           self.transform_variable_declaration(node).map(ForStatementInit::VariableDeclaration)

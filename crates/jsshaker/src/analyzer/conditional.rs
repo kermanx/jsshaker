@@ -33,20 +33,21 @@ struct ConditionalBranch<'a> {
   maybe_true: bool,
   maybe_false: bool,
   test: Entity<'a>,
-  referred: &'a Cell<bool>,
+  consumed: &'a Cell<bool>,
 }
 
 impl<'a> ConditionalBranch<'a> {
-  fn refer_with_data(&self, data: &mut ConditionalData<'a>) {
-    if !self.referred.replace(true) {
-      data.maybe_true |= self.maybe_true;
-      data.maybe_false |= self.maybe_false;
-      data.tests_to_consume.push(self.test);
-      if self.is_true_branch {
-        data.impure_true = true;
-      } else {
-        data.impure_false = true;
-      }
+  fn consume_with_data(&self, data: &mut ConditionalData<'a>) {
+    if self.consumed.replace(true) {
+      return;
+    }
+    data.maybe_true |= self.maybe_true;
+    data.maybe_false |= self.maybe_false;
+    data.tests_to_consume.push(self.test);
+    if self.is_true_branch {
+      data.impure_true = true;
+    } else {
+      data.impure_false = true;
     }
   }
 }
@@ -54,7 +55,7 @@ impl<'a> ConditionalBranch<'a> {
 impl<'a> CustomDepTrait<'a> for ConditionalBranch<'a> {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.id);
-    self.refer_with_data(data);
+    self.consume_with_data(data);
   }
 }
 
@@ -149,7 +150,7 @@ impl<'a> Analyzer<'a> {
       maybe_true,
       maybe_false,
       test,
-      referred: self.allocator.alloc(Cell::new(false)),
+      consumed: self.allocator.alloc(Cell::new(false)),
     });
 
     let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
@@ -165,14 +166,14 @@ impl<'a> Analyzer<'a> {
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
     for (callsite, branches) in mem::take(&mut self.conditional_data.callsite_to_branches) {
-      if self.is_referred(callsite) {
+      if self.is_deoptimized(callsite) {
         let mut remaining_branches = vec![];
         for branch in branches {
           let data = self.get_conditional_data_mut(branch.id);
           let is_opposite_impure =
             if branch.is_true_branch { data.impure_false } else { data.impure_true };
           if is_opposite_impure {
-            branch.refer_with_data(data);
+            branch.consume_with_data(data);
           } else {
             remaining_branches.push(branch);
           }

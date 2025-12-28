@@ -278,7 +278,7 @@ impl<'a> Transformer<'a> {
           with_clause,
         } = node.as_ref();
         if let Some(declaration) = declaration {
-          let need_export = self.is_referred(AstKind2::ExportNamedDeclaration(node));
+          let need_export = self.is_deoptimized(AstKind2::ExportNamedDeclaration(node));
           let declaration = self.transform_declaration(declaration)?;
           if need_export {
             Some(
@@ -300,7 +300,7 @@ impl<'a> Transformer<'a> {
         } else {
           let mut transformed_specifiers = self.ast.vec();
           for specifier in specifiers {
-            if self.is_referred(AstKind2::ExportSpecifier(specifier)) {
+            if self.is_deoptimized(AstKind2::ExportSpecifier(specifier)) {
               transformed_specifiers.push(self.clone_node(specifier));
             }
           }
@@ -354,7 +354,7 @@ impl<'a> Transformer<'a> {
       }
       ModuleDeclaration::ExportAllDeclaration(node) => {
         if node.exported.is_some() {
-          let need_export = self.is_referred(AstKind2::ExportAllDeclaration(node));
+          let need_export = self.is_deoptimized(AstKind2::ExportAllDeclaration(node));
           need_export.then(|| ModuleDeclaration::ExportAllDeclaration(self.clone_node(node)).into())
         } else {
           Some(ModuleDeclaration::ExportAllDeclaration(self.clone_node(node)).into())

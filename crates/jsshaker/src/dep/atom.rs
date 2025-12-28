@@ -20,7 +20,7 @@ impl Debug for DepAtom {
 
 impl<'a> CustomDepTrait<'a> for DepAtom {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.refer_dep(*self);
+    analyzer.deoptimize_atom(*self);
   }
 }
 
@@ -63,36 +63,36 @@ impl DepAtom {
   }
 }
 
-pub struct ReferredDeps(FxHashSet<DepAtom>);
+pub struct DeoptimizedAtoms(FxHashSet<DepAtom>);
 
-impl Default for ReferredDeps {
+impl Default for DeoptimizedAtoms {
   fn default() -> Self {
     Self(FxHashSet::from_iter([AstKind2::Environment.into()]))
   }
 }
 
-impl ReferredDeps {
-  pub fn refer_dep(&mut self, dep: impl Into<DepAtom>) {
+impl DeoptimizedAtoms {
+  pub fn deoptimize_atom(&mut self, dep: impl Into<DepAtom>) {
     self.0.insert(dep.into());
   }
 
-  pub fn is_referred(&self, dep: impl Into<DepAtom>) -> bool {
+  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
     self.0.contains(&dep.into())
   }
 }
 
 impl Analyzer<'_> {
-  pub fn refer_dep(&mut self, dep: impl Into<DepAtom>) {
-    self.referred_deps.refer_dep(dep);
+  pub fn deoptimize_atom(&mut self, dep: impl Into<DepAtom>) {
+    self.deoptimized_atoms.deoptimize_atom(dep);
   }
 
-  pub fn is_referred(&self, dep: impl Into<DepAtom>) -> bool {
-    self.referred_deps.is_referred(dep)
+  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
+    self.deoptimized_atoms.is_deoptimized(dep)
   }
 }
 
 impl Transformer<'_> {
-  pub fn is_referred(&self, dep: impl Into<DepAtom>) -> bool {
-    self.referred_deps.is_referred(dep)
+  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
+    self.deoptimized_atoms.is_deoptimized(dep)
   }
 }

@@ -54,7 +54,7 @@ impl<'a> Transformer<'a> {
       None
     } else {
       init.as_ref().and_then(|init| {
-        self.transform_expression(init, self.is_referred(AstKind2::VariableDeclarator(node)))
+        self.transform_expression(init, self.is_deoptimized(AstKind2::VariableDeclarator(node)))
       })
     };
 

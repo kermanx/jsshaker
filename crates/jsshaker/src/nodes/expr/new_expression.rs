@@ -27,7 +27,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let NewExpression { span, callee, arguments, .. } = node;
 
-    if need_val || self.is_referred(AstKind2::NewExpression(node)) {
+    if need_val || self.is_deoptimized(AstKind2::NewExpression(node)) {
       let callee = self.transform_expression(callee, true);
       let arguments = self.transform_arguments_need_call(arguments);
 

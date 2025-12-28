@@ -54,17 +54,17 @@ impl<'a> CfScopeKind<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ReferredState {
+pub enum DeoptimizeState {
   Never,
-  ReferredClean,
-  ReferredDirty,
+  DeoptimizedClean,
+  DeoptimizedDirty,
 }
 
 #[derive(Debug)]
 pub struct CfScope<'a> {
   pub kind: CfScopeKind<'a>,
   pub deps: DepCollector<'a>,
-  pub referred_state: ReferredState,
+  pub deoptimize_state: DeoptimizeState,
   pub exited: Option<bool>,
 }
 
@@ -73,15 +73,15 @@ impl<'a> CfScope<'a> {
     CfScope {
       kind,
       deps: DepCollector::new(deps),
-      referred_state: ReferredState::Never,
+      deoptimize_state: DeoptimizeState::Never,
       exited: if indeterminate { None } else { Some(false) },
     }
   }
 
   pub fn push_dep(&mut self, dep: Dep<'a>) {
     self.deps.push(dep);
-    if self.referred_state == ReferredState::ReferredClean {
-      self.referred_state = ReferredState::ReferredDirty;
+    if self.deoptimize_state == DeoptimizeState::DeoptimizedClean {
+      self.deoptimize_state = DeoptimizeState::DeoptimizedDirty;
     }
   }
 
@@ -237,7 +237,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label) = cf_scope.kind.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
+            self.deoptimized_atoms.deoptimize_atom(AstKind2::LabeledStatement(label));
             label_used = true;
           }
           target_depth = Some(idx);
@@ -267,7 +267,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label) = cf_scope.kind.matches_label(label) {
           if !is_closest_continuable {
-            self.referred_deps.refer_dep(AstKind2::LabeledStatement(label));
+            self.deoptimized_atoms.deoptimize_atom(AstKind2::LabeledStatement(label));
             label_used = true;
           }
           target_depth = Some(idx);
@@ -309,24 +309,24 @@ impl<'a> Analyzer<'a> {
     let mut deps = vec![];
     for depth in (0..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
-      match scope.referred_state {
-        ReferredState::Never => {
-          scope.referred_state = ReferredState::ReferredClean;
+      match scope.deoptimize_state {
+        DeoptimizeState::Never => {
+          scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
           deps.push(scope.deps.take(self.factory));
         }
-        ReferredState::ReferredClean => break,
-        ReferredState::ReferredDirty => {
-          scope.referred_state = ReferredState::ReferredClean;
+        DeoptimizeState::DeoptimizedClean => break,
+        DeoptimizeState::DeoptimizedDirty => {
+          scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
           deps.push(scope.deps.take(self.factory));
 
           for depth in (0..depth).rev() {
             let scope = self.scoping.cf.get_mut_from_depth(depth);
-            match scope.referred_state {
-              ReferredState::Never => unreachable!("Logic error in global_effect"),
-              ReferredState::ReferredClean => break,
-              ReferredState::ReferredDirty => {
+            match scope.deoptimize_state {
+              DeoptimizeState::Never => unreachable!("Logic error in global_effect"),
+              DeoptimizeState::DeoptimizedClean => break,
+              DeoptimizeState::DeoptimizedDirty => {
                 scope.deps.force_clear();
-                scope.referred_state = ReferredState::ReferredClean;
+                scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
               }
             }
           }

@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
 
     let mut to_consume = vec![];
     self.assoc_deps.to_deps.retain(|base, deps| {
-      if self.referred_deps.is_referred(*base) {
+      if self.deoptimized_atoms.is_deoptimized(*base) {
         to_consume.push(mem::take(deps));
         false
       } else {
@@ -40,7 +40,7 @@ impl<'a> Analyzer<'a> {
 
     let mut to_consume = vec![];
     self.assoc_deps.to_entities.retain(|base, entities| {
-      if self.referred_deps.is_referred(*base) {
+      if self.deoptimized_atoms.is_deoptimized(*base) {
         to_consume.push(mem::take(entities));
         false
       } else {

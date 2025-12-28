@@ -61,7 +61,7 @@ impl<'a> Transformer<'a> {
             let value_span = value.span();
 
             let transformed_value =
-              self.transform_expression(value, self.is_referred(AstKind2::ObjectProperty(node)));
+              self.transform_expression(value, self.is_deoptimized(AstKind2::ObjectProperty(node)));
 
             if let Some(mut transformed_value) = transformed_value {
               if *kind == PropertyKind::Set {
@@ -103,14 +103,14 @@ impl<'a> Transformer<'a> {
           ObjectPropertyKind::SpreadProperty(node) => {
             let SpreadElement { span, argument } = node.as_ref();
 
-            let referred = self.is_referred(AstKind2::SpreadElement(node));
+            let deoptimized = self.is_deoptimized(AstKind2::SpreadElement(node));
 
-            let argument = self.transform_expression(argument, referred);
+            let argument = self.transform_expression(argument, deoptimized);
 
             if let Some(argument) = argument {
               self.ast.object_property_kind_spread_property(
                 *span,
-                if referred {
+                if deoptimized {
                   argument
                 } else {
                   build_effect!(
@@ -147,7 +147,7 @@ impl<'a> Transformer<'a> {
           ObjectPropertyKind::SpreadProperty(node) => {
             let SpreadElement { span, argument } = node.as_ref();
 
-            let need_spread = self.is_referred(AstKind2::SpreadElement(node));
+            let need_spread = self.is_deoptimized(AstKind2::SpreadElement(node));
             if let Some(argument) = self.transform_expression(argument, need_spread) {
               effects.push(if need_spread {
                 self.build_object_spread_effect(*span, argument)

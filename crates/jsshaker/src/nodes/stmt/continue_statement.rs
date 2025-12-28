@@ -20,7 +20,7 @@ impl<'a> Transformer<'a> {
 
     Some(self.ast.statement_continue(
       *span,
-      if self.is_referred(AstKind2::ContinueStatement(node)) { label.clone() } else { None },
+      if self.is_deoptimized(AstKind2::ContinueStatement(node)) { label.clone() } else { None },
     ))
   }
 }

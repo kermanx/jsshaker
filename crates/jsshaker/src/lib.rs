@@ -66,7 +66,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
       folder,
       mangler,
       data,
-      referred_deps,
+      deoptimized_atoms,
       conditional_data,
       ..
     } = unsafe { &mut *(&mut analyzer as *mut _) };
@@ -81,7 +81,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
         &allocator,
         path,
         data,
-        referred_deps,
+        deoptimized_atoms,
         conditional_data,
         folder,
         mangler.clone(),

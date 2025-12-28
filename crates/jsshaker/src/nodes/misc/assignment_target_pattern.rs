@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
             self.throw_builtin_error("Cannot destructure nullish value");
           }
           value.consume(self);
-          self.refer_dep(AstKind2::ObjectAssignmentTarget(node));
+          self.deoptimize_atom(AstKind2::ObjectAssignmentTarget(node));
         }
 
         let mut enumerated = vec![];
@@ -65,7 +65,7 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let ArrayAssignmentTarget { span, elements, rest } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind2::ArrayAssignmentTarget(node));
+        let deoptimized = self.is_deoptimized(AstKind2::ArrayAssignmentTarget(node));
 
         let mut transformed_elements = self.ast.vec();
         for element in elements {
@@ -77,15 +77,15 @@ impl<'a> Transformer<'a> {
         }
 
         let rest =
-          rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, is_referred));
+          rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, deoptimized));
 
-        if !is_referred && rest.is_none() {
+        if !deoptimized && rest.is_none() {
           while transformed_elements.last().is_some_and(Option::is_none) {
             transformed_elements.pop();
           }
         }
 
-        if !is_referred && transformed_elements.is_empty() && rest.is_none() {
+        if !deoptimized && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast.assignment_target_pattern_array_assignment_target(
@@ -98,12 +98,12 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let ObjectAssignmentTarget { span, properties, rest } = node.as_ref();
 
-        let is_referred = self.is_referred(AstKind2::ObjectAssignmentTarget(node));
+        let deoptimized = self.is_deoptimized(AstKind2::ObjectAssignmentTarget(node));
 
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_assignment_target_rest(
             rest,
-            self.is_referred(AstKind2::ObjectAssignmentTarget(node)),
+            self.is_deoptimized(AstKind2::ObjectAssignmentTarget(node)),
           )
         });
 
@@ -113,7 +113,7 @@ impl<'a> Transformer<'a> {
             transformed_properties.push(property);
           }
         }
-        if !is_referred && transformed_properties.is_empty() && rest.is_none() {
+        if !deoptimized && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast.assignment_target_pattern_object_assignment_target(
