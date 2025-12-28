@@ -28,12 +28,12 @@ impl<'a> Analyzer<'a> {
       arguments.push(self.factory.computed(value, dep));
     }
 
-    tag.call(
-      self,
-      AstKind2::TaggedTemplateExpression(node),
-      this,
-      self.factory.arguments(arguments.into_bump_slice(), None),
-    )
+    let callsite = AstKind2::TaggedTemplateExpression(node);
+    self.scoping.current_callsite = callsite;
+    let result =
+      tag.call(self, callsite, this, self.factory.arguments(arguments.into_bump_slice(), None));
+    self.scoping.current_callsite = AstKind2::Environment;
+    result
   }
 }
 

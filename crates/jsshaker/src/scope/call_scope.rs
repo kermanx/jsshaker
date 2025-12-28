@@ -5,14 +5,14 @@ use oxc::allocator;
 use super::variable_scope::VariableScopeId;
 use crate::{
   analyzer::Analyzer,
-  dep::{DepAtom, DepTrait},
+  dep::DepTrait,
   entity::Entity,
   module::ModuleId,
-  utils::CalleeInfo,
+  utils::{CalleeInfo, ast::AstKind2},
 };
 
 pub struct CallScope<'a> {
-  pub call_id: DepAtom,
+  pub callsite: AstKind2<'a>,
   pub callee: CalleeInfo<'a>,
   pub old_module: ModuleId,
   pub old_variable_scope: Option<VariableScopeId>,
@@ -29,7 +29,7 @@ pub struct CallScope<'a> {
 
 impl<'a> CallScope<'a> {
   pub fn new_in(
-    call_id: DepAtom,
+    callsite: AstKind2<'a>,
     callee: CalleeInfo<'a>,
     old_module: ModuleId,
     old_variable_scope: Option<VariableScopeId>,
@@ -39,7 +39,7 @@ impl<'a> CallScope<'a> {
     is_generator: bool,
   ) -> Self {
     CallScope {
-      call_id,
+      callsite,
       callee,
       old_module,
       old_variable_scope,

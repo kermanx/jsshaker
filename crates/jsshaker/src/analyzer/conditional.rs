@@ -8,6 +8,7 @@ use crate::{
   entity::Entity,
   scope::CfScopeKind,
   transformer::Transformer,
+  utils::ast::AstKind2,
 };
 
 #[derive(Debug, Default)]
@@ -21,7 +22,7 @@ struct ConditionalData<'a> {
 
 #[derive(Debug, Default)]
 pub struct ConditionalDataMap<'a> {
-  call_to_branches: FxHashMap<DepAtom, Vec<&'a ConditionalBranch<'a>>>,
+  callsite_to_branches: FxHashMap<AstKind2<'a>, Vec<&'a ConditionalBranch<'a>>>,
   node_to_data: FxHashMap<DepAtom, ConditionalData<'a>>,
 }
 
@@ -140,7 +141,7 @@ impl<'a> Analyzer<'a> {
     has_contra: bool,
   ) -> Dep<'a> {
     let id = id.into();
-    let call_id = self.call_scope().call_id;
+    let callsite = self.call_scope().callsite;
 
     let branch = self.allocator.alloc(ConditionalBranch {
       id,
@@ -151,10 +152,10 @@ impl<'a> Analyzer<'a> {
       referred: self.allocator.alloc(Cell::new(false)),
     });
 
-    let ConditionalDataMap { call_to_branches, node_to_data } = &mut self.conditional_data;
+    let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
 
     if has_contra {
-      call_to_branches.entry(call_id).or_insert_with(Default::default).push(branch);
+      callsite_to_branches.entry(callsite).or_insert_with(Default::default).push(branch);
     }
 
     node_to_data.entry(id).or_insert_with(ConditionalData::default);
@@ -163,8 +164,8 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
-    for (call_id, branches) in mem::take(&mut self.conditional_data.call_to_branches) {
-      if self.is_referred(call_id) {
+    for (callsite, branches) in mem::take(&mut self.conditional_data.callsite_to_branches) {
+      if self.is_referred(callsite) {
         let mut remaining_branches = vec![];
         for branch in branches {
           let data = self.get_conditional_data_mut(branch.id);
@@ -177,10 +178,10 @@ impl<'a> Analyzer<'a> {
           }
         }
         if !remaining_branches.is_empty() {
-          self.conditional_data.call_to_branches.insert(call_id, remaining_branches);
+          self.conditional_data.callsite_to_branches.insert(callsite, remaining_branches);
         }
       } else {
-        self.conditional_data.call_to_branches.insert(call_id, branches);
+        self.conditional_data.callsite_to_branches.insert(callsite, branches);
       }
     }
 

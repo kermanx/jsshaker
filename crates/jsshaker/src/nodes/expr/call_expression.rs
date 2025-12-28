@@ -27,18 +27,18 @@ impl<'a> Analyzer<'a> {
   ) -> Result<(usize, Entity<'a>, Option<Entity<'a>>), Entity<'a>> {
     let (mut scope_count, callee, mut undefined, this) = self.exec_callee(&node.callee)?;
 
-    let dep_id = AstKind2::CallExpression(node);
+    let callsite = AstKind2::CallExpression(node);
 
     if node.optional {
       let maybe_left = match callee.test_nullish() {
         Some(true) => {
           self.pop_multiple_cf_scopes(scope_count);
-          return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
+          return Err(self.forward_logical_left_val(callsite, self.factory.undefined, true, false));
         }
         Some(false) => false,
         None => {
           undefined = Some(self.forward_logical_left_val(
-            dep_id,
+            callsite,
             undefined.unwrap_or(self.factory.undefined),
             true,
             false,
@@ -47,13 +47,15 @@ impl<'a> Analyzer<'a> {
         }
       };
 
-      self.push_logical_right_cf_scope(dep_id, callee, maybe_left, true);
+      self.push_logical_right_cf_scope(callsite, callee, maybe_left, true);
       scope_count += 1;
     }
 
     let args = self.exec_arguments(&node.arguments);
 
-    let ret_val = callee.call(self, dep_id, this, args);
+    self.scoping.current_callsite = callsite;
+    let ret_val = callee.call(self, callsite, this, args);
+    self.scoping.current_callsite = AstKind2::Environment;
 
     Ok((scope_count, ret_val, undefined))
   }

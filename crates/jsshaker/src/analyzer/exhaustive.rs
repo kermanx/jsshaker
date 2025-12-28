@@ -10,6 +10,7 @@ use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   entity::Entity,
   scope::{CfScopeKind, cf_scope::ReferredState},
+  utils::ast::AstKind2,
 };
 
 #[derive(Debug)]
@@ -57,6 +58,7 @@ impl<'a> Analyzer<'a> {
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
   ) -> Entity<'a> {
     let runner = Rc::new(move |analyzer: &mut Analyzer<'a>| {
+      analyzer.scoping.current_callsite = AstKind2::Environment;
       let ret_val = runner(analyzer);
       analyzer.consume(ret_val);
       ret_val

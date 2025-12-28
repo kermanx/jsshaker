@@ -17,11 +17,11 @@ pub use variable_scope::VariableScopeId;
 
 use crate::{
   analyzer::{Analyzer, Factory},
-  dep::{Dep, DepAtom, DepTrait, DepVec},
+  dep::{Dep, DepTrait, DepVec},
   entity::Entity,
   module::ModuleId,
   scope::linked_tree::LinkedTree,
-  utils::{CalleeInfo, CalleeNode},
+  utils::{CalleeInfo, CalleeNode, ast::AstKind2},
   value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
@@ -31,7 +31,7 @@ pub struct Scoping<'a> {
   pub cf: StackedTree<'a, CfScopeId, CfScope<'a>>,
   pub root_cf_scope: CfScopeId,
   pub try_catch_depth: Option<usize>,
-
+  pub current_callsite: AstKind2<'a>,
   pub object_symbol_counter: usize,
 }
 
@@ -45,7 +45,7 @@ impl<'a> Scoping<'a> {
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
       call: vec![CallScope::new_in(
-        DepAtom::from_counter(),
+        AstKind2::Environment,
         CalleeInfo {
           module_id: ModuleId::from(0),
           node: CalleeNode::Root,
@@ -64,7 +64,7 @@ impl<'a> Scoping<'a> {
       cf,
       root_cf_scope,
       try_catch_depth: None,
-
+      current_callsite: AstKind2::Environment,
       object_symbol_counter: 128,
     }
   }
@@ -119,7 +119,7 @@ impl<'a> Analyzer<'a> {
     );
 
     self.scoping.call.push(CallScope::new_in(
-      info.call_id,
+      self.scoping.current_callsite,
       info.func.callee,
       old_module,
       old_variable_scope_stack,

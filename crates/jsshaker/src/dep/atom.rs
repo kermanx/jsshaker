@@ -43,6 +43,18 @@ impl GetSpan for DepAtom {
   }
 }
 
+impl PartialEq for AstKind2<'_> {
+  fn eq(&self, other: &Self) -> bool {
+    DepAtom::from(*self) == DepAtom::from(*other)
+  }
+}
+impl Eq for AstKind2<'_> {}
+impl Hash for AstKind2<'_> {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    DepAtom::from(*self).hash(state);
+  }
+}
+
 static COUNTER: AtomicUsize = AtomicUsize::new(0);
 
 impl DepAtom {

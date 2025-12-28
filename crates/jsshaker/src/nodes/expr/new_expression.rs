@@ -11,7 +11,11 @@ impl<'a> Analyzer<'a> {
   pub fn exec_new_expression(&mut self, node: &'a NewExpression<'a>) -> Entity<'a> {
     let callee = self.exec_expression(&node.callee);
     let arguments = self.exec_arguments(&node.arguments);
-    callee.construct(self, AstKind2::NewExpression(node), arguments)
+    let callsite = AstKind2::NewExpression(node);
+    self.scoping.current_callsite = callsite;
+    let result = callee.construct(self, callsite, arguments);
+    self.scoping.current_callsite = AstKind2::Environment;
+    result
   }
 }
 
