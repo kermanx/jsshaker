@@ -2,6 +2,7 @@ use oxc::semantic::SymbolId;
 
 use crate::{
   Analyzer,
+  dep::DepAtom,
   entity::Entity,
   module::ModuleId,
   scope::{CfScopeId, VariableScopeId, variable_scope::EntityOrTDZ},
@@ -47,9 +48,10 @@ impl<'a> Analyzer<'a> {
     scope: CfScopeId,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCachable<'a>>,
-  ) {
+  ) -> Option<DepAtom> {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
+    let mut tracker_dep = None;
     for depth in (target_depth..self.scoping.cf.stack.len()).rev() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
       if let Some(data) = scope.exhaustive_data_mut() {
@@ -66,9 +68,10 @@ impl<'a> Analyzer<'a> {
         }
       }
       if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.track_read(target, cacheable);
+        data.track_read(target, cacheable, &mut tracker_dep);
       }
     }
+    tracker_dep
   }
 
   pub fn track_write(
@@ -119,7 +122,7 @@ impl<'a> Analyzer<'a> {
     (exhaustive, indeterminate)
   }
 
-  pub fn get_rw_target_current_value(&self, target: ReadWriteTarget<'a>) -> Option<Entity<'a>> {
+  pub fn get_rw_target_current_value(&self, target: ReadWriteTarget<'a>) -> EntityOrTDZ<'a> {
     match target {
       ReadWriteTarget::Variable(scope, symbol) => {
         let scope = self.scoping.variable.get(scope);

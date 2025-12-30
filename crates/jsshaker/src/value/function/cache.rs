@@ -20,7 +20,7 @@ pub struct FnCachedInput<'a> {
 
 #[derive(Debug)]
 pub struct FnCachedEffects<'a> {
-  pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, EntityOrTDZ<'a>>,
+  pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, (EntityOrTDZ<'a>, DepAtom)>,
   pub writes: allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>,
 }
 
@@ -59,6 +59,7 @@ impl<'a> FnCacheTrackingData<'a> {
     &mut self,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCachable<'a>>,
+    tracker_dep: &mut Option<DepAtom>,
   ) {
     let Self::Tracked { effects, .. } = self else {
       return;
@@ -73,7 +74,7 @@ impl<'a> FnCacheTrackingData<'a> {
     match effects.reads.entry(target) {
       allocator::hash_map::Entry::Occupied(v) => {
         // TODO: Remove these?
-        if match (*v.get(), current_value) {
+        if match (v.get().0, current_value) {
           (Some(e1), Some(e2)) => !e1.exactly_same(e2),
           (None, None) => false,
           _ => true,
@@ -82,7 +83,8 @@ impl<'a> FnCacheTrackingData<'a> {
         }
       }
       allocator::hash_map::Entry::Vacant(v) => {
-        v.insert(current_value);
+        let atom = *tracker_dep.get_or_insert_with(DepAtom::from_counter);
+        v.insert((current_value, atom));
       }
     }
   }
@@ -188,37 +190,34 @@ impl<'a> FnCache<'a> {
   ) -> Option<Entity<'a>> {
     let table = self.table.borrow();
     if let Some(cached) = table.get(key) {
-      let mut read_deps = None;
-      for (&target, &last_value) in &cached.effects.reads {
+      for (&target, &(last_value, tracking_dep)) in &cached.effects.reads {
         let current_value = analyzer.get_rw_target_current_value(target);
         match (last_value, current_value) {
           (Some(e1), Some(e2)) => {
             if !e1.exactly_same(e2) {
               let c1 = e1.as_cacheable(analyzer)?;
               let c2 = e2.as_cacheable(analyzer)?;
-              if c1 != c2 {
+              if c1.is_compatiable(&c2) {
+                analyzer.add_assoc_entity_dep(tracking_dep, e2);
+              } else {
                 return None;
               }
-              read_deps
-                .get_or_insert_with(|| analyzer.factory.vec())
-                .push(e2.get_shallow_dep(analyzer));
             }
           }
           (None, None) => {}
           _ => return None,
         }
       }
-      let dep = analyzer.factory.dep((call_dep, read_deps));
 
       for (&target, &(indeterminate, cacheable)) in &cached.effects.writes {
         analyzer.set_rw_target_current_value(
           target,
-          analyzer.factory.computed(cacheable, dep),
+          analyzer.factory.computed(cacheable, call_dep),
           indeterminate,
         );
       }
 
-      analyzer.add_assoc_dep(cached.track_deps.call_id, dep);
+      analyzer.add_assoc_dep(cached.track_deps.call_id, call_dep);
 
       analyzer.add_assoc_entity_dep(cached.track_deps.this, this);
       for (dep, arg) in cached.track_deps.args.iter().zip(args.elements.iter()) {
@@ -228,7 +227,7 @@ impl<'a> FnCache<'a> {
         analyzer.add_assoc_entity_dep(*dep, *rest);
       }
 
-      let ret = analyzer.factory.computed(cached.ret, dep);
+      let ret = analyzer.factory.computed(cached.ret, call_dep);
 
       let has_global_effects = cached.has_global_effects;
       drop(table);

@@ -2,7 +2,9 @@ use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
   cacheable::Cacheable, consumed_object, never::NeverValue,
 };
-use crate::{analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity};
+use crate::{
+  analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity, value::LiteralValue,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PrimitiveValue {
@@ -188,5 +190,20 @@ impl<'a> PrimitiveValue {
 
   fn maybe_string(&self) -> bool {
     matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String)
+  }
+
+  pub fn is_compatiable(&self, lit: &LiteralValue) -> bool {
+    matches!(
+      (self, lit),
+      (PrimitiveValue::Mixed, _)
+        | (PrimitiveValue::BigInt, LiteralValue::BigInt(_))
+        | (
+          PrimitiveValue::Number,
+          LiteralValue::Number(_, _) | LiteralValue::Infinity(_) | LiteralValue::NaN,
+        )
+        | (PrimitiveValue::String, LiteralValue::String(_, _))
+        | (PrimitiveValue::Boolean, LiteralValue::Boolean(_))
+        | (PrimitiveValue::Symbol, LiteralValue::Symbol(_, _))
+    )
   }
 }

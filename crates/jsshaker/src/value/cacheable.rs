@@ -15,12 +15,13 @@ pub enum Cacheable<'a> {
 
   Literal(LiteralValue<'a>),
   Primitive(PrimitiveValue),
-  Union(allocator::Vec<'a, Cacheable<'a>>),
   Object(ObjectId),
   Array(ArrayId),
   ModuleObject(ModuleId),
   Function(CalleeInstanceId),
   BuiltinFn(&'static str),
+
+  Union(allocator::Vec<'a, Cacheable<'a>>),
 }
 
 impl<'a> Cacheable<'a> {
@@ -54,6 +55,20 @@ impl<'a> Cacheable<'a> {
       Self::Array(_) | Self::Object(_) => false,
       Self::Union(u) => u.iter().all(|c| c.is_copiable()),
       _ => true,
+    }
+  }
+
+  pub fn is_compatiable(&self, other: &Cacheable<'a>) -> bool {
+    match (self, other) {
+      (Cacheable::Unknown, _) | (_, Cacheable::Never) => true,
+
+      (Cacheable::Primitive(PrimitiveValue::Mixed), Cacheable::Primitive(_)) => true,
+      (Cacheable::Primitive(p), Cacheable::Literal(l)) => p.is_compatiable(l),
+
+      (c1, Cacheable::Union(u2)) => u2.iter().all(|c2| c1.is_compatiable(c2)),
+      (Cacheable::Union(u1), c2) => u1.iter().any(|c1| c1.is_compatiable(c2)),
+
+      (v1, v2) => v1 == v2,
     }
   }
 }

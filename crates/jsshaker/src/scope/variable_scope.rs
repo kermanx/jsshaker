@@ -204,7 +204,7 @@ impl<'a> Analyzer<'a> {
         true
       };
       drop(variable);
-      self.track_read(
+      let tracker_dep = self.track_read(
         cf_scope,
         ReadWriteTarget::Variable(scope, symbol),
         Some(if may_change {
@@ -213,7 +213,11 @@ impl<'a> Analyzer<'a> {
           TrackReadCachable::Immutable
         }),
       );
-      value
+      if let (Some(value), Some(tracker_dep)) = (value, tracker_dep) {
+        Some(self.factory.computed(value, tracker_dep))
+      } else {
+        value
+      }
     };
 
     if value.is_none() {
