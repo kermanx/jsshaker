@@ -48,4 +48,12 @@ impl<'a> Cacheable<'a> {
       (v1, v2) => Cacheable::Union(allocator::Vec::from_array_in([v1, v2], allocator)),
     }
   }
+
+  pub fn is_copiable(&self) -> bool {
+    match self {
+      Self::Array(_) | Self::Object(_) => false,
+      Self::Union(u) => u.iter().all(|c| c.is_copiable()),
+      _ => true,
+    }
+  }
 }

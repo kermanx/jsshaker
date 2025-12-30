@@ -75,8 +75,14 @@ impl<'a> Analyzer<'a> {
     &mut self,
     scope_depth: usize,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<Entity<'a>>,
+    mut cacheable: Option<Entity<'a>>,
   ) -> (bool, bool) {
+    if let Some(c) = cacheable
+      && !c.as_cacheable(self).is_some_and(|c| c.is_copiable())
+    {
+      cacheable = None;
+    }
+
     let mut exhaustive = false;
     let mut indeterminate = false;
     let mut must_mark = true;

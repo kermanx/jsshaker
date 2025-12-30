@@ -254,7 +254,7 @@ impl<'a> FnCache<'a> {
     let FnCacheTrackingData::Tracked { effects } = tracking_data else {
       return;
     };
-    if ret.as_cacheable(analyzer).is_none() {
+    if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copiable()) {
       return;
     };
 
