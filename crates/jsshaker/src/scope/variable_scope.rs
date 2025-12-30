@@ -10,7 +10,7 @@ use super::cf_scope::CfScopeId;
 use crate::{
   analyzer::{
     Analyzer,
-    rw_tracking::{ReadWriteTarget, TrackReadCachable},
+    rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   },
   ast::DeclarationKind,
   define_box_bump_idx,
@@ -208,9 +208,9 @@ impl<'a> Analyzer<'a> {
         cf_scope,
         ReadWriteTarget::Variable(scope, symbol),
         Some(if may_change {
-          TrackReadCachable::Mutable(value)
+          TrackReadCacheable::Mutable(value)
         } else {
-          TrackReadCachable::Immutable
+          TrackReadCacheable::Immutable
         }),
       );
       if let (Some(value), Some(tracker_dep)) = (value, tracker_dep) {

@@ -50,23 +50,23 @@ impl<'a> Cacheable<'a> {
     }
   }
 
-  pub fn is_copiable(&self) -> bool {
+  pub fn is_copyable(&self) -> bool {
     match self {
       Self::Array(_) | Self::Object(_) => false,
-      Self::Union(u) => u.iter().all(|c| c.is_copiable()),
+      Self::Union(u) => u.iter().all(|c| c.is_copyable()),
       _ => true,
     }
   }
 
-  pub fn is_compatiable(&self, other: &Cacheable<'a>) -> bool {
+  pub fn is_compatible(&self, other: &Cacheable<'a>) -> bool {
     match (self, other) {
       (Cacheable::Unknown, _) | (_, Cacheable::Never) => true,
 
       (Cacheable::Primitive(PrimitiveValue::Mixed), Cacheable::Primitive(_)) => true,
-      (Cacheable::Primitive(p), Cacheable::Literal(l)) => p.is_compatiable(l),
+      (Cacheable::Primitive(p), Cacheable::Literal(l)) => p.is_compatible(l),
 
-      (c1, Cacheable::Union(u2)) => u2.iter().all(|c2| c1.is_compatiable(c2)),
-      (Cacheable::Union(u1), c2) => u1.iter().any(|c1| c1.is_compatiable(c2)),
+      (c1, Cacheable::Union(u2)) => u2.iter().all(|c2| c1.is_compatible(c2)),
+      (Cacheable::Union(u1), c2) => u1.iter().any(|c1| c1.is_compatible(c2)),
 
       (v1, v2) => v1 == v2,
     }

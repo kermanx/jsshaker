@@ -192,7 +192,7 @@ impl<'a> PrimitiveValue {
     matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String)
   }
 
-  pub fn is_compatiable(&self, lit: &LiteralValue) -> bool {
+  pub fn is_compatible(&self, lit: &LiteralValue) -> bool {
     matches!(
       (self, lit),
       (PrimitiveValue::Mixed, _)

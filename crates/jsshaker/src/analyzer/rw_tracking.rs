@@ -37,7 +37,7 @@ impl<'a> ReadWriteTarget<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum TrackReadCachable<'a> {
+pub enum TrackReadCacheable<'a> {
   Immutable,
   Mutable(EntityOrTDZ<'a>),
 }
@@ -47,7 +47,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     scope: CfScopeId,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCacheable<'a>>,
   ) -> Option<DepAtom> {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
@@ -81,7 +81,7 @@ impl<'a> Analyzer<'a> {
     mut cacheable: Option<Entity<'a>>,
   ) -> (bool, bool) {
     if let Some(c) = cacheable
-      && !c.as_cacheable(self).is_some_and(|c| c.is_copiable())
+      && !c.as_cacheable(self).is_some_and(|c| c.is_copyable())
     {
       cacheable = None;
     }

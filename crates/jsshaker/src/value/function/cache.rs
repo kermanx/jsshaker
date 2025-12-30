@@ -4,7 +4,7 @@ use oxc::allocator;
 
 use crate::{
   Analyzer,
-  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCachable},
+  analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
   dep::{Dep, DepAtom},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
@@ -58,7 +58,7 @@ impl<'a> FnCacheTrackingData<'a> {
   pub fn track_read(
     &mut self,
     target: ReadWriteTarget<'a>,
-    cacheable: Option<TrackReadCachable<'a>>,
+    cacheable: Option<TrackReadCacheable<'a>>,
     tracker_dep: &mut Option<DepAtom>,
   ) {
     let Self::Tracked { effects, .. } = self else {
@@ -68,7 +68,7 @@ impl<'a> FnCacheTrackingData<'a> {
       *self = Self::UnTrackable;
       return;
     };
-    let TrackReadCachable::Mutable(current_value) = cacheable else {
+    let TrackReadCacheable::Mutable(current_value) = cacheable else {
       return;
     };
     match effects.reads.entry(target) {
@@ -197,7 +197,7 @@ impl<'a> FnCache<'a> {
             if !e1.exactly_same(e2) {
               let c1 = e1.as_cacheable(analyzer)?;
               let c2 = e2.as_cacheable(analyzer)?;
-              if c1.is_compatiable(&c2) {
+              if c1.is_compatible(&c2) {
                 analyzer.add_assoc_entity_dep(tracking_dep, e2);
               } else {
                 return None;
@@ -253,7 +253,7 @@ impl<'a> FnCache<'a> {
     let FnCacheTrackingData::Tracked { effects } = tracking_data else {
       return;
     };
-    if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copiable()) {
+    if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copyable()) {
       return;
     };
 
