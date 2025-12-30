@@ -154,15 +154,17 @@ impl<'a> Analyzer<'a> {
     self.scoping.cf.find_lca(another).0 + 1
   }
 
-  pub fn get_exec_dep(&mut self, target_depth: usize) -> Dep<'a> {
+  pub fn get_exec_dep(&mut self, target_depth: usize) -> (DepVec<'a>, bool) {
     let mut deps = self.factory.vec();
+    let mut indeterminate = false;
     for id in target_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(id);
       if let Some(dep) = scope.deps.collect(self.factory) {
         deps.push(dep);
       }
+      indeterminate |= scope.is_indeterminate();
     }
-    self.dep(deps)
+    (deps, indeterminate)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {

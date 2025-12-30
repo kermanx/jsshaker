@@ -99,7 +99,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.add_extra_dep(dep);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    let (should_consume, _) =
+    let should_consume =
       analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
     if should_consume {

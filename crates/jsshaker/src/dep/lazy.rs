@@ -34,4 +34,8 @@ impl<'a, T: DepTrait<'a> + 'a> LazyDep<'a, T> {
       deferred_deps.push(dep);
     }
   }
+
+  pub fn is_consumed(&self) -> bool {
+    self.0.borrow().is_none()
+  }
 }

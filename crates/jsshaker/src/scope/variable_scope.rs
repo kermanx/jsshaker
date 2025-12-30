@@ -114,9 +114,10 @@ impl<'a> Analyzer<'a> {
         // Re-declaration
       }
     } else {
-      let has_fn_value = fn_value.is_some();
-      let exhausted = if let Some(exhausted_variables) = &self.exhausted_variables {
-        !has_fn_value && exhausted_variables.contains(&(self.current_module, symbol))
+      let exhausted = if fn_value.is_none()
+        && let Some(exhausted_variables) = &self.exhausted_variables
+      {
+        exhausted_variables.contains(&(self.current_module, symbol))
       } else {
         false
       };
@@ -135,7 +136,7 @@ impl<'a> Analyzer<'a> {
         decl_node,
       }));
       self.scoping.variable.get_mut(scope).variables.insert(symbol, variable);
-      if has_fn_value {
+      if fn_value.is_some() {
         self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
       }
     }
@@ -241,21 +242,31 @@ impl<'a> Analyzer<'a> {
     };
     let variable = variable_cell.borrow();
     let kind = variable.kind;
+    let decl_node = variable.decl_node;
     if kind.is_untracked() {
       self.consume(new_val);
     } else if kind.is_const() {
       self.throw_builtin_error("Cannot assign to const variable");
-      self.consume(variable.decl_node);
+      self.consume(decl_node);
       new_val.consume(self);
     } else {
       let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
-      let dep = (self.get_exec_dep(target_cf_scope), variable.decl_node);
+      let (exec_dep, cf_indeterminate) = self.get_exec_dep(target_cf_scope);
 
-      if let Some(deps) = variable.exhausted {
-        deps.push(self, self.dep((dep, new_val)));
+      if let Some(deps) = &variable.exhausted {
+        let dep = self.dep((exec_dep, decl_node, new_val));
+        if cf_indeterminate {
+          deps.push(self, dep);
+        } else if deps.is_consumed() {
+          self.consume(dep);
+        } else {
+          drop(variable);
+          variable_cell.borrow_mut().exhausted =
+            Some(self.factory.lazy_dep(self.factory.vec1(dep)));
+        }
       } else {
         let old_val = variable.value;
-        let (should_consume, cf_indeterminate) = if old_val.is_some() {
+        let exhaustive = if old_val.is_some() {
           // Normal write
           self.track_write(target_cf_scope, ReadWriteTarget::Variable(scope, symbol), Some(new_val))
         } else if variable.kind.is_redeclarable() {
@@ -264,18 +275,21 @@ impl<'a> Analyzer<'a> {
         } else {
           // TDZ write
           self.handle_tdz();
-          (true, false)
+          true
         };
         drop(variable);
 
         let mut variable = variable_cell.borrow_mut();
-        if should_consume {
+        if exhaustive {
           let module_id = self.current_module;
           if let Some(exhausted_variables) = &mut self.exhausted_variables {
             exhausted_variables.insert((module_id, symbol));
           }
-          variable.exhausted =
-            Some(self.factory.lazy_dep(self.factory.vec1(self.dep((dep, new_val, old_val)))));
+          variable.exhausted = Some(
+            self
+              .factory
+              .lazy_dep(self.factory.vec1(self.dep((exec_dep, decl_node, new_val, old_val)))),
+          );
           variable.value = Some(self.factory.unknown);
         } else {
           variable.value = Some(self.factory.computed(
@@ -284,7 +298,7 @@ impl<'a> Analyzer<'a> {
             } else {
               new_val
             },
-            dep,
+            (exec_dep, decl_node),
           ));
         };
         drop(variable);

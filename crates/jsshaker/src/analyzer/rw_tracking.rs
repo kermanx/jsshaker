@@ -79,7 +79,7 @@ impl<'a> Analyzer<'a> {
     scope_depth: usize,
     target: ReadWriteTarget<'a>,
     mut cacheable: Option<Entity<'a>>,
-  ) -> (bool, bool) {
+  ) -> bool {
     if let Some(c) = cacheable
       && !c.as_cacheable(self).is_some_and(|c| c.is_copyable())
     {
@@ -87,12 +87,10 @@ impl<'a> Analyzer<'a> {
     }
 
     let mut exhaustive = false;
-    let mut indeterminate = false;
     let mut must_mark = true;
     let mut has_fn_scope = false;
     for depth in scope_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(depth);
-      indeterminate |= scope.is_indeterminate();
       has_fn_scope |= scope.kind.is_function();
       if let Some(data) = scope.exhaustive_data_mut() {
         exhaustive = true;
@@ -119,7 +117,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    (exhaustive, indeterminate)
+    exhaustive
   }
 
   pub fn get_rw_target_current_value(&self, target: ReadWriteTarget<'a>) -> EntityOrTDZ<'a> {
