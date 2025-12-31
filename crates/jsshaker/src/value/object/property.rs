@@ -122,7 +122,7 @@ impl<'a> ObjectProperty<'a> {
     &mut self,
     analyzer: &mut Analyzer<'a>,
     is_exhaustive: bool,
-    indeterminate: bool,
+    non_det: bool,
     value: Entity<'a>,
     setters: &mut Vec<PendingSetter<'a>>,
     deferred_deps: &mut Vec<Entity<'a>>,
@@ -141,7 +141,7 @@ impl<'a> ObjectProperty<'a> {
           field_values.push(value);
         }
         ObjectPropertyValue::Property(_, Some(setter)) => setters.push(PendingSetter {
-          indeterminate: self.possible_values.len() > 1 || !self.definite,
+          non_det: self.possible_values.len() > 1 || !self.definite,
           dep: self.non_existent.collect(analyzer.factory),
           setter,
         }),
@@ -150,14 +150,14 @@ impl<'a> ObjectProperty<'a> {
     }
 
     if writable {
-      if !indeterminate || is_exhaustive {
+      if !non_det || is_exhaustive {
         // Remove all writable fields
         self
           .possible_values
           .retain(|possible_value| !matches!(possible_value, ObjectPropertyValue::Field(_, false)));
       }
 
-      if !indeterminate {
+      if !non_det {
         // This property must exist now
         self.definite = true;
         self.non_existent.force_clear();
@@ -191,7 +191,7 @@ impl<'a> ObjectProperty<'a> {
     for possible_value in &self.possible_values {
       if let ObjectPropertyValue::Property(_, Some(setter)) = *possible_value {
         setters.push(PendingSetter {
-          indeterminate: self.possible_values.len() > 1,
+          non_det: self.possible_values.len() > 1,
           dep: self.non_existent.collect(analyzer.factory),
           setter,
         });
@@ -203,9 +203,9 @@ impl<'a> ObjectProperty<'a> {
     if found_others { Found::Unknown } else { Found::known(found_setter) }
   }
 
-  pub fn delete(&mut self, indeterminate: bool, dep: Dep<'a>) {
+  pub fn delete(&mut self, non_det: bool, dep: Dep<'a>) {
     self.definite = false;
-    if !indeterminate {
+    if !non_det {
       self.possible_values.clear();
       self.non_existent.force_clear();
     }

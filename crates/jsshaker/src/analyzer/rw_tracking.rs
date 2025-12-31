@@ -108,12 +108,12 @@ impl<'a> Analyzer<'a> {
       }
     }
     if has_fn_scope {
-      let mut indeterminate = false;
+      let mut non_det = false;
       for depth in (scope_depth..self.scoping.cf.stack.len()).rev() {
         let scope = self.scoping.cf.get_mut_from_depth(depth);
-        indeterminate |= scope.is_indeterminate();
+        non_det |= scope.non_det();
         if let Some(data) = scope.fn_cache_tracking_data_mut() {
-          data.track_write(target, cacheable.map(|e| (indeterminate, e)));
+          data.track_write(target, cacheable.map(|e| (non_det, e)));
         }
       }
     }
@@ -134,11 +134,11 @@ impl<'a> Analyzer<'a> {
     &mut self,
     target: ReadWriteTarget<'a>,
     value: Entity<'a>,
-    indeterminate: bool,
+    non_det: bool,
   ) {
     match target {
       ReadWriteTarget::Variable(scope, symbol) => {
-        let written = self.write_on_scope(scope, symbol, value, indeterminate);
+        let written = self.write_on_scope(scope, symbol, value, non_det);
         debug_assert!(written);
       }
       _ => unreachable!(),

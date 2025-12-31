@@ -47,7 +47,7 @@ impl<'a> Builtins<'a> {
       }
 
       if let Some(rest) = args.rest {
-        analyzer.push_indeterminate_cf_scope();
+        analyzer.push_non_det_cf_scope();
         let rest = if has_map_fn != Some(true) {
           let args = analyzer
             .factory

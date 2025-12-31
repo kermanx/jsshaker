@@ -23,7 +23,7 @@ pub enum CfScopeKind<'a> {
   Switch,
 
   Dependent,
-  Indeterminate,
+  NonDet,
   Exhaustive(&'a mut ExhaustiveData<'a>),
   ExitBlocker(Option<usize>),
 }
@@ -69,12 +69,12 @@ pub struct CfScope<'a> {
 }
 
 impl<'a> CfScope<'a> {
-  pub fn new(kind: CfScopeKind<'a>, deps: DepVec<'a>, indeterminate: bool) -> Self {
+  pub fn new(kind: CfScopeKind<'a>, deps: DepVec<'a>, non_det: bool) -> Self {
     CfScope {
       kind,
       deps: DepCollector::new(deps),
       deoptimize_state: DeoptimizeState::Never,
-      exited: if indeterminate { None } else { Some(false) },
+      exited: if non_det { None } else { Some(false) },
     }
   }
 
@@ -94,7 +94,7 @@ impl<'a> CfScope<'a> {
     }
   }
 
-  pub fn reset_indeterminate(&mut self) {
+  pub fn reset_non_det(&mut self) {
     self.exited = None;
     self.deps.force_clear();
   }
@@ -103,7 +103,7 @@ impl<'a> CfScope<'a> {
     matches!(self.exited, Some(true))
   }
 
-  pub fn is_indeterminate(&self) -> bool {
+  pub fn non_det(&self) -> bool {
     self.exited.is_none()
   }
 
@@ -143,8 +143,8 @@ impl<'a> CfScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_indeterminately<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
-    self.push_indeterminate_cf_scope();
+  pub fn exec_non_det<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
+    self.push_non_det_cf_scope();
     let result = runner(self);
     self.pop_cf_scope();
     result
@@ -156,15 +156,15 @@ impl<'a> Analyzer<'a> {
 
   pub fn get_exec_dep(&mut self, target_depth: usize) -> (DepVec<'a>, bool) {
     let mut deps = self.factory.vec();
-    let mut indeterminate = false;
+    let mut non_det = false;
     for id in target_depth..self.scoping.cf.stack.len() {
       let scope = self.scoping.cf.get_mut_from_depth(id);
       if let Some(dep) = scope.deps.collect(self.factory) {
         deps.push(dep);
       }
-      indeterminate |= scope.is_indeterminate();
+      non_det |= scope.non_det();
     }
-    (deps, indeterminate)
+    (deps, non_det)
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
@@ -196,14 +196,14 @@ impl<'a> Analyzer<'a> {
 
       // Update exited state
       if must_exit {
-        let is_indeterminate = cf_scope.is_indeterminate();
+        let non_det = cf_scope.non_det();
         cf_scope.update_exited(Some(true), acc_dep);
 
-        // Stop exiting outer scopes if one inner scope is indeterminate.
-        if is_indeterminate {
+        // Stop exiting outer scopes if one inner scope is non_det.
+        if non_det {
           must_exit = false;
           if let CfScopeKind::ExitBlocker(target) = &mut cf_scope.kind {
-            // For the `if` statement, do not mark the outer scopes as indeterminate here.
+            // For the `if` statement, do not mark the outer scopes as non_det here.
             // Instead, let the `if` statement handle it.
             assert!(target.is_none());
             *target = Some(target_depth);

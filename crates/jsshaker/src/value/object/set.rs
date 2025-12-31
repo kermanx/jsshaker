@@ -10,7 +10,7 @@ use crate::{
 };
 
 pub struct PendingSetter<'a> {
-  pub indeterminate: bool,
+  pub non_det: bool,
   pub dep: Option<Dep<'a>>,
   pub setter: Entity<'a>,
 }
@@ -27,8 +27,7 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let (target_depth, is_exhaustive, mut indeterminate, deps) =
-      self.prepare_mutation(analyzer, dep);
+    let (target_depth, is_exhaustive, mut non_det, deps) = self.prepare_mutation(analyzer, dep);
     let key_literals = key.get_to_literals(analyzer);
 
     if is_exhaustive && key_literals.is_none() {
@@ -43,13 +42,13 @@ impl<'a> ObjectValue<'a> {
     let mut deferred_deps = vec![];
 
     if self.lookup_unknown_keyed_setters(analyzer, &mut setters).may_found() {
-      indeterminate = true;
+      non_det = true;
     }
 
     if let Some(key_literals) = key_literals {
       let mut keyed = self.keyed.borrow_mut();
 
-      indeterminate |= key_literals.len() > 1;
+      non_det |= key_literals.len() > 1;
 
       let mangable = self.check_mangable(analyzer, &key_literals);
       let value = if mangable { value } else { non_mangable_value };
@@ -68,14 +67,8 @@ impl<'a> ObjectValue<'a> {
           } else {
             value
           };
-          if property.set(
-            analyzer,
-            is_exhaustive,
-            indeterminate,
-            value,
-            &mut setters,
-            &mut deferred_deps,
-          ) {
+          if property.set(analyzer, is_exhaustive, non_det, value, &mut setters, &mut deferred_deps)
+          {
             analyzer.track_write(
               target_depth,
               ReadWriteTarget::ObjectField(self.object_id(), key_literal.into()),
@@ -112,7 +105,7 @@ impl<'a> ObjectValue<'a> {
         keyed.insert(
           key_str,
           ObjectProperty {
-            definite: !indeterminate && found.must_not_found(),
+            definite: !non_det && found.must_not_found(),
             enumerable: true, /* TODO: Object.defineProperty */
             possible_values: analyzer.factory.vec1(if is_exhaustive {
               ObjectPropertyValue::new_consumed(analyzer, analyzer.factory.vec1(value))
@@ -133,7 +126,7 @@ impl<'a> ObjectValue<'a> {
 
       self.disable_mangling(analyzer);
 
-      indeterminate = true;
+      non_det = true;
 
       let mut unknown_keyed = self.unknown.borrow_mut();
       unknown_keyed.possible_values.push(ObjectPropertyValue::Field(non_mangable_value, false));
@@ -151,14 +144,14 @@ impl<'a> ObjectValue<'a> {
     }
 
     if !setters.is_empty() {
-      let indeterminate = indeterminate || setters.len() > 1 || setters[0].indeterminate;
+      let non_det = non_det || setters.len() > 1 || setters[0].non_det;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
         analyzer.factory.vec1(analyzer.dep((dep, key))),
-        indeterminate,
+        non_det,
       );
       for s in setters {
-        analyzer.cf_scope_mut().exited = if indeterminate { None } else { Some(false) };
+        analyzer.cf_scope_mut().exited = if non_det { None } else { Some(false) };
         s.setter.call_as_setter(analyzer, s.dep, self.into(), non_mangable_value);
       }
       analyzer.pop_cf_scope();
@@ -184,7 +177,7 @@ impl<'a> ObjectValue<'a> {
       }
       ObjectPrototype::Unknown(dep) => {
         setters.push(PendingSetter {
-          indeterminate: true,
+          non_det: true,
           dep: Some(dep),
           setter: analyzer.factory.computed_unknown(dep),
         });
@@ -261,16 +254,16 @@ impl<'a> ObjectValue<'a> {
   ) -> (usize, bool, bool, DepVec<'a>) {
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let mut exhaustive = false;
-    let mut indeterminate = false;
+    let mut non_det = false;
     let mut deps = analyzer.factory.vec1(dep);
     for depth in target_depth..analyzer.scoping.cf.stack.len() {
       let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
       exhaustive |= scope.is_exhaustive();
-      indeterminate |= scope.is_indeterminate();
+      non_det |= scope.non_det();
       if let Some(dep) = scope.deps.collect(analyzer.factory) {
         deps.push(dep);
       }
     }
-    (target_depth, exhaustive, indeterminate, deps)
+    (target_depth, exhaustive, non_det, deps)
   }
 }

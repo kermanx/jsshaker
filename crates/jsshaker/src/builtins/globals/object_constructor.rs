@@ -33,14 +33,14 @@ impl<'a> Builtins<'a> {
     self.factory.implemented_builtin_fn("Object.assign", |analyzer, mut dep, _, args| {
       let target = args.get(analyzer, 0);
 
-      let mut assign = |source: Entity<'a>, indeterminate: bool| {
+      let mut assign = |source: Entity<'a>, non_det: bool| {
         let enumerated = source.enumerate_properties(analyzer, dep);
         for (definite, key, value) in enumerated.known.into_values() {
-          if indeterminate || !definite {
-            analyzer.push_indeterminate_cf_scope();
+          if non_det || !definite {
+            analyzer.push_non_det_cf_scope();
           }
           target.set_property(analyzer, enumerated.dep, key, value);
-          if indeterminate || !definite {
+          if non_det || !definite {
             analyzer.pop_cf_scope();
           }
         }

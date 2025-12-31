@@ -4,7 +4,7 @@ use crate::{analyzer::Analyzer, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_try_statement(&mut self, node: &'a TryStatement<'a>) {
-    self.push_indeterminate_cf_scope();
+    self.push_non_det_cf_scope();
     if self.scoping.try_catch_depth.is_none() {
       self.scoping.try_catch_depth = Some(self.scoping.cf.current_depth());
       self.exec_block_statement(&node.block);

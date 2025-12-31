@@ -122,7 +122,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return consumed_object::set_property(analyzer, dep, key, value);
     }
 
-    let (is_exhaustive, indeterminate, exec_deps) = self.prepare_mutation(analyzer, dep);
+    let (is_exhaustive, non_det, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
@@ -139,7 +139,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         break 'known;
       };
 
-      let definite = !indeterminate && key_literals.len() == 1;
+      let definite = !non_det && key_literals.len() == 1;
       let mut rest_added = false;
       for key_literal in key_literals {
         match key_literal {
@@ -376,12 +376,12 @@ impl<'a> ArrayValue<'a> {
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
 
     let mut is_exhaustive = false;
-    let mut indeterminate = false;
+    let mut non_det = false;
     let mut exec_deps = analyzer.factory.vec1(dep);
     for depth in target_depth..analyzer.scoping.cf.stack.len() {
       let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
       is_exhaustive |= scope.is_exhaustive();
-      indeterminate |= scope.is_indeterminate();
+      non_det |= scope.non_det();
       if let Some(dep) = scope.deps.collect(analyzer.factory) {
         exec_deps.push(dep);
       }
@@ -390,7 +390,7 @@ impl<'a> ArrayValue<'a> {
     analyzer.track_write(target_depth, ReadWriteTarget::Array(self.array_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::Array(self.array_id()));
 
-    (is_exhaustive, indeterminate, exec_deps)
+    (is_exhaustive, non_det, exec_deps)
   }
 }
 

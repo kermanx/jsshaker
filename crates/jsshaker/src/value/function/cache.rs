@@ -132,9 +132,9 @@ impl<'a> FnCacheTrackDeps<'a> {
     }
     args.elements = new_args.into_bump_slice();
     let rest_dep = if let Some(rest) = &mut args.rest {
-      let rdep = DepAtom::from_counter();
-      *rest = factory.computed(*rest, rdep);
-      Some(rdep)
+      let rest_dep = DepAtom::from_counter();
+      *rest = factory.computed(*rest, rest_dep);
+      Some(rest_dep)
     } else {
       None
     };
@@ -209,11 +209,11 @@ impl<'a> FnCache<'a> {
         }
       }
 
-      for (&target, &(indeterminate, cacheable)) in &cached.effects.writes {
+      for (&target, &(non_det, cacheable)) in &cached.effects.writes {
         analyzer.set_rw_target_current_value(
           target,
           analyzer.factory.computed(cacheable, call_dep),
-          indeterminate,
+          non_det,
         );
       }
 

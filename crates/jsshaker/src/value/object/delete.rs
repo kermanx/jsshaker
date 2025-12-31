@@ -13,7 +13,7 @@ impl<'a> ObjectValue<'a> {
       return consumed_object::delete_property(analyzer, dep, key);
     }
 
-    let (_target_depth, is_exhaustive, indeterminate, deps) = self.prepare_mutation(analyzer, dep);
+    let (_target_depth, is_exhaustive, non_det, deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
@@ -29,7 +29,7 @@ impl<'a> ObjectValue<'a> {
     }
 
     if let Some(key_literals) = key.get_to_literals(analyzer) {
-      let indeterminate = indeterminate || key_literals.len() > 1;
+      let non_det = non_det || key_literals.len() > 1;
       let mangable = self.check_mangable(analyzer, &key_literals);
       let deps = if mangable { deps } else { analyzer.dep((deps, key)) };
 
@@ -38,7 +38,7 @@ impl<'a> ObjectValue<'a> {
         let (key_str, key_atom) = key_literal.into();
         if let Some(property) = string_keyed.get_mut(&key_str) {
           property.delete(
-            indeterminate,
+            non_det,
             if mangable {
               let prev_key = property.key.unwrap();
               let prev_atom = property.mangling.unwrap();

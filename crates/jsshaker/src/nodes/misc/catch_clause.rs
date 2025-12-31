@@ -7,7 +7,7 @@ use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transforme
 
 impl<'a> Analyzer<'a> {
   pub fn exec_catch_clause(&mut self, node: &'a CatchClause<'a>, value: Entity<'a>) {
-    self.push_indeterminate_cf_scope();
+    self.push_non_det_cf_scope();
 
     if let Some(param) = &node.param {
       self.declare_binding_pattern(&param.pattern, None, DeclarationKind::Caught);

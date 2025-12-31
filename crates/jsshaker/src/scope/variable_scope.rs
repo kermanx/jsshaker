@@ -235,7 +235,7 @@ impl<'a> Analyzer<'a> {
     scope: VariableScopeId,
     symbol: SymbolId,
     new_val: Entity<'a>,
-    force_indeterminate: bool,
+    force_non_det: bool,
   ) -> bool {
     let Some(variable_cell) = self.variable(scope, symbol) else {
       return false;
@@ -251,11 +251,11 @@ impl<'a> Analyzer<'a> {
       new_val.consume(self);
     } else {
       let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
-      let (exec_dep, cf_indeterminate) = self.get_exec_dep(target_cf_scope);
+      let (exec_dep, cf_non_det) = self.get_exec_dep(target_cf_scope);
 
       if let Some(deps) = &variable.exhausted {
         let dep = self.dep((exec_dep, decl_node, new_val));
-        if cf_indeterminate {
+        if cf_non_det {
           deps.push(self, dep);
         } else if deps.is_consumed() {
           self.consume(dep);
@@ -293,7 +293,7 @@ impl<'a> Analyzer<'a> {
           variable.value = Some(self.factory.unknown);
         } else {
           variable.value = Some(self.factory.computed(
-            if force_indeterminate || cf_indeterminate {
+            if force_non_det || cf_non_det {
               self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
             } else {
               new_val

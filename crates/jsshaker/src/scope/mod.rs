@@ -154,22 +154,22 @@ impl<'a> Analyzer<'a> {
     self.scoping.variable.pop()
   }
 
-  pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, indeterminate: bool) -> usize {
-    self.push_cf_scope_with_deps(kind, self.factory.vec(), indeterminate)
+  pub fn push_cf_scope(&mut self, kind: CfScopeKind<'a>, non_det: bool) -> usize {
+    self.push_cf_scope_with_deps(kind, self.factory.vec(), non_det)
   }
 
   pub fn push_cf_scope_with_deps(
     &mut self,
     kind: CfScopeKind<'a>,
     deps: DepVec<'a>,
-    indeterminate: bool,
+    non_det: bool,
   ) -> usize {
-    self.scoping.cf.push(CfScope::new(kind, deps, indeterminate));
+    self.scoping.cf.push(CfScope::new(kind, deps, non_det));
     self.scoping.cf.current_depth()
   }
 
-  pub fn push_indeterminate_cf_scope(&mut self) {
-    self.push_cf_scope(CfScopeKind::Indeterminate, true);
+  pub fn push_non_det_cf_scope(&mut self) {
+    self.push_cf_scope(CfScopeKind::NonDet, true);
   }
 
   pub fn push_dependent_cf_scope(&mut self, dep: impl DepTrait<'a> + 'a) {

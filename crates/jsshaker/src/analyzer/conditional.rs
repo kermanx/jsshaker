@@ -104,7 +104,7 @@ impl<'a> Analyzer<'a> {
     assert!(maybe_right);
     self.push_conditional_cf_scope(
       id,
-      CfScopeKind::Indeterminate,
+      CfScopeKind::NonDet,
       left,
       maybe_left,
       maybe_right,

@@ -18,7 +18,7 @@ impl<'a> Analyzer<'a> {
     let mut default_case = None;
     let mut maybe_default_case = Some(true);
     let mut test_results = vec![];
-    let mut indeterminate = false;
+    let mut non_det = false;
     for (index, case) in node.cases.iter().enumerate() {
       if let Some(test) = &case.test {
         let test_val = self.exec_expression(test);
@@ -41,9 +41,9 @@ impl<'a> Analyzer<'a> {
             self.consume((discriminant, test_val, m));
             // data.need_test.insert(index);
             maybe_default_case = None;
-            if !indeterminate {
-              indeterminate = true;
-              self.push_indeterminate_cf_scope();
+            if !non_det {
+              non_det = true;
+              self.push_non_det_cf_scope();
             }
           }
         }
@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
         test_results.push(/* Updated later */ None);
       }
     }
-    if indeterminate {
+    if non_det {
       self.pop_cf_scope();
     }
 
@@ -88,7 +88,7 @@ impl<'a> Analyzer<'a> {
         let data = self.load_data::<StatementVecData>(AstKind2::SwitchCase(case));
 
         if entered.is_none() {
-          self.push_indeterminate_cf_scope();
+          self.push_non_det_cf_scope();
         }
         self.exec_statement_vec(data, &case.consequent);
         if entered.is_none() {
