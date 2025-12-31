@@ -243,6 +243,14 @@ impl<'a> Factory<'a> {
     self.dep_once(dep)
   }
 
+  pub fn dep_from_vec<T: DepTrait<'a> + 'a>(&self, deps: allocator::Vec<'a, T>) -> Dep<'a> {
+    match deps.len() {
+      0 => self.no_dep,
+      1 => deps.into_iter().next().unwrap().uniform(self.allocator),
+      _ => self.dep(deps),
+    }
+  }
+
   pub fn optional_computed(
     &self,
     val: Entity<'a>,

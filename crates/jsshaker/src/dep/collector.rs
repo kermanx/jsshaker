@@ -32,7 +32,7 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
       let node = Some(if let Some(node) = self.node {
         factory.dep((current, node))
       } else {
-        factory.dep(current)
+        factory.dep_from_vec(current)
       });
       self.node = node;
       node
