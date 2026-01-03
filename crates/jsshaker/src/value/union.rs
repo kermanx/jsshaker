@@ -181,21 +181,50 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    let mut results = analyzer.factory.vec();
-    let mut has_undefined = false;
+    let mut elements = Vec::new();
+    let mut max_elements = usize::MAX;
+    let mut rest = analyzer.factory.vec();
+    let mut deps = analyzer.factory.vec();
+
     analyzer.push_non_det_cf_scope();
     for entity in self.values.iter() {
-      if let Some(result) = entity.iterate_result_union(analyzer, dep) {
-        results.push(result);
-      } else {
-        has_undefined = true;
+      analyzer.cf_scope_mut().reset_non_det();
+      let (e, r, d) = entity.iterate(analyzer, dep);
+      let n = max_elements.min(e.len());
+      if r.is_some() {
+        max_elements = n;
+      }
+      if elements.len() < n {
+        elements.resize_with(n, || analyzer.factory.vec());
+      }
+      for (i, el) in e[..n].iter().copied().enumerate() {
+        elements[i].push(el);
+      }
+      for el in e.iter().copied().skip(max_elements).chain(r) {
+        rest.push(el);
+      }
+      deps.push(d);
+    }
+    if elements.len() > max_elements {
+      for e in elements.drain(max_elements..) {
+        rest.extend(e);
       }
     }
     analyzer.pop_cf_scope();
-    if has_undefined {
-      results.push(analyzer.factory.undefined);
-    }
-    (vec![], analyzer.factory.try_union(results), analyzer.factory.no_dep)
+
+    (
+      elements
+        .into_iter()
+        .map(|mut e| {
+          if e.len() < self.values.len() {
+            e.push(analyzer.factory.undefined);
+          }
+          analyzer.factory.union(e)
+        })
+        .collect(),
+      analyzer.factory.try_union(rest),
+      analyzer.factory.dep(deps),
+    )
   }
 
   fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
