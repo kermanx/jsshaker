@@ -185,14 +185,6 @@ impl<'a> Entity<'a> {
     self.value.destruct_as_array(analyzer, self.forward_dep(dep, analyzer), length, need_rest)
   }
 
-  pub fn iterate_result_union(
-    &self,
-    analyzer: &mut Analyzer<'a>,
-    dep: impl DepTrait<'a> + 'a,
-  ) -> Option<Entity<'a>> {
-    self.value.iterate_result_union(analyzer, self.forward_dep(dep, analyzer))
-  }
-
   pub fn call_as_getter(
     &self,
     analyzer: &mut Analyzer<'a>,

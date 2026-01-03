@@ -18,7 +18,7 @@ use cacheable::Cacheable;
 pub use function::*;
 pub use literal::LiteralValue;
 pub use object::*;
-use oxc::{allocator, semantic::SymbolId};
+use oxc::semantic::SymbolId;
 use rustc_hash::FxHashMap;
 use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
@@ -164,19 +164,6 @@ pub trait ValueTrait<'a>: Debug {
     });
 
     (elements, rest_arr, dep)
-  }
-
-  fn iterate_result_union(
-    &'a self,
-    analyzer: &mut Analyzer<'a>,
-    dep: Dep<'a>,
-  ) -> Option<Entity<'a>> {
-    let (elements, rest, deps) = self.iterate(analyzer, dep);
-    let union = analyzer.factory.try_union(allocator::Vec::from_iter_in(
-      elements.iter().copied().chain(rest),
-      analyzer.allocator,
-    ));
-    union.map(|u| analyzer.factory.computed(u, deps))
   }
 
   fn call_as_getter(

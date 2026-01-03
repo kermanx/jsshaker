@@ -18,21 +18,45 @@ impl<'a> Analyzer<'a> {
 
     self.declare_for_statement_left(&node.left);
 
-    let Some(iterated) = right.iterate_result_union(self, AstKind2::ForOfStatement(node)) else {
-      return;
-    };
-
-    let dep = self.dep((AstKind2::ForOfStatement(node), right));
+    let (elements, rest, dep) = right.iterate(self, AstKind2::ForOfStatement(node));
 
     self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
-    self.exec_loop(move |analyzer| {
-      analyzer.declare_for_statement_left(&node.left);
-      analyzer.init_for_statement_left(&node.left, iterated);
+    for element in elements {
+      self.push_cf_scope_with_deps(
+        CfScopeKind::LoopContinue,
+        self.factory.vec1(element.get_shallow_dep(self)),
+        false,
+      );
+      self.declare_for_statement_left(&node.left);
+      self.init_for_statement_left(&node.left, element);
 
-      analyzer.push_cf_scope(CfScopeKind::LoopContinue, true);
-      analyzer.exec_statement(&node.body);
-      analyzer.pop_cf_scope();
-    });
+      self.exec_statement(&node.body);
+
+      self.pop_cf_scope();
+
+      if self.cf_scope().must_exited() {
+        break;
+      }
+    }
+    if !self.cf_scope().must_exited()
+      && let Some(rest) = rest
+    {
+      let cf_dep = rest.get_shallow_dep(self);
+      self.exec_loop(move |analyzer| {
+        analyzer.push_cf_scope_with_deps(
+          CfScopeKind::LoopContinue,
+          analyzer.factory.vec1(cf_dep),
+          true,
+        );
+
+        analyzer.declare_for_statement_left(&node.left);
+        analyzer.init_for_statement_left(&node.left, rest);
+
+        analyzer.exec_statement(&node.body);
+
+        analyzer.pop_cf_scope();
+      });
+    }
     self.pop_cf_scope();
   }
 }
