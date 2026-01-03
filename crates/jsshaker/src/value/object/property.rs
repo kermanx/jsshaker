@@ -5,7 +5,7 @@ use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepCollector, LazyDep},
   entity::Entity,
-  mangling::{MangleAtom, MangleConstraint},
+  mangling::{MangleAtom, MangleConstraint, ManglingDep},
   utils::Found,
 };
 
@@ -62,6 +62,12 @@ impl<'a> ObjectProperty<'a> {
       }
     }
     !self.definite
+  }
+
+  pub fn make_mangling_dep(&mut self, key: Entity<'a>, key_atom: MangleAtom) -> ManglingDep<'a> {
+    let prev_key = self.key.unwrap();
+    let prev_atom = self.mangling.unwrap();
+    ManglingDep { deps: (prev_key, key), constraint: MangleConstraint::Eq(prev_atom, key_atom) }
   }
 
   pub(super) fn get(
@@ -122,14 +128,27 @@ impl<'a> ObjectProperty<'a> {
     &mut self,
     analyzer: &mut Analyzer<'a>,
     is_exhaustive: bool,
+    is_private_identifier: bool,
     non_det: bool,
-    value: Entity<'a>,
+    key: Entity<'a>,
+    key_atom: Option<MangleAtom>,
+    mut value: Entity<'a>,
     setters: &mut Vec<PendingSetter<'a>>,
     deferred_deps: &mut Vec<Entity<'a>>,
   ) -> bool {
+    let mangling_dep = key_atom.map(|key_atom| self.make_mangling_dep(key, key_atom));
+
+    if non_det || is_private_identifier {
+      value = analyzer.factory.optional_computed(value, mangling_dep);
+    } else if let Some(key_atom) = key_atom {
+      let prev_atom = self.mangling.unwrap();
+      value = analyzer.factory.computed(value, MangleConstraint::Eq(prev_atom, key_atom));
+    }
+
     let mut writable = false;
     let mut was_consumed = None;
     let mut field_values = vec![value];
+
     for possible_value in &self.possible_values {
       match *possible_value {
         ObjectPropertyValue::Consumed(_, deps) => {
@@ -143,7 +162,7 @@ impl<'a> ObjectProperty<'a> {
         ObjectPropertyValue::Property(_, Some(setter)) => setters.push(PendingSetter {
           non_det: self.possible_values.len() > 1 || !self.definite,
           dep: self.non_existent.collect(analyzer.factory),
-          setter,
+          setter: analyzer.factory.optional_computed(setter, mangling_dep),
         }),
         ObjectPropertyValue::Property(_, None) => {}
       }
@@ -161,7 +180,13 @@ impl<'a> ObjectProperty<'a> {
         // This property must exist now
         self.definite = true;
         self.non_existent.force_clear();
+
+        if !is_private_identifier {
+          self.key = Some(key);
+          self.mangling = key_atom;
+        }
       }
+
       if is_exhaustive {
         if let Some(was_consumed) = was_consumed {
           for field_value in field_values {
@@ -184,6 +209,7 @@ impl<'a> ObjectProperty<'a> {
   pub fn lookup_setters(
     &mut self,
     analyzer: &Analyzer<'a>,
+    mangling_dep: Option<ManglingDep<'a>>,
     setters: &mut Vec<PendingSetter<'a>>,
   ) -> Found {
     let mut found_setter = false;
@@ -193,7 +219,7 @@ impl<'a> ObjectProperty<'a> {
         setters.push(PendingSetter {
           non_det: self.possible_values.len() > 1,
           dep: self.non_existent.collect(analyzer.factory),
-          setter,
+          setter: analyzer.factory.optional_computed(setter, mangling_dep),
         });
         found_setter = true;
       } else {

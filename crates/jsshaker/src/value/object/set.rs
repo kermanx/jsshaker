@@ -3,7 +3,7 @@ use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::{Dep, DepCollector, DepVec},
   entity::Entity,
-  mangling::{MangleAtom, MangleConstraint},
+  mangling::MangleAtom,
   scope::CfScopeKind,
   utils::Found,
   value::{PropertyKeyValue, ValueTrait, consumed_object},
@@ -56,19 +56,17 @@ impl<'a> ObjectValue<'a> {
       for key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
         let exists = if let Some(property) = keyed.get_mut(&key_str) {
-          let value = if mangable {
-            let prev_key = property.key.unwrap();
-            let prev_atom = property.mangling.unwrap();
-            analyzer.factory.mangable(
-              value,
-              (prev_key, key),
-              MangleConstraint::Eq(prev_atom, key_atom.unwrap()),
-            )
-          } else {
-            value
-          };
-          if property.set(analyzer, is_exhaustive, non_det, value, &mut setters, &mut deferred_deps)
-          {
+          if property.set(
+            analyzer,
+            is_exhaustive,
+            key_str.is_private_identifier(),
+            non_det,
+            key,
+            mangable.then(|| key_atom.unwrap()),
+            value,
+            &mut setters,
+            &mut deferred_deps,
+          ) {
             analyzer.track_write(
               target_depth,
               ReadWriteTarget::ObjectField(self.object_id(), key_literal.into()),
@@ -90,11 +88,22 @@ impl<'a> ObjectValue<'a> {
         };
 
         if let Some(rest) = &self.rest {
-          rest.borrow_mut().set(analyzer, false, true, value, &mut setters, &mut deferred_deps);
+          rest.borrow_mut().set(
+            analyzer,
+            false,
+            false,
+            true,
+            key,
+            None,
+            value,
+            &mut setters,
+            &mut deferred_deps,
+          );
           continue;
         }
 
-        let found = self.lookup_keyed_setters_on_proto(analyzer, key_str, key_atom, &mut setters);
+        let found =
+          self.lookup_keyed_setters_on_proto(analyzer, key, key_str, key_atom, &mut setters);
         if exists || found.must_found() {
           continue;
         }
@@ -133,11 +142,11 @@ impl<'a> ObjectValue<'a> {
 
       let mut string_keyed = self.keyed.borrow_mut();
       for property in string_keyed.values_mut() {
-        property.lookup_setters(analyzer, &mut setters);
+        property.lookup_setters(analyzer, None, &mut setters);
       }
 
       if let Some(rest) = &self.rest {
-        rest.borrow_mut().lookup_setters(analyzer, &mut setters);
+        rest.borrow_mut().lookup_setters(analyzer, None, &mut setters);
       }
 
       self.lookup_any_string_keyed_setters_on_proto(analyzer, &mut setters);
@@ -167,7 +176,7 @@ impl<'a> ObjectValue<'a> {
   ) -> Found {
     let mut found = Found::False;
 
-    found += self.unknown.borrow_mut().lookup_setters(analyzer, setters);
+    found += self.unknown.borrow_mut().lookup_setters(analyzer, None, setters);
 
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => {}
@@ -191,6 +200,7 @@ impl<'a> ObjectValue<'a> {
   fn lookup_keyed_setters_on_proto(
     &self,
     analyzer: &mut Analyzer<'a>,
+    key: Entity<'a>,
     key_str: PropertyKeyValue<'a>,
     mut key_atom: Option<MangleAtom>,
     setters: &mut Vec<PendingSetter<'a>>,
@@ -207,7 +217,8 @@ impl<'a> ObjectValue<'a> {
           } else {
             key_atom = None;
           }
-          let found = property.lookup_setters(analyzer, setters);
+          let mangling_dep = key_atom.map(|atom| property.make_mangling_dep(key, atom));
+          let found = property.lookup_setters(analyzer, mangling_dep, setters);
           if property.definite && found.must_found() {
             return Found::True;
           }
@@ -216,7 +227,8 @@ impl<'a> ObjectValue<'a> {
           Found::False
         };
 
-        let found2 = prototype.lookup_keyed_setters_on_proto(analyzer, key_str, key_atom, setters);
+        let found2 =
+          prototype.lookup_keyed_setters_on_proto(analyzer, key, key_str, key_atom, setters);
 
         found1 + found2
       }
@@ -238,7 +250,7 @@ impl<'a> ObjectValue<'a> {
         }
 
         for property in prototype.keyed.borrow_mut().values_mut() {
-          property.lookup_setters(analyzer, setters);
+          property.lookup_setters(analyzer, None, setters);
         }
 
         prototype.lookup_any_string_keyed_setters_on_proto(analyzer, setters);

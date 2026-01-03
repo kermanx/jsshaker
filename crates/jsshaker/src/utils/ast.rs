@@ -150,6 +150,7 @@ ast_kind_2! {
 
   // extras
   Expression(&'a Expression<'a>),
+  ObjectPropertyKey(&'a ObjectProperty<'a>),
   SwitchCaseTest(&'a SwitchCase<'a>),
   AssignmentTargetProperty(&'a AssignmentTargetProperty<'a>),
   AssignmentTargetPropertyIdentifier(&'a AssignmentTargetPropertyIdentifier<'a>),

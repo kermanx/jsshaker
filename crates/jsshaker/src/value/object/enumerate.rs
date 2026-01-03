@@ -68,14 +68,13 @@ impl<'a> ObjectValue<'a> {
         }
 
         let definite = property.definite;
-        let (key, key_entity) = if let PropertyKeyValue::String(key) = key {
-          (
-            PropertyKeyValue::String(key),
-            analyzer.factory.string(key, mangable.then(|| property.mangling.unwrap())),
-          )
-        } else {
-          todo!()
-        };
+        let key_entity = property.key.unwrap_or_else(|| {
+          if let PropertyKeyValue::String(key) = key {
+            analyzer.factory.string(key, mangable.then(|| property.mangling.unwrap()))
+          } else {
+            todo!()
+          }
+        });
 
         property.get(analyzer, &mut context, None);
         mem::drop(string_keyed);

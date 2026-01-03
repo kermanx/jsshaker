@@ -28,6 +28,7 @@ impl<'a> Analyzer<'a> {
             });
             object.add_extra_dep(dep);
           } else {
+            let key = self.factory.computed(key, AstKind2::ObjectPropertyKey(node));
             let value = self.factory.computed(value, AstKind2::ObjectProperty(node));
             object.init_property(self, node.kind, key, value, true);
           }
@@ -60,8 +61,10 @@ impl<'a> Transformer<'a> {
 
             let value_span = value.span();
 
-            let transformed_value =
-              self.transform_expression(value, self.is_deoptimized(AstKind2::ObjectProperty(node)));
+            let need_value = self.is_deoptimized(AstKind2::ObjectProperty(node));
+            let need_key = need_value || self.is_deoptimized(AstKind2::ObjectPropertyKey(node));
+
+            let transformed_value = self.transform_expression(value, need_value);
 
             if let Some(mut transformed_value) = transformed_value {
               if *kind == PropertyKind::Set {
@@ -86,7 +89,7 @@ impl<'a> Transformer<'a> {
                 false,
                 *computed,
               )
-            } else if let Some(key) = self.transform_property_key(key, false) {
+            } else if let Some(key) = self.transform_property_key(key, need_key) {
               self.ast.object_property_kind_object_property(
                 *span,
                 *kind,
