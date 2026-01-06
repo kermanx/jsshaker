@@ -97,6 +97,12 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     }
 
     self.add_extra_dep(dep);
+    self.disable_mangling(analyzer);
+
+    self.unknown.borrow_mut().possible_values.push(ObjectPropertyValue::Property(
+      Some(analyzer.factory.unknown),
+      Some(analyzer.factory.unknown),
+    ));
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let should_consume =
