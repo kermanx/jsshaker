@@ -1,0 +1,28 @@
+-decorators
+
+# https://github.com/tc39/test262/blob/main/features.txt
+
+# Start with `-` to skip feature
+# Map feature to engine262 feature using `feature = engine262featurename`
+# e.g.:
+# import-defer = import-defer
+decorators = decorators
+
+# Update with test262 on Feb 2025, to be investigated/implemented
+-Float16Array
+-arraybuffer-transfer
+-explicit-resource-management
+-source-phase-imports
+-source-phase-imports-module-source
+-immutable-arraybuffer
+
+# Added before Feb 2025
+
+-Atomics
+-Atomics.waitAsync
+-Atomics.pause
+-caller
+-SharedArrayBuffer
+-tail-call-optimization
+-Temporal
+-resizable-arraybuffer

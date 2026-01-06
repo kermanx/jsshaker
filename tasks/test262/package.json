@@ -2,14 +2,22 @@
 	"type": "module",
 	"devDependencies": {
 		"@engine262/engine262": "0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68",
-		"jsshaker": "workspace:*",
+		"@pppp606/ink-chart": "^0.2.4",
+		"@types/node": "^25.0.3",
+		"cli-highlight": "^2.1.11",
 		"diff": "^6.0.0",
+		"ink": "^6.6.0",
+		"ink-task-list": "^2.0.0",
+		"js-yaml": "^4.1.1",
+		"jsshaker": "workspace:*",
 		"picocolors": "^1.1.0",
 		"prettier": "^3.3.3",
-		"test262-harness": "^10.0.0"
+		"react": "^19.2.3",
+		"test262-harness": "^10.0.0",
+		"tinyglobby": "^0.2.15"
 	},
 	"packageManager": "pnpm@9.11.0",
 	"scripts": {
-		"test": "test262-harness --host-type=engine262 --host-path ./node_modules/.bin/engine262 --features-exclude \"decorators,source-phase-imports,source-phase-imports-module-source,import-attributes\" --preprocessor ./preprocessor.cjs \"./test262/test/language/**/*.js\" --threads 32 | node ./output.cjs"
+		"test": "node --disable-warning=ExperimentalWarning --experimental-strip-types ./test262.mts --strict-only"
 	}
 }

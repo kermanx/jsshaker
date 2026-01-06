@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler"
+  }
+}
