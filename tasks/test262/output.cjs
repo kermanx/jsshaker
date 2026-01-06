@@ -27,11 +27,15 @@ process.stdin.on('end', () => {
     .filter(Boolean);
 
   const failedTests = {}
+  const failedIgnored = new Set();
   let expectedFailedNum = 0;
   for (let i = 0; i < lines.length; i+=2) {
     let name = lines[i].slice('test262/test/'.length);
     if (ignored.includes(name) || v8Failed.includes(name) || engine262Skip.includes(name) || treeShakeSkipped.includes(name)) {
       expectedFailedNum++;
+      if (ignored.includes(name)) {
+        failedIgnored.add(name);
+      }
     } else {
       failedTests[name] = lines[i+1]?.replaceAll("`", "'") || '<NO OUTPUT>';
     }
@@ -41,6 +45,10 @@ process.stdin.on('end', () => {
     return `[${name}](https://github.com/tc39/test262/tree/main/test/${name}): \`${message.trim()}\``;
   }).join('\n');
   fs.writeFileSync(path.join(__dirname, 'failed.txt'), failedList);
+
+  // Find tests that are in ignored.json but didn't fail (meaning they now pass)
+  const newSucceeded = ignored.filter(name => !name.startsWith('//') && !failedIgnored.has(name));
+  fs.writeFileSync(path.join(__dirname, 'new-succeeded.json'), JSON.stringify(newSucceeded, null, 2));
 
   const stat = input.match(/^Ran \d+ tests[\s\S]+/m)[0];
   const total = +stat.match(/^Ran (\d+) tests$/m)[1];
@@ -53,6 +61,7 @@ process.stdin.on('end', () => {
 - Total: ${total}
 - Passed: ${passedNum}
 - Ignored: ${expectedFailedNum}
+- New Succeeded (in ignored.json but now pass): ${newSucceeded.length}
 ${restMessage.split('\n').filter(Boolean).map(s => `- ${s.trim()}`).join('\n')}
 
 ${failedNum ? `
