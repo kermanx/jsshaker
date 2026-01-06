@@ -156,8 +156,8 @@ importers:
   tasks/test262:
     devDependencies:
       '@engine262/engine262':
-        specifier: 0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc
-        version: 0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc
+        specifier: 0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68
+        version: 0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68(ws@8.18.3)
       diff:
         specifier: ^6.0.0
         version: 6.0.0
@@ -415,9 +415,14 @@ packages:
   '@emotion/unitless@0.7.5':
     resolution: {integrity: sha512-OWORNpfjMsSSUBVrRBVGECkhWcULOAJz9ZW8uK9qgxD+87M7jHRcvh/A96XXNhXTLmKcoYSQtBEX7lHMO7YRwg==}
 
-  '@engine262/engine262@0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc':
-    resolution: {integrity: sha512-m6qcSSZsa/W89Z7xMrJ/f89pm/U9nNp40cOOBqdQ4YbK7WYcsffVHzXSVix/JqF1CkDef9/T8mOvpWWZfAsWJg==}
+  '@engine262/engine262@0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68':
+    resolution: {integrity: sha512-cVzVrvZkE/t8+CscJec2IMt1FBg+EDPNfurKIyHN1Iz7lEtu1llzwb4ecPh0yokVF5rxmjKfJdzoqFz79YRi6g==}
     hasBin: true
+    peerDependencies:
+      ws: ^8.18.0
+    peerDependenciesMeta:
+      ws:
+        optional: true
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -4401,7 +4406,9 @@ snapshots:
 
   '@emotion/unitless@0.7.5': {}
 
-  '@engine262/engine262@0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc': {}
+  '@engine262/engine262@0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68(ws@8.18.3)':
+    optionalDependencies:
+      ws: 8.18.3
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true

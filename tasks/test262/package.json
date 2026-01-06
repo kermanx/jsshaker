@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"devDependencies": {
-		"@engine262/engine262": "0.0.1-dd05c163162914b12baca4fbabb6e9ce99a217bc",
+		"@engine262/engine262": "0.0.1-27615a19b32e5ab55bbe815959d5375c0b668e68",
 		"jsshaker": "workspace:*",
 		"diff": "^6.0.0",
 		"picocolors": "^1.1.0",
