@@ -77,13 +77,23 @@ impl<'a> Transformer<'a> {
       return if self.is_deoptimized(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();
-        Some(self.ast.statement_expression(
-          *span,
-          self.ast.expression_array(
+        Some(if *r#await {
+          self.ast.statement_for_of(
             *span,
-            self.ast.vec1(self.ast.array_expression_element_spread_element(right_span, right)),
-          ),
-        ))
+            true,
+            self.build_unused_for_statement_left(left_span),
+            right,
+            self.ast.statement_empty(body_span),
+          )
+        } else {
+          self.ast.statement_expression(
+            *span,
+            self.ast.expression_array(
+              *span,
+              self.ast.vec1(self.ast.array_expression_element_spread_element(right_span, right)),
+            ),
+          )
+        })
       } else {
         self
           .transform_expression(right, false)
