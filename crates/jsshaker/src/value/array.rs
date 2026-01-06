@@ -156,6 +156,10 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
               if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
                 if let Some(length) = length.map(|l| l.0.trunc()) {
                   let length = length as usize;
+                  if length > 1024 {
+                    break 'known;
+                  }
+
                   let mut elements = self.elements.borrow_mut();
                   let mut rest = self.rest.borrow_mut();
                   if elements.len() > length {
