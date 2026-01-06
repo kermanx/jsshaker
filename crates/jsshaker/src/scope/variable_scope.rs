@@ -252,10 +252,11 @@ impl<'a> Analyzer<'a> {
     } else {
       let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
       let (exec_dep, cf_non_det) = self.get_exec_dep(target_cf_scope);
+      let non_det = force_non_det || cf_non_det;
 
       if let Some(deps) = &variable.exhausted {
         let dep = self.dep((exec_dep, decl_node, new_val));
-        if cf_non_det {
+        if non_det {
           deps.push(self, dep);
         } else if deps.is_consumed() {
           self.consume(dep);
@@ -263,6 +264,7 @@ impl<'a> Analyzer<'a> {
           drop(variable);
           variable_cell.borrow_mut().exhausted =
             Some(self.factory.lazy_dep(self.factory.vec1(dep)));
+          self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
         }
       } else {
         let old_val = variable.value;
@@ -293,7 +295,7 @@ impl<'a> Analyzer<'a> {
           variable.value = Some(self.factory.unknown);
         } else {
           variable.value = Some(self.factory.computed(
-            if force_non_det || cf_non_det {
+            if non_det {
               self.factory.union((old_val.unwrap_or(self.factory.undefined), new_val))
             } else {
               new_val
