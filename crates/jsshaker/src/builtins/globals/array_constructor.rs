@@ -31,29 +31,29 @@ impl<'a> Builtins<'a> {
 
       let array = analyzer.new_empty_array();
 
-      let iterated = iterable.iterate(analyzer, dep);
-      let has_map_fn = map_fn.test_is_undefined();
+      let (elements, rest, dep) = iterable.iterate(analyzer, dep);
+      let no_map_fn = map_fn.test_is_undefined();
 
-      for (i, element) in iterated.0.into_iter().enumerate() {
-        let element = if has_map_fn != Some(true) {
+      for (i, element) in elements.into_iter().enumerate() {
+        let element = if no_map_fn != Some(true) {
           let index = analyzer.factory.number(i as f64, None);
           let args = analyzer.factory.arguments(analyzer.allocator.alloc([element, index]), None);
-          let mapped = map_fn.call(analyzer, iterated.2, this_arg, args);
-          if has_map_fn == Some(true) { mapped } else { analyzer.factory.union((element, mapped)) }
+          let mapped = map_fn.call(analyzer, dep, this_arg, args);
+          if no_map_fn == Some(false) { mapped } else { analyzer.factory.union((element, mapped)) }
         } else {
           element
         };
         array.push_element(element);
       }
 
-      if let Some(rest) = args.rest {
+      if let Some(rest) = rest {
         analyzer.push_non_det_cf_scope();
-        let rest = if has_map_fn != Some(true) {
+        let rest = if no_map_fn != Some(true) {
           let args = analyzer
             .factory
             .arguments(analyzer.allocator.alloc([rest, analyzer.factory.unknown_number]), None);
-          let mapped = map_fn.call(analyzer, iterated.2, this_arg, args);
-          if has_map_fn == Some(true) { mapped } else { analyzer.factory.union((rest, mapped)) }
+          let mapped = map_fn.call(analyzer, dep, this_arg, args);
+          if no_map_fn == Some(false) { mapped } else { analyzer.factory.union((rest, mapped)) }
         } else {
           rest
         };
@@ -61,7 +61,7 @@ impl<'a> Builtins<'a> {
         analyzer.pop_cf_scope();
       }
 
-      analyzer.factory.computed(array.into(), iterated.2)
+      analyzer.factory.computed(array.into(), dep)
     })
   }
 
