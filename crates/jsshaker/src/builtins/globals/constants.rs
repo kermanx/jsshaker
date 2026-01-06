@@ -98,9 +98,16 @@ impl Builtins<'_> {
 
       // Debug helper (non-standard)
       "$$DEBUG$$" => factory.implemented_builtin_fn(
-        "debug",
+        "$$DEBUG$$",
         |analyzer, _dep, _this, args| {
           println!("Debug: {:#?}", args.get(analyzer, 0));
+          analyzer.factory.undefined
+        },
+      ),
+      "$$TRACE$$" => factory.implemented_builtin_fn(
+        "$$TRACE$$",
+        |analyzer, _dep, _this, args| {
+          println!("Trace: {:#?}", args.get(analyzer, 0).get_literal(analyzer).unwrap().to_string(analyzer.allocator));
           analyzer.factory.undefined
         },
       ),
