@@ -85,6 +85,8 @@ impl<'a> Transformer<'a> {
       } else {
         Some(left)
       }
+    } else if need_val && left.is_none() && right.is_none() {
+      Some(self.build_unused_expression(*span))
     } else {
       build_effect!(self.ast, *span, left, right)
     }

@@ -94,19 +94,22 @@ impl<'a> Transformer<'a> {
     let transformed_right = self.transform_expression(right, need_val || !left_is_empty);
 
     match (transformed_left, transformed_right) {
-      (Some(left), right) => Some(self.ast.expression_assignment(
-        *span,
-        if operator.is_logical() {
-          let (_, maybe_left, _) =
-            self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node), false);
+      (Some(left), right) => {
+        debug_assert!(!left_is_empty);
+        Some(self.ast.expression_assignment(
+          *span,
+          if operator.is_logical() {
+            let (_, maybe_left, _) =
+              self.get_conditional_result(AstKind2::LogicalAssignmentExpressionLeft(node), false);
 
-          if maybe_left { *operator } else { AssignmentOperator::Assign }
-        } else {
-          *operator
-        },
-        left,
-        right.unwrap(),
-      )),
+            if maybe_left { *operator } else { AssignmentOperator::Assign }
+          } else {
+            *operator
+          },
+          left,
+          right.unwrap(),
+        ))
+      }
       (None, Some(right)) => {
         if need_val && *operator != AssignmentOperator::Assign {
           if operator.is_logical() {

@@ -205,6 +205,10 @@ impl<'a> Transformer<'a> {
         Some(literal)
       }
     } else {
+      if need_val {
+        debug_assert!(inner.is_some(), "Expr: {:#?}", node);
+      }
+
       inner
     }
   }
