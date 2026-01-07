@@ -1,6 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["crates/*", "packages/napi", "packages/wasm", "tasks/benchmark"]
+members = ["crates/*", "packages/napi", "tasks/benchmark"]
+default-members = ["crates/*"]
 
 [workspace.package]
 authors = ["_Kerman <kermanx@qq.com>"]
@@ -36,7 +37,6 @@ napi = "3.2.4"
 napi-derive = "3.2.4"
 napi-build = "2.2.3"
 console_error_panic_hook = "0.1.7"
-wasm-bindgen = "0.2.100"
 serde = "1.0.219"
 
 [profile.release]
