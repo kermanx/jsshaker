@@ -1,9 +1,11 @@
 use std::borrow::BorrowMut;
 
 use crate::{
+  Analyzer,
   builtins::Builtins,
   entity::Entity,
   init_namespace,
+  scope::CfScopeKind,
   value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
 };
 
@@ -33,15 +35,27 @@ impl<'a> Builtins<'a> {
     self.factory.implemented_builtin_fn("Object.assign", |analyzer, mut dep, _, args| {
       let target = args.get(analyzer, 0);
 
-      let mut assign = |source: Entity<'a>, non_det: bool| {
+      if target.test_typeof().intersects(TypeofResult::_Primitive) {
+        analyzer.push_non_det_cf_scope();
+        for source in args.elements.iter().skip(1) {
+          source.enumerate_properties(analyzer, dep);
+        }
+        if let Some(rest) = args.rest {
+          rest.enumerate_properties(analyzer, dep);
+        }
+        analyzer.pop_cf_scope();
+        return analyzer.factory.computed_unknown((dep, args));
+      }
+
+      let mut assign = |analyzer: &mut Analyzer<'a>, source: Entity<'a>, non_det: bool| {
         let enumerated = source.enumerate_properties(analyzer, dep);
         for (definite, key, value) in enumerated.known.into_values() {
-          if non_det || !definite {
-            analyzer.push_non_det_cf_scope();
+          if !definite {
+            analyzer.cf_scope_mut().exited = None;
           }
           target.set_property(analyzer, enumerated.dep, key, value);
-          if non_det || !definite {
-            analyzer.pop_cf_scope();
+          if !non_det {
+            analyzer.cf_scope_mut().exited = Some(false);
           }
         }
         if let Some(unknown) = enumerated.unknown {
@@ -50,12 +64,15 @@ impl<'a> Builtins<'a> {
         dep = analyzer.factory.dep((dep, enumerated.dep));
       };
 
+      analyzer.push_cf_scope(CfScopeKind::NonDet, false);
       for source in args.elements.iter().skip(1) {
-        assign(*source, false);
+        assign(analyzer, *source, false);
       }
       if let Some(rest) = args.rest {
-        assign(rest, true);
+        analyzer.cf_scope_mut().exited = None;
+        assign(analyzer, rest, true);
       }
+      analyzer.pop_cf_scope();
 
       analyzer.factory.computed(target, dep)
     })
