@@ -116,4 +116,35 @@ impl<'a> Transformer<'a> {
 
     self.ast.formal_parameters(*span, *kind, transformed_items, transformed_rest)
   }
+
+  pub fn transform_uncalled_formal_parameters(
+    &self,
+    node: &'a FormalParameters<'a>,
+  ) -> FormalParameters<'a> {
+    let FormalParameters { span, items, kind, rest: _ } = node;
+
+    if !self.config.preserve_function_length {
+      return self.ast.formal_parameters(*span, *kind, self.ast.vec(), NONE);
+    }
+
+    let mut transformed_items = self.ast.vec();
+    for param in items.iter() {
+      let FormalParameter { span, decorators, pattern, .. } = param;
+
+      if matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_)) {
+        break;
+      }
+
+      transformed_items.push(self.ast.formal_parameter(
+        *span,
+        self.clone_node(decorators),
+        self.build_unused_binding_pattern(*span),
+        None,
+        false,
+        false,
+      ));
+    }
+
+    self.ast.formal_parameters(*span, *kind, transformed_items, NONE)
+  }
 }

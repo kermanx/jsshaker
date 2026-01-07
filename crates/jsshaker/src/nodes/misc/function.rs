@@ -145,7 +145,7 @@ impl<'a> Transformer<'a> {
         false,
         NONE,
         NONE,
-        self.ast.formal_parameters(params.span, params.kind, self.ast.vec(), NONE),
+        self.transform_uncalled_formal_parameters(params),
         NONE,
         Some(self.ast.function_body(params.span, self.ast.vec(), self.ast.vec())),
       ))

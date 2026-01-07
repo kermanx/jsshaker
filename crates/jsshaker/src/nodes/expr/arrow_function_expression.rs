@@ -90,7 +90,7 @@ impl<'a> Transformer<'a> {
         true,
         false,
         NONE,
-        self.ast.formal_parameters(params.span, params.kind, self.ast.vec(), NONE),
+        self.transform_uncalled_formal_parameters(params),
         NONE,
         self.ast.function_body(
           body.span,
