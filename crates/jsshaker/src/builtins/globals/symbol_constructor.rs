@@ -1,6 +1,6 @@
 use crate::{
   builtins::Builtins,
-  init_namespace,
+  init_object,
   value::{ObjectPropertyValue, ObjectPrototype},
 };
 
@@ -8,10 +8,11 @@ impl Builtins<'_> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
-    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
+    let statics =
+      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
+    statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
-    init_namespace!(object, factory, {
+    init_object!(statics, factory, {
       "prototype" => factory.unknown,
       // Well-known symbols
       "asyncIterator" => factory.unknown_symbol,
@@ -32,6 +33,16 @@ impl Builtins<'_> {
       "keyFor" => factory.pure_fn_returns_string,
     });
 
-    self.globals.insert("Symbol", object.into());
+    self.globals.insert(
+      "Symbol",
+      self.factory.implemented_builtin_fn_with_statics(
+        "Symbol",
+        |analyzer, dep, _, args| {
+          let description = args.get(analyzer, 0);
+          analyzer.factory.computed_unknown((dep, description))
+        },
+        statics,
+      ),
+    );
   }
 }

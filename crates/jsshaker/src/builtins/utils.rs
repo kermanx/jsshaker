@@ -22,11 +22,11 @@ macro_rules! init_namespace {
 
 #[macro_export]
 macro_rules! init_object {
-  ($ns:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
+  ($obj:expr, $factory:expr, { $($k:expr => $v:expr,)* }) => {
     {
       use $crate::value::{ObjectProperty, ObjectPropertyValue, PropertyKeyValue};
       use $crate::dep::DepCollector;
-      let mut keyed = $ns.keyed.borrow_mut();
+      let mut keyed = $obj.keyed.borrow_mut();
       $(keyed.insert(
         PropertyKeyValue::String($k),
         ObjectProperty {

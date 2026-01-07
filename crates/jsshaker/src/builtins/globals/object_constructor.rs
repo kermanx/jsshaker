@@ -4,7 +4,7 @@ use crate::{
   Analyzer,
   builtins::Builtins,
   entity::Entity,
-  init_namespace,
+  init_object,
   scope::CfScopeKind,
   value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
 };
@@ -13,10 +13,11 @@ impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
-    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
+    let statics =
+      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
+    statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
-    init_namespace!(object, factory, {
+    init_object!(statics, factory, {
       "prototype" => factory.unknown,
       "assign" => self.create_object_assign_impl(),
       "keys" => self.create_object_keys_impl(),
@@ -28,7 +29,24 @@ impl<'a> Builtins<'a> {
       "is" => self.create_object_is_impl(),
     });
 
-    self.globals.borrow_mut().insert("Object", object.into());
+    self.globals.borrow_mut().insert(
+      "Object",
+      self.factory.implemented_builtin_fn_with_statics(
+        "Object",
+        |analyzer, dep, this, args| {
+          let value = args.get(analyzer, 0);
+          let n = value.test_nullish();
+          if n == Some(true) {
+            analyzer.new_empty_object(ObjectPrototype::ImplicitOrNull, None).into()
+          } else if n.is_none() || value.test_typeof().intersects(TypeofResult::_Primitive) {
+            analyzer.factory.computed_unknown((dep, this, args))
+          } else {
+            analyzer.factory.computed(value, (dep, this))
+          }
+        },
+        statics,
+      ),
+    );
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {

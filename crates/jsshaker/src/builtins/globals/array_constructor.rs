@@ -1,7 +1,7 @@
 use crate::{
   builtins::Builtins,
   entity::Entity,
-  init_namespace,
+  init_object,
   value::{ObjectPropertyValue, ObjectPrototype},
 };
 
@@ -9,10 +9,11 @@ impl<'a> Builtins<'a> {
   pub fn init_array_constructor(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
-    object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
+    let statics =
+      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
+    statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
-    init_namespace!(object, factory, {
+    init_object!(statics, factory, {
       "prototype" => factory.unknown,
       "from" => self.create_array_from_impl(),
       "fromAsync" => factory.pure_fn_returns_unknown,
@@ -20,7 +21,14 @@ impl<'a> Builtins<'a> {
       "of" => self.create_array_of_impl(),
     });
 
-    self.globals.insert("Array", object.into());
+    self.globals.insert(
+      "Array",
+      self.factory.implemented_builtin_fn_with_statics(
+        "Array",
+        |analyzer, dep, this, args| analyzer.factory.computed_unknown((dep, this, args)),
+        statics,
+      ),
+    );
   }
 
   fn create_array_from_impl(&self) -> Entity<'a> {
