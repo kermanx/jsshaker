@@ -29,15 +29,14 @@ impl<'a> ArgumentsValue<'a> {
     }
   }
 
-  pub fn get_shallow_dep(&self, analyzer: &mut Analyzer<'a>) -> allocator::Vec<'a, Dep<'a>> {
-    let mut deps = analyzer.factory.vec();
-    for entity in self.elements {
-      deps.push(entity.get_shallow_dep(analyzer));
+  pub fn get_last_shallow_dep(&self, analyzer: &mut Analyzer<'a>) -> Dep<'a> {
+    if let Some(e) = self.rest {
+      return e.get_shallow_dep(analyzer);
     }
-    if let Some(rest) = self.rest {
-      deps.push(rest.get_shallow_dep(analyzer));
+    if let Some(e) = self.elements.last() {
+      return e.get_shallow_dep(analyzer);
     }
-    deps
+    analyzer.factory.no_dep
   }
 
   pub fn get(&self, analyzer: &mut Analyzer<'a>, nth: usize) -> Entity<'a> {
