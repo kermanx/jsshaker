@@ -158,10 +158,12 @@ impl<'a> Analyzer<'a> {
         // Do nothing
       }
     } else if let Some(deps) = variable.exhausted {
+      drop(variable);
       deps.push(self, self.dep((init_node, value)));
     } else {
       variable.value =
         Some(self.factory.computed(value.unwrap_or(self.factory.undefined), init_node));
+      drop(variable);
       self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
     }
   }
@@ -244,8 +246,10 @@ impl<'a> Analyzer<'a> {
     let kind = variable.kind;
     let decl_node = variable.decl_node;
     if kind.is_untracked() {
+      drop(variable);
       self.consume(new_val);
     } else if kind.is_const() {
+      drop(variable);
       self.throw_builtin_error("Cannot assign to const variable");
       self.consume(decl_node);
       new_val.consume(self);
@@ -256,10 +260,11 @@ impl<'a> Analyzer<'a> {
 
       if let Some(deps) = &variable.exhausted {
         let dep = self.dep((exec_dep, decl_node, new_val));
-        if non_det {
-          deps.push(self, dep);
-        } else if deps.is_consumed() {
+        if deps.is_consumed() {
+          drop(variable);
           self.consume(dep);
+        } else if non_det {
+          deps.push(self, dep);
         } else {
           drop(variable);
           variable_cell.borrow_mut().exhausted =
