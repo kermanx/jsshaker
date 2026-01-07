@@ -338,7 +338,7 @@ impl<'a> Analyzer<'a> {
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.stack[cf_scope_depth],
       value: Some(self.factory.unknown),
-      decl_node: AstKind2::Environment,
+      decl_node: AstKind2::ENVIRONMENT,
     }));
     let old = self.variable_scope_mut().variables.insert(symbol, variable);
     assert!(old.is_none());

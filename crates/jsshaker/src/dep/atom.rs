@@ -55,7 +55,7 @@ impl Hash for AstKind2<'_> {
   }
 }
 
-static COUNTER: AtomicUsize = AtomicUsize::new(0);
+static COUNTER: AtomicUsize = AtomicUsize::new(1);
 
 impl DepAtom {
   pub fn from_counter() -> Self {
@@ -67,7 +67,7 @@ pub struct DeoptimizedAtoms(FxHashSet<DepAtom>);
 
 impl Default for DeoptimizedAtoms {
   fn default() -> Self {
-    Self(FxHashSet::from_iter([AstKind2::Environment.into()]))
+    Self(FxHashSet::from_iter([AstKind2::ENVIRONMENT.into()]))
   }
 }
 

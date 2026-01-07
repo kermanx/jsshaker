@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
 
     self.scoping.current_callsite = callsite;
     let ret_val = callee.call(self, callsite, this, args);
-    self.scoping.current_callsite = AstKind2::Environment;
+    self.scoping.current_callsite = AstKind2::ENVIRONMENT;
 
     Ok((scope_count, ret_val, undefined))
   }

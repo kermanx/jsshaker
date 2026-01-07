@@ -32,7 +32,7 @@ impl<'a> Analyzer<'a> {
     self.scoping.current_callsite = callsite;
     let result =
       tag.call(self, callsite, this, self.factory.arguments(arguments.into_bump_slice(), None));
-    self.scoping.current_callsite = AstKind2::Environment;
+    self.scoping.current_callsite = AstKind2::ENVIRONMENT;
     result
   }
 }

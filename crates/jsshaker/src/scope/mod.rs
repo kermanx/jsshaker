@@ -45,7 +45,7 @@ impl<'a> Scoping<'a> {
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
       call: vec![CallScope::new_in(
-        AstKind2::Environment,
+        AstKind2::ENVIRONMENT,
         CalleeInfo {
           module_id: ModuleId::from(0),
           node: CalleeNode::Root,
@@ -64,7 +64,7 @@ impl<'a> Scoping<'a> {
       cf,
       root_cf_scope,
       try_catch_depth: None,
-      current_callsite: AstKind2::Environment,
+      current_callsite: AstKind2::ENVIRONMENT,
       object_symbol_counter: 128,
     }
   }

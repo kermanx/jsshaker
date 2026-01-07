@@ -16,15 +16,18 @@ macro_rules! ast_kind_2 {
     #[derive(Clone, Copy)]
     #[repr(u8)]
     pub enum AstKind2<'a> {
-      Environment,
       Index(usize),
       $( $x($t), )+
+    }
+
+    impl<'a> AstKind2<'a> {
+      pub const ENVIRONMENT: Self = AstKind2::Index(0);
     }
 
     impl GetSpan for AstKind2<'_> {
       fn span(&self) -> Span {
         match self {
-          AstKind2::Environment | AstKind2::Index(_) => SPAN,
+          AstKind2::Index(_) => SPAN,
           $( AstKind2::$x(node) => node.span(), )+
         }
       }
@@ -33,7 +36,6 @@ macro_rules! ast_kind_2 {
     impl fmt::Debug for AstKind2<'_> {
       fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-          AstKind2::Environment => write!(f, "Environment"),
           AstKind2::Index(index) => write!(f, "Index({})", index),
           $(AstKind2::$x(node) => {
             // Example: "IdentifierName(111-222)"

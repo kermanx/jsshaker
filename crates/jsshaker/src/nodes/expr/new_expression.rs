@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     let callsite = AstKind2::NewExpression(node);
     self.scoping.current_callsite = callsite;
     let result = callee.construct(self, callsite, arguments);
-    self.scoping.current_callsite = AstKind2::Environment;
+    self.scoping.current_callsite = AstKind2::ENVIRONMENT;
     result
   }
 }

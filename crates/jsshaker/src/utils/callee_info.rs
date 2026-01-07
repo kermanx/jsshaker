@@ -31,7 +31,7 @@ impl<'a> From<CalleeNode<'a>> for AstKind2<'a> {
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
       CalleeNode::ClassStatics(node) => AstKind2::Class(node),
       CalleeNode::ClassConstructor(node) => AstKind2::ClassConstructor(node),
-      CalleeNode::BoundFunction(_) | CalleeNode::Root | CalleeNode::Module => AstKind2::Environment,
+      CalleeNode::BoundFunction(_) | CalleeNode::Root | CalleeNode::Module => AstKind2::ENVIRONMENT,
     }
   }
 }
