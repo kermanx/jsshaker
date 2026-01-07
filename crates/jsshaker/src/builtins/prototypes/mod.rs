@@ -13,7 +13,7 @@ mod utils;
 
 use std::fmt;
 
-use oxc::{allocator, semantic::SymbolId};
+use oxc::allocator;
 
 use super::Builtins;
 use crate::{
@@ -25,8 +25,7 @@ use crate::{
 
 pub struct BuiltinPrototype<'a> {
   name: &'static str,
-  string_keyed: allocator::HashMap<'a, &'static str, Entity<'a>>,
-  symbol_keyed: allocator::HashMap<'a, SymbolId, Entity<'a>>,
+  fields: allocator::HashMap<'a, PropertyKeyValue<'a>, Entity<'a>>,
 }
 
 impl fmt::Debug for BuiltinPrototype<'_> {
@@ -37,11 +36,7 @@ impl fmt::Debug for BuiltinPrototype<'_> {
 
 impl<'a> BuiltinPrototype<'a> {
   pub fn new_in(factory: &Factory<'a>) -> Self {
-    Self {
-      name: "",
-      string_keyed: allocator::HashMap::new_in(factory.allocator),
-      symbol_keyed: allocator::HashMap::new_in(factory.allocator),
-    }
+    Self { name: "", fields: allocator::HashMap::new_in(factory.allocator) }
   }
 
   pub fn with_name(mut self, name: &'static str) -> Self {
@@ -49,19 +44,12 @@ impl<'a> BuiltinPrototype<'a> {
     self
   }
 
-  pub fn insert_string_keyed(&mut self, key: &'static str, value: impl Into<Entity<'a>>) {
-    self.string_keyed.insert(key, value.into());
-  }
-
-  pub fn insert_symbol_keyed(&mut self, key: SymbolId, value: impl Into<Entity<'a>>) {
-    self.symbol_keyed.insert(key, value.into());
+  pub fn insert_string_keyed(&mut self, key: &'a str, value: impl Into<Entity<'a>>) {
+    self.fields.insert(PropertyKeyValue::String(key), value.into());
   }
 
   pub fn get_keyed(&self, key: PropertyKeyValue) -> Option<Entity<'a>> {
-    match key {
-      PropertyKeyValue::String(s) => self.string_keyed.get(&s).copied(),
-      PropertyKeyValue::Symbol(_) => todo!(),
-    }
+    self.fields.get(&key).copied()
   }
 
   pub fn get_literal_keyed(&self, key: LiteralValue) -> Option<Entity<'a>> {
