@@ -24,7 +24,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_array_from_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Array.from", |analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Array.from", |analyzer, dep, this, args| {
       let iterable = args.get(analyzer, 0);
       let map_fn = args.get(analyzer, 1);
       let this_arg = args.get(analyzer, 2);
@@ -61,7 +61,7 @@ impl<'a> Builtins<'a> {
         analyzer.pop_cf_scope();
       }
 
-      analyzer.factory.computed(array.into(), dep)
+      analyzer.factory.computed(array.into(), (this, dep))
     })
   }
 
