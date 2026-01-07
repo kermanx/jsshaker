@@ -115,7 +115,8 @@ impl<'a> Analyzer<'a> {
           Some(if eq { l.0 <= r.0 } else { l.0 < r.0 })
         }
         (LiteralValue::String(l, _), LiteralValue::String(r, _)) => {
-          Some(if eq { l <= r } else { l < r })
+          let c = l.encode_utf16().cmp(r.encode_utf16());
+          Some(if eq { c <= std::cmp::Ordering::Equal } else { c < std::cmp::Ordering::Equal })
         }
         (LiteralValue::BigInt(_), LiteralValue::BigInt(_))
         | (LiteralValue::BigInt(_), LiteralValue::String(_, _))
