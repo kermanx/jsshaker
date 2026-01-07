@@ -227,7 +227,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
         }
       }
       LiteralValue::String(str, atom) => {
-        let val = str.string_to_number();
+        let val = str.trim().string_to_number();
         analyzer.factory.computed(
           if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val, None) },
           *atom,
@@ -429,14 +429,8 @@ impl<'a> LiteralValue<'a> {
       }
       LiteralValue::Boolean(value) => Some(Some(if value { 1.0 } else { 0.0 }.into())),
       LiteralValue::String(value, _) => {
-        let value = value.trim();
-        Some(if value.is_empty() {
-          Some(0.0.into())
-        } else if let Ok(value) = value.parse::<f64>() {
-          Some(value.into())
-        } else {
-          None
-        })
+        let val = value.trim().string_to_number();
+        Some(if val.is_nan() { None } else { Some(val.into()) })
       }
       LiteralValue::Null => Some(Some(0.0.into())),
       LiteralValue::Symbol(_, _) => {
