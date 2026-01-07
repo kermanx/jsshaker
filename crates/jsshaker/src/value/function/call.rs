@@ -63,6 +63,7 @@ impl<'a> FunctionValue<'a> {
       }
       _ => unreachable!(),
     };
+
     let ret_val = if IS_CTOR {
       let typeof_ret = ret_val.test_typeof();
       match (

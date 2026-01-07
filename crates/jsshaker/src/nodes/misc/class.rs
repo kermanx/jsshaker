@@ -166,7 +166,9 @@ impl<'a> Analyzer<'a> {
       if info.consume {
         self.consume_return_values();
       }
-      self.pop_call_scope()
+      let (ret_val, _) = self.pop_call_scope();
+      let ret_val = self.factory.computed(ret_val, dep);
+      (ret_val, FnCacheTrackingData::worst_case())
     } else if let Some(super_class) = &data.super_class {
       self.pop_call_scope();
       let ret_val = super_class.call(self, self.factory.no_dep, info.this, info.args);
