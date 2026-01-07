@@ -27,6 +27,14 @@ impl<'a> Builtins<'a> {
       "defineProperty" => self.create_object_define_property_impl(),
       "create" => self.create_object_create_impl(),
       "is" => self.create_object_is_impl(),
+      "preventExtensions" => factory.pure_fn_returns_unknown,
+      "seal" => factory.pure_fn_returns_unknown,
+      "getOwnPropertyNames" => factory.pure_fn_returns_unknown,
+      "getOwnPropertySymbols" => factory.pure_fn_returns_unknown,
+      "getOwnPropertyDescriptor" => factory.pure_fn_returns_unknown,
+      "isExtensible" => factory.pure_fn_returns_boolean,
+      "isFrozen" => factory.pure_fn_returns_boolean,
+      "isSealed" => factory.pure_fn_returns_boolean,
     });
 
     self.globals.borrow_mut().insert(
@@ -50,21 +58,24 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_object_assign_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Object.assign", |analyzer, mut dep, _, args| {
+    self.factory.implemented_builtin_fn("Object.assign", |analyzer, dep, _, args| {
       let target = args.get(analyzer, 0);
 
       if target.test_typeof().intersects(TypeofResult::_Primitive) {
         analyzer.push_non_det_cf_scope();
+        let mut deps = analyzer.factory.vec();
         for source in args.elements.iter().skip(1) {
-          source.enumerate_properties(analyzer, dep);
+          deps.push(source.enumerate_properties(analyzer, dep).into_dep(analyzer));
         }
         if let Some(rest) = args.rest {
-          rest.enumerate_properties(analyzer, dep);
+          deps.push(rest.enumerate_properties(analyzer, dep).into_dep(analyzer));
         }
+        target.unknown_mutate(analyzer, (dep, deps));
         analyzer.pop_cf_scope();
-        return analyzer.factory.computed_unknown((dep, args));
+        return analyzer.factory.computed(target, dep);
       }
 
+      let mut deps = analyzer.factory.vec();
       let mut assign = |analyzer: &mut Analyzer<'a>, source: Entity<'a>, non_det: bool| {
         let enumerated = source.enumerate_properties(analyzer, dep);
         for (definite, key, value) in enumerated.known.into_values() {
@@ -79,7 +90,7 @@ impl<'a> Builtins<'a> {
         if let Some(unknown) = enumerated.unknown {
           target.set_property(analyzer, enumerated.dep, analyzer.factory.unknown_string, unknown);
         }
-        dep = analyzer.factory.dep((dep, enumerated.dep));
+        deps.push(enumerated.dep);
       };
 
       analyzer.push_cf_scope(CfScopeKind::NonDet, false);
@@ -92,7 +103,7 @@ impl<'a> Builtins<'a> {
       }
       analyzer.pop_cf_scope();
 
-      analyzer.factory.computed(target, dep)
+      analyzer.factory.computed(target, (dep, deps))
     })
   }
 

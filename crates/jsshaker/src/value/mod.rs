@@ -35,10 +35,22 @@ pub enum PropertyKeyValue<'a> {
   Symbol(SymbolId),
 }
 
+#[derive(Debug)]
 pub struct EnumeratedProperties<'a> {
   pub known: FxHashMap<PropertyKeyValue<'a>, (bool, Entity<'a>, Entity<'a>)>,
   pub unknown: Option<Entity<'a>>,
   pub dep: Dep<'a>,
+}
+
+impl<'a> EnumeratedProperties<'a> {
+  pub fn into_dep(self, analyzer: &mut Analyzer<'a>) -> Dep<'a> {
+    let mut entities = analyzer.factory.vec();
+    for (_, key_entity, value_entity) in self.known.values() {
+      entities.push(*key_entity);
+      entities.push(*value_entity);
+    }
+    analyzer.factory.dep((entities, self.unknown, self.dep))
+  }
 }
 
 /// (vec![known_elements], rest, dep)
