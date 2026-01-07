@@ -1,6 +1,6 @@
 pub mod array;
 pub mod cacheable;
-mod consumed_object;
+pub mod consumed_object;
 mod function;
 mod literal;
 pub mod logical_result;

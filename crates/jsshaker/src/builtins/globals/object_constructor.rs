@@ -6,7 +6,7 @@ use crate::{
   entity::Entity,
   init_object,
   scope::CfScopeKind,
-  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult},
+  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult, consumed_object},
 };
 
 impl<'a> Builtins<'a> {
@@ -41,17 +41,7 @@ impl<'a> Builtins<'a> {
       "Object",
       self.factory.implemented_builtin_fn_with_statics(
         "Object",
-        |analyzer, dep, this, args| {
-          let value = args.get(analyzer, 0);
-          let n = value.test_nullish();
-          if n == Some(true) {
-            analyzer.new_empty_object(ObjectPrototype::ImplicitOrNull, None).into()
-          } else if n.is_none() || value.test_typeof().intersects(TypeofResult::_Primitive) {
-            analyzer.factory.computed_unknown((dep, this, args))
-          } else {
-            analyzer.factory.computed(value, (dep, this))
-          }
-        },
+        consumed_object::builtin_call,
         statics,
       ),
     );

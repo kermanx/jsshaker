@@ -2,7 +2,7 @@ use crate::{
   builtins::Builtins,
   entity::Entity,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype},
+  value::{ObjectPropertyValue, ObjectPrototype, consumed_object},
 };
 
 impl<'a> Builtins<'a> {
@@ -25,7 +25,7 @@ impl<'a> Builtins<'a> {
       "Array",
       self.factory.implemented_builtin_fn_with_statics(
         "Array",
-        |analyzer, dep, this, args| analyzer.factory.computed_unknown((dep, this, args)),
+        consumed_object::builtin_call,
         statics,
       ),
     );

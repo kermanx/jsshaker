@@ -66,6 +66,17 @@ pub fn call<'a>(
   analyzer.factory.unknown
 }
 
+pub fn builtin_call<'a>(
+  analyzer: &mut Analyzer<'a>,
+  dep: Dep<'a>,
+  this: Entity<'a>,
+  args: ArgumentsValue<'a>,
+) -> Entity<'a> {
+  analyzer.consume((dep, this, args));
+  analyzer.global_effect();
+  analyzer.factory.unknown
+}
+
 pub fn construct<'a>(
   target: Value<'a>,
   analyzer: &mut Analyzer<'a>,

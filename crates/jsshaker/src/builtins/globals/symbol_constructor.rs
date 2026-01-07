@@ -1,7 +1,7 @@
 use crate::{
   builtins::Builtins,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype},
+  value::{ObjectPropertyValue, ObjectPrototype, consumed_object},
 };
 
 impl Builtins<'_> {
@@ -37,10 +37,7 @@ impl Builtins<'_> {
       "Symbol",
       self.factory.implemented_builtin_fn_with_statics(
         "Symbol",
-        |analyzer, dep, _, args| {
-          let description = args.get(analyzer, 0);
-          analyzer.factory.computed_unknown((dep, description))
-        },
+        consumed_object::builtin_call,
         statics,
       ),
     );
