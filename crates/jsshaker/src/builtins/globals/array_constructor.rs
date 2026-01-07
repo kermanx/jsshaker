@@ -74,7 +74,7 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_array_of_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("Array.of", |analyzer, dep, _, args| {
+    self.factory.implemented_builtin_fn("Array.of", |analyzer, dep, this, args| {
       let array = analyzer.new_empty_array();
 
       for element in args.elements.iter() {
@@ -85,7 +85,7 @@ impl<'a> Builtins<'a> {
         array.init_rest(rest);
       }
 
-      analyzer.factory.computed(array.into(), dep)
+      analyzer.factory.computed(array.into(), (this, dep))
     })
   }
 }
