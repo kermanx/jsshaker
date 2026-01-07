@@ -93,9 +93,11 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
                 || analyzer.factory.computed_unknown_number(&self.rest),
                 |length| analyzer.factory.number(length as f64, None),
               ));
-            } else if let Some(property) =
-              analyzer.builtins.prototypes.array.get_keyed(PropertyKeyValue::String(key))
-            {
+            } else if let Some(property) = analyzer.builtins.prototypes.array.get_keyed(
+              analyzer,
+              PropertyKeyValue::String(key),
+              self,
+            ) {
               result.push(property);
             } else {
               result.push(analyzer.factory.unmatched_prototype_property);

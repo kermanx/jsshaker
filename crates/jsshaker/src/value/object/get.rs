@@ -7,10 +7,11 @@ use crate::{
   entity::Entity,
   mangling::MangleAtom,
   scope::CfScopeKind,
-  value::{PropertyKeyValue, consumed_object, object::ObjectPrototype},
+  value::{PropertyKeyValue, Value, consumed_object, object::ObjectPrototype},
 };
 
 pub(crate) struct GetPropertyContext<'a> {
+  pub this: Value<'a>,
   pub key: Entity<'a>,
   pub values: Vec<Entity<'a>>,
   pub getters: Vec<Entity<'a>>,
@@ -21,6 +22,7 @@ impl<'a> ObjectValue<'a> {
   pub fn get_property(
     &'a self,
     analyzer: &mut Analyzer<'a>,
+    this: Value<'a>,
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
@@ -30,6 +32,7 @@ impl<'a> ObjectValue<'a> {
 
     let mut mangable = false;
     let mut context = GetPropertyContext {
+      this,
       key,
       values: vec![],
       getters: vec![],
@@ -105,7 +108,7 @@ impl<'a> ObjectValue<'a> {
   }
 
   fn get_keyed(
-    &self,
+    &'a self,
     analyzer: &mut Analyzer<'a>,
     context: &mut GetPropertyContext<'a>,
     key: PropertyKeyValue<'a>,
@@ -138,7 +141,7 @@ impl<'a> ObjectValue<'a> {
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => false,
       ObjectPrototype::Builtin(prototype) => {
-        if let Some(value) = prototype.get_keyed(key) {
+        if let Some(value) = prototype.get_keyed(analyzer, key, context.this) {
           context.values.push(if let Some(key_atom) = key_atom {
             analyzer.factory.computed(value, key_atom)
           } else {

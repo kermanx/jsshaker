@@ -56,7 +56,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.statics.get_property(analyzer, dep, key)
+    self.statics.get_property(analyzer, self, dep, key)
   }
 
   fn set_property(

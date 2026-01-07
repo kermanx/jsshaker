@@ -5,17 +5,17 @@ use rustc_hash::FxHashMap;
 
 use super::{ObjectValue, get::GetPropertyContext};
 use crate::{
-  analyzer::Analyzer,
-  analyzer::rw_tracking::ReadWriteTarget,
+  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::Dep,
   scope::CfScopeKind,
-  value::{EnumeratedProperties, PropertyKeyValue, consumed_object},
+  value::{EnumeratedProperties, PropertyKeyValue, Value, consumed_object},
 };
 
 impl<'a> ObjectValue<'a> {
   pub fn enumerate_properties(
     &'a self,
     analyzer: &mut Analyzer<'a>,
+    this: Value<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.is_self_or_proto_consumed() {
@@ -25,6 +25,7 @@ impl<'a> ObjectValue<'a> {
     analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), true);
 
     let mut context = GetPropertyContext {
+      this,
       key: analyzer.factory.never,
       values: vec![],
       getters: vec![],

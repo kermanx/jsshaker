@@ -40,7 +40,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     key: Entity<'a>,
   ) -> Entity<'a> {
     if let Some(object) = self.statics() {
-      object.get_property(analyzer, dep, key)
+      object.get_property(analyzer, self, dep, key)
     } else {
       analyzer.builtins.prototypes.function.get_property(analyzer, self.into(), key, dep)
     }

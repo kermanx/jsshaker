@@ -20,12 +20,12 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
-  value::{LiteralValue, PropertyKeyValue},
+  value::{LiteralValue, PropertyKeyValue, Value},
 };
 
 pub struct BuiltinPrototype<'a> {
   name: &'static str,
-  fields: allocator::HashMap<'a, PropertyKeyValue<'a>, Entity<'a>>,
+  fields: allocator::HashMap<'a, PropertyKeyValue<'a>, (bool, Entity<'a>)>,
 }
 
 impl fmt::Debug for BuiltinPrototype<'_> {
@@ -44,17 +44,28 @@ impl<'a> BuiltinPrototype<'a> {
     self
   }
 
-  pub fn insert_string_keyed(&mut self, key: &'a str, value: impl Into<Entity<'a>>) {
-    self.fields.insert(PropertyKeyValue::String(key), value.into());
+  pub fn insert_string_keyed(
+    &mut self,
+    key: &'a str,
+    is_getter: bool,
+    value: impl Into<Entity<'a>>,
+  ) {
+    self.fields.insert(PropertyKeyValue::String(key), (is_getter, value.into()));
   }
 
-  pub fn get_keyed(&self, key: PropertyKeyValue) -> Option<Entity<'a>> {
-    self.fields.get(&key).copied()
+  pub fn get_keyed(
+    &self,
+    analyzer: &Analyzer<'a>,
+    key: PropertyKeyValue,
+    this: Value<'a>,
+  ) -> Option<Entity<'a>> {
+    let (is_getter, value) = self.fields.get(&key).copied()?;
+    Some(if is_getter { analyzer.factory.computed(value, this) } else { value })
   }
 
   pub fn get_literal_keyed(&self, key: LiteralValue) -> Option<Entity<'a>> {
     let (key, _) = key.into();
-    self.get_keyed(key)
+    self.fields.get(&key).map(|(_, v)| *v)
   }
 
   pub fn get_property(

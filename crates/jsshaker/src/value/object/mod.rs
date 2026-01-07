@@ -113,7 +113,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    self.get_property(analyzer, dep, key)
+    self.get_property(analyzer, self, dep, key)
   }
 
   fn set_property(
@@ -131,7 +131,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    self.enumerate_properties(analyzer, dep)
+    self.enumerate_properties(analyzer, self, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
