@@ -309,30 +309,30 @@ impl<'a> Analyzer<'a> {
 
   pub fn global_effect(&mut self) {
     let mut deps = vec![];
-    for depth in (0..self.scoping.cf.stack.len()).rev() {
-      let scope = self.scoping.cf.get_mut_from_depth(depth);
-      match scope.deoptimize_state {
-        DeoptimizeState::Never => {
-          scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
-          deps.push(scope.deps.take(self.factory));
-        }
-        DeoptimizeState::DeoptimizedClean => break,
-        DeoptimizeState::DeoptimizedDirty => {
-          scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
-          deps.push(scope.deps.take(self.factory));
-
-          for depth in (0..depth).rev() {
-            let scope = self.scoping.cf.get_mut_from_depth(depth);
-            match scope.deoptimize_state {
-              DeoptimizeState::Never => unreachable!("Logic error in global_effect"),
-              DeoptimizeState::DeoptimizedClean => break,
-              DeoptimizeState::DeoptimizedDirty => {
-                scope.deps.force_clear();
-                scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
-              }
-            }
+    let mut first_stage = true;
+    for scope in self.scoping.cf.stack.iter().rev() {
+      let scope = &mut self.scoping.cf.nodes.get_mut(*scope).data;
+      if first_stage {
+        match scope.deoptimize_state {
+          DeoptimizeState::Never => {
+            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+            deps.push(scope.deps.take(self.factory));
           }
-          break;
+          DeoptimizeState::DeoptimizedClean => break,
+          DeoptimizeState::DeoptimizedDirty => {
+            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+            deps.push(scope.deps.take(self.factory));
+            first_stage = false;
+          }
+        }
+      } else {
+        match scope.deoptimize_state {
+          DeoptimizeState::Never => unreachable!("Logic error in global_effect"),
+          DeoptimizeState::DeoptimizedClean => break,
+          DeoptimizeState::DeoptimizedDirty => {
+            scope.deps.force_clear();
+            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+          }
         }
       }
     }

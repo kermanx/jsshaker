@@ -1,14 +1,14 @@
 use crate::utils::box_bump::{BoxBump, Idx};
 use oxc::allocator::Allocator;
 
-struct NodeInfo<I, T> {
-  data: T,
+pub struct NodeInfo<I, T> {
+  pub data: T,
   depth: usize,
   parent: Option<I>,
 }
 
 pub struct StackedTree<'a, I: Idx, T> {
-  nodes: BoxBump<'a, I, NodeInfo<I, T>>,
+  pub nodes: BoxBump<'a, I, NodeInfo<I, T>>,
   pub stack: Vec<I>,
 }
 
