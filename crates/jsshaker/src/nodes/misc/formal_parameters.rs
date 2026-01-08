@@ -80,18 +80,20 @@ impl<'a> Transformer<'a> {
       let FormalParameter { span, decorators, pattern, initializer, .. } = param;
 
       let pattern_span = pattern.span();
-      let pattern = if let Some(pattern) = self.transform_binding_pattern(pattern, false) {
-        used_length = index + 1;
-        Some(pattern)
-      } else {
-        None
-      };
+      let pattern = self.transform_binding_pattern(pattern, false);
       let initializer_span = initializer.as_ref().map(|init| init.span());
       let initializer = if let Some(initializer) = initializer {
         self.transform_with_default(initializer, pattern.is_some())
       } else {
         None
       };
+
+      if initializer_span.is_some() {
+        counting_length = false;
+      }
+      if counting_length || pattern.is_some() || initializer.is_some() {
+        used_length = index + 1;
+      }
 
       transformed_items.push(self.ast.formal_parameter(
         *span,
@@ -111,13 +113,6 @@ impl<'a> Transformer<'a> {
         false,
         false,
       ));
-
-      if initializer_span.is_some() {
-        counting_length = false;
-      }
-      if counting_length {
-        used_length = index + 1;
-      }
     }
 
     let transformed_rest = match rest {
