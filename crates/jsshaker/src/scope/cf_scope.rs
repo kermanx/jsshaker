@@ -316,12 +316,16 @@ impl<'a> Analyzer<'a> {
         match scope.deoptimize_state {
           DeoptimizeState::Never => {
             scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
-            deps.push(scope.deps.take(self.factory));
+            if let Some(dep) = scope.deps.take(self.factory) {
+              deps.push(dep);
+            }
           }
           DeoptimizeState::DeoptimizedClean => break,
           DeoptimizeState::DeoptimizedDirty => {
             scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
-            deps.push(scope.deps.take(self.factory));
+            if let Some(dep) = scope.deps.take(self.factory) {
+              deps.push(dep);
+            }
             first_stage = false;
           }
         }
