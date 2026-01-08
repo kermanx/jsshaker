@@ -11,7 +11,8 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
-  use_consumed_flag, value::literal::PossibleLiterals,
+  use_consumed_flag,
+  value::literal::PossibleLiterals,
 };
 
 #[derive(Debug)]

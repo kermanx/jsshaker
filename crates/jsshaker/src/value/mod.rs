@@ -26,7 +26,8 @@ pub use typeof_result::TypeofResult;
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
-  entity::Entity, value::literal::PossibleLiterals,
+  entity::Entity,
+  value::literal::PossibleLiterals,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
