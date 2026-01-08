@@ -55,6 +55,7 @@ impl<'a> Analyzer<'a> {
           self.factory.unknown
         });
 
+        self.push_dependent_cf_scope(init.get_shallow_dep(self));
         let is_nullish = init.test_nullish();
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {
@@ -80,6 +81,7 @@ impl<'a> Analyzer<'a> {
           let init = self.exec_object_rest(dep, init, enumerated);
           self.init_binding_rest_element(rest, init);
         }
+        self.pop_cf_scope();
       }
       BindingPattern::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
