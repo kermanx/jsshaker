@@ -15,7 +15,7 @@ impl Analyzer<'_> {
       Span::new(comment.span.end, span.start).source_text(self.semantic().source_text());
     let only_whitespace = match comment.kind {
       CommentKind::Line => range_text.trim().is_empty(),
-      CommentKind::Block => {
+      CommentKind::SingleLineBlock | CommentKind::MultiLineBlock => {
         range_text
           .strip_prefix("*/") // for multi-line comment
           .is_some_and(|s| s.trim().is_empty())

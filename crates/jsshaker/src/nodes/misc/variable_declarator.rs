@@ -1,4 +1,7 @@
-use oxc::{ast::ast::VariableDeclarator, span::GetSpan};
+use oxc::{
+  ast::{NONE, ast::VariableDeclarator},
+  span::GetSpan,
+};
 
 use crate::{
   analyzer::Analyzer,
@@ -64,6 +67,7 @@ impl<'a> Transformer<'a> {
         *span,
         *kind,
         id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),
+        NONE,
         if kind.is_const() {
           transformed_init
             .or_else(|| init.as_ref().map(|init| self.build_unused_expression(init.span())))

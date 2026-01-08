@@ -1,11 +1,5 @@
 use oxc::{
-  ast::{
-    NONE,
-    ast::{
-      ArrayPattern, AssignmentPattern, BindingPattern, BindingPatternKind, BindingProperty,
-      ObjectPattern,
-    },
-  },
+  ast::ast::{ArrayPattern, AssignmentPattern, BindingPattern, BindingProperty, ObjectPattern},
   span::GetSpan,
 };
 
@@ -24,11 +18,11 @@ impl<'a> Analyzer<'a> {
     exporting: Option<DepAtom>,
     kind: DeclarationKind,
   ) {
-    match &node.kind {
-      BindingPatternKind::BindingIdentifier(node) => {
+    match node {
+      BindingPattern::BindingIdentifier(node) => {
         self.declare_binding_identifier(node, exporting, kind);
       }
-      BindingPatternKind::ObjectPattern(node) => {
+      BindingPattern::ObjectPattern(node) => {
         for property in &node.properties {
           self.declare_binding_pattern(&property.value, exporting, kind);
         }
@@ -36,7 +30,7 @@ impl<'a> Analyzer<'a> {
           self.declare_binding_rest_element(rest, exporting, kind);
         }
       }
-      BindingPatternKind::ArrayPattern(node) => {
+      BindingPattern::ArrayPattern(node) => {
         for element in node.elements.iter().flatten() {
           self.declare_binding_pattern(element, exporting, kind);
         }
@@ -44,18 +38,18 @@ impl<'a> Analyzer<'a> {
           self.declare_binding_rest_element(rest, exporting, kind);
         }
       }
-      BindingPatternKind::AssignmentPattern(node) => {
+      BindingPattern::AssignmentPattern(node) => {
         self.declare_binding_pattern(&node.left, exporting, kind);
       }
     }
   }
 
   pub fn init_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Option<Entity<'a>>) {
-    match &node.kind {
-      BindingPatternKind::BindingIdentifier(node) => {
+    match node {
+      BindingPattern::BindingIdentifier(node) => {
         self.init_binding_identifier(node, init);
       }
-      BindingPatternKind::ObjectPattern(node) => {
+      BindingPattern::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.throw_builtin_error("Missing initializer in destructuring declaration");
           self.factory.unknown
@@ -87,7 +81,7 @@ impl<'a> Analyzer<'a> {
           self.init_binding_rest_element(rest, init);
         }
       }
-      BindingPatternKind::ArrayPattern(node) => {
+      BindingPattern::ArrayPattern(node) => {
         let init = init.unwrap_or_else(|| {
           self.throw_builtin_error("Missing initializer in destructuring declaration");
           self.factory.unknown
@@ -111,7 +105,7 @@ impl<'a> Analyzer<'a> {
         }
         self.pop_cf_scope();
       }
-      BindingPatternKind::AssignmentPattern(node) => {
+      BindingPattern::AssignmentPattern(node) => {
         let binding_val = self.exec_with_default(&node.right, init.unwrap());
         self.init_binding_pattern(&node.left, Some(binding_val));
       }
@@ -127,17 +121,11 @@ impl<'a> Transformer<'a> {
   ) -> Option<BindingPattern<'a>> {
     let span = node.span();
 
-    let BindingPattern { kind, .. } = node;
-
-    match kind {
-      BindingPatternKind::BindingIdentifier(node) => {
-        let result = self.transform_binding_identifier(node).map(|identifier| {
-          self.ast.binding_pattern(
-            BindingPatternKind::BindingIdentifier(self.ast.alloc(identifier)),
-            NONE,
-            false,
-          )
-        });
+    match node {
+      BindingPattern::BindingIdentifier(node) => {
+        let result = self
+          .transform_binding_identifier(node)
+          .map(|identifier| BindingPattern::BindingIdentifier(self.ast.alloc(identifier)));
 
         if need_binding {
           Some(result.unwrap_or_else(|| self.build_unused_binding_pattern(span)))
@@ -145,7 +133,7 @@ impl<'a> Transformer<'a> {
           result
         }
       }
-      BindingPatternKind::ObjectPattern(node) => {
+      BindingPattern::ObjectPattern(node) => {
         let ObjectPattern { span, properties, rest } = node.as_ref();
 
         let need_binding =
@@ -168,7 +156,7 @@ impl<'a> Transformer<'a> {
           let transformed_key = self.transform_property_key(key, need_property);
           let shorthand = *shorthand
             && transformed_key.as_ref().is_none_or(|transformed| transformed.name() == key.name());
-          if shorthand && matches!(value.kind, BindingPatternKind::BindingIdentifier(_)) {
+          if shorthand && matches!(value, BindingPattern::BindingIdentifier(_)) {
             if self.transform_binding_pattern(value, false).is_some()
               || need_property
               || transformed_key.is_some()
@@ -194,14 +182,10 @@ impl<'a> Transformer<'a> {
         if !need_binding && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast.binding_pattern(
-            self.ast.binding_pattern_kind_object_pattern(*span, transformed_properties, rest),
-            NONE,
-            false,
-          ))
+          Some(self.ast.binding_pattern_object_pattern(*span, transformed_properties, rest))
         }
       }
-      BindingPatternKind::ArrayPattern(node) => {
+      BindingPattern::ArrayPattern(node) => {
         let ArrayPattern { span, elements, rest } = node.as_ref();
 
         let deoptimized = self.is_deoptimized(AstKind2::ArrayPattern(node));
@@ -225,14 +209,10 @@ impl<'a> Transformer<'a> {
         if !need_binding && !deoptimized && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
-          Some(self.ast.binding_pattern(
-            self.ast.binding_pattern_kind_array_pattern(*span, transformed_elements, rest),
-            NONE,
-            false,
-          ))
+          Some(self.ast.binding_pattern_array_pattern(*span, transformed_elements, rest))
         }
       }
-      BindingPatternKind::AssignmentPattern(node) => {
+      BindingPattern::AssignmentPattern(node) => {
         let AssignmentPattern { span, left, right } = node.as_ref();
 
         let left_span = left.span();
@@ -244,14 +224,10 @@ impl<'a> Transformer<'a> {
         };
 
         if let Some(right) = transformed_right {
-          Some(self.ast.binding_pattern(
-            self.ast.binding_pattern_kind_assignment_pattern(
-              *span,
-              transformed_left.unwrap_or(self.build_unused_binding_pattern(left_span)),
-              right,
-            ),
-            NONE,
-            false,
+          Some(self.ast.binding_pattern_assignment_pattern(
+            *span,
+            transformed_left.unwrap_or(self.build_unused_binding_pattern(left_span)),
+            right,
           ))
         } else if need_binding {
           Some(

@@ -1,9 +1,9 @@
-use oxc::ast::{
-  NONE,
+use oxc::{
   ast::{
-    BindingPatternKind, ClassElement, Function, MethodDefinition, MethodDefinitionKind,
-    PropertyDefinitionType,
+    NONE,
+    ast::{ClassElement, Function, MethodDefinition, MethodDefinitionKind, PropertyDefinitionType},
   },
+  span::GetSpan,
 };
 
 use crate::transformer::Transformer;
@@ -87,13 +87,16 @@ impl<'a> Transformer<'a> {
       transformed_node.params.items.push(self.ast.formal_parameter(
         span,
         self.ast.vec(),
+        self.build_unused_binding_pattern(span),
+        NONE,
         if self.config.preserve_function_length
-          && matches!(original_param.pattern.kind, BindingPatternKind::AssignmentPattern(_))
+          && let Some(initializer) = &original_param.initializer
         {
-          self.build_unused_assignment_binding_pattern(span)
+          Some(self.build_unused_expression(initializer.span()))
         } else {
-          self.build_unused_binding_pattern(span)
+          None
         },
+        false,
         None,
         false,
         false,

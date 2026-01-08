@@ -1,5 +1,8 @@
 use oxc::{
-  ast::ast::{CatchClause, CatchParameter},
+  ast::{
+    NONE,
+    ast::{CatchClause, CatchParameter},
+  },
   span::GetSpan,
 };
 
@@ -25,10 +28,10 @@ impl<'a> Transformer<'a> {
     let CatchClause { span, param, body, .. } = node;
 
     let param = param.as_ref().and_then(|param| {
-      let CatchParameter { span, pattern } = param;
+      let CatchParameter { span, pattern, .. } = param;
       self
         .transform_binding_pattern(pattern, false)
-        .map(|pattern| self.ast.catch_parameter(*span, pattern))
+        .map(|pattern| self.ast.catch_parameter(*span, pattern, NONE))
     });
 
     let body_span = body.span();

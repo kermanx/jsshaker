@@ -1,9 +1,9 @@
 use oxc::{
   ast::{
     NONE,
-    ast::{BindingPatternKind, FormalParameter, FormalParameters},
+    ast::{FormalParameter, FormalParameters},
   },
-  span::{GetSpan, SPAN},
+  span::GetSpan,
 };
 
 use crate::{
@@ -21,8 +21,13 @@ impl<'a> Analyzer<'a> {
       self.declare_binding_pattern(&param.pattern, None, kind);
     }
 
-    for (param, init) in node.items.iter().zip(args.elements) {
-      self.init_binding_pattern(&param.pattern, Some(*init));
+    for (param, &init) in node.items.iter().zip(args.elements) {
+      let binding_val = if let Some(initializer) = &param.initializer {
+        self.exec_with_default(initializer, init)
+      } else {
+        init
+      };
+      self.init_binding_pattern(&param.pattern, Some(binding_val));
     }
     if node.items.len() > args.elements.len() {
       let value = args.rest.unwrap_or(self.factory.undefined);
@@ -48,8 +53,8 @@ impl<'a> Analyzer<'a> {
         arr.init_rest(rest);
       }
 
-      self.declare_binding_rest_element(rest, None, kind);
-      self.init_binding_rest_element(rest, arr.into());
+      self.declare_binding_rest_element(&rest.rest, None, kind);
+      self.init_binding_rest_element(&rest.rest, arr.into());
     }
   }
 }
@@ -67,39 +72,42 @@ impl<'a> Transformer<'a> {
     let mut used_length = 0;
 
     for (index, param) in items.iter().enumerate() {
-      let FormalParameter { span, decorators, pattern, .. } = param;
+      let FormalParameter { span, decorators, pattern, initializer, .. } = param;
 
-      let pattern_was_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
+      let pattern_span = pattern.span();
       let pattern = if let Some(pattern) = self.transform_binding_pattern(pattern, false) {
         used_length = index + 1;
-        pattern
+        Some(pattern)
       } else {
-        self.build_unused_binding_pattern(*span)
+        None
       };
-      let pattern_is_assignment = matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_));
+      let initializer_span = initializer.as_ref().map(|init| init.span());
+      let initializer = if let Some(initializer) = initializer {
+        self.transform_with_default(initializer, pattern.is_some())
+      } else {
+        None
+      };
 
       transformed_items.push(self.ast.formal_parameter(
         *span,
         self.clone_node(decorators),
-        if counting_length && pattern_was_assignment && !pattern_is_assignment {
-          self.ast.binding_pattern(
-            self.ast.binding_pattern_kind_assignment_pattern(
-              pattern.span(),
-              pattern,
-              self.build_unused_expression(SPAN),
-            ),
-            NONE,
-            false,
-          )
+        pattern.unwrap_or_else(|| self.build_unused_binding_pattern(pattern_span)),
+        NONE,
+        if counting_length
+          && initializer.is_none()
+          && let Some(span) = initializer_span
+        {
+          Some(self.build_unused_expression(span))
         } else {
-          pattern
+          initializer
         },
+        false,
         None,
         false,
         false,
       ));
 
-      if pattern_was_assignment {
+      if initializer_span.is_some() {
         counting_length = false;
       }
       if counting_length {
@@ -108,7 +116,9 @@ impl<'a> Transformer<'a> {
     }
 
     let transformed_rest = match rest {
-      Some(rest) => self.transform_binding_rest_element(rest, false),
+      Some(rest) => self
+        .transform_binding_rest_element(&rest.rest, false)
+        .map(|rest| self.ast.formal_parameter_rest(rest.span(), rest, NONE)),
       None => None,
     };
 
@@ -129,9 +139,9 @@ impl<'a> Transformer<'a> {
 
     let mut transformed_items = self.ast.vec();
     for param in items.iter() {
-      let FormalParameter { span, decorators, pattern, .. } = param;
+      let FormalParameter { span, decorators, initializer, .. } = param;
 
-      if matches!(pattern.kind, BindingPatternKind::AssignmentPattern(_)) {
+      if initializer.is_some() {
         break;
       }
 
@@ -139,6 +149,9 @@ impl<'a> Transformer<'a> {
         *span,
         self.clone_node(decorators),
         self.build_unused_binding_pattern(*span),
+        NONE,
+        NONE,
+        false,
         None,
         false,
         false,

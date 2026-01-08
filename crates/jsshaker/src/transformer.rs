@@ -9,10 +9,9 @@ use oxc::{
   ast::{
     AstBuilder, NONE,
     ast::{
-      AssignmentTarget, BinaryOperator, BindingIdentifier, BindingPattern, BindingPatternKind,
-      Expression, ForStatementLeft, FormalParameterKind, IdentifierReference, LogicalOperator,
-      NumberBase, Program, SimpleAssignmentTarget, Statement, UnaryOperator,
-      VariableDeclarationKind,
+      AssignmentTarget, BinaryOperator, BindingIdentifier, BindingPattern, Expression,
+      ForStatementLeft, FormalParameterKind, IdentifierReference, LogicalOperator, NumberBase,
+      Program, SimpleAssignmentTarget, Statement, UnaryOperator, VariableDeclarationKind,
     },
   },
   semantic::{ScopeId, Semantic, SymbolId},
@@ -142,11 +141,8 @@ impl<'a> Transformer<'a> {
         declarations.push(self.ast.variable_declarator(
           span,
           VariableDeclarationKind::Var,
-          self.ast.binding_pattern(
-            self.ast.binding_pattern_kind_binding_identifier(span, self.ast.atom(name)),
-            NONE,
-            false,
-          ),
+          self.ast.binding_pattern_binding_identifier(span, self.ast.atom(name)),
+          NONE,
           None,
           false,
         ));
@@ -188,25 +184,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    self.ast.binding_pattern(
-      BindingPatternKind::BindingIdentifier(
-        self.ast.alloc(self.build_unused_binding_identifier(span)),
-      ),
-      NONE,
-      false,
-    )
-  }
-
-  pub fn build_unused_assignment_binding_pattern(&self, span: Span) -> BindingPattern<'a> {
-    self.ast.binding_pattern(
-      self.ast.binding_pattern_kind_assignment_pattern(
-        span,
-        self.build_unused_binding_pattern(SPAN),
-        self.build_unused_expression(SPAN),
-      ),
-      NONE,
-      false,
-    )
+    BindingPattern::BindingIdentifier(self.ast.alloc(self.build_unused_binding_identifier(span)))
   }
 
   pub fn build_unused_identifier_reference_write(&self, span: Span) -> IdentifierReference<'a> {
@@ -266,11 +244,8 @@ impl<'a> Transformer<'a> {
       self.ast.vec1(self.ast.variable_declarator(
         SPAN,
         VariableDeclarationKind::Var,
-        self.ast.binding_pattern(
-          self.ast.binding_pattern_kind_binding_identifier(SPAN, "__unused__"),
-          NONE,
-          false,
-        ),
+        self.ast.binding_pattern_binding_identifier(SPAN, "__unused__"),
+        NONE,
         None,
         false,
       )),
@@ -285,11 +260,8 @@ impl<'a> Transformer<'a> {
       self.ast.vec1(self.ast.variable_declarator(
         SPAN,
         VariableDeclarationKind::Var,
-        self.ast.binding_pattern(
-          self.ast.binding_pattern_kind_binding_identifier(SPAN, "__non_nullish__"),
-          NONE,
-          false,
-        ),
+        self.ast.binding_pattern_binding_identifier(SPAN, "__non_nullish__"),
+        NONE,
         Some(self.ast.expression_arrow_function(
           SPAN,
           true,
@@ -301,11 +273,10 @@ impl<'a> Transformer<'a> {
             self.ast.vec1(self.ast.formal_parameter(
               SPAN,
               self.ast.vec(),
-              self.ast.binding_pattern(
-                self.ast.binding_pattern_kind_binding_identifier(SPAN, "v"),
-                NONE,
-                false,
-              ),
+              self.ast.binding_pattern_binding_identifier(SPAN, "v"),
+              NONE,
+              NONE,
+              false,
               None,
               false,
               false,
