@@ -308,7 +308,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn global_effect(&mut self) {
-    let mut deps = vec![];
+    let mut deps: Option<Vec<_>> = None;
     let mut first_stage = true;
     for scope in self.scoping.cf.stack.iter().rev() {
       let scope = &mut self.scoping.cf.nodes.get_mut(*scope).data;
@@ -317,14 +317,14 @@ impl<'a> Analyzer<'a> {
           DeoptimizeState::Never => {
             scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
             if let Some(dep) = scope.deps.take(self.factory) {
-              deps.push(dep);
+              deps.get_or_insert_default().push(dep);
             }
           }
           DeoptimizeState::DeoptimizedClean => break,
           DeoptimizeState::DeoptimizedDirty => {
             scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
             if let Some(dep) = scope.deps.take(self.factory) {
-              deps.push(dep);
+              deps.get_or_insert_default().push(dep);
             }
             first_stage = false;
           }
