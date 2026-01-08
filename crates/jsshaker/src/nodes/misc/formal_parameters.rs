@@ -7,7 +7,8 @@ use oxc::{
 };
 
 use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, transformer::Transformer, value::ArgumentsValue,
+  analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer,
+  value::ArgumentsValue,
 };
 
 impl<'a> Analyzer<'a> {
@@ -22,17 +23,12 @@ impl<'a> Analyzer<'a> {
     }
 
     for (param, &init) in node.items.iter().zip(args.elements) {
-      let binding_val = if let Some(initializer) = &param.initializer {
-        self.exec_with_default(initializer, init)
-      } else {
-        init
-      };
-      self.init_binding_pattern(&param.pattern, Some(binding_val));
+      self.exec_formal_parameter(param, init);
     }
     if node.items.len() > args.elements.len() {
       let value = args.rest.unwrap_or(self.factory.undefined);
       for param in &node.items[args.elements.len()..] {
-        self.init_binding_pattern(&param.pattern, Some(value));
+        self.exec_formal_parameter(param, value);
       }
     }
 
@@ -56,6 +52,15 @@ impl<'a> Analyzer<'a> {
       self.declare_binding_rest_element(&rest.rest, None, kind);
       self.init_binding_rest_element(&rest.rest, arr.into());
     }
+  }
+
+  fn exec_formal_parameter(&mut self, node: &'a FormalParameter<'a>, arg: Entity<'a>) {
+    let binding_val = if let Some(initializer) = &node.initializer {
+      self.exec_with_default(initializer, arg)
+    } else {
+      arg
+    };
+    self.init_binding_pattern(&node.pattern, Some(binding_val));
   }
 }
 
