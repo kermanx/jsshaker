@@ -1,4 +1,4 @@
-use std::mem;
+use std::{cell::UnsafeCell, mem};
 
 use line_index::LineIndex;
 use oxc::{
@@ -44,7 +44,7 @@ pub struct ModuleInfo<'a> {
   pub id: ModuleId,
   pub path: Atom<'a>,
   pub line_index: LineIndex,
-  pub program: &'a Program<'a>,
+  pub program: UnsafeCell<&'a mut Program<'a>>,
   pub semantic: Semantic<'a>,
   pub call_id: DepAtom,
 
@@ -120,7 +120,8 @@ impl<'a> Analyzer<'a> {
       SourceType::mjs().with_jsx(self.config.jsx.is_enabled()),
     );
     let parsed = parser.parse();
-    let program = &*self.allocator.alloc(parsed.program);
+    let program_cell = UnsafeCell::new(self.allocator.alloc(parsed.program));
+    let program = unsafe { &mut *program_cell.get() };
     for error in parsed.errors {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
@@ -131,7 +132,7 @@ impl<'a> Analyzer<'a> {
       id: module_id,
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
-      program,
+      program: program_cell,
       semantic,
       call_id: DepAtom::from_counter(),
       readonly_symbol_cache: Default::default(),
@@ -169,7 +170,7 @@ impl<'a> Analyzer<'a> {
       return;
     }
     module.initializing = true;
-    let program = module.program;
+    let program = unsafe { &*module.program.get() };
     let variable_scope = module.variable_scope;
 
     let old_module = self.set_current_module(module_id);

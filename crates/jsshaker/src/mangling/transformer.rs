@@ -1,5 +1,5 @@
 use oxc::ast::ast::{Expression, IdentifierName};
-use oxc_ast_visit::VisitMut;
+use oxc_ast_visit::{VisitMut, walk_mut};
 
 use super::MangleAtom;
 use crate::{transformer::Transformer, utils::ast::AstKind2};
@@ -19,6 +19,8 @@ impl<'a> VisitMut<'a> for ManglerTransformer<'a> {
   fn visit_expression(&mut self, node: &mut Expression<'a>) {
     if let Some(folded) = self.0.build_folded_expr(AstKind2::Expression(node)) {
       *node = folded;
+    } else {
+      walk_mut::walk_expression(self, node);
     }
   }
 }

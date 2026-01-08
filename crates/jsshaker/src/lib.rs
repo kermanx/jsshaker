@@ -21,7 +21,7 @@ use mangling::ManglerTransformer;
 use module::ModuleInfo;
 pub use oxc;
 use oxc::{
-  allocator::{Allocator, CloneIn},
+  allocator::Allocator,
   codegen::{Codegen, CodegenOptions, CodegenReturn},
   minifier::{Minifier, MinifierOptions},
   parser::Parser,
@@ -87,9 +87,9 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
         mangler.clone(),
         semantic,
       );
+      let program = unsafe { &mut *program.get() };
       let program = if config.mangling == Some(true) {
         // Mangling only
-        let program = allocator.alloc(program.clone_in(&allocator));
         ManglerTransformer(transformer).visit_program(program);
         program
       } else {
