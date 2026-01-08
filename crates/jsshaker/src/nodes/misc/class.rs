@@ -1,5 +1,5 @@
 use oxc::{
-  allocator,
+  allocator::{self, Allocator},
   ast::{
     NONE,
     ast::{
@@ -16,16 +16,26 @@ use crate::{
   dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
-  utils::CalleeNode,
+  utils::{CalleeNode, DefaultIn},
   value::{ObjectPrototype, ValueTrait, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
-#[derive(Default)]
 struct Data<'a> {
   pub value: Option<Entity<'a>>,
   pub constructor: Option<&'a MethodDefinition<'a>>,
-  pub keys: Vec<Option<Entity<'a>>>,
+  pub keys: allocator::Vec<'a, Option<Entity<'a>>>,
   pub super_class: Option<Entity<'a>>,
+}
+
+impl<'a> DefaultIn<'a> for Data<'a> {
+  fn default_in(allocator: &'a Allocator) -> Self {
+    Data {
+      value: None,
+      constructor: None,
+      keys: allocator::Vec::new_in(allocator),
+      super_class: None,
+    }
+  }
 }
 
 impl<'a> Analyzer<'a> {

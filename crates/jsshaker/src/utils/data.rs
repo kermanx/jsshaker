@@ -1,44 +1,43 @@
-use std::mem;
-
+use oxc::allocator::Allocator;
 use rustc_hash::FxHashMap;
 
 use crate::{analyzer::Analyzer, dep::DepAtom, transformer::Transformer};
 
-pub struct DataPlaceholder<'a> {
-  _phantom: std::marker::PhantomData<&'a ()>,
-}
-
-pub type ExtraData<'a> = FxHashMap<DepAtom, Box<DataPlaceholder<'a>>>;
+pub type ExtraData<'a> = FxHashMap<DepAtom, *mut ()>;
 
 #[derive(Debug, Default)]
 pub struct StatementVecData {
   pub last_stmt: Option<usize>,
 }
 
-impl<'a> Analyzer<'a> {
-  pub fn get_data_or_insert_with<D: 'a>(
-    &mut self,
-    key: impl Into<DepAtom>,
-    default: impl FnOnce() -> D,
-  ) -> &'a mut D {
-    let boxed =
-      self.data.entry(key.into()).or_insert_with(|| unsafe { mem::transmute(Box::new(default())) });
-    unsafe { mem::transmute(boxed.as_mut()) }
-  }
+pub trait DefaultIn<'a> {
+  fn default_in(allocator: &'a Allocator) -> Self;
+}
 
-  pub fn load_data<D: Default + 'a>(&mut self, key: impl Into<DepAtom>) -> &'a mut D {
-    self.get_data_or_insert_with(key, Default::default)
+impl<'a, T: Default> DefaultIn<'a> for T {
+  fn default_in(_allocator: &'a Allocator) -> Self {
+    T::default()
+  }
+}
+
+impl<'a> Analyzer<'a> {
+  pub fn load_data<D: DefaultIn<'a> + 'a>(&mut self, key: impl Into<DepAtom>) -> &'a mut D {
+    let data = self
+      .data
+      .entry(key.into())
+      .or_insert_with(|| self.allocator.alloc(D::default_in(self.allocator)) as *mut D as *mut ());
+    unsafe { &mut *(*data as *mut D) }
   }
 }
 
 impl<'a> Transformer<'a> {
-  pub fn get_data<D: Default + 'a>(&self, key: impl Into<DepAtom>) -> &'a D {
+  pub fn get_data<D: DefaultIn<'a> + 'a>(&self, key: impl Into<DepAtom>) -> &'a D {
     const { assert!(!std::mem::needs_drop::<D>(), "Cannot allocate Drop type in arena") };
 
     let existing = self.data.get(&key.into());
     match existing {
-      Some(boxed) => unsafe { mem::transmute::<&DataPlaceholder<'_>, &D>(boxed.as_ref()) },
-      None => self.allocator.alloc(D::default()),
+      Some(data) => unsafe { &*(*data as *const D) },
+      None => self.allocator.alloc(D::default_in(self.allocator)),
     }
   }
 }
