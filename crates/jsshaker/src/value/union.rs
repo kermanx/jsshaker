@@ -11,7 +11,7 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
-  use_consumed_flag,
+  use_consumed_flag, value::literal::PossibleLiterals,
 };
 
 #[derive(Debug)]
@@ -262,12 +262,16 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     analyzer.factory.union(values)
   }
 
-  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
+  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     let mut result = FxHashSet::default();
     for entity in self.values.iter() {
-      result.extend(entity.get_to_literals(analyzer)?);
+      result.extend(entity.get_to_literals(analyzer)?.into_iter());
     }
-    Some(Vec::from_iter(result))
+    Some(if result.len() == 1 {
+      PossibleLiterals::Single(result.into_iter().next().unwrap())
+    } else {
+      PossibleLiterals::Multiple(result.into_iter().collect())
+    })
   }
 
   fn get_literal(&'a self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

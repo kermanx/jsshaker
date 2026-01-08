@@ -53,7 +53,7 @@ impl<'a> ObjectValue<'a> {
       let mangable = self.check_mangable(analyzer, &key_literals);
       let value = if mangable { value } else { non_mangable_value };
 
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
         let exists = if let Some(property) = keyed.get_mut(&key_str) {
           if property.set(

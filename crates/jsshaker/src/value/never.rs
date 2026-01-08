@@ -1,5 +1,5 @@
 use super::{ArgumentsValue, UnionHint, ValueTrait, cacheable::Cacheable};
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, value::literal::PossibleLiterals};
 
 #[derive(Debug, Clone, Copy)]
 pub struct NeverValue;
@@ -80,7 +80,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<super::LiteralValue<'a>>> {
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     None
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralValue<'a>> {

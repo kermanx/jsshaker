@@ -39,7 +39,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
       let rest_unknown =
         analyzer.does_module_reexport_unknown(self.module, &mut Default::default());
       let mut result = analyzer.factory.vec();
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         match key_literal {
           LiteralValue::String(key, _) => {
             if let Some(found) =

@@ -14,8 +14,8 @@ use oxc::allocator;
 pub use property::{ObjectProperty, ObjectPropertyValue};
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
-  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object,
+  ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
+  ValueTrait, cacheable::Cacheable, consumed_object,
 };
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
@@ -27,6 +27,7 @@ use crate::{
   scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,
+  value::literal::PossibleLiterals,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -289,7 +290,7 @@ impl<'a> ObjectValue<'a> {
     self.mangling_group.get().is_some()
   }
 
-  fn check_mangable(&self, analyzer: &mut Analyzer<'a>, literals: &Vec<LiteralValue>) -> bool {
+  fn check_mangable(&self, analyzer: &mut Analyzer<'a>, literals: &PossibleLiterals<'a>) -> bool {
     if self.is_mangable() {
       if is_literal_mangable(literals) {
         true

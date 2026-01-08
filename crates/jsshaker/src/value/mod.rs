@@ -2,7 +2,7 @@ pub mod array;
 pub mod cacheable;
 pub mod consumed_object;
 mod function;
-mod literal;
+pub mod literal;
 pub mod logical_result;
 pub mod module_object;
 pub mod never;
@@ -26,7 +26,7 @@ pub use typeof_result::TypeofResult;
 use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
-  entity::Entity,
+  entity::Entity, value::literal::PossibleLiterals,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -115,7 +115,7 @@ pub trait ValueTrait<'a>: Debug {
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     None
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

@@ -24,7 +24,7 @@ impl<'a> ObjectValue<'a> {
       let value = if mangable { value } else { analyzer.factory.computed(value, key) };
 
       let definite = definite && key_literals.len() == 1;
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
         let mut keyed = self.keyed.borrow_mut();
         let existing = keyed.get_mut(&key_str);

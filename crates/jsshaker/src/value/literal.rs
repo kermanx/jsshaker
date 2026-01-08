@@ -1,3 +1,5 @@
+use std::vec;
+
 use oxc::{
   allocator::Allocator,
   ast::ast::{BigintBase, Expression, NumberBase, UnaryOperator},
@@ -68,7 +70,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       let dep = analyzer.dep((self, dep, key));
       if let Some(key_literals) = key.get_to_literals(analyzer) {
         let mut values = analyzer.factory.vec();
-        for key_literal in key_literals {
+        for &key_literal in &key_literals {
           if let Some(property) = self.get_known_instance_property(analyzer, key_literal) {
             values.push(property);
           } else if let Some(property) = prototype.get_literal_keyed(key_literal) {
@@ -264,8 +266,8 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
-    Some(vec![*self])
+  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+    Some(PossibleLiterals::Single(*self))
   }
 
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
@@ -529,5 +531,32 @@ impl<'a> From<LiteralValue<'a>> for (PropertyKeyValue<'a>, Option<MangleAtom>) {
         _ => None,
       },
     )
+  }
+}
+
+#[derive(Debug)]
+pub enum PossibleLiterals<'a> {
+  Single(LiteralValue<'a>),
+  Multiple(Box<[LiteralValue<'a>]>),
+}
+
+impl<'a> PossibleLiterals<'a> {
+  pub fn len(&self) -> usize {
+    match self {
+      PossibleLiterals::Single(_) => 1,
+      PossibleLiterals::Multiple(lits) => lits.len(),
+    }
+  }
+}
+
+impl<'a, 'b> IntoIterator for &'b PossibleLiterals<'a> {
+  type Item = &'b LiteralValue<'a>;
+  type IntoIter = std::slice::Iter<'b, LiteralValue<'a>>;
+
+  fn into_iter(self) -> Self::IntoIter {
+    match self {
+      PossibleLiterals::Single(lit) => std::slice::from_ref(lit).iter(),
+      PossibleLiterals::Multiple(lits) => lits.iter(),
+    }
   }
 }

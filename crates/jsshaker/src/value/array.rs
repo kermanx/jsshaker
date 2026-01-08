@@ -77,7 +77,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut result = analyzer.factory.vec();
       let mut rest_added = false;
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         match key_literal {
           LiteralValue::String(key, _) => {
             if let Ok(index) = key.parse::<usize>() {
@@ -143,7 +143,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
       let definite = !non_det && key_literals.len() == 1;
       let mut rest_added = false;
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         match key_literal {
           LiteralValue::String(key_str, _) => {
             if let Ok(index) = key_str.parse::<usize>() {

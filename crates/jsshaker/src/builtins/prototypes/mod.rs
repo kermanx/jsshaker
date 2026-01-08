@@ -78,7 +78,7 @@ impl<'a> BuiltinPrototype<'a> {
     let dep = (dep, target, key);
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut values = analyzer.factory.vec();
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         if let Some(property) = self.get_literal_keyed(key_literal) {
           values.push(property);
         } else {

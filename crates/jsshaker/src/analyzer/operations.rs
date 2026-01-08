@@ -5,7 +5,7 @@ use crate::{
   analyzer::Analyzer,
   entity::Entity,
   mangling::MangleConstraint,
-  value::{LiteralValue, TypeofResult, ValueTrait},
+  value::{LiteralValue, TypeofResult, ValueTrait, literal::PossibleLiterals},
 };
 
 impl<'a> Analyzer<'a> {
@@ -67,10 +67,10 @@ impl<'a> Analyzer<'a> {
     let lhs_lit = lhs.get_to_literals(self);
     let rhs_lit = rhs.get_to_literals(self);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
-      if lhs_lit.len() == 1 && rhs_lit.len() == 1 {
-        let lhs_lit = *lhs_lit.first().unwrap();
-        let rhs_lit = *rhs_lit.first().unwrap();
-        let (eq, m) = lhs_lit.strict_eq(rhs_lit, object_is);
+      if let (PossibleLiterals::Single(lhs_lit), PossibleLiterals::Single(rhs_lit)) =
+        (&lhs_lit, &rhs_lit)
+      {
+        let (eq, m) = lhs_lit.strict_eq(*rhs_lit, object_is);
         return (Some(eq), m);
       }
 
@@ -109,7 +109,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn op_lt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
-    fn literal_lt(lhs: &LiteralValue, rhs: &LiteralValue, eq: bool) -> Option<bool> {
+    fn literal_lt(lhs: LiteralValue, rhs: LiteralValue, eq: bool) -> Option<bool> {
       match (lhs, rhs) {
         (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) => {
           Some(if eq { l.0 <= r.0 } else { l.0 < r.0 })
@@ -135,8 +135,8 @@ impl<'a> Analyzer<'a> {
 
     if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(self), rhs.get_to_literals(self)) {
       let mut result = None;
-      for lhs in lhs.iter() {
-        for rhs in rhs.iter() {
+      for &lhs in &lhs {
+        for &rhs in &rhs {
           if let Some(v) = literal_lt(lhs, rhs, eq) {
             if let Some(result) = result {
               if result != v {

@@ -4,7 +4,7 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
     ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
-    TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable,
+    TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable, literal::PossibleLiterals,
   },
 };
 
@@ -145,7 +145,7 @@ impl<'a> Entity<'a> {
   pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.get_to_jsx_child(analyzer), analyzer)
   }
-  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<Vec<LiteralValue<'a>>> {
+  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     self.value.get_to_literals(analyzer)
   }
   pub fn get_literal(&self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {

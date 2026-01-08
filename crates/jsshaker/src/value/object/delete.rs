@@ -34,7 +34,7 @@ impl<'a> ObjectValue<'a> {
       let deps = if mangable { deps } else { analyzer.dep((deps, key)) };
 
       let mut string_keyed = self.keyed.borrow_mut();
-      for key_literal in key_literals {
+      for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
         if let Some(property) = string_keyed.get_mut(&key_str) {
           property.delete(
