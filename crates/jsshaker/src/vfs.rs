@@ -17,26 +17,27 @@ impl Vfs for StdFs {
     path.pop();
     path.push(specifier);
     path = normalize_path::normalize(&path);
-    Some(
-      path
-        .exists()
-        .then(|| path.to_string_lossy().into_owned())
-        .or_else(|| {
-          path.set_extension("js");
-          path.exists().then(|| path.to_string_lossy().into_owned())
-        })
-        .or_else(|| {
-          path.set_extension("mjs");
-          path.exists().then(|| path.to_string_lossy().into_owned())
-        })
-        .or_else(|| {
-          path.set_extension("cjs");
-          path.exists().then(|| path.to_string_lossy().into_owned())
-        })
-        .unwrap_or_else(|| {
-          panic!("Cannot resolve module: {} from {}", specifier, importer);
-        }),
-    )
+    let result = path
+      .exists()
+      .then(|| path.to_string_lossy().into_owned())
+      .or_else(|| {
+        path.set_extension("js");
+        path.exists().then(|| path.to_string_lossy().into_owned())
+      })
+      .or_else(|| {
+        path.set_extension("mjs");
+        path.exists().then(|| path.to_string_lossy().into_owned())
+      })
+      .or_else(|| {
+        path.set_extension("cjs");
+        path.exists().then(|| path.to_string_lossy().into_owned())
+      });
+
+    if result.is_none() {
+      eprintln!("[Warning] Cannot resolve module: {} from {}", specifier, importer);
+    }
+
+    result
   }
 
   fn read_file(&self, path: &str) -> String {
