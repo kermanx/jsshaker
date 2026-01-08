@@ -27,7 +27,7 @@ jobs:
         with:
           cache-on-failure: true
 
-      - name: Use Node.js 22
+      - name: Use Node.js 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -44,10 +44,10 @@ jobs:
         working-directory: ./tasks/e2e
 
       - name: Build benchmarks
-        run: cargo codspeed build
+        run: cargo codspeed build -p benchmark
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
-          run: cargo codspeed run
+          run: cargo codspeed run -p benchmark
