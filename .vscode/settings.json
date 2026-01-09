@@ -1,6 +1,6 @@
 {
   "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
-  "rust-analyzer.cargo.features": ["flame"],
+  "rust-analyzer.cargo.features": "all",
 
   "[rust]": {
     "editor.formatOnSave": true,

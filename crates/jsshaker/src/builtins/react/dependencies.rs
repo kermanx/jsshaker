@@ -140,10 +140,8 @@ pub fn check_dependencies<'a>(
   };
 
   if require_rerun {
-    for depth in 0..analyzer.scoping.cf.stack.len() {
-      if let Some(exhaustive_data) =
-        analyzer.scoping.cf.get_mut_from_depth(depth).exhaustive_data_mut()
-      {
+    for scope in analyzer.scoping.cf.iter_stack_mut() {
+      if let Some(exhaustive_data) = scope.exhaustive_data_mut() {
         exhaustive_data.clean = false;
         break;
       }

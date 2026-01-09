@@ -83,7 +83,7 @@ impl<'a> Analyzer<'a> {
     runner: Rc<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a>,
   ) -> Entity<'a> {
     self.push_cf_scope(
-      CfScopeKind::Exhaustive(self.allocator.alloc(ExhaustiveData {
+      CfScopeKind::Exhaustive(Box::new(ExhaustiveData {
         clean: true,
         temp_deps: drain.then(|| allocator::HashSet::new_in(self.allocator)),
         register_deps: register.then(|| allocator::HashSet::new_in(self.allocator)),
@@ -114,9 +114,11 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
-    let id = self.pop_cf_scope();
-    let data = self.scoping.cf.get_mut(id).exhaustive_data_mut().unwrap();
-    if let Some(register_deps) = data.register_deps.take() {
+    let scope = self.pop_cf_scope();
+    let CfScopeKind::Exhaustive(data) = scope.kind else {
+      unreachable!();
+    };
+    if let Some(register_deps) = data.register_deps {
       self.register_exhaustive_callbacks(drain, runner, register_deps);
     }
     first_ret.unwrap()

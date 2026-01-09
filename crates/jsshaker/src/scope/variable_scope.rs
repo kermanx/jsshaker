@@ -126,7 +126,7 @@ impl<'a> Analyzer<'a> {
         kind,
         cf_scope: if kind.is_var() {
           let depth = self.call_scope().cf_scope_depth;
-          self.scoping.cf.stack[depth]
+          self.scoping.cf.depth_to_id(depth)
         } else {
           self.scoping.cf.current_id()
         },
@@ -341,7 +341,7 @@ impl<'a> Analyzer<'a> {
     let variable = self.allocator.alloc(RefCell::new(Variable {
       exhausted: Some(self.factory.consumed_lazy_dep),
       kind: DeclarationKind::UntrackedVar,
-      cf_scope: self.scoping.cf.stack[cf_scope_depth],
+      cf_scope: self.scoping.cf.depth_to_id(cf_scope_depth),
       value: Some(self.factory.unknown),
       decl_node: AstKind2::ENVIRONMENT,
     }));

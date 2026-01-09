@@ -19,7 +19,7 @@ impl<'a> Analyzer<'a> {
 
     let mut both_exit = true;
     let mut exit_target_inner = 0;
-    let mut exit_target_outer = self.scoping.cf.stack.len();
+    let mut exit_target_outer = self.scoping.cf.stack_len();
     let mut acc_dep_1 = None;
     let mut acc_dep_2 = None;
 
@@ -34,7 +34,7 @@ impl<'a> Analyzer<'a> {
         node.alternate.is_some(),
       );
       self.exec_statement(&node.consequent);
-      let conditional_scope = self.pop_cf_scope_and_get_mut();
+      let mut conditional_scope = self.pop_cf_scope();
       if let CfScopeKind::ExitBlocker(Some(stopped_exit)) = &conditional_scope.kind {
         exit_target_inner = exit_target_inner.max(*stopped_exit);
         exit_target_outer = exit_target_outer.min(*stopped_exit);
@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
       );
       if let Some(alternate) = &node.alternate {
         self.exec_statement(alternate);
-        let conditional_scope = self.pop_cf_scope_and_get_mut();
+        let mut conditional_scope = self.pop_cf_scope();
         if let CfScopeKind::ExitBlocker(Some(stopped_exit)) = &conditional_scope.kind {
           exit_target_inner = exit_target_inner.max(*stopped_exit);
           exit_target_outer = exit_target_outer.min(*stopped_exit);
@@ -72,12 +72,12 @@ impl<'a> Analyzer<'a> {
     let acc_dep = Some(self.dep((acc_dep_1, acc_dep_2)));
     if both_exit {
       if let Some(acc_dep) =
-        self.exit_to_impl(exit_target_inner, self.scoping.cf.stack.len(), true, acc_dep)
+        self.exit_to_impl(exit_target_inner, self.scoping.cf.stack_len(), true, acc_dep)
       {
         self.exit_to_impl(exit_target_outer, exit_target_inner, false, acc_dep);
       }
     } else {
-      self.exit_to_impl(exit_target_outer, self.scoping.cf.stack.len(), false, acc_dep);
+      self.exit_to_impl(exit_target_outer, self.scoping.cf.stack_len(), false, acc_dep);
     }
   }
 }

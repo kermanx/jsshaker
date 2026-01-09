@@ -384,8 +384,7 @@ impl<'a> ArrayValue<'a> {
     let mut is_exhaustive = false;
     let mut non_det = false;
     let mut exec_deps = analyzer.factory.vec1(dep);
-    for depth in target_depth..analyzer.scoping.cf.stack.len() {
-      let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
+    for scope in analyzer.scoping.cf.iter_stack_mut().skip(target_depth) {
       is_exhaustive |= scope.is_exhaustive();
       non_det |= scope.non_det();
       if let Some(dep) = scope.deps.collect(analyzer.factory) {
