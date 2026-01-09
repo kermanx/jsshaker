@@ -268,8 +268,8 @@ impl<'a> ObjectValue<'a> {
     let mut exhaustive = false;
     let mut non_det = false;
     let mut deps = analyzer.factory.vec1(dep);
-    for depth in target_depth..analyzer.scoping.cf.stack.len() {
-      let scope = analyzer.scoping.cf.get_mut_from_depth(depth);
+    for depth in target_depth..analyzer.scoping.cf.stack_len() {
+      let scope = analyzer.scoping.cf.data_at_mut(depth);
       exhaustive |= scope.is_exhaustive();
       non_det |= scope.non_det();
       if let Some(dep) = scope.deps.collect(analyzer.factory) {

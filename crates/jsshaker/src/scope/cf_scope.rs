@@ -2,13 +2,13 @@ use oxc::{ast::ast::LabeledStatement, span::Atom};
 
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveData},
-  define_box_bump_idx,
+  define_stacked_tree_idx,
   dep::{Dep, DepCollector, DepVec},
   utils::ast::AstKind2,
   value::cache::FnCacheTrackingData,
 };
 
-define_box_bump_idx! {
+define_stacked_tree_idx! {
   pub struct CfScopeId;
 }
 
@@ -17,14 +17,14 @@ pub enum CfScopeKind<'a> {
   Root,
   Module,
   Labeled(&'a LabeledStatement<'a>),
-  Function(&'a mut FnCacheTrackingData<'a>),
+  Function(Box<FnCacheTrackingData<'a>>),
   LoopBreak,
   LoopContinue,
   Switch,
 
   Dependent,
   NonDet,
-  Exhaustive(&'a mut ExhaustiveData<'a>),
+  Exhaustive(Box<ExhaustiveData<'a>>),
   ExitBlocker(Option<usize>),
 }
 
@@ -157,8 +157,8 @@ impl<'a> Analyzer<'a> {
   pub fn get_exec_dep(&mut self, target_depth: usize) -> (DepVec<'a>, bool) {
     let mut deps = self.factory.vec();
     let mut non_det = false;
-    for id in target_depth..self.scoping.cf.stack.len() {
-      let scope = self.scoping.cf.get_mut_from_depth(id);
+    for id in target_depth..self.scoping.cf.stack_len() {
+      let scope = self.scoping.cf.data_at_mut(id);
       if let Some(dep) = scope.deps.collect(self.factory) {
         deps.push(dep);
       }
@@ -168,11 +168,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exit_to(&mut self, target_depth: usize) {
-    self.exit_to_impl(target_depth, self.scoping.cf.stack.len(), true, None);
+    self.exit_to_impl(target_depth, self.scoping.cf.stack_len(), true, None);
   }
 
   pub fn exit_to_not_must(&mut self, target_depth: usize) {
-    self.exit_to_impl(target_depth, self.scoping.cf.stack.len(), false, None);
+    self.exit_to_impl(target_depth, self.scoping.cf.stack_len(), false, None);
   }
 
   /// `None` => Interrupted by if branch
@@ -185,8 +185,7 @@ impl<'a> Analyzer<'a> {
     mut acc_dep: Option<Dep<'a>>,
   ) -> Option<Option<Dep<'a>>> {
     for depth in (target_depth..from_depth).rev() {
-      let id = self.scoping.cf.stack[depth];
-      let cf_scope = self.scoping.cf.get_mut(id);
+      let cf_scope = self.scoping.cf.data_at_mut(depth);
 
       if cf_scope.must_exited() {
         return Some(Some(self.factory.no_dep));
@@ -310,8 +309,7 @@ impl<'a> Analyzer<'a> {
   pub fn global_effect(&mut self) {
     let mut deps = vec![];
     let mut first_stage = true;
-    for scope in self.scoping.cf.stack.iter().rev() {
-      let scope = &mut self.scoping.cf.nodes.get_mut(*scope).data;
+    for scope in self.scoping.cf.iter_stack_mut().rev() {
       if first_stage {
         match scope.deoptimize_state {
           DeoptimizeState::Never => {

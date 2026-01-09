@@ -6,8 +6,6 @@ mod stacked_tree;
 mod linked_tree;
 pub mod variable_scope;
 
-use std::mem;
-
 use call_scope::CallScope;
 use cf_scope::CfScope;
 pub use cf_scope::{CfScopeId, CfScopeKind};
@@ -28,7 +26,7 @@ use crate::{
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: LinkedTree<'a, VariableScopeId, VariableScope<'a>>,
-  pub cf: StackedTree<'a, CfScopeId, CfScope<'a>>,
+  pub cf: StackedTree<CfScopeId, CfScope<'a>>,
   pub root_cf_scope: CfScopeId,
   pub try_catch_depth: Option<usize>,
   pub current_callsite: AstKind2<'a>,
@@ -40,8 +38,8 @@ impl<'a> Scoping<'a> {
     let mut variable = LinkedTree::new_in(factory.allocator);
     let root_variable_scope =
       variable.push(VariableScope::new_in_with_this(factory.allocator, factory.unknown));
-    let mut cf = StackedTree::new_in(factory.allocator);
-    let root_cf_scope = cf.push(CfScope::new(CfScopeKind::Root, factory.vec(), false));
+    let cf = StackedTree::new(CfScope::new(CfScopeKind::Root, factory.vec(), false));
+    let root_cf_scope = cf.root;
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
       call: vec![CallScope::new_in(
@@ -80,11 +78,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn cf_scope(&self) -> &CfScope<'a> {
-    self.scoping.cf.get_current()
+    self.scoping.cf.current_data()
   }
 
   pub fn cf_scope_mut(&mut self) -> &mut CfScope<'a> {
-    self.scoping.cf.get_current_mut()
+    self.scoping.cf.current_data_mut()
   }
 
   pub fn variable_scope(&self) -> &VariableScope<'a> {
@@ -111,9 +109,7 @@ impl<'a> Analyzer<'a> {
     let old_variable_scope_stack = self.replace_variable_scope(info.func.lexical_scope);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
-      CfScopeKind::Function(
-        self.allocator.alloc(FnCacheTrackingData::new_in(self.allocator, info)),
-      ),
+      CfScopeKind::Function(Box::new(FnCacheTrackingData::new_in(self.allocator, info))),
       self.factory.vec1(info.call_dep),
       false,
     );
@@ -133,17 +129,14 @@ impl<'a> Analyzer<'a> {
   pub fn pop_call_scope(&mut self) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let scope = self.scoping.call.pop().unwrap();
     let ret_val = scope.ret_val(self);
-    let cf_scope_id = self.pop_cf_scope();
-    let cf_scope = self.scoping.cf.get_mut(cf_scope_id);
-    let CfScopeKind::Function(tracking_data) = &mut cf_scope.kind else {
+    let cf_scope = self.pop_cf_scope();
+    let CfScopeKind::Function(tracking_data) = cf_scope.kind else {
       unreachable!();
     };
-    let tracking_data = mem::take(*tracking_data);
-
     self.pop_variable_scope();
     self.replace_variable_scope(scope.old_variable_scope);
     self.set_current_module(scope.old_module);
-    (ret_val, tracking_data)
+    (ret_val, *tracking_data)
   }
 
   pub fn push_variable_scope(&mut self) -> VariableScopeId {
@@ -180,23 +173,18 @@ impl<'a> Analyzer<'a> {
     );
   }
 
-  pub fn pop_cf_scope(&mut self) -> CfScopeId {
+  pub fn pop_cf_scope(&mut self) -> CfScope<'a> {
     self.scoping.cf.pop()
   }
 
   pub fn pop_multiple_cf_scopes(&mut self, count: usize) -> Option<Dep<'a>> {
     let mut exec_deps = self.factory.vec();
     for _ in 0..count {
-      let id = self.scoping.cf.stack.pop().unwrap();
-      if let Some(dep) = self.scoping.cf.get_mut(id).deps.collect(self.factory) {
+      let mut scope = self.pop_cf_scope();
+      if let Some(dep) = scope.deps.collect(self.factory) {
         exec_deps.push(dep);
       }
     }
     if exec_deps.is_empty() { None } else { Some(self.dep(exec_deps)) }
-  }
-
-  pub fn pop_cf_scope_and_get_mut(&mut self) -> &mut CfScope<'a> {
-    let id = self.pop_cf_scope();
-    self.scoping.cf.get_mut(id)
   }
 }
