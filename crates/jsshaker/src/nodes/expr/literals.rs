@@ -3,11 +3,12 @@ use oxc::ast::ast::{
   StringLiteral,
 };
 
-use crate::{Analyzer, entity::Entity};
+use crate::{Analyzer, entity::Entity, utils::ast::AstKind2};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_string_literal(&mut self, node: &'a StringLiteral) -> Entity<'a> {
-    self.factory.mangable_string(node.value.as_str(), self.mangler.new_atom())
+    let atom = self.mangler.use_node_atom(AstKind2::StringLiteral(node));
+    self.factory.string(node.value.as_str(), atom)
   }
 
   pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {

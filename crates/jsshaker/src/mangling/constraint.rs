@@ -72,7 +72,7 @@ impl<'a> Mangler<'a> {
       return;
     }
 
-    let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
+    let Mangler { states: atoms, identity_groups, uniqueness_groups, .. } = self;
 
     match atoms.get_two_mut(a, b) {
       (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
@@ -142,7 +142,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
-    let state = &mut self.atoms[atom];
+    let state = &mut self.states[atom];
     if matches!(state, AtomState::Constant(_)) {
       return;
     }
@@ -169,7 +169,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn add_to_uniqueness_group(&mut self, group: UniquenessGroupId, atom: MangleAtom) {
-    match &mut self.atoms[atom] {
+    match &mut self.states[atom] {
       AtomState::Constrained(_, uniqueness_groups) => {
         uniqueness_groups.insert(group);
         self.uniqueness_groups[group].0.push(atom);
@@ -187,7 +187,7 @@ impl<'a> Mangler<'a> {
   }
 
   fn mark_atom_constant(&mut self, atom: MangleAtom, value: &'a str) {
-    let Mangler { identity_groups, atoms, .. } = self;
+    let Mangler { identity_groups, states: atoms, .. } = self;
 
     let atom = mem::replace(&mut atoms[atom], AtomState::Constant(value));
 
