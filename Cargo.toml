@@ -25,6 +25,7 @@ flamescope = "0.1.3"
 flate2 = "1.1.0"
 line-index = "0.1.2"
 oxc = "0.107.0"
+oxc_allocator = { "version" = "0.107.0", features = ["track_allocations"] }
 oxc_ast_visit = "0.107.0"
 oxc_ecmascript = "0.107.0"
 oxc_index = "4.1.0"
@@ -59,3 +60,6 @@ unnecessary_safety_comment = "deny"
 
 missing_transmute_annotations = "allow"
 too_many_arguments = "allow"
+
+[patch.crates-io]
+oxc_allocator = { path = "./oxc_allocator" }

@@ -1,0 +1,6 @@
+{
+  "git": {
+    "sha1": "811b2a753c46f5af860633c3dbc0601ff926f03d"
+  },
+  "path_in_vcs": "crates/oxc_allocator"
+}

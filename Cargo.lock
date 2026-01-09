@@ -1021,8 +1021,6 @@ dependencies = [
 [[package]]
 name = "oxc_allocator"
 version = "0.107.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "377063b29ba9762002f07bd4bc5cdd60373a4e3b094e15ea201eec07556d65ff"
 dependencies = [
  "allocator-api2",
  "bumpalo",
