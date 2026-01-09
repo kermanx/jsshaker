@@ -99,7 +99,7 @@ impl Alloc for Bump {
         // `track_allocations` feature, so should never be compiled in production code.
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
         unsafe {
-            crate::tracking::get_stats_ref(self).record_allocation();
+            crate::tracking::get_stats_ref(self).record_allocation::<Layout>(0);
         }
 
         self.alloc_layout(layout)

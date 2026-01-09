@@ -715,6 +715,7 @@ dependencies = [
  "insta",
  "line-index",
  "oxc",
+ "oxc_allocator",
  "oxc_ast_visit",
  "oxc_ecmascript",
  "oxc_index",
@@ -1025,8 +1026,12 @@ dependencies = [
  "allocator-api2",
  "bumpalo",
  "hashbrown 0.16.1",
+ "oxc_ast_macros",
  "oxc_data_structures",
+ "oxc_estree",
  "rustc-hash",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1141,6 +1146,11 @@ name = "oxc_estree"
 version = "0.107.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2059abb4c194b588d128c1933b6c20fde1b443b053e51da818caed17c272f65"
+dependencies = [
+ "dragonbox_ecma",
+ "itoa",
+ "oxc_data_structures",
+]
 
 [[package]]
 name = "oxc_index"

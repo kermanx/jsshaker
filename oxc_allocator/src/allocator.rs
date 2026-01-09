@@ -301,7 +301,7 @@ impl Allocator {
         const { assert!(!std::mem::needs_drop::<T>(), "Cannot allocate Drop type in arena") };
 
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
-        self.stats.record_allocation();
+        self.stats.record_allocation::<T>(std::mem::size_of::<T>());
 
         self.bump.alloc(val)
     }
@@ -325,7 +325,7 @@ impl Allocator {
     #[inline(always)]
     pub fn alloc_str<'alloc>(&'alloc self, src: &str) -> &'alloc str {
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
-        self.stats.record_allocation();
+        self.stats.record_allocation::<&str>(std::mem::size_of_val(src));
 
         self.bump.alloc_str(src)
     }
@@ -348,7 +348,7 @@ impl Allocator {
     #[inline(always)]
     pub fn alloc_slice_copy<T: Copy>(&self, src: &[T]) -> &mut [T] {
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
-        self.stats.record_allocation();
+        self.stats.record_allocation::<&[T]>(std::mem::size_of_val(src));
 
         self.bump.alloc_slice_copy(src)
     }
@@ -363,7 +363,7 @@ impl Allocator {
     /// Panics if reserving space matching `layout` fails.
     pub fn alloc_layout(&self, layout: Layout) -> NonNull<u8> {
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
-        self.stats.record_allocation();
+        self.stats.record_allocation::<Layout>(0);
 
         self.bump.alloc_layout(layout)
     }
@@ -416,7 +416,7 @@ impl Allocator {
         );
 
         #[cfg(all(feature = "track_allocations", not(feature = "disable_track_allocations")))]
-        self.stats.record_allocation();
+        self.stats.record_allocation::<[&str; N]>(total_len);
 
         // Create actual `&str` in a separate function, to ensure that `alloc_concat_strs_array`
         // is inlined, so that compiler has knowledge to remove the overflow checks above.

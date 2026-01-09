@@ -70,6 +70,9 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
       conditional_data,
       ..
     } = unsafe { &mut *(&mut analyzer as *mut _) };
+
+    allocator.print_allocation_stats_types();
+
     let mangler = Rc::new(RefCell::new(mangler));
     let mut codegen_return = FxHashMap::default();
     for module_info in mem::take(&mut modules.modules) {

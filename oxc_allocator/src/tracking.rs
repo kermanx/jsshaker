@@ -29,14 +29,22 @@ pub struct AllocationStats {
     num_alloc: Cell<usize>,
     /// Number of reallocations
     num_realloc: Cell<usize>,
+
+    types: std::cell::RefCell<std::collections::HashMap<&'static str, (usize, usize)>>
 }
 
 impl AllocationStats {
     /// Record that an allocation was made.
-    pub(crate) fn record_allocation(&self) {
+    pub(crate) fn record_allocation<T>(&self, size: usize) {
         // Counter maxes out at `usize::MAX`, but if there's that many allocations,
         // the exact number is not important
         self.num_alloc.set(self.num_alloc.get().saturating_add(1));
+
+        let type_name = std::any::type_name::<T>();
+        let mut map = self.types.borrow_mut();
+        let entry = map.entry(type_name).or_insert((0, 0));
+        entry.0 += 1;    // 数量 +1
+        entry.1 += size; // 总字节数 + size
     }
 
     /// Record that a reallocation was made.
@@ -60,6 +68,15 @@ impl Allocator {
         let num_alloc = self.stats.num_alloc.get();
         let num_realloc = self.stats.num_realloc.get();
         (num_alloc, num_realloc)
+    }
+
+    pub fn print_allocation_stats_types(&self) {
+      let map = self.stats.types.borrow();
+      let mut entries: Vec<_> = map.iter().collect();
+      entries.sort_by(|a, b| b.1.1.cmp(&a.1.1));
+      for (name, (count, size)) in entries {
+        println!("{size}\t{count}\t{name}");
+      }
     }
 }
 
