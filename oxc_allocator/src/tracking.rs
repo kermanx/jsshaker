@@ -74,9 +74,15 @@ impl Allocator {
       let map = self.stats.types.borrow();
       let mut entries: Vec<_> = map.iter().collect();
       entries.sort_by(|a, b| b.1.1.cmp(&a.1.1));
+      let mut total_size = 0;
       for (name, (count, size)) in entries {
+        if name.starts_with("oxc") {
+          continue;
+        }
         println!("{size}\t{count}\t{name}");
+        total_size += size;
       }
+      println!("Total: {total_size}");
     }
 }
 
