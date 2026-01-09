@@ -1,4 +1,4 @@
-use crate::{analyzer::Factory, entity::Entity, value::ObjectPrototype};
+use crate::{analyzer::Factory, builtin_string, entity::Entity, value::ObjectPrototype};
 
 pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<'a> {
   factory.implemented_builtin_fn("React::createElement", |analyzer, dep, _this, args| {
@@ -32,8 +32,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
     }
 
     // Special prop: ref
-    let r#ref =
-      props.get_property(analyzer, analyzer.factory.no_dep, analyzer.factory.builtin_string("ref"));
+    let r#ref = props.get_property(analyzer, analyzer.factory.no_dep, builtin_string!("ref"));
     if r#ref.test_nullish() != Some(true) {
       // TODO: currently we haven't implemented useRef, so we just consider it as a callback
       analyzer.exec_consumed_fn("React_ref", move |analyzer| {
@@ -47,8 +46,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
     }
 
     // Special prop: key
-    let key =
-      props.get_property(analyzer, analyzer.factory.no_dep, analyzer.factory.builtin_string("key"));
+    let key = props.get_property(analyzer, analyzer.factory.no_dep, builtin_string!("key"));
     if r#ref.test_nullish() != Some(true) {
       analyzer.consume(key);
     }
@@ -57,7 +55,7 @@ pub fn create_react_create_element_impl<'a>(factory: &'a Factory<'a>) -> Entity<
     props.set_property(
       analyzer,
       analyzer.factory.no_dep,
-      analyzer.factory.builtin_string("children"),
+      builtin_string!("children"),
       children.into(),
     );
 

@@ -19,11 +19,12 @@ use super::{
 };
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
+  builtin_atom, builtin_string,
   builtins::BuiltinPrototype,
   define_ptr_idx,
   dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
-  mangling::{MangleAtom, UniquenessGroupId, is_literal_mangable},
+  mangling::{BUILTIN_ATOM, MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,
@@ -214,7 +215,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     for (key, property) in self.keyed.borrow_mut().iter_mut() {
       let key_entity = property.key.unwrap_or_else(|| {
         if let PropertyKeyValue::String(key) = key {
-          analyzer.factory.string(key, property.mangling)
+          analyzer.factory.string(*key, property.mangling)
         } else {
           todo!()
         }
@@ -382,14 +383,14 @@ impl<'a> Analyzer<'a> {
       mangling_group.1,
     );
     statics.keyed.borrow_mut().insert(
-      PropertyKeyValue::String("prototype"),
+      PropertyKeyValue::String(builtin_atom!("prototype")),
       ObjectProperty {
         definite: true,
         enumerable: false,
         possible_values: self.factory.vec1(ObjectPropertyValue::Field((&*prototype).into(), false)),
         non_existent: DepCollector::new(self.factory.vec()),
-        key: Some(self.factory.builtin_string("prototype")),
-        mangling: Some(self.mangler.builtin_atom),
+        key: Some(builtin_string!("prototype")),
+        mangling: Some(BUILTIN_ATOM),
       },
     );
     (statics, prototype)

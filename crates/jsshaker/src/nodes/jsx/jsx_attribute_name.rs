@@ -1,6 +1,13 @@
-use oxc::{allocator::Allocator, ast::ast::JSXAttributeName, span::GetSpan};
+use oxc::{
+  allocator::Allocator,
+  ast::ast::JSXAttributeName,
+  span::{Atom, GetSpan},
+};
 
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer,
+  value::literal::string::ToAtomRef,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_attribute_name(&mut self, node: &'a JSXAttributeName<'a>) -> Entity<'a> {
@@ -24,11 +31,11 @@ impl<'a> Transformer<'a> {
   }
 }
 
-fn get_text<'a>(allocator: &'a Allocator, node: &'a JSXAttributeName<'a>) -> &'a str {
+fn get_text<'a>(allocator: &'a Allocator, node: &'a JSXAttributeName<'a>) -> &'a Atom<'a> {
   match node {
-    JSXAttributeName::Identifier(node) => node.name.as_str(),
+    JSXAttributeName::Identifier(node) => &node.name,
     JSXAttributeName::NamespacedName(node) => {
-      allocator.alloc_str(&format!("{}:{}", node.namespace.name, node.name))
+      format!("{}:{}", node.namespace.name, node.name).to_atom_ref(allocator)
     }
   }
 }

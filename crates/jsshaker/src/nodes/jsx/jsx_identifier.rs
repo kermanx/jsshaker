@@ -4,7 +4,7 @@ use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Tran
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_identifier(&mut self, node: &'a JSXIdentifier<'a>) -> Entity<'a> {
-    self.exec_mangable_static_string(AstKind2::JSXIdentifier(node), node.name.as_str())
+    self.exec_mangable_static_string(AstKind2::JSXIdentifier(node), &node.name)
   }
 }
 

@@ -8,7 +8,7 @@ mod escape_template_element_value;
 mod f64_with_eq;
 mod found;
 mod get_two_mut;
-mod private_identifier_name;
+pub mod private_identifier_name;
 pub mod ptr_idx;
 mod symbol_id;
 

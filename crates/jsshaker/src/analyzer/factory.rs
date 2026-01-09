@@ -4,7 +4,7 @@ use std::{
 };
 
 use oxc::allocator::{self, Allocator};
-use oxc::semantic::SymbolId;
+use oxc::{semantic::SymbolId, span::Atom};
 use oxc_syntax::operator::LogicalOperator;
 
 use crate::{
@@ -16,7 +16,7 @@ use crate::{
   utils::{CalleeInstanceId, F64WithEq},
   value::{
     ArgumentsValue, BuiltinFnImplementation, ImplementedBuiltinFnValue, LiteralValue,
-    ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue,
+    ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue, literal::string::ToAtomRef,
     logical_result::LogicalResultValue, never::NeverValue, primitive::PrimitiveValue,
     react_element::ReactElementValue, union::UnionValues, unknown::UnknownValue,
   },
@@ -25,7 +25,6 @@ use crate::{
 pub struct Factory<'a> {
   pub allocator: &'a Allocator,
   pub root_cf_scope: Option<CfScopeId>,
-  pub builtin_atom: Option<MangleAtom>,
   instance_id_counter: Cell<usize>,
 
   pub r#true: Entity<'a>,
@@ -127,7 +126,6 @@ impl<'a> Factory<'a> {
     Factory {
       allocator,
       root_cf_scope: None,
-      builtin_atom: None,
       instance_id_counter: Cell::new(0),
 
       r#true,
@@ -278,26 +276,26 @@ impl<'a> Factory<'a> {
     }
   }
 
-  pub fn builtin_string(&self, value: &'static str) -> Entity<'a> {
-    self.string(value, self.builtin_atom)
-  }
-
-  pub fn mangable_string(&self, value: &'a str, atom: MangleAtom) -> Entity<'a> {
+  pub fn mangable_string(&self, value: impl ToAtomRef<'a>, atom: MangleAtom) -> Entity<'a> {
     self.string(value, Some(atom))
   }
 
-  pub fn unmangable_string(&self, value: &'a str) -> Entity<'a> {
+  pub fn unmangable_string(&self, value: impl ToAtomRef<'a>) -> Entity<'a> {
     self.string(value, None)
   }
 
-  pub fn string(&self, value: &'a str, atom: Option<MangleAtom>) -> Entity<'a> {
-    self.alloc(LiteralValue::String(value, atom)).into()
+  pub fn string(&self, value: impl ToAtomRef<'a>, atom: Option<MangleAtom>) -> Entity<'a> {
+    if atom.is_some() {
+      self.alloc(LiteralValue::String(value.to_atom_ref(self.allocator), atom)).into()
+    } else {
+      value.to_atom_ref(self.allocator).into()
+    }
   }
 
-  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a str>) -> Entity<'a> {
+  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a Atom<'a>>) -> Entity<'a> {
     self.alloc(LiteralValue::Number(value.into(), str_rep)).into()
   }
-  pub fn big_int(&self, value: &'a str) -> Entity<'a> {
+  pub fn big_int(&self, value: &'a Atom<'a>) -> Entity<'a> {
     self.alloc(LiteralValue::BigInt(value)).into()
   }
 
@@ -312,7 +310,7 @@ impl<'a> Factory<'a> {
     self.alloc(LiteralValue::Infinity(positivie)).into()
   }
 
-  pub fn symbol(&self, id: SymbolId, str_rep: &'a str) -> Entity<'a> {
+  pub fn symbol(&self, id: SymbolId, str_rep: &'a Atom<'a>) -> Entity<'a> {
     self.alloc(LiteralValue::Symbol(id, str_rep)).into()
   }
 
@@ -432,4 +430,22 @@ impl<'a> Factory<'a> {
     computed_unknown_bigint -> unknown_bigint,
     computed_unknown_symbol -> unknown_symbol,
   }
+}
+
+#[macro_export]
+macro_rules! builtin_atom {
+  ($s:expr) => {{
+    const S: oxc::span::Atom = oxc::span::Atom::new_const($s);
+    (&S)
+  }};
+}
+
+#[macro_export]
+macro_rules! builtin_string {
+  ($s:expr) => {{
+    $crate::entity::Entity::from(&$crate::value::literal::LiteralValue::String(
+      $crate::builtin_atom!($s),
+      Some($crate::mangling::BUILTIN_ATOM),
+    ))
+  }};
 }

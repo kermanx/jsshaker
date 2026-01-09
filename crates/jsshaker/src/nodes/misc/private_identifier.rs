@@ -1,6 +1,9 @@
 use oxc::ast::ast::PrivateIdentifier;
 
-use crate::{analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer,
+  utils::private_identifier_name::escape_private_identifier_name,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_private_identifier(&mut self, node: &'a PrivateIdentifier<'a>) -> Entity<'a> {
@@ -8,7 +11,7 @@ impl<'a> Analyzer<'a> {
     self.factory.computed(
       self.exec_mangable_static_string(
         AstKind2::PrivateIdentifier(node),
-        self.escape_private_identifier_name(node.name.as_str()),
+        escape_private_identifier_name(node.name.as_str()),
       ),
       AstKind2::PrivateIdentifier(node),
     )

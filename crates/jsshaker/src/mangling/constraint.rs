@@ -72,9 +72,10 @@ impl<'a> Mangler<'a> {
       return;
     }
 
-    let Mangler { atoms, identity_groups, uniqueness_groups, .. } = self;
+    let Mangler { states: atoms, identity_groups, uniqueness_groups, .. } = self;
 
     match atoms.get_two_mut(a, b) {
+      (AtomState::Preserved, AtomState::Preserved) => {}
       (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
         if eq {
           *x = AtomState::Preserved;
@@ -142,13 +143,14 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
-    let state = &mut self.atoms[atom];
-    if matches!(state, AtomState::Constant(_)) {
-      return;
-    }
-    if let AtomState::Constrained(identity_group, uniqueness_groups) =
-      mem::replace(state, AtomState::NonMangable)
-    {
+    let state = &mut self.states[atom];
+    if matches!(state, AtomState::Constrained(_, _)) {
+      let AtomState::Constrained(identity_group, uniqueness_groups) =
+        mem::replace(state, AtomState::NonMangable)
+      else {
+        unreachable!()
+      };
+
       if let Some(index) = identity_group {
         for atom in mem::take(&mut self.identity_groups[index].0) {
           self.mark_atom_non_mangable(atom);
@@ -169,7 +171,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn add_to_uniqueness_group(&mut self, group: UniquenessGroupId, atom: MangleAtom) {
-    match &mut self.atoms[atom] {
+    match &mut self.states[atom] {
       AtomState::Constrained(_, uniqueness_groups) => {
         uniqueness_groups.insert(group);
         self.uniqueness_groups[group].0.push(atom);
@@ -187,13 +189,17 @@ impl<'a> Mangler<'a> {
   }
 
   fn mark_atom_constant(&mut self, atom: MangleAtom, value: &'a str) {
-    let Mangler { identity_groups, atoms, .. } = self;
+    let Mangler { identity_groups, states, .. } = self;
 
-    let atom = mem::replace(&mut atoms[atom], AtomState::Constant(value));
+    if matches!(states[atom], AtomState::Preserved) {
+      return;
+    }
+
+    let atom = mem::replace(&mut states[atom], AtomState::Constant(value));
 
     if let AtomState::Constrained(Some(identity_group), _) = atom {
       for atom in mem::take(&mut identity_groups[identity_group].0) {
-        atoms[atom] = AtomState::Constant(value);
+        states[atom] = AtomState::Constant(value);
       }
     }
   }

@@ -13,6 +13,7 @@ pub enum Cacheable<'a> {
   Unknown,
   Never,
 
+  String(&'a str),
   Literal(LiteralValue<'a>),
   Primitive(PrimitiveValue),
   Object(ObjectId),

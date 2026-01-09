@@ -230,6 +230,11 @@ impl<'a, T: ValueTrait<'a> + 'a> From<&'a mut T> for Entity<'a> {
     (&*value).into()
   }
 }
+impl<'a> From<Value<'a>> for Entity<'a> {
+  fn from(value: Value<'a>) -> Self {
+    Entity { value, dep: None }
+  }
+}
 
 impl<'a> Factory<'a> {
   pub fn entity_with_dep(&self, value: Value<'a>, dep: Dep<'a>) -> Entity<'a> {
