@@ -6,16 +6,17 @@ use oxc::{
   },
 };
 
-use crate::{analyzer::Analyzer, build_effect, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, build_effect, builtin_string, entity::Entity, transformer::Transformer,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_jsx_element(&mut self, node: &'a JSXElement<'a>) -> Entity<'a> {
     let tag = self.exec_jsx_element_name(&node.opening_element.name);
     let attributes = self.exec_jsx_attributes(&node.opening_element);
     let children = self.exec_jsx_children(&node.children);
-    let key_children = *self.builtins.react_data.key_children.get_or_insert_with(|| {
-      self.factory.mangable_string("children", self.mangler.new_constant_atom("children"))
-    });
+    let key_children =
+      *self.builtins.react_data.key_children.get_or_insert_with(|| builtin_string!("children"));
     attributes.init_property(self, PropertyKind::Init, key_children, children, true);
     self.factory.react_element(tag, attributes.into())
   }

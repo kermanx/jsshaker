@@ -1,4 +1,6 @@
-use std::vec;
+pub mod string;
+
+use std::{fmt::Debug, vec};
 
 use oxc::{
   allocator::Allocator,
@@ -6,7 +8,7 @@ use oxc::{
   semantic::SymbolId,
   span::{Atom, SPAN, Span},
 };
-use oxc_ecmascript::StringToNumber;
+use oxc_ecmascript::{StringCharAt, StringCharAtResult, StringToNumber};
 use oxc_syntax::number::ToJsString;
 
 use super::{
@@ -15,21 +17,23 @@ use super::{
 };
 use crate::{
   analyzer::Analyzer,
+  builtin_atom, builtin_string,
   builtins::BuiltinPrototype,
   dep::Dep,
   entity::Entity,
   mangling::{MangleAtom, MangleConstraint},
   transformer::Transformer,
   utils::F64WithEq,
+  value::literal::string::ToAtomRef,
 };
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LiteralValue<'a> {
-  String(&'a str, Option<MangleAtom>),
-  Number(F64WithEq, Option<&'a str>),
-  BigInt(&'a str),
+  String(&'a Atom<'a>, Option<MangleAtom>),
+  Number(F64WithEq, Option<&'a Atom<'a>>),
+  BigInt(&'a Atom<'a>),
   Boolean(bool),
-  Symbol(SymbolId, &'a str),
+  Symbol(SymbolId, &'a Atom<'a>),
   Infinity(bool),
   NaN,
   Null,
@@ -37,18 +41,18 @@ pub enum LiteralValue<'a> {
 }
 
 impl<'a> ValueTrait<'a> for LiteralValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+  fn consume(&self, analyzer: &mut Analyzer<'a>) {
     if let LiteralValue::String(_, Some(atom)) = self {
       analyzer.consume(*atom);
     }
   }
 
-  fn consume_mangable(&'a self, _analyzer: &mut Analyzer<'a>) -> bool {
+  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     !matches!(self, LiteralValue::String(_, Some(_)))
   }
 
-  fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
+  fn unknown_mutate(&self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
     // No effect
   }
 
@@ -115,13 +119,14 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
           known: value
             .char_indices()
             .map(|(i, c)| {
-              let i_str = analyzer.allocator.alloc_str(&i.to_string());
+              let i_str = i.to_string().to_atom_ref(analyzer.allocator);
+              let c_str = c.to_string().to_atom_ref(analyzer.allocator);
               (
                 PropertyKeyValue::String(i_str),
                 (
                   true,
                   analyzer.factory.unmangable_string(i_str),
-                  analyzer.factory.unmangable_string(analyzer.allocator.alloc_str(&c.to_string())),
+                  analyzer.factory.unmangable_string(c_str),
                 ),
               )
             })
@@ -223,9 +228,9 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       | LiteralValue::Infinity(_) => self.into(),
       LiteralValue::Boolean(value) => {
         if *value {
-          analyzer.factory.number(1.0, Some("1"))
+          analyzer.factory.number(1.0, Some(builtin_atom!("1")))
         } else {
-          analyzer.factory.number(0.0, Some("0"))
+          analyzer.factory.number(0.0, Some(builtin_atom!("0")))
         }
       }
       LiteralValue::String(str, atom) => {
@@ -235,7 +240,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
           *atom,
         )
       }
-      LiteralValue::Null => analyzer.factory.number(0.0, Some("0")),
+      LiteralValue::Null => analyzer.factory.number(0.0, Some(builtin_atom!("0"))),
       LiteralValue::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         analyzer.factory.unknown
@@ -262,7 +267,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
       self.get_to_string(analyzer)
     } else {
-      analyzer.factory.builtin_string("")
+      builtin_string!("")
     }
   }
 
@@ -274,7 +279,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     Some(*self)
   }
 
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_own_keys(&self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
     match self {
       LiteralValue::String(_, _) => None,
       _ => Some(vec![]),
@@ -313,7 +318,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     if let LiteralValue::String(s, _) = self {
-      Some(Cacheable::Literal(LiteralValue::String(s, None)))
+      Some(Cacheable::String(s.as_str()))
     } else {
       Some(Cacheable::Literal(*self))
     }
@@ -336,12 +341,8 @@ impl<'a> LiteralValue<'a> {
       }
       LiteralValue::Number(value, raw) => {
         let negated = value.0.is_sign_negative();
-        let absolute = ast.expression_numeric_literal(
-          span,
-          value.0.abs(),
-          raw.map(Atom::from),
-          NumberBase::Decimal,
-        );
+        let absolute =
+          ast.expression_numeric_literal(span, value.0.abs(), raw.copied(), NumberBase::Decimal);
         if negated {
           ast.expression_unary(span, UnaryOperator::UnaryNegation, absolute)
         } else {
@@ -349,7 +350,7 @@ impl<'a> LiteralValue<'a> {
         }
       }
       LiteralValue::BigInt(value) => {
-        ast.expression_big_int_literal(span, *value, None, BigintBase::Decimal)
+        ast.expression_big_int_literal(span, **value, None, BigintBase::Decimal)
       }
       LiteralValue::Boolean(value) => ast.expression_boolean_literal(span, *value),
       LiteralValue::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
@@ -393,31 +394,31 @@ impl<'a> LiteralValue<'a> {
     }
   }
 
-  pub fn to_string(self, allocator: &'a Allocator) -> &'a str {
+  pub fn to_string(self, allocator: &'a Allocator) -> &'a Atom<'a> {
     match self {
       LiteralValue::String(value, _) => value,
       LiteralValue::Number(value, str_rep) => {
-        str_rep.unwrap_or_else(|| allocator.alloc_str(&value.0.to_js_string()))
+        str_rep.unwrap_or_else(|| value.0.to_js_string().to_atom_ref(allocator))
       }
       LiteralValue::BigInt(value) => value,
       LiteralValue::Boolean(value) => {
         if value {
-          "true"
+          builtin_atom!("true")
         } else {
-          "false"
+          builtin_atom!("false")
         }
       }
       LiteralValue::Symbol(_, str_rep) => str_rep,
       LiteralValue::Infinity(positive) => {
         if positive {
-          "Infinity"
+          builtin_atom!("Infinity")
         } else {
-          "-Infinity"
+          builtin_atom!("-Infinity")
         }
       }
-      LiteralValue::NaN => "NaN",
-      LiteralValue::Null => "null",
-      LiteralValue::Undefined => "undefined",
+      LiteralValue::NaN => builtin_atom!("NaN"),
+      LiteralValue::Null => builtin_atom!("null"),
+      LiteralValue::Undefined => builtin_atom!("undefined"),
     }
   }
 
@@ -469,14 +470,17 @@ impl<'a> LiteralValue<'a> {
         let LiteralValue::String(key, atom_key) = key else { return None };
         if key == "length" {
           Some(analyzer.factory.number(value.len() as f64, None))
-        } else if let Ok(index) = key.parse::<usize>() {
-          Some(
-            value
-              .get(index..index + 1)
-              .map_or(analyzer.factory.undefined, |v| analyzer.factory.unmangable_string(v)),
-          )
         } else {
-          None
+          let index = key.as_str().string_to_number();
+          if index.is_finite() {
+            Some(match value.as_str().char_at(Some(index)) {
+              StringCharAtResult::InvalidChar(_) => analyzer.factory.unknown,
+              StringCharAtResult::OutOfRange => analyzer.factory.undefined,
+              StringCharAtResult::Value(c) => analyzer.factory.unmangable_string(c.to_string()),
+            })
+          } else {
+            None
+          }
         }
         .map(|val| analyzer.factory.computed(val, (*atom_self, atom_key)))
       }

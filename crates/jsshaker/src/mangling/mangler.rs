@@ -33,7 +33,6 @@ pub struct Mangler<'a> {
 
   pub states: BoxBump<'a, MangleAtom, AtomState<'a>>,
   pub node_to_atom: FxHashMap<DepAtom, Option<MangleAtom>>,
-  pub builtin_atom: MangleAtom,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
@@ -45,14 +44,11 @@ impl<'a> Mangler<'a> {
   pub fn new(enabled: bool, factory: &mut Factory<'a>) -> Self {
     let allocator = factory.allocator;
     let states = BoxBump::new(allocator);
-    let builtin_atom = states.alloc(AtomState::Preserved);
-    factory.builtin_atom = Some(builtin_atom);
     Self {
       enabled,
       allocator,
       states,
       node_to_atom: FxHashMap::default(),
-      builtin_atom,
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
     }

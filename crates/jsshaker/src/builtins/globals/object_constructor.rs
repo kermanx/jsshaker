@@ -194,7 +194,7 @@ impl<'a> Builtins<'a> {
           let Some(LiteralValue::String(key_str, _)) = key.get_literal(analyzer) else {
             break 'trackable;
           };
-          match key_str {
+          match key_str.as_str() {
             "value" => {
               value = self.factory.computed(value2, (key, value));
             }

@@ -3,7 +3,8 @@ use super::{
   cacheable::Cacheable, consumed_object, never::NeverValue,
 };
 use crate::{
-  analyzer::Analyzer, builtins::BuiltinPrototype, dep::Dep, entity::Entity, value::LiteralValue,
+  analyzer::Analyzer, builtin_string, builtins::BuiltinPrototype, dep::Dep, entity::Entity,
+  value::LiteralValue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -138,7 +139,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     if matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String | PrimitiveValue::Number) {
       analyzer.factory.unknown_string
     } else {
-      analyzer.factory.builtin_string("")
+      builtin_string!("")
     }
   }
   fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {

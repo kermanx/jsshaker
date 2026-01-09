@@ -1,6 +1,7 @@
 use super::{Builtins, prototypes::BuiltinPrototypes};
 use crate::{
   analyzer::Factory,
+  builtin_atom,
   dep::DepCollector,
   entity::Entity,
   value::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, PropertyKeyValue},
@@ -19,7 +20,7 @@ impl<'a> Builtins<'a> {
 
     // import.meta.url
     object.keyed.borrow_mut().insert(
-      PropertyKeyValue::String("url"),
+      PropertyKeyValue::String(builtin_atom!("url")),
       ObjectProperty {
         definite: true,
         enumerable: true,

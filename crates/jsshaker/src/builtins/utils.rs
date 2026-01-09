@@ -4,9 +4,10 @@ macro_rules! init_namespace {
     {
       use $crate::value::{ObjectProperty, ObjectPropertyValue, PropertyKeyValue};
       use $crate::dep::DepCollector;
+      use $crate::builtin_atom;
       let mut keyed = $ns.keyed.borrow_mut();
       $(keyed.insert(
-        PropertyKeyValue::String($k),
+        PropertyKeyValue::String(builtin_atom!($k)),
         ObjectProperty {
           definite: true,
           enumerable: false,
@@ -26,9 +27,10 @@ macro_rules! init_object {
     {
       use $crate::value::{ObjectProperty, ObjectPropertyValue, PropertyKeyValue};
       use $crate::dep::DepCollector;
+      use $crate::builtin_atom;
       let mut keyed = $obj.keyed.borrow_mut();
       $(keyed.insert(
-        PropertyKeyValue::String($k),
+        PropertyKeyValue::String(builtin_atom!($k)),
         ObjectProperty {
           definite: true,
           enumerable: true,

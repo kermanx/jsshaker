@@ -13,6 +13,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
   analyzer::Analyzer,
+  builtin_string,
   dep::{CustomDepTrait, DepAtom},
   entity::Entity,
   scope::{VariableScopeId, variable_scope::EntityOrTDZ},
@@ -315,13 +316,17 @@ impl<'a> Analyzer<'a> {
       }
     }
     for (name, value) in &module.named_exports {
-      keys.push(self.factory.computed(self.factory.unmangable_string(name.as_str()), value.dep()));
+      keys.push(
+        self
+          .factory
+          .computed(self.factory.unmangable_string(&*self.factory.alloc(*name)), value.dep()),
+      );
     }
     if searched.is_empty()
       && let Some(default_export) = &module.default_export
       && default_export.is_some()
     {
-      keys.push(self.factory.computed(self.factory.builtin_string("default"), *default_export));
+      keys.push(self.factory.computed(builtin_string!("default"), *default_export));
     }
 
     keys

@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a IdentifierReference<'a>,
   ) -> Entity<'a> {
-    self.exec_mangable_static_string(AstKind2::IdentifierReference(node), node.name.as_str())
+    self.exec_mangable_static_string(AstKind2::IdentifierReference(node), &node.name)
   }
 }
 

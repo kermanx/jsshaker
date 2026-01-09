@@ -1,6 +1,6 @@
 use bitflags::bitflags;
 
-use crate::{analyzer::Factory, entity::Entity};
+use crate::{analyzer::Factory, builtin_string, entity::Entity};
 
 bitflags! {
   #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -33,28 +33,28 @@ impl TypeofResult {
       _ => {
         let mut values = factory.vec();
         if self.contains(TypeofResult::String) {
-          values.push(factory.builtin_string("string"));
+          values.push(builtin_string!("string"));
         }
         if self.contains(TypeofResult::Number) {
-          values.push(factory.builtin_string("number"));
+          values.push(builtin_string!("number"));
         }
         if self.contains(TypeofResult::BigInt) {
-          values.push(factory.builtin_string("bigint"));
+          values.push(builtin_string!("bigint"));
         }
         if self.contains(TypeofResult::Boolean) {
-          values.push(factory.builtin_string("boolean"));
+          values.push(builtin_string!("boolean"));
         }
         if self.contains(TypeofResult::Symbol) {
-          values.push(factory.builtin_string("symbol"));
+          values.push(builtin_string!("symbol"));
         }
         if self.contains(TypeofResult::Undefined) {
-          values.push(factory.builtin_string("undefined"));
+          values.push(builtin_string!("undefined"));
         }
         if self.contains(TypeofResult::Object) {
-          values.push(factory.builtin_string("object"));
+          values.push(builtin_string!("object"));
         }
         if self.contains(TypeofResult::Function) {
-          values.push(factory.builtin_string("function"));
+          values.push(builtin_string!("function"));
         }
         factory.union(values)
       }

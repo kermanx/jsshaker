@@ -141,7 +141,11 @@ impl<'a> Analyzer<'a> {
             ImportDeclarationSpecifier::ImportDefaultSpecifier(_node) => known.default,
             ImportDeclarationSpecifier::ImportNamespaceSpecifier(_node) => known.namespace,
             ImportDeclarationSpecifier::ImportSpecifier(node) => {
-              let key = self.factory.unmangable_string(node.imported.name().as_str());
+              let key = self.factory.unmangable_string(match &node.imported {
+                ModuleExportName::IdentifierName(identifier) => &identifier.name,
+                ModuleExportName::IdentifierReference(identifier) => &identifier.name,
+                ModuleExportName::StringLiteral(literal) => &literal.value,
+              });
               known.namespace.get_property(self, self.factory.no_dep, key)
             }
           }

@@ -1,15 +1,11 @@
 use oxc::ast::ast::{Expression, Super};
 
-use crate::{analyzer::Analyzer, entity::Entity, transformer::Transformer};
+use crate::{analyzer::Analyzer, builtin_string, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_super(&mut self, _node: &'a Super) -> Entity<'a> {
     // Should only be called in member expression
-    self.get_super().get_property(
-      self,
-      self.factory.no_dep,
-      self.factory.builtin_string("prototype"),
-    )
+    self.get_super().get_property(self, self.factory.no_dep, builtin_string!("prototype"))
   }
 }
 

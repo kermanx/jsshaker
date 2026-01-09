@@ -4,7 +4,7 @@ use super::super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
   TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, use_consumed_flag};
+use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_consumed_flag};
 
 trait BuiltinFnImpl<'a>: Debug {
   fn name(&self) -> &'static str;
@@ -142,9 +142,9 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     self.get_to_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
-    analyzer.factory.builtin_string("")
+    builtin_string!("")
   }
 
   fn get_constructor_prototype(

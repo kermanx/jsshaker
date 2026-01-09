@@ -1,10 +1,13 @@
-use crate::{analyzer::Analyzer, dep::DepAtom, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, dep::DepAtom, entity::Entity, transformer::Transformer,
+  value::literal::string::ToAtomRef,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_mangable_static_string(
     &mut self,
     node: impl Into<DepAtom>,
-    str: &'a str,
+    str: impl ToAtomRef<'a>,
   ) -> Entity<'a> {
     let atom = self.mangler.use_node_atom(node);
     self.factory.string(str, atom)

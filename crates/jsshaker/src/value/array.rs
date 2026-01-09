@@ -14,6 +14,7 @@ use crate::{
   entity::Entity,
   scope::CfScopeId,
   use_consumed_flag,
+  value::literal::string::ToAtomRef,
 };
 
 #[derive(Debug)]
@@ -225,7 +226,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     let mut known = FxHashMap::default();
     for (i, element) in self.elements.borrow().iter().enumerate() {
-      let i_str = analyzer.allocator.alloc_str(&i.to_string());
+      let i_str = i.to_string().to_atom_ref(analyzer.allocator);
       known.insert(
         PropertyKeyValue::String(i_str),
         (true, analyzer.factory.unmangable_string(i_str), *element),

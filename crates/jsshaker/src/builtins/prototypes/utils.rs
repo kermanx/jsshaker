@@ -1,10 +1,10 @@
 #[macro_export]
 macro_rules! insert_prototype_property {
   ($p:expr, $k:literal : $v:expr) => {
-    $p.insert_string_keyed($k, false, $v)
+    $p.insert_string_keyed($crate::builtin_atom!($k), false, $v)
   };
   ($p:expr, $k:literal => $v:expr) => {
-    $p.insert_string_keyed($k, true, $v)
+    $p.insert_string_keyed($crate::builtin_atom!($k), true, $v)
   };
 }
 

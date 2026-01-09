@@ -43,7 +43,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
         match key_literal {
           LiteralValue::String(key, _) => {
             if let Some(found) =
-              analyzer.get_export_value_by_name(self.module, key.into(), &mut Default::default())
+              analyzer.get_export_value_by_name(self.module, *key, &mut Default::default())
             {
               result.push(found);
             } else if rest_unknown {
