@@ -31,8 +31,8 @@ use oxc::{
 use oxc_syntax::operator::{AssignmentOperator, UnaryOperator};
 
 use crate::{
-  analyzer::Analyzer, build_effect, dep::DepTrait, entity::Entity, transformer::Transformer,
-  utils::ast::AstKind2,
+  analyzer::Analyzer, build_effect, dep::DepTrait, entity::Entity, folding::maybe_foldable_expr,
+  transformer::Transformer, utils::ast::AstKind2,
 };
 
 impl<'a> Analyzer<'a> {
@@ -86,7 +86,11 @@ impl<'a> Analyzer<'a> {
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
     self.pop_span();
-    self.try_fold_node(AstKind2::Expression(node), value)
+    if maybe_foldable_expr(node) {
+      self.try_fold_node(AstKind2::Expression(node), value)
+    } else {
+      value
+    }
   }
 
   pub fn exec_expression_with_dependency(

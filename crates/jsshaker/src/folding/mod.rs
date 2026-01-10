@@ -3,7 +3,11 @@ mod dep;
 use std::mem;
 
 use dep::{FoldableDep, UnFoldableDep};
-use oxc::{allocator, ast::ast::Expression, span::GetSpan};
+use oxc::{
+  allocator,
+  ast::{ast::Expression, match_member_expression},
+  span::GetSpan,
+};
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -110,5 +114,55 @@ impl<'a> Transformer<'a> {
   pub fn get_folded_literal(&self, node: AstKind2<'a>) -> Option<LiteralValue<'a>> {
     let data = self.folder.get(node.into())?;
     if let FoldingData::Foldable { literal, .. } = data { Some(*literal) } else { None }
+  }
+}
+
+pub fn maybe_foldable_expr(node: &Expression) -> bool {
+  match node {
+    match_member_expression!(Expression) => true,
+
+    Expression::StringLiteral(_)
+    | Expression::NumericLiteral(_)
+    | Expression::BigIntLiteral(_)
+    | Expression::BooleanLiteral(_)
+    | Expression::NullLiteral(_)
+    | Expression::RegExpLiteral(_)
+    | Expression::TemplateLiteral(_) => false,
+
+    Expression::FunctionExpression(_)
+    | Expression::ArrowFunctionExpression(_)
+    | Expression::ObjectExpression(_)
+    | Expression::ParenthesizedExpression(_)
+    | Expression::SequenceExpression(_)
+    | Expression::ImportExpression(_)
+    | Expression::NewExpression(_)
+    | Expression::ClassExpression(_) => false,
+
+    Expression::Identifier(_)
+    | Expression::UnaryExpression(_)
+    | Expression::UpdateExpression(_)
+    | Expression::BinaryExpression(_)
+    | Expression::LogicalExpression(_)
+    | Expression::ConditionalExpression(_)
+    | Expression::CallExpression(_)
+    | Expression::TaggedTemplateExpression(_)
+    | Expression::AwaitExpression(_)
+    | Expression::YieldExpression(_)
+    | Expression::ArrayExpression(_)
+    | Expression::AssignmentExpression(_)
+    | Expression::ChainExpression(_)
+    | Expression::MetaProperty(_)
+    | Expression::PrivateInExpression(_)
+    | Expression::ThisExpression(_)
+    | Expression::Super(_) => true,
+
+    Expression::JSXElement(_) | Expression::JSXFragment(_) => true,
+
+    Expression::V8IntrinsicExpression(_)
+    | Expression::TSAsExpression(_)
+    | Expression::TSInstantiationExpression(_)
+    | Expression::TSTypeAssertion(_)
+    | Expression::TSNonNullExpression(_)
+    | Expression::TSSatisfiesExpression(_) => unreachable!(),
   }
 }
