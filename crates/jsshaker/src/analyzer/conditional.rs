@@ -1,5 +1,6 @@
 use std::{cell::Cell, fmt::Debug, mem};
 
+use oxc::allocator;
 use rustc_hash::FxHashMap;
 
 use crate::{
@@ -70,7 +71,7 @@ impl<'a> Analyzer<'a> {
     maybe_alternate: bool,
     is_consequent: bool,
     has_contra: bool,
-  ) -> Dep<'a> {
+  ) -> Option<Dep<'a>> {
     self.push_conditional_cf_scope(
       id,
       kind,
@@ -100,7 +101,7 @@ impl<'a> Analyzer<'a> {
     left: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
-  ) -> Dep<'a> {
+  ) -> Option<Dep<'a>> {
     assert!(maybe_right);
     self.push_conditional_cf_scope(
       id,
@@ -123,11 +124,13 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> Dep<'a> {
+  ) -> Option<Dep<'a>> {
     let dep =
       self.register_conditional_data(id, test, maybe_true, maybe_false, is_true, has_contra);
 
-    self.push_cf_scope_with_deps(kind, self.factory.vec1(dep), maybe_true && maybe_false);
+    let non_det = maybe_true && maybe_false;
+
+    self.push_cf_scope_with_deps(kind, allocator::Vec::from_iter_in(dep, self.allocator), non_det);
 
     dep
   }
@@ -140,9 +143,18 @@ impl<'a> Analyzer<'a> {
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
-  ) -> Dep<'a> {
+  ) -> Option<Dep<'a>> {
     let id = id.into();
     let callsite = self.call_scope().callsite;
+
+    let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
+
+    let data = node_to_data.entry(id).or_insert_with(ConditionalData::default);
+
+    if data.maybe_true && data.maybe_false {
+      self.consume(test);
+      return None;
+    }
 
     let branch = self.allocator.alloc(ConditionalBranch {
       id,
@@ -153,15 +165,11 @@ impl<'a> Analyzer<'a> {
       consumed: self.allocator.alloc(Cell::new(false)),
     });
 
-    let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
-
     if has_contra {
       callsite_to_branches.entry(callsite).or_insert_with(Default::default).push(branch);
     }
 
-    node_to_data.entry(id).or_insert_with(ConditionalData::default);
-
-    Dep(branch)
+    Some(Dep(branch))
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
