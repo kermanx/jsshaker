@@ -12,13 +12,12 @@ impl<'a> Analyzer<'a> {
   pub fn exec_switch_statement(&mut self, node: &'a SwitchStatement<'a>) {
     // 1. discriminant
     let discriminant = self.exec_expression(&node.discriminant);
-    self.push_dependent_cf_scope(discriminant);
+    self.push_dependent_cf_scope(self.factory.always_mangable_dep(discriminant));
 
     // 2. tests
     let mut default_case = None;
     let mut maybe_default_case = Some(true);
     let mut test_results = vec![];
-    let mut non_det = false;
     for (index, case) in node.cases.iter().enumerate() {
       if let Some(test) = &case.test {
         let test_val = self.exec_expression(test);
@@ -31,6 +30,16 @@ impl<'a> Analyzer<'a> {
           self.consume(AstKind2::SwitchCaseTest(case));
         }
 
+        self.consume(m);
+        if test_result != Some(false) {
+          if m.is_some() {
+            test_val.consume_mangable(self);
+            discriminant.consume_mangable(self);
+          } else {
+            self.consume((test_val, discriminant));
+          }
+        }
+
         match test_result {
           Some(true) => {
             maybe_default_case = Some(false);
@@ -38,22 +47,15 @@ impl<'a> Analyzer<'a> {
           }
           Some(false) => {}
           None => {
-            self.consume((discriminant, test_val, m));
             // data.need_test.insert(index);
             maybe_default_case = None;
-            if !non_det {
-              non_det = true;
-              self.push_non_det_cf_scope();
-            }
+            self.cf_scope_mut().exited = None;
           }
         }
       } else {
         default_case = Some(index);
         test_results.push(/* Updated later */ None);
       }
-    }
-    if non_det {
-      self.pop_cf_scope();
     }
 
     // Patch default case
