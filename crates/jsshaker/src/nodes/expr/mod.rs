@@ -125,8 +125,8 @@ impl<'a> Transformer<'a> {
       match_member_expression!(Expression) => {
         self.transform_member_expression_read(node.to_member_expression(), need_val)
       }
-      Expression::StringLiteral(_)
-      | Expression::NumericLiteral(_)
+      Expression::StringLiteral(node) => self.transform_string_literal(node, need_val),
+      Expression::NumericLiteral(_)
       | Expression::BigIntLiteral(_)
       | Expression::BooleanLiteral(_)
       | Expression::NullLiteral(_)

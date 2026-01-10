@@ -1,15 +1,15 @@
 ---
-source: src/tests/mod.rs
-expression: tree_shake(input)
-input_file: src/tests/fixtures/template_literal.js
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/template_literal.js
 ---
 export function main(a) {
 	test1(`a${a}b`);
-	test2(`a7b${a}6d`);
-	test3((effect, effect, "a2b3"));
-	test4(`a2b3c${effect, a}`);
-	test5(`a2b${effect, a}c3`);
-	test6(`a2b${effect, a}c${effect, 3}`);
+	test2(`a${7}b${a}${6}d`);
+	test3(`a${effect, 2}b${effect, 3}`);
+	test4(`a${effect, 2}b${3}c${a}`);
+	test5(`a${effect, 2}b${a}c${3}`);
+	test6(`a${effect, 2}b${a}c${effect, 3}`);
 	test7(`\\${a}\`${b}
 ${c}\${}`);
 }
