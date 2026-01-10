@@ -21,7 +21,7 @@ use crate::{
 pub enum FoldingData<'a> {
   Initial,
   Foldable {
-    literal: &'a LiteralValue<'a>,
+    literal: LiteralValue<'a>,
     used_values: allocator::Vec<'a, Entity<'a>>,
     mangle_atom: Option<MangleAtom>,
   },
@@ -65,13 +65,20 @@ impl<'a> Analyzer<'a> {
       .or_insert_with(|| self.folder.bump.alloc(FoldingData::Initial));
     if let FoldingData::UnFoldable = self.folder.bump.get(data) {
       value
-    } else if let Some(mut literal) = self.get_foldable_literal(value) {
-      let mangle_atom = match &mut literal {
-        LiteralValue::String(_, atom) => Some(*atom.get_or_insert_with(|| self.mangler.new_atom())),
+    } else if let Some(literal) = self.get_foldable_literal(value) {
+      let mut value = value;
+      let mangle_atom = match literal {
+        LiteralValue::String(_, Some(atom)) => Some(atom),
+        LiteralValue::String(str, None) => {
+          let atom = self.mangler.use_foldable_node(node);
+          if let Some(atom) = atom {
+            value = self.factory.string(str, Some(atom))
+          }
+          atom
+        }
         _ => None,
       };
-      let literal = &*self.factory.alloc(literal);
-      self.factory.computed(literal.into(), FoldableDep { data, literal, value, mangle_atom })
+      value.override_dep(self.factory.dep(FoldableDep { data, literal, value, mangle_atom }))
     } else {
       self.factory.computed(value, UnFoldableDep { data })
     }
@@ -102,6 +109,6 @@ impl<'a> Transformer<'a> {
 
   pub fn get_folded_literal(&self, node: AstKind2<'a>) -> Option<LiteralValue<'a>> {
     let data = self.folder.get(node.into())?;
-    if let FoldingData::Foldable { literal, .. } = data { Some(**literal) } else { None }
+    if let FoldingData::Foldable { literal, .. } = data { Some(*literal) } else { None }
   }
 }

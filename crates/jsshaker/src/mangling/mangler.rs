@@ -1,10 +1,18 @@
 use std::collections::hash_map;
 
-use oxc::allocator::{self, Allocator};
+use oxc::{
+  allocator::{self, Allocator},
+  span::Atom,
+};
 use oxc_index::IndexVec;
 use rustc_hash::FxHashMap;
 
-use crate::{analyzer::Factory, dep::DepAtom, utils::box_bump::BoxBump};
+use crate::{
+  analyzer::Factory,
+  dep::DepAtom,
+  utils::box_bump::BoxBump,
+  value::{LiteralValue, Value},
+};
 
 use super::{MangleAtom, utils::get_mangled_name};
 
@@ -32,7 +40,8 @@ pub struct Mangler<'a> {
   pub allocator: &'a Allocator,
 
   pub states: BoxBump<'a, MangleAtom, AtomState<'a>>,
-  pub node_to_atom: FxHashMap<DepAtom, Option<MangleAtom>>,
+  pub constant_nodes: FxHashMap<DepAtom, (Option<MangleAtom>, Value<'a>)>,
+  pub foldable_nodes: FxHashMap<DepAtom, Option<MangleAtom>>,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
@@ -48,14 +57,38 @@ impl<'a> Mangler<'a> {
       enabled,
       allocator,
       states,
-      node_to_atom: FxHashMap::default(),
+      constant_nodes: FxHashMap::default(),
+      foldable_nodes: FxHashMap::default(),
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
     }
   }
 
-  pub fn use_node_atom(&mut self, node: impl Into<DepAtom>) -> Option<MangleAtom> {
-    match self.node_to_atom.entry(node.into()) {
+  pub fn use_constant_node(&mut self, node: impl Into<DepAtom>, str: &'a Atom<'a>) -> Value<'a> {
+    match self.constant_nodes.entry(node.into()) {
+      hash_map::Entry::Occupied(mut entry) => {
+        let (atom, value) = entry.get_mut();
+        if let Some(a) = atom
+          && matches!(self.states[*a], AtomState::NonMangable)
+        {
+          *atom = None;
+          *value = str;
+        }
+        *value
+      }
+      hash_map::Entry::Vacant(entry) => {
+        let atom = self
+          .states
+          .alloc(AtomState::Constrained(None, allocator::HashSet::new_in(self.allocator)));
+        let value = self.allocator.alloc(LiteralValue::String(str, Some(atom)));
+        entry.insert((Some(atom), value));
+        value
+      }
+    }
+  }
+
+  pub fn use_foldable_node(&mut self, node: impl Into<DepAtom>) -> Option<MangleAtom> {
+    match self.foldable_nodes.entry(node.into()) {
       hash_map::Entry::Occupied(mut entry) => {
         let atom = entry.get_mut();
         if let Some(a) = atom
@@ -113,7 +146,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn resolve_node(&mut self, node: impl Into<DepAtom>) -> Option<&'a str> {
-    if let Some(atom) = self.node_to_atom.get(&node.into()).and_then(|&a| a) {
+    if let Some(atom) = self.constant_nodes.get(&node.into()).and_then(|&(a, _)| a) {
       self.resolve(atom)
     } else {
       None

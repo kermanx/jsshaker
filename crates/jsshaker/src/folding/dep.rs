@@ -11,7 +11,7 @@ use crate::{
 #[derive(Debug)]
 pub struct FoldableDep<'a> {
   pub data: FoldingDataId,
-  pub literal: &'a LiteralValue<'a>,
+  pub literal: LiteralValue<'a>,
   pub value: Entity<'a>,
   pub mangle_atom: Option<MangleAtom>,
 }
@@ -28,7 +28,7 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
         };
       }
       FoldingData::Foldable { literal, used_values, mangle_atom, .. } => {
-        if literal.strict_eq(*self.literal, true).0 {
+        if literal.strict_eq(self.literal, true).0 {
           used_values.push(self.value);
           match (*mangle_atom, self.mangle_atom) {
             (Some(m1), Some(m2)) => {

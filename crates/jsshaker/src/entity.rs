@@ -47,6 +47,10 @@ impl<'a> Entity<'a> {
       }
   }
 
+  pub fn override_dep(self, dep: Dep<'a>) -> Entity<'a> {
+    Entity { value: self.value, dep: Some(dep) }
+  }
+
   pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.consume(*self);
   }

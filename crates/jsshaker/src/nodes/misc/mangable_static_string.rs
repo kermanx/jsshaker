@@ -9,8 +9,8 @@ impl<'a> Analyzer<'a> {
     node: impl Into<DepAtom>,
     str: impl ToAtomRef<'a>,
   ) -> Entity<'a> {
-    let atom = self.mangler.use_node_atom(node);
-    self.factory.string(str, atom)
+    let str = str.to_atom_ref(self.allocator);
+    self.mangler.use_constant_node(node, str).into()
   }
 }
 
