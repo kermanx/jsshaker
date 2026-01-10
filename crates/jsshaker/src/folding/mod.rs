@@ -66,19 +66,19 @@ impl<'a> Analyzer<'a> {
     if let FoldingData::UnFoldable = self.folder.bump.get(data) {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
-      let mut value = value;
+      let mut new_value = value;
       let mangle_atom = match literal {
         LiteralValue::String(_, Some(atom)) => Some(atom),
         LiteralValue::String(str, None) => {
           let atom = self.mangler.use_foldable_node(node);
           if let Some(atom) = atom {
-            value = self.factory.string(str, Some(atom))
+            new_value = self.factory.string(str, Some(atom))
           }
           atom
         }
         _ => None,
       };
-      value.override_dep(self.factory.dep(FoldableDep { data, literal, value, mangle_atom }))
+      new_value.override_dep(self.factory.dep(FoldableDep { data, literal, value, mangle_atom }))
     } else {
       self.factory.computed(value, UnFoldableDep { data })
     }
