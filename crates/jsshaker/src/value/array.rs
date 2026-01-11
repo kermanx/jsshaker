@@ -195,7 +195,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       }
       if has_effect {
         let mut deps = self.deps.borrow_mut();
-        deps.push(analyzer.dep(exec_deps));
+        deps.push(analyzer.dep((exec_deps, key)));
       }
       return;
     }
