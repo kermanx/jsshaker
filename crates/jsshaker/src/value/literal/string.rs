@@ -159,7 +159,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let value = self.as_str();
     let val = value.trim().string_to_number();
-    if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val, None) }
+    if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val) }
   }
 
   fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -210,7 +210,7 @@ fn get_known_instance_property<'a>(
 ) -> Option<Entity<'a>> {
   let LiteralValue::String(key, _) = key else { return None };
   if key == "length" {
-    Some(analyzer.factory.number(value.len() as f64, None))
+    Some(analyzer.factory.number(value.len() as f64))
   } else {
     let index = key.as_str().string_to_number();
     if index.is_finite() {

@@ -92,7 +92,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
                 || analyzer.factory.computed_unknown_number(&self.rest),
-                |length| analyzer.factory.number(length as f64, None),
+                |length| analyzer.factory.number(length as f64),
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get_keyed(
               analyzer,

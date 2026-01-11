@@ -30,12 +30,10 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub enum LiteralValue<'a> {
   String(&'a Atom<'a>, Option<MangleAtom>),
-  Number(F64WithEq, Option<&'a Atom<'a>>),
+  Number(F64WithEq),
   BigInt(&'a Atom<'a>),
   Boolean(bool),
   Symbol(SymbolId, &'a Atom<'a>),
-  Infinity(bool),
-  NaN,
   Null,
   Undefined,
 }
@@ -191,21 +189,18 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
 
   fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
-      LiteralValue::Number(_, _)
-      | LiteralValue::BigInt(_)
-      | LiteralValue::NaN
-      | LiteralValue::Infinity(_) => self.into(),
+      LiteralValue::Number(_) | LiteralValue::BigInt(_) => self.into(),
       LiteralValue::Boolean(value) => {
         if *value {
-          analyzer.factory.number(1.0, Some(builtin_atom!("1")))
+          analyzer.factory.number(1.0)
         } else {
-          analyzer.factory.number(0.0, Some(builtin_atom!("0")))
+          analyzer.factory.number(0.0)
         }
       }
       LiteralValue::String(str, atom) => {
         analyzer.factory.computed(str.get_to_numeric(analyzer), *atom)
       }
-      LiteralValue::Null => analyzer.factory.number(0.0, Some(builtin_atom!("0"))),
+      LiteralValue::Null => analyzer.factory.number(0.0),
       LiteralValue::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         analyzer.factory.unknown
@@ -254,12 +249,10 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   fn test_typeof(&self) -> TypeofResult {
     match self {
       LiteralValue::String(_, _) => TypeofResult::String,
-      LiteralValue::Number(_, _) => TypeofResult::Number,
+      LiteralValue::Number(_) => TypeofResult::Number,
       LiteralValue::BigInt(_) => TypeofResult::BigInt,
       LiteralValue::Boolean(_) => TypeofResult::Boolean,
       LiteralValue::Symbol(_, _) => TypeofResult::Symbol,
-      LiteralValue::Infinity(_) => TypeofResult::Number,
-      LiteralValue::NaN => TypeofResult::Number,
       LiteralValue::Null => TypeofResult::Object,
       LiteralValue::Undefined => TypeofResult::Undefined,
     }
@@ -268,12 +261,11 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   fn test_truthy(&self) -> Option<bool> {
     Some(match self {
       LiteralValue::String(value, _) => !value.is_empty(),
-      LiteralValue::Number(value, _) => *value != 0.0.into() && *value != (-0.0).into(),
+      LiteralValue::Number(value) => *value != 0.0.into() && *value != (-0.0).into(),
       LiteralValue::BigInt(value) => !value.chars().all(|c| c == '0'),
       LiteralValue::Boolean(value) => *value,
       LiteralValue::Symbol(_, _) => true,
-      LiteralValue::Infinity(_) => true,
-      LiteralValue::NaN | LiteralValue::Null | LiteralValue::Undefined => false,
+      LiteralValue::Null | LiteralValue::Undefined => false,
     })
   }
 
@@ -304,10 +296,15 @@ impl<'a> LiteralValue<'a> {
         let mangled = atom.and_then(|a| mangler.resolve(a)).unwrap_or(value);
         ast.expression_string_literal(span, mangled, None)
       }
-      LiteralValue::Number(value, raw) => {
+      LiteralValue::Number(value) => {
         let negated = value.0.is_sign_negative();
-        let absolute =
-          ast.expression_numeric_literal(span, value.0.abs(), raw.copied(), NumberBase::Decimal);
+        let absolute = if value.0.is_infinite() {
+          ast.expression_identifier(span, "Infinity")
+        } else if value.0.is_nan() {
+          ast.expression_identifier(span, "NaN")
+        } else {
+          ast.expression_numeric_literal(span, value.0.abs(), None, NumberBase::Decimal)
+        };
         if negated {
           ast.expression_unary(span, UnaryOperator::UnaryNegation, absolute)
         } else {
@@ -319,18 +316,6 @@ impl<'a> LiteralValue<'a> {
       }
       LiteralValue::Boolean(value) => ast.expression_boolean_literal(span, *value),
       LiteralValue::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
-      LiteralValue::Infinity(positive) => {
-        if *positive {
-          ast.expression_identifier(span, "Infinity")
-        } else {
-          ast.expression_unary(
-            span,
-            UnaryOperator::UnaryNegation,
-            ast.expression_identifier(span, "Infinity"),
-          )
-        }
-      }
-      LiteralValue::NaN => ast.expression_identifier(span, "NaN"),
       LiteralValue::Null => ast.expression_null_literal(span),
       LiteralValue::Undefined => ast.expression_unary(
         span,
@@ -344,16 +329,15 @@ impl<'a> LiteralValue<'a> {
     let config = &analyzer.config;
     match self {
       LiteralValue::String(value, _) => value.len() <= config.max_simple_string_length,
-      LiteralValue::Number(value, _) => {
-        value.0.fract() == 0.0
-          && config.min_simple_number_value <= (value.0 as i64)
-          && (value.0 as i64) <= config.max_simple_number_value
+      LiteralValue::Number(value) => {
+        !value.0.is_finite()
+          || (value.0.fract() == 0.0
+            && config.min_simple_number_value <= (value.0 as i64)
+            && (value.0 as i64) <= config.max_simple_number_value)
       }
       LiteralValue::BigInt(_) => false,
       LiteralValue::Boolean(_) => true,
       LiteralValue::Symbol(_, _) => false,
-      LiteralValue::Infinity(_) => true,
-      LiteralValue::NaN => true,
       LiteralValue::Null => true,
       LiteralValue::Undefined => true,
     }
@@ -362,9 +346,7 @@ impl<'a> LiteralValue<'a> {
   pub fn to_string(self, allocator: &'a Allocator) -> &'a Atom<'a> {
     match self {
       LiteralValue::String(value, _) => value,
-      LiteralValue::Number(value, str_rep) => {
-        str_rep.unwrap_or_else(|| value.0.to_js_string().to_atom_ref(allocator))
-      }
+      LiteralValue::Number(value) => value.0.to_js_string().to_atom_ref(allocator),
       LiteralValue::BigInt(value) => value,
       LiteralValue::Boolean(value) => {
         if value {
@@ -374,14 +356,6 @@ impl<'a> LiteralValue<'a> {
         }
       }
       LiteralValue::Symbol(_, str_rep) => str_rep,
-      LiteralValue::Infinity(positive) => {
-        if positive {
-          builtin_atom!("Infinity")
-        } else {
-          builtin_atom!("-Infinity")
-        }
-      }
-      LiteralValue::NaN => builtin_atom!("NaN"),
       LiteralValue::Null => builtin_atom!("null"),
       LiteralValue::Undefined => builtin_atom!("undefined"),
     }
@@ -390,7 +364,7 @@ impl<'a> LiteralValue<'a> {
   // `None` for unresolvable, `Some(None)` for NaN, `Some(Some(value))` for number
   pub fn to_number(self) -> Option<Option<F64WithEq>> {
     match self {
-      LiteralValue::Number(value, _) => Some(Some(value)),
+      LiteralValue::Number(value) => Some(Some(value)),
       LiteralValue::BigInt(_value) => {
         // TODO: warn: TypeError: Cannot convert a BigInt value to a number
         None
@@ -405,20 +379,17 @@ impl<'a> LiteralValue<'a> {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         None
       }
-      LiteralValue::NaN | LiteralValue::Undefined => Some(None),
-      LiteralValue::Infinity(_) => None,
+      LiteralValue::Undefined => Some(None),
     }
   }
 
   fn get_prototype(&self, analyzer: &mut Analyzer<'a>) -> &'a BuiltinPrototype<'a> {
     match self {
       LiteralValue::String(_, _) => &analyzer.builtins.prototypes.string,
-      LiteralValue::Number(_, _) => &analyzer.builtins.prototypes.number,
+      LiteralValue::Number(_) => &analyzer.builtins.prototypes.number,
       LiteralValue::BigInt(_) => &analyzer.builtins.prototypes.bigint,
       LiteralValue::Boolean(_) => &analyzer.builtins.prototypes.boolean,
       LiteralValue::Symbol(_, _) => &analyzer.builtins.prototypes.symbol,
-      LiteralValue::Infinity(_) => &analyzer.builtins.prototypes.number,
-      LiteralValue::NaN => &analyzer.builtins.prototypes.number,
       LiteralValue::Null | LiteralValue::Undefined => {
         unreachable!("Cannot get prototype of null or undefined")
       }
@@ -426,13 +397,9 @@ impl<'a> LiteralValue<'a> {
   }
 
   pub fn strict_eq(self, other: LiteralValue, object_is: bool) -> (bool, Option<MangleConstraint>) {
-    // 0.0 === -0.0
-    if !object_is && let (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) = (self, other) {
-      let eq = if l == 0.0.into() || l == (-0.0).into() {
-        r == 0.0.into() || r == (-0.0).into()
-      } else {
-        l == r
-      };
+    if let (LiteralValue::Number(l), LiteralValue::Number(r)) = (self, other) {
+      // 0.0 === -0.0
+      let eq = if object_is { l == r } else { l.0 == r.0 };
       return (eq, None);
     }
 
@@ -442,10 +409,6 @@ impl<'a> LiteralValue<'a> {
     }
 
     if self != other {
-      return (false, None);
-    }
-
-    if !object_is && self == LiteralValue::NaN {
       return (false, None);
     }
 

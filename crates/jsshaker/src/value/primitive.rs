@@ -198,10 +198,7 @@ impl<'a> PrimitiveValue {
       (self, lit),
       (PrimitiveValue::Mixed, _)
         | (PrimitiveValue::BigInt, LiteralValue::BigInt(_))
-        | (
-          PrimitiveValue::Number,
-          LiteralValue::Number(_, _) | LiteralValue::Infinity(_) | LiteralValue::NaN,
-        )
+        | (PrimitiveValue::Number, LiteralValue::Number(_))
         | (PrimitiveValue::String, LiteralValue::String(_, _))
         | (PrimitiveValue::Boolean, LiteralValue::Boolean(_))
         | (PrimitiveValue::Symbol, LiteralValue::Symbol(_, _))

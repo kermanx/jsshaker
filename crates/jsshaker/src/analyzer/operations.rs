@@ -111,7 +111,7 @@ impl<'a> Analyzer<'a> {
   pub fn op_lt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
     fn literal_lt(lhs: LiteralValue, rhs: LiteralValue, eq: bool) -> Option<bool> {
       match (lhs, rhs) {
-        (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) => {
+        (LiteralValue::Number(l), LiteralValue::Number(r)) => {
           Some(if eq { l.0 <= r.0 } else { l.0 < r.0 })
         }
         (LiteralValue::String(l, _), LiteralValue::String(r, _)) => {
@@ -215,7 +215,7 @@ impl<'a> Analyzer<'a> {
         (Some(l), Some(r)) => match (l, r) {
           (Some(l), Some(r)) => {
             let val = l.0 + r.0;
-            values.push(self.factory.number(val, None));
+            values.push(self.factory.number(val));
           }
           _ => {
             values.push(self.factory.nan);
@@ -265,8 +265,7 @@ impl<'a> Analyzer<'a> {
     self.factory.computed(
       if let (Some(l), Some(r)) = (lhs.get_literal(self), rhs.get_literal(self)) {
         match (l, r) {
-          (LiteralValue::Number(l, _), LiteralValue::Number(r, _)) => calc(l.0, r.0),
-          (LiteralValue::NaN, _) | (_, LiteralValue::NaN) => self.factory.nan,
+          (LiteralValue::Number(l), LiteralValue::Number(r)) => calc(l.0, r.0),
           _ => self.factory.unknown_primitive,
         }
       } else {
@@ -278,11 +277,10 @@ impl<'a> Analyzer<'a> {
 
   pub fn op_update(&self, input: Entity<'a>, operator: UpdateOperator) -> Entity<'a> {
     let apply_update = |v: f64| {
-      let val = match operator {
+      self.factory.number(match operator {
         UpdateOperator::Increment => v + 1.0,
         UpdateOperator::Decrement => v - 1.0,
-      };
-      self.factory.number(val, None)
+      })
     };
 
     if let Some(num) = input.get_literal(self).and_then(|lit| lit.to_number()) {
@@ -362,7 +360,7 @@ impl<'a> Analyzer<'a> {
           BinaryOperator::Exponential => l.powf(r),
           _ => unreachable!(),
         };
-        if value.is_nan() { factory.nan } else { factory.number(value, None) }
+        if value.is_nan() { factory.nan } else { factory.number(value) }
       }),
 
       BinaryOperator::ShiftLeft
@@ -387,7 +385,7 @@ impl<'a> Analyzer<'a> {
             }
             _ => unreachable!(),
           };
-          factory.number(value, None)
+          factory.number(value)
         })
       }
 
@@ -401,7 +399,7 @@ impl<'a> Analyzer<'a> {
             BinaryOperator::BitwiseAnd => l & r,
             _ => unreachable!(),
           };
-          factory.number(f64::from(value), None)
+          factory.number(f64::from(value))
         }),
 
       BinaryOperator::In => factory.computed_unknown_boolean((lhs, rhs)),

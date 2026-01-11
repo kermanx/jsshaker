@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
           if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
             if let Some(num) = num {
               let num = -num.0;
-              self.factory.number(num, None)
+              self.factory.number(num)
             } else {
               self.factory.nan
             }
@@ -74,11 +74,10 @@ impl<'a> Analyzer<'a> {
         if let Some(literals) = argument.get_to_numeric(self).get_to_literals(self) {
           self.factory.union(allocator::Vec::from_iter_in(
             literals.into_iter().map(|lit| match lit {
-              LiteralValue::Number(num, _) => {
+              LiteralValue::Number(num) => {
                 let num = !num.0.to_int_32();
-                self.factory.number(num as f64, None)
+                self.factory.number(num as f64)
               }
-              LiteralValue::NaN => self.factory.number(-1f64, None),
               _ => self.factory.unknown_primitive,
             }),
             self.allocator,

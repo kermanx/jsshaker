@@ -7,7 +7,7 @@ impl Builtins<'_> {
     init_map!(self.globals, {
       // Value properties
       "undefined" => factory.undefined,
-      "Infinity" => factory.infinity(true),
+      "Infinity" => factory.number(f64::INFINITY),
       "NaN" => factory.nan,
       "globalThis" => factory.unknown,
 

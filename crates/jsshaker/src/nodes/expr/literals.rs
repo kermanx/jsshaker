@@ -14,7 +14,7 @@ impl<'a> Analyzer<'a> {
     if node.base == NumberBase::Float {
       self.factory.unknown_number
     } else {
-      self.factory.number(node.value, None)
+      self.factory.number(node.value)
     }
   }
 

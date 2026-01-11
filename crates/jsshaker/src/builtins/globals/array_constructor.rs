@@ -44,7 +44,7 @@ impl<'a> Builtins<'a> {
 
       for (i, element) in elements.into_iter().enumerate() {
         let element = if no_map_fn != Some(true) {
-          let index = analyzer.factory.number(i as f64, None);
+          let index = analyzer.factory.number(i as f64);
           let args = analyzer.factory.arguments(analyzer.allocator.alloc([element, index]), None);
           let mapped = map_fn.call(analyzer, dep, this_arg, args);
           if no_map_fn == Some(false) { mapped } else { analyzer.factory.union((element, mapped)) }

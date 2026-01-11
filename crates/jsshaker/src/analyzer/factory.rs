@@ -70,7 +70,7 @@ impl<'a> Factory<'a> {
   pub fn new(allocator: &'a Allocator, config: &TreeShakeConfig) -> Factory<'a> {
     let r#true = allocator.alloc(LiteralValue::Boolean(true)).into();
     let r#false = allocator.alloc(LiteralValue::Boolean(false)).into();
-    let nan = allocator.alloc(LiteralValue::NaN).into();
+    let nan = allocator.alloc(LiteralValue::Number(f64::NAN.into())).into();
     let null = allocator.alloc(LiteralValue::Null).into();
     let undefined = allocator.alloc(LiteralValue::Undefined).into();
 
@@ -292,8 +292,8 @@ impl<'a> Factory<'a> {
     }
   }
 
-  pub fn number(&self, value: impl Into<F64WithEq>, str_rep: Option<&'a Atom<'a>>) -> Entity<'a> {
-    self.alloc(LiteralValue::Number(value.into(), str_rep)).into()
+  pub fn number(&self, value: impl Into<F64WithEq>) -> Entity<'a> {
+    self.alloc(LiteralValue::Number(value.into())).into()
   }
   pub fn big_int(&self, value: &'a Atom<'a>) -> Entity<'a> {
     self.alloc(LiteralValue::BigInt(value)).into()
@@ -304,10 +304,6 @@ impl<'a> Factory<'a> {
   }
   pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
     if let Some(value) = value { self.boolean(value) } else { self.unknown_boolean }
-  }
-
-  pub fn infinity(&self, positivie: bool) -> Entity<'a> {
-    self.alloc(LiteralValue::Infinity(positivie)).into()
   }
 
   pub fn symbol(&self, id: SymbolId, str_rep: &'a Atom<'a>) -> Entity<'a> {
