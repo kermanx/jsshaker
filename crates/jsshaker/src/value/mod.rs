@@ -36,6 +36,12 @@ pub enum PropertyKeyValue<'a> {
   Symbol(SymbolId),
 }
 
+impl<'a> PropertyKeyValue<'a> {
+  pub fn is_special_key(&self) -> bool {
+    matches!(self, PropertyKeyValue::String(s) if s.as_str() == "__proto__")
+  }
+}
+
 #[derive(Debug)]
 pub struct EnumeratedProperties<'a> {
   pub known: FxHashMap<PropertyKeyValue<'a>, (bool, Entity<'a>, Entity<'a>)>,

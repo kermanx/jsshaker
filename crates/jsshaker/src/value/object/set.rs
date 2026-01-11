@@ -55,6 +55,13 @@ impl<'a> ObjectValue<'a> {
 
       for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
+
+        if key_str.is_special_key() {
+          drop(keyed);
+          self.consume(analyzer);
+          return consumed_object::set_property(analyzer, dep, key, value);
+        }
+
         let exists = if let Some(property) = keyed.get_mut(&key_str) {
           if property.set(
             analyzer,

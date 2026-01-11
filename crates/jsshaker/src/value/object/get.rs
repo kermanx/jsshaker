@@ -45,8 +45,13 @@ impl<'a> ObjectValue<'a> {
     if let Some(key_literals) = &key_literals {
       mangable = self.check_mangable(analyzer, key_literals);
       for &key_literal in key_literals {
-        let (key, key_atom) = key_literal.into();
-        if !self.get_keyed(analyzer, &mut context, key, key_atom, exhaustive_deps.as_mut()) {
+        let (key_str, key_atom) = key_literal.into();
+
+        if key_str.is_special_key() {
+          return analyzer.factory.computed_unknown((self, dep, key));
+        }
+
+        if !self.get_keyed(analyzer, &mut context, key_str, key_atom, exhaustive_deps.as_mut()) {
           check_rest = true;
         }
       }
