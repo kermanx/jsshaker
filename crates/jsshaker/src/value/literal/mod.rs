@@ -8,7 +8,7 @@ use oxc::{
   semantic::SymbolId,
   span::{Atom, SPAN, Span},
 };
-use oxc_ecmascript::{StringCharAt, StringCharAtResult, StringToNumber};
+use oxc_ecmascript::StringToNumber;
 use oxc_syntax::number::ToJsString;
 
 use super::{
@@ -62,30 +62,22 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if matches!(self, LiteralValue::Null | LiteralValue::Undefined) {
-      analyzer.throw_builtin_error("Cannot get property of null or undefined");
-      if analyzer.config.preserve_exceptions {
-        consumed_object::get_property(self, analyzer, dep, key)
-      } else {
-        analyzer.factory.never
-      }
-    } else {
-      let prototype = self.get_prototype(analyzer);
-      let dep = analyzer.dep((self, dep, key));
-      if let Some(key_literals) = key.get_to_literals(analyzer) {
-        let mut values = analyzer.factory.vec();
-        for &key_literal in &key_literals {
-          if let Some(property) = self.get_known_instance_property(analyzer, key_literal) {
-            values.push(property);
-          } else if let Some(property) = prototype.get_literal_keyed(key_literal) {
-            values.push(property);
-          } else {
-            values.push(analyzer.factory.unmatched_prototype_property);
-          }
+    match self {
+      LiteralValue::Null | LiteralValue::Undefined => {
+        analyzer.throw_builtin_error("Cannot get property of null or undefined");
+        if analyzer.config.preserve_exceptions {
+          consumed_object::get_property(self, analyzer, dep, key)
+        } else {
+          analyzer.factory.never
         }
-        analyzer.factory.computed_union(values, dep)
-      } else {
-        analyzer.factory.computed_unknown(dep)
+      }
+      LiteralValue::String(str, atom) => {
+        let dep = analyzer.dep((dep, *atom));
+        str.get_property(analyzer, dep, key)
+      }
+      _ => {
+        let prototype = self.get_prototype(analyzer);
+        prototype.get_property(analyzer, self.into(), key, dep)
       }
     }
   }
@@ -113,30 +105,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if let LiteralValue::String(value, atom) = self {
-      let dep = analyzer.dep((dep, *atom));
-      if value.len() <= analyzer.config.max_simple_string_length {
-        EnumeratedProperties {
-          known: value
-            .char_indices()
-            .map(|(i, c)| {
-              let i_str = i.to_string().to_atom_ref(analyzer.allocator);
-              let c_str = c.to_string().to_atom_ref(analyzer.allocator);
-              (
-                PropertyKeyValue::String(i_str),
-                (
-                  true,
-                  analyzer.factory.unmangable_string(i_str),
-                  analyzer.factory.unmangable_string(c_str),
-                ),
-              )
-            })
-            .collect(),
-          unknown: None,
-          dep,
-        }
-      } else {
-        analyzer.factory.computed_unknown_string(self).enumerate_properties(analyzer, dep)
-      }
+      value.enumerate_properties(analyzer, analyzer.dep((dep, *atom)))
     } else {
       // No effect
       EnumeratedProperties { known: Default::default(), unknown: None, dep }
@@ -234,11 +203,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
         }
       }
       LiteralValue::String(str, atom) => {
-        let val = str.trim().string_to_number();
-        analyzer.factory.computed(
-          if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val, None) },
-          *atom,
-        )
+        analyzer.factory.computed(str.get_to_numeric(analyzer), *atom)
       }
       LiteralValue::Null => analyzer.factory.number(0.0, Some(builtin_atom!("0"))),
       LiteralValue::Symbol(_, _) => {
@@ -457,34 +422,6 @@ impl<'a> LiteralValue<'a> {
       LiteralValue::Null | LiteralValue::Undefined => {
         unreachable!("Cannot get prototype of null or undefined")
       }
-    }
-  }
-
-  fn get_known_instance_property(
-    &self,
-    analyzer: &Analyzer<'a>,
-    key: LiteralValue<'a>,
-  ) -> Option<Entity<'a>> {
-    match self {
-      LiteralValue::String(value, atom_self) => {
-        let LiteralValue::String(key, atom_key) = key else { return None };
-        if key == "length" {
-          Some(analyzer.factory.number(value.len() as f64, None))
-        } else {
-          let index = key.as_str().string_to_number();
-          if index.is_finite() {
-            Some(match value.as_str().char_at(Some(index)) {
-              StringCharAtResult::InvalidChar(_) => analyzer.factory.unknown,
-              StringCharAtResult::OutOfRange => analyzer.factory.undefined,
-              StringCharAtResult::Value(c) => analyzer.factory.unmangable_string(c.to_string()),
-            })
-          } else {
-            None
-          }
-        }
-        .map(|val| analyzer.factory.computed(val, (*atom_self, atom_key)))
-      }
-      _ => None,
     }
   }
 

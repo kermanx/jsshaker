@@ -47,7 +47,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     key: Entity<'a>,
   ) -> Entity<'a> {
     let prototype = &analyzer.builtins.prototypes.string;
-    let dep = analyzer.dep((self, dep, key));
+    let dep = analyzer.dep((dep, key));
     if let Some(key_literals) = key.get_to_literals(analyzer) {
       let mut values = analyzer.factory.vec();
       for &key_literal in &key_literals {
@@ -149,11 +149,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     let value = self.as_str();
-    (
-      vec![],
-      (!value.is_empty()).then_some(analyzer.factory.unknown_string),
-      analyzer.dep((self, dep)),
-    )
+    (vec![], (!value.is_empty()).then_some(analyzer.factory.unknown_string), dep)
   }
 
   fn get_to_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
