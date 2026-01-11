@@ -1,21 +1,15 @@
 # JsShaker
 
-\[WIP\] This is an experimental code size optimizer for JavaScript based on [the Oxc parser](https://oxc.rs).
+This is an experimental code size optimizer for JavaScript based on [the Oxc parser](https://oxc.rs).
 
-[**Try online**](https://kermanx.com/jsshaker) | [**Run locally**](#run-locally)
+[**Try online**](https://kermanx.com/jsshaker) | [**CLI**](https://www.npmjs.com/package/jsshaker) | [**Bundler Plugin**](https://www.npmjs.com/package/rollup-plugin-jsshaker)
 
-## Features
-
-- Simulate the runtime behavior of the code, instead of applying rules.
-- Single AST pass - Analyzer as much information as possible.
-- As accurate as possible. [test262](https://github.com/tc39/test262) is used for testing.
-- May not be the fastest. (But I will try my best)
+- Up to 30% size reduction on real-world apps (compared to Rollup)
+- Supports latest JavaScript features
 
 ## Examples
 
 ### Constant Folding
-
-> This is a simple example, but it's a good start.
 
 <table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
@@ -255,47 +249,6 @@ Here is a simple comparison:
 - Minification: Removing whitespace, renaming variables, syntax-level optimizations, etc.
 - Dead code elimination: Removing code that is never executed, by using a set of rules, for example, "`if(false) { ... }` can be removed".
 - Tree shaking: Removing code that is never executed, by simulating the runtime behavior of the code. For example, "`if (x) { ... }` can only be preserved if `...` is reachable and has side effects".
-
-## Todo
-
-- Performance!
-- Type narrowing
-- Pure annotation
-- Complete JS Builtins metadata
-- Test against fixtures from other optimizers like Rollup
-- Rollup-like try-scope optimization/de-optimization
-- Reuse code with oxc_minifier for JS computation logics
-
-## Basic Approach
-
-1. Parse the code via `oxc_parser`.
-2. Build the semantic information via `oxc_semantic`.
-3. Tree shake the code.
-   - Emulate the runtime behavior of the code. (Control flow, Side effects, ...)
-   - Analyze the possible runtime values of the variables.
-   - Remove the dead code.
-4. Minify the code via `oxc_minifier`. (Optional)
-
-### Concepts
-
-- `Entity`: Represents the analyzed information of a JS value.
-- `Consumable`: Entity or AST Nodes or some other things that the runtime value of `Entity` depends on.
-- Scopes:
-  - Call Scope: Function call scope.
-  - Cf Scope: Control flow scope.
-  - Variable Scope: Variable scope.
-  - Try Scope: Try statement or function.
-
-## Run Locally
-
-1. Clone the repo.
-2. Run `cargo run ./path/to/bundled.js`
-3. The output files will be in `./output/...`
-4. (Optional) You can open the optimized file in VSCode and run the Open Diff command from the "Auto Diff Opener" extension to see the diff.
-
-Note that Rollup is recommended for bundling, because it has information about the side effects of the modules, and it produces much cleaner bundles.
-
-If you encounter any problems, please open an issue with the minimal reproduction. Thanks!
 
 ## Soundiness Statement
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const { parseArgs } = require("node:util");
-const { shakeFsModule } = require("./index.js");
-const { writeFile, mkdir } = require("node:fs/promises");
+const { shakeFsModule, shakeSingleModule } = require("./index.js");
+const { writeFile, mkdir, readFile } = require("node:fs/promises");
 const { join, dirname } = require("node:path");
 
 (async () => {
@@ -20,6 +20,10 @@ const { join, dirname } = require("node:path");
         type: "string",
         short: "o",
       },
+      single: {
+        type: "boolean",
+        short: "s",
+      },
     },
     allowPositionals: true,
     strict: false,
@@ -29,26 +33,34 @@ const { join, dirname } = require("node:path");
     throw new Error("Must provide exactly one entry js file path.");
   }
 
-  const result = shakeFsModule(
-    positionals[0],
-    {
-      preset: values.preset,
-      minify: values.minify,
-    }
-  );
+  const options = {
+    preset: values.preset,
+    minify: values.minify,
+  };
 
-  for (const message of result.diagnostics) {
-    console.warn(message);
-  }
+  if (!values.single) {
+    const result = shakeFsModule(positionals[0], options);
 
-  for (let [path, { code }] of Object.entries(result.output)) {
-    if (values.outdir) {
-      path = join(values.outdir, path);
+    for (const message of result.diagnostics) {
+      console.warn(message);
     }
-    const dir = dirname(path);
-    await mkdir(dir, { recursive: true });
-    console.log('Writing', path);
-    await writeFile(path, code);
+
+    for (let [path, { code }] of Object.entries(result.output)) {
+      path = join(values.outdir || "./out", path);
+      const dir = dirname(path);
+      await mkdir(dir, { recursive: true });
+      console.log('Writing', path);
+      await writeFile(path, code);
+    }
+  } else {
+    const content = await readFile(positionals[0], "utf-8");
+    const result = shakeSingleModule(content, options);
+
+    for (const message of result.diagnostics) {
+      console.warn(message);
+    }
+
+    await writeFile(values.outdir || "out.js", result.output.code);
   }
 })().catch((err) => {
   console.error(err);

@@ -7,7 +7,7 @@ https://github.com/kermanx/jsshaker
 ## WASM & N-API
 
 ```ts
-import { shakeSingleModule, shakeMultiModule } from "jsshaker";
+import { shakeSingleModule, shakeMultiModule, shakeFsModule } from "jsshaker";
 ```
 
 ## CLI
@@ -15,35 +15,12 @@ import { shakeSingleModule, shakeMultiModule } from "jsshaker";
 ```sh
 pnpx jsshaker ./entry.js
 
-# --preset(-p, optional): "safest" | "recommended" | "smallest" | "disabled"
-# --minify(-m, optional): boolean
-# --outdir(-o, optional): string
+# --preset(-p, optional): "safest" | "recommended" | "smallest" | "disabled" - Preset configuration (default: "recommended")
+# --minify(-m, optional): boolean - Minify output (default: false)
+# --outdir(-o, optional): string  - Output directory (default: ./out)
+# --single(-s, optional): boolean - Shake as a single module (default: ./out.js)
 ```
 
-## Vite Plugin
+## Rollup/Vite/Rolldown Plugin
 
-```ts
-import { defineConfig } from "vite";
-import { shakeMultiModule } from "jsshaker";
-import * as fs from "fs";
-
-export default defineConfig({
-  plugins: [
-    {
-      name: "jsshaker",
-      enforce: "post",
-      buildEnd() {
-        const { output, diagnostics } = shakeMultiModule("./dist/index.js", {
-          minify: true,
-        })
-        for (const diag of diagnostics) {
-          console.error(diag);
-        }
-        for (const file in output) {
-          fs.writeFileSync(file, output[file]);
-        }
-      },
-    },
-  ],
-});
-```
+https://www.npmjs.com/package/rollup-plugin-jsshaker
