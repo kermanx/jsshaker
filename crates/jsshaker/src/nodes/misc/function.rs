@@ -55,6 +55,7 @@ impl<'a> Analyzer<'a> {
       let factory = analyzer.factory;
       let variable_scope = analyzer.variable_scope_mut();
       variable_scope.this = Some(info.this);
+      variable_scope.super_class = info.consume.then_some(factory.unknown);
       variable_scope.arguments =
         Some((info.args, factory.vec(/* later filled by formal parameters */)));
 

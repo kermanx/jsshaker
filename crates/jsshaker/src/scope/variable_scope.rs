@@ -462,7 +462,6 @@ impl<'a> Analyzer<'a> {
         return super_class;
       }
     }
-    self.throw_builtin_error("Unsupported reference to 'super'");
     self.factory.unknown
   }
 }
