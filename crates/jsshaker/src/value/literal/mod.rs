@@ -261,7 +261,9 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   fn test_truthy(&self) -> Option<bool> {
     Some(match self {
       LiteralValue::String(value, _) => !value.is_empty(),
-      LiteralValue::Number(value) => *value != 0.0.into() && *value != (-0.0).into(),
+      LiteralValue::Number(value) => {
+        !value.0.is_nan() && *value != 0.0.into() && *value != (-0.0).into()
+      }
       LiteralValue::BigInt(value) => !value.chars().all(|c| c == '0'),
       LiteralValue::Boolean(value) => *value,
       LiteralValue::Symbol(_, _) => true,
