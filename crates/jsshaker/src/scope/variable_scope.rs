@@ -259,16 +259,16 @@ impl<'a> Analyzer<'a> {
       let non_det = force_non_det || cf_non_det;
 
       if let Some(deps) = &variable.exhausted {
-        let dep = self.dep((exec_dep, decl_node, new_val));
+        let dep = (exec_dep, decl_node, new_val);
         if deps.is_consumed() {
           drop(variable);
           self.consume(dep);
         } else if non_det {
-          deps.push(self, dep);
+          deps.push(self, self.dep(dep));
         } else {
           drop(variable);
           variable_cell.borrow_mut().exhausted =
-            Some(self.factory.lazy_dep(self.factory.vec1(dep)));
+            Some(self.factory.lazy_dep(self.factory.vec1(self.dep(dep))));
           self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
         }
       } else {
