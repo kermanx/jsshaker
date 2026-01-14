@@ -40,11 +40,11 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
             _ => {}
           }
         } else {
-          analyzer.mark_unfoldable(self.data);
+          analyzer.mark_non_foldable(self.data);
           self.value.consume_mangable(analyzer);
         }
       }
-      FoldingData::UnFoldable => {
+      FoldingData::NonFoldable => {
         self.value.consume_mangable(analyzer);
       }
     }
@@ -52,12 +52,12 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct UnFoldableDep {
+pub struct NonFoldableDep {
   pub data: FoldingDataId,
 }
 
-impl<'a> CustomDepTrait<'a> for UnFoldableDep {
+impl<'a> CustomDepTrait<'a> for NonFoldableDep {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.mark_unfoldable(self.data);
+    analyzer.mark_non_foldable(self.data);
   }
 }

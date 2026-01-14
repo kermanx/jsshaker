@@ -2,7 +2,7 @@ mod dep;
 
 use std::mem;
 
-use dep::{FoldableDep, UnFoldableDep};
+use dep::{FoldableDep, NonFoldableDep};
 use oxc::{
   allocator,
   ast::{ast::Expression, match_member_expression},
@@ -29,7 +29,7 @@ pub enum FoldingData<'a> {
     used_values: allocator::Vec<'a, Entity<'a>>,
     mangle_atom: Option<MangleAtom>,
   },
-  UnFoldable,
+  NonFoldable,
 }
 
 define_box_bump_idx! {
@@ -67,7 +67,7 @@ impl<'a> Analyzer<'a> {
       .nodes
       .entry(node.into())
       .or_insert_with(|| self.folder.bump.alloc(FoldingData::Initial));
-    if let FoldingData::UnFoldable = self.folder.bump.get(data) {
+    if let FoldingData::NonFoldable = self.folder.bump.get(data) {
       value
     } else if let Some(literal) = self.get_foldable_literal(value) {
       let mut new_value = value;
@@ -84,14 +84,14 @@ impl<'a> Analyzer<'a> {
       };
       new_value.override_dep(self.factory.dep(FoldableDep { data, literal, value, mangle_atom }))
     } else {
-      self.factory.computed(value, UnFoldableDep { data })
+      self.factory.computed(value, NonFoldableDep { data })
     }
   }
 
-  pub fn mark_unfoldable(&mut self, id: FoldingDataId) {
+  pub fn mark_non_foldable(&mut self, id: FoldingDataId) {
     let data = self.folder.bump.get_mut(id);
-    match mem::replace(data, FoldingData::UnFoldable) {
-      FoldingData::UnFoldable | FoldingData::Initial => {}
+    match mem::replace(data, FoldingData::NonFoldable) {
+      FoldingData::NonFoldable | FoldingData::Initial => {}
       FoldingData::Foldable { used_values, .. } => {
         for value in used_values {
           value.consume_mangable(self);
