@@ -52,8 +52,7 @@ impl<'a> Analyzer<'a> {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
     let mut tracker_dep = None;
-    for depth in (target_depth..self.scoping.cf.stack_len()).rev() {
-      let scope = self.scoping.cf.data_at_mut(depth);
+    for scope in self.scoping.cf.iter_stack_mut().skip(target_depth).rev() {
       if let Some(data) = scope.exhaustive_data_mut() {
         if data.clean
           && let Some(temp_deps) = data.temp_deps.as_mut()
@@ -89,8 +88,7 @@ impl<'a> Analyzer<'a> {
     let mut exhaustive = false;
     let mut must_mark = true;
     let mut has_fn_scope = false;
-    for depth in scope_depth..self.scoping.cf.stack_len() {
-      let scope = self.scoping.cf.data_at_mut(depth);
+    for scope in self.scoping.cf.iter_stack_mut().skip(scope_depth) {
       has_fn_scope |= scope.kind.is_function();
       if let Some(data) = scope.exhaustive_data_mut() {
         exhaustive = true;
@@ -109,8 +107,7 @@ impl<'a> Analyzer<'a> {
     }
     if has_fn_scope {
       let mut non_det = false;
-      for depth in (scope_depth..self.scoping.cf.stack_len()).rev() {
-        let scope = self.scoping.cf.data_at_mut(depth);
+      for scope in self.scoping.cf.iter_stack_mut().skip(scope_depth).rev() {
         non_det |= scope.non_det();
         if let Some(data) = scope.fn_cache_tracking_data_mut() {
           data.track_write(target, cacheable.map(|e| (non_det, e)));
