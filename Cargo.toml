@@ -39,15 +39,15 @@ napi-build = "2.2.3"
 console_error_panic_hook = "0.1.7"
 serde = "1.0.219"
 
-[profile.release]
-# Configurations explicitly listed here for clarity.
-# Using the best options for performance.
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-strip = "symbols" # Set to `false` for debug information
-debug = false     # Set to `true` for debug information
-panic = "abort"   # Let it crash and force ourselves to write safe Rust
+# [profile.release]
+# # Configurations explicitly listed here for clarity.
+# # Using the best options for performance.
+# opt-level = 3
+# lto = "fat"
+# codegen-units = 1
+# strip = "symbols" # Set to `false` for debug information
+# debug = false     # Set to `true` for debug information
+# panic = "abort"   # Let it crash and force ourselves to write safe Rust
 
 [workspace.lints.clippy]
 dbg_macro = "deny"
