@@ -338,7 +338,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
   fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     let mut result = Cacheable::Never;
     for value in self.values.iter() {
-      result = result.add(analyzer.allocator, value.as_cacheable(analyzer)?);
+      result = result.union(analyzer.allocator, value.as_cacheable(analyzer)?);
     }
     Some(result)
   }

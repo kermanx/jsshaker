@@ -26,7 +26,7 @@ pub enum Cacheable<'a> {
 }
 
 impl<'a> Cacheable<'a> {
-  pub fn add(self, allocator: &'a Allocator, other: Cacheable<'a>) -> Cacheable<'a> {
+  pub fn union(self, allocator: &'a Allocator, other: Cacheable<'a>) -> Cacheable<'a> {
     if self == other {
       return self;
     }
