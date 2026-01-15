@@ -173,11 +173,14 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
-    for (callsite, branches) in mem::take(&mut self.conditional_data.callsite_to_branches) {
-      if self.is_deoptimized(callsite) {
+    let deoptimized_atoms = &self.deoptimized_atoms;
+    let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
+
+    callsite_to_branches.retain(|callsite, branches| {
+      if deoptimized_atoms.is_deoptimized(*callsite) {
         let mut remaining_branches = vec![];
         for branch in branches {
-          let data = self.get_conditional_data_mut(branch.id);
+          let data = node_to_data.get_mut(&branch.id).unwrap();
           let is_opposite_impure =
             if branch.is_true_branch { data.impure_false } else { data.impure_true };
           if is_opposite_impure {
@@ -186,16 +189,14 @@ impl<'a> Analyzer<'a> {
             remaining_branches.push(branch);
           }
         }
-        if !remaining_branches.is_empty() {
-          self.conditional_data.callsite_to_branches.insert(callsite, remaining_branches);
-        }
+        !remaining_branches.is_empty()
       } else {
-        self.conditional_data.callsite_to_branches.insert(callsite, branches);
+        true
       }
-    }
+    });
 
     let mut tests_to_consume = vec![];
-    for data in self.conditional_data.node_to_data.values_mut() {
+    for data in node_to_data.values_mut() {
       if data.maybe_true && data.maybe_false {
         tests_to_consume.push(mem::take(&mut data.tests_to_consume));
       }
