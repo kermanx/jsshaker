@@ -96,7 +96,19 @@ impl<'a> Analyzer<'a> {
           node.rest.is_some(),
         );
 
-        self.push_dependent_cf_scope(dep);
+        let is_simple = node
+          .elements
+          .iter()
+          .all(|element| matches!(element, None | Some(BindingPattern::BindingIdentifier(_))))
+          && node
+            .rest
+            .as_ref()
+            .is_none_or(|rest| matches!(rest.argument, BindingPattern::BindingIdentifier(_)));
+
+        if !is_simple {
+          self.push_dependent_cf_scope(dep);
+        }
+
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
             self.init_binding_pattern(element, Some(value));
@@ -105,7 +117,10 @@ impl<'a> Analyzer<'a> {
         if let Some(rest) = &node.rest {
           self.init_binding_rest_element(rest, rest_value.unwrap());
         }
-        self.pop_cf_scope();
+
+        if !is_simple {
+          self.pop_cf_scope();
+        }
       }
       BindingPattern::AssignmentPattern(node) => {
         let binding_val = self.exec_with_default(&node.right, init.unwrap());
