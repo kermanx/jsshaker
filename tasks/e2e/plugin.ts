@@ -12,7 +12,7 @@ export default function (
   });
 
   const disabled = +(process.env.DISABLE_TREE_SHAKE ?? 0);
-  const treeShake = disabled ? null : import("jsshaker");
+  const treeShake = disabled ? null : require([..."jsshaker"].join(""));
 
   return {
     name: "jsshaker",
@@ -59,7 +59,7 @@ export default function (
         const {
           output: { code: output },
           diagnostics,
-        } = (await treeShake).shakeSingleModule(code, {
+        } = treeShake.shakeSingleModule(code, {
           preset: "recommended",
         });
         const duration = `${Date.now() - startTime}ms`;
