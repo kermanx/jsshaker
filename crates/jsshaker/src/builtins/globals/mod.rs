@@ -1,5 +1,6 @@
 mod array_constructor;
 mod constants;
+mod date_constructor;
 mod json_object;
 mod math_object;
 mod object_constructor;
@@ -15,5 +16,6 @@ impl Builtins<'_> {
     self.init_array_constructor();
     self.init_json_object();
     self.init_math_object();
+    self.init_date_constructor();
   }
 }
