@@ -42,7 +42,6 @@ impl Builtins<'_> {
       // Numbers and dates
       "Number" => factory.unknown,
       "BigInt" => factory.unknown,
-      "Math" => factory.unknown,
       "Date" => factory.unknown,
 
       // Text processing
