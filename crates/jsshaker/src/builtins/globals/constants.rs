@@ -93,8 +93,11 @@ impl Builtins<'_> {
 
       // Internationalization
       "Intl" => factory.unknown,
+    });
 
-      // Debug helper (non-standard)
+    // Debug helpers (non-standard)
+    #[cfg(debug_assertions)]
+    init_map!(self.globals, {
       "$$DEBUG$$" => factory.implemented_builtin_fn(
         "$$DEBUG$$",
         |analyzer, _dep, _this, args| {
