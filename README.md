@@ -2,7 +2,7 @@
 
 This is an experimental code size optimizer for JavaScript based on [the Oxc parser](https://oxc.rs).
 
-[**Try online**](https://kermanx.com/jsshaker) | [**CLI**](https://www.npmjs.com/package/jsshaker) | [**Bundler Plugin**](https://www.npmjs.com/package/rollup-plugin-jsshaker)
+[**Try online**](https://kermanx.com/jsshaker) | [**CLI**](https://www.npmjs.com/package/jsshaker) | [**Bundler Plugin**](https://www.npmjs.com/package/rollup-plugin-jsshaker) `pnpm i -D rollup-plugin-jsshaker`
 
 - Up to 25% size reduction on real-world apps (compared to Rollup)
 - Supports latest JavaScript features
