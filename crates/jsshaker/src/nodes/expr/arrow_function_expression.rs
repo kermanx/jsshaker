@@ -67,7 +67,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let ArrowFunctionExpression { span, expression, r#async, params, body, .. } = node;
 
-    if self.is_deoptimized(AstKind2::ArrowFunctionExpression(node)) {
+    if self.is_included(AstKind2::ArrowFunctionExpression(node)) {
       let params = self.transform_formal_parameters(params);
       let body = if *expression {
         self.transform_function_expression_body(body)

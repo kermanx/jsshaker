@@ -45,7 +45,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let TaggedTemplateExpression { span, tag, quasi, .. } = node;
 
-    let need_call = need_val || self.is_deoptimized(AstKind2::TaggedTemplateExpression(node));
+    let need_call = need_val || self.is_included(AstKind2::TaggedTemplateExpression(node));
 
     let tag = self.transform_callee(tag, need_call).unwrap();
 
@@ -72,10 +72,10 @@ impl<'a> Transformer<'a> {
     let mut transformed_expressions = self.ast.vec();
     for expr in expressions {
       let expr_span = expr.span();
-      let deoptimized = self.is_deoptimized(AstKind2::ExpressionInTaggedTemplate(expr));
+      let included = self.is_included(AstKind2::ExpressionInTaggedTemplate(expr));
       transformed_expressions.push(
         self
-          .transform_expression(expr, deoptimized)
+          .transform_expression(expr, included)
           .unwrap_or_else(|| self.build_unused_expression(expr_span)),
       );
     }

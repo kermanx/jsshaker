@@ -65,12 +65,12 @@ impl<'a> Transformer<'a> {
     node: &'a Argument<'a>,
     preserve_args_num: bool,
   ) -> Option<Argument<'a>> {
-    let deoptimized = self.is_deoptimized(AstKind2::Argument(node));
+    let included = self.is_included(AstKind2::Argument(node));
     let span = node.span();
     match node {
       Argument::SpreadElement(node) => self.transform_arguments_spread_element(node),
       _ => self
-        .transform_expression(node.to_expression(), deoptimized)
+        .transform_expression(node.to_expression(), included)
         .or_else(|| preserve_args_num.then(|| self.build_unused_expression(span)))
         .map(Argument::from),
     }

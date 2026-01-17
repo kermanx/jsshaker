@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
     node: &'a PrivateIdentifier<'a>,
     need_val: bool,
   ) -> Option<PrivateIdentifier<'a>> {
-    if need_val || self.is_deoptimized(AstKind2::PrivateIdentifier(node)) {
+    if need_val || self.is_included(AstKind2::PrivateIdentifier(node)) {
       let PrivateIdentifier { span, name } = node;
       Some(self.ast.private_identifier(
         *span,

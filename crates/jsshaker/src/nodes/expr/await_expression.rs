@@ -24,7 +24,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let AwaitExpression { span, argument } = node;
 
-    let has_effect = self.is_deoptimized(AstKind2::AwaitExpression(node));
+    let has_effect = self.is_included(AstKind2::AwaitExpression(node));
 
     if has_effect {
       let argument = self.transform_expression(argument, true).unwrap();

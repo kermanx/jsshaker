@@ -23,7 +23,7 @@ impl<'a> Analyzer<'a> {
     let [Statement::ExpressionStatement(expr)] = node.statements.as_slice() else {
       unreachable!();
     };
-    self.deoptimize_atom(AstKind2::ArrowFunctionBodyExecuted(node));
+    self.include_atom(AstKind2::ArrowFunctionBodyExecuted(node));
     let value = self.exec_expression(&expr.expression);
     let value = self.factory.computed(value, AstKind2::FunctionBody(node));
     let call_scope = self.call_scope_mut();
@@ -55,8 +55,8 @@ impl<'a> Transformer<'a> {
     };
     let ExpressionStatement { expression, .. } = expr.as_ref();
 
-    let expr = if self.is_deoptimized(AstKind2::ArrowFunctionBodyExecuted(node)) {
-      let need_val = self.is_deoptimized(AstKind2::FunctionBody(node));
+    let expr = if self.is_included(AstKind2::ArrowFunctionBodyExecuted(node)) {
+      let need_val = self.is_included(AstKind2::FunctionBody(node));
       self.transform_expression(expression, need_val)
     } else {
       None

@@ -24,7 +24,7 @@ impl<'a> Analyzer<'a> {
         Expression::PrivateFieldExpression(node) => {
           self.add_diagnostic("SyntaxError: private fields can't be deleted");
           let _object = self.exec_expression(&node.object);
-          self.deoptimize_atom(dep);
+          self.include_atom(dep);
         }
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
         }
         Expression::Identifier(_node) => {
           self.add_diagnostic("SyntaxError: Delete of an unqualified identifier in strict mode");
-          self.deoptimize_atom(dep);
+          self.include_atom(dep);
         }
         expr => {
           self.exec_expression(expr);
@@ -105,7 +105,7 @@ impl<'a> Transformer<'a> {
     let UnaryExpression { span, operator, argument } = node;
 
     if *operator == UnaryOperator::Delete {
-      return if self.is_deoptimized(AstKind2::UnaryExpression(node)) {
+      return if self.is_included(AstKind2::UnaryExpression(node)) {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();

@@ -100,15 +100,14 @@ impl<'a> Transformer<'a> {
     node: &'a Function<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, Function<'a>>> {
-    if self.is_deoptimized(AstKind2::FunctionNoShake(node)) {
+    if self.is_included(AstKind2::FunctionNoShake(node)) {
       return Some(self.ast.alloc(self.clone_node(node)));
     }
 
     let Function { r#type, span, id, generator, r#async, params, body, .. } = node;
 
-    let need_id =
-      id.as_ref().is_some_and(|id| self.is_deoptimized(AstKind2::BindingIdentifier(id)));
-    if self.is_deoptimized(AstKind2::Function(node)) {
+    let need_id = id.as_ref().is_some_and(|id| self.is_included(AstKind2::BindingIdentifier(id)));
+    if self.is_included(AstKind2::Function(node)) {
       let old_declaration_only = self.declaration_only.replace(false);
 
       let params = self.transform_formal_parameters(params);

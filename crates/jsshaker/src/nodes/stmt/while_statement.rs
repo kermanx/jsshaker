@@ -40,7 +40,7 @@ impl<'a> Transformer<'a> {
     let WhileStatement { span, test, body } = node;
     let body_span = body.span();
 
-    let need_loop = self.is_deoptimized(AstKind2::WhileStatement(node));
+    let need_loop = self.is_included(AstKind2::WhileStatement(node));
     let test = self.transform_expression(test, need_loop);
     let body = if need_loop { self.transform_statement(body) } else { None };
 

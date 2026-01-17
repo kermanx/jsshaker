@@ -47,7 +47,7 @@ impl<'a> Transformer<'a> {
         JSXAttributeItem::SpreadAttribute(node) => {
           let JSXSpreadAttribute { span, argument } = node.as_ref();
 
-          if self.is_deoptimized(AstKind2::JSXAttributeItem(attr)) {
+          if self.is_included(AstKind2::JSXAttributeItem(attr)) {
             let argument = self.transform_expression(argument, true).unwrap();
             Some(self.build_object_spread_effect(*span, argument))
           } else {
@@ -65,12 +65,12 @@ impl<'a> Transformer<'a> {
     let mut transformed = self.ast.vec_with_capacity(node.len());
 
     for attr in node.iter() {
-      let deoptimized = self.is_deoptimized(AstKind2::JSXAttributeItem(attr));
+      let included = self.is_included(AstKind2::JSXAttributeItem(attr));
       match attr {
         JSXAttributeItem::Attribute(node) => {
           let JSXAttribute { span, name, value } = node.as_ref();
 
-          if let Some(value) = self.transform_jsx_attribute_value_as_item(value, deoptimized) {
+          if let Some(value) = self.transform_jsx_attribute_value_as_item(value, included) {
             transformed.push(self.ast.jsx_attribute_item_attribute(
               *span,
               self.transform_jsx_attribute_name_need_val(name),
@@ -81,7 +81,7 @@ impl<'a> Transformer<'a> {
         JSXAttributeItem::SpreadAttribute(node) => {
           let JSXSpreadAttribute { span, argument } = node.as_ref();
 
-          if deoptimized {
+          if included {
             transformed.push(self.ast.jsx_attribute_item_spread_attribute(
               *span,
               self.transform_expression(argument, true).unwrap(),

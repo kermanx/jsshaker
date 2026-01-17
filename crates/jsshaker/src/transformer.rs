@@ -20,7 +20,7 @@ use oxc::{
 use rustc_hash::FxHashMap;
 
 use crate::{
-  TreeShakeConfig, analyzer::conditional::ConditionalDataMap, dep::DeoptimizedAtoms,
+  TreeShakeConfig, analyzer::conditional::ConditionalDataMap, dep::IncludedAtoms,
   folding::ConstantFolder, mangling::Mangler, utils::ExtraData,
 };
 
@@ -29,7 +29,7 @@ pub struct Transformer<'a> {
   pub allocator: &'a Allocator,
   pub path: Atom<'a>,
   pub data: &'a ExtraData<'a>,
-  pub deoptimized_atoms: &'a DeoptimizedAtoms,
+  pub included_atoms: &'a IncludedAtoms,
   pub conditional_data: &'a ConditionalDataMap<'a>,
   pub folder: &'a ConstantFolder<'a>,
   pub mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
@@ -51,7 +51,7 @@ impl<'a> Transformer<'a> {
     allocator: &'a Allocator,
     path: Atom<'a>,
     data: &'a ExtraData<'a>,
-    deoptimized_atoms: &'a DeoptimizedAtoms,
+    included_atoms: &'a IncludedAtoms,
     conditional_data: &'a ConditionalDataMap<'a>,
     folder: &'a ConstantFolder<'a>,
     mangler: Rc<RefCell<&'a mut Mangler<'a>>>,
@@ -62,7 +62,7 @@ impl<'a> Transformer<'a> {
       allocator,
       path,
       data,
-      deoptimized_atoms,
+      included_atoms,
       conditional_data,
       folder,
       mangler,

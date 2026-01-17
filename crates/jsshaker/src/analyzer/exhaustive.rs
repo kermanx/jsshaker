@@ -9,7 +9,7 @@ use oxc::allocator;
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   entity::Entity,
-  scope::{CfScopeKind, cf_scope::DeoptimizeState},
+  scope::{CfScopeKind, cf_scope::IncludeState},
   utils::ast::AstKind2,
 };
 
@@ -47,9 +47,7 @@ impl<'a> Analyzer<'a> {
     self.exec_exhaustively("loop", true, false, runner.clone());
 
     let cf_scope = self.cf_scope();
-    if cf_scope.deoptimize_state != DeoptimizeState::DeoptimizedClean
-      && cf_scope.deps.may_not_deoptimized()
-    {
+    if cf_scope.include_state != IncludeState::IncludedClean && cf_scope.deps.may_not_included() {
       runner(self);
     }
   }
@@ -162,10 +160,10 @@ impl<'a> Analyzer<'a> {
     loop {
       let runners = mem::take(&mut self.pending_deps);
       for runner in runners {
-        // let old_count = self.deoptimized_atoms.debug_count();
+        // let old_count = self.included_atoms.debug_count();
         let ExhaustiveCallback { handler: runner, drain } = runner;
         self.exec_exhaustively("dep", drain, true, runner.clone());
-        // let new_count = self.deoptimized_atoms.debug_count();
+        // let new_count = self.included_atoms.debug_count();
         // self.debug += 1;
       }
       if self.pending_deps.is_empty() {

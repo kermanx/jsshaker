@@ -44,7 +44,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a AssignmentTargetProperty<'a>,
   ) -> Option<AssignmentTargetProperty<'a>> {
-    let need_binding = self.is_deoptimized(AstKind2::AssignmentTargetProperty(node));
+    let need_binding = self.is_included(AstKind2::AssignmentTargetProperty(node));
     match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let AssignmentTargetPropertyIdentifier { span, binding, init } = node.as_ref();

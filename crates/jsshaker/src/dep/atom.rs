@@ -20,7 +20,7 @@ impl Debug for DepAtom {
 
 impl<'a> CustomDepTrait<'a> for DepAtom {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.deoptimize_atom(*self);
+    analyzer.include_atom(*self);
   }
 }
 
@@ -63,36 +63,36 @@ impl DepAtom {
   }
 }
 
-pub struct DeoptimizedAtoms(FxHashSet<DepAtom>);
+pub struct IncludedAtoms(FxHashSet<DepAtom>);
 
-impl Default for DeoptimizedAtoms {
+impl Default for IncludedAtoms {
   fn default() -> Self {
     Self(FxHashSet::from_iter([AstKind2::ENVIRONMENT.into()]))
   }
 }
 
-impl DeoptimizedAtoms {
-  pub fn deoptimize_atom(&mut self, dep: impl Into<DepAtom>) {
+impl IncludedAtoms {
+  pub fn include_atom(&mut self, dep: impl Into<DepAtom>) {
     self.0.insert(dep.into());
   }
 
-  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
+  pub fn is_included(&self, dep: impl Into<DepAtom>) -> bool {
     self.0.contains(&dep.into())
   }
 }
 
 impl Analyzer<'_> {
-  pub fn deoptimize_atom(&mut self, dep: impl Into<DepAtom>) {
-    self.deoptimized_atoms.deoptimize_atom(dep);
+  pub fn include_atom(&mut self, dep: impl Into<DepAtom>) {
+    self.included_atoms.include_atom(dep);
   }
 
-  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
-    self.deoptimized_atoms.is_deoptimized(dep)
+  pub fn is_included(&self, dep: impl Into<DepAtom>) -> bool {
+    self.included_atoms.is_included(dep)
   }
 }
 
 impl Transformer<'_> {
-  pub fn is_deoptimized(&self, dep: impl Into<DepAtom>) -> bool {
-    self.deoptimized_atoms.is_deoptimized(dep)
+  pub fn is_included(&self, dep: impl Into<DepAtom>) -> bool {
+    self.included_atoms.is_included(dep)
   }
 }

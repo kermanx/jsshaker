@@ -52,7 +52,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_for_in_statement(&self, node: &'a ForInStatement<'a>) -> Option<Statement<'a>> {
     let ForInStatement { span, left, right, body, .. } = node;
 
-    let need_loop = self.is_deoptimized(AstKind2::ForInStatement(node));
+    let need_loop = self.is_included(AstKind2::ForInStatement(node));
 
     let left_span = left.span();
     let body_span = body.span();

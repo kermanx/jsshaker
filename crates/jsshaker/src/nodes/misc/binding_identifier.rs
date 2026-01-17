@@ -37,7 +37,7 @@ impl<'a> Transformer<'a> {
     let symbol = node.symbol_id.get().unwrap();
     self.update_var_decl_state(symbol, true);
 
-    let deoptimized = self.is_deoptimized(AstKind2::BindingIdentifier(node));
-    deoptimized.then(|| self.clone_node(node))
+    let included = self.is_included(AstKind2::BindingIdentifier(node));
+    included.then(|| self.clone_node(node))
   }
 }

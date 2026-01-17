@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     let right = self.exec_expression(&node.right);
     let right = if node.r#await {
       right.consume(self);
-      self.deoptimize_atom(AstKind2::ForOfStatement(node));
+      self.include_atom(AstKind2::ForOfStatement(node));
       self.factory.unknown
     } else {
       right
@@ -65,7 +65,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_for_of_statement(&self, node: &'a ForOfStatement<'a>) -> Option<Statement<'a>> {
     let ForOfStatement { span, r#await, left, right, body, .. } = node;
 
-    let need_loop = self.is_deoptimized(AstKind2::ForOfStatement(node));
+    let need_loop = self.is_included(AstKind2::ForOfStatement(node));
 
     let left_span = left.span();
     let body_span = body.span();
@@ -74,7 +74,7 @@ impl<'a> Transformer<'a> {
     let body = if need_loop { self.transform_statement(body) } else { None };
 
     if left.is_none() && body.is_none() {
-      return if self.is_deoptimized(AstKind2::ForOfStatement(node)) {
+      return if self.is_included(AstKind2::ForOfStatement(node)) {
         let right_span = right.span();
         let right = self.transform_expression(right, true).unwrap();
         Some(if *r#await {

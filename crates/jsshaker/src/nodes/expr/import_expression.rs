@@ -32,7 +32,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let ImportExpression { span, source, options, phase } = node;
 
-    let need_import = need_val || self.is_deoptimized(AstKind2::ImportExpression(node));
+    let need_import = need_val || self.is_included(AstKind2::ImportExpression(node));
 
     let source = self.transform_expression(source, need_import);
 

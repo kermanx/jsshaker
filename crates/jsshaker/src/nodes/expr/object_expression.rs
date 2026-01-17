@@ -61,8 +61,8 @@ impl<'a> Transformer<'a> {
 
             let value_span = value.span();
 
-            let need_value = self.is_deoptimized(AstKind2::ObjectProperty(node));
-            let need_key = need_value || self.is_deoptimized(AstKind2::ObjectPropertyKey(node));
+            let need_value = self.is_included(AstKind2::ObjectProperty(node));
+            let need_key = need_value || self.is_included(AstKind2::ObjectPropertyKey(node));
 
             let transformed_value = self.transform_expression(value, need_value);
 
@@ -106,14 +106,14 @@ impl<'a> Transformer<'a> {
           ObjectPropertyKind::SpreadProperty(node) => {
             let SpreadElement { span, argument } = node.as_ref();
 
-            let deoptimized = self.is_deoptimized(AstKind2::SpreadElement(node));
+            let included = self.is_included(AstKind2::SpreadElement(node));
 
-            let argument = self.transform_expression(argument, deoptimized);
+            let argument = self.transform_expression(argument, included);
 
             if let Some(argument) = argument {
               self.ast.object_property_kind_spread_property(
                 *span,
-                if deoptimized {
+                if included {
                   argument
                 } else {
                   build_effect!(
@@ -150,7 +150,7 @@ impl<'a> Transformer<'a> {
           ObjectPropertyKind::SpreadProperty(node) => {
             let SpreadElement { span, argument } = node.as_ref();
 
-            let need_spread = self.is_deoptimized(AstKind2::SpreadElement(node));
+            let need_spread = self.is_included(AstKind2::SpreadElement(node));
             if let Some(argument) = self.transform_expression(argument, need_spread) {
               effects.push(if need_spread {
                 self.build_object_spread_effect(*span, argument)

@@ -37,7 +37,7 @@ impl<'a> Analyzer<'a> {
             self.throw_builtin_error("Cannot destructure nullish value");
           }
           value.consume(self);
-          self.deoptimize_atom(AstKind2::ObjectAssignmentTarget(node));
+          self.include_atom(AstKind2::ObjectAssignmentTarget(node));
         }
 
         let mut enumerated = vec![];
@@ -65,7 +65,7 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ArrayAssignmentTarget(node) => {
         let ArrayAssignmentTarget { span, elements, rest } = node.as_ref();
 
-        let deoptimized = self.is_deoptimized(AstKind2::ArrayAssignmentTarget(node));
+        let included = self.is_included(AstKind2::ArrayAssignmentTarget(node));
 
         let mut transformed_elements = self.ast.vec();
         for element in elements {
@@ -77,15 +77,15 @@ impl<'a> Transformer<'a> {
         }
 
         let rest =
-          rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, deoptimized));
+          rest.as_ref().and_then(|rest| self.transform_assignment_target_rest(rest, included));
 
-        if !deoptimized && rest.is_none() {
+        if !included && rest.is_none() {
           while transformed_elements.last().is_some_and(Option::is_none) {
             transformed_elements.pop();
           }
         }
 
-        if !deoptimized && transformed_elements.is_empty() && rest.is_none() {
+        if !included && transformed_elements.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast.assignment_target_pattern_array_assignment_target(
@@ -98,12 +98,12 @@ impl<'a> Transformer<'a> {
       AssignmentTargetPattern::ObjectAssignmentTarget(node) => {
         let ObjectAssignmentTarget { span, properties, rest } = node.as_ref();
 
-        let deoptimized = self.is_deoptimized(AstKind2::ObjectAssignmentTarget(node));
+        let included = self.is_included(AstKind2::ObjectAssignmentTarget(node));
 
         let rest = rest.as_ref().and_then(|rest| {
           self.transform_assignment_target_rest(
             rest,
-            self.is_deoptimized(AstKind2::ObjectAssignmentTarget(node)),
+            self.is_included(AstKind2::ObjectAssignmentTarget(node)),
           )
         });
 
@@ -113,7 +113,7 @@ impl<'a> Transformer<'a> {
             transformed_properties.push(property);
           }
         }
-        if !deoptimized && transformed_properties.is_empty() && rest.is_none() {
+        if !included && transformed_properties.is_empty() && rest.is_none() {
           None
         } else {
           Some(self.ast.assignment_target_pattern_object_assignment_target(

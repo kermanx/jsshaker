@@ -54,17 +54,17 @@ impl<'a> CfScopeKind<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DeoptimizeState {
+pub enum IncludeState {
   Never,
-  DeoptimizedClean,
-  DeoptimizedDirty,
+  IncludedClean,
+  IncludedDirty,
 }
 
 #[derive(Debug)]
 pub struct CfScope<'a> {
   pub kind: CfScopeKind<'a>,
   pub deps: DepCollector<'a>,
-  pub deoptimize_state: DeoptimizeState,
+  pub include_state: IncludeState,
   pub exited: Option<bool>,
 }
 
@@ -73,15 +73,15 @@ impl<'a> CfScope<'a> {
     CfScope {
       kind,
       deps: DepCollector::new(deps),
-      deoptimize_state: DeoptimizeState::Never,
+      include_state: IncludeState::Never,
       exited: if non_det { None } else { Some(false) },
     }
   }
 
   pub fn push_dep(&mut self, dep: Dep<'a>) {
     self.deps.push(dep);
-    if self.deoptimize_state == DeoptimizeState::DeoptimizedClean {
-      self.deoptimize_state = DeoptimizeState::DeoptimizedDirty;
+    if self.include_state == IncludeState::IncludedClean {
+      self.include_state = IncludeState::IncludedDirty;
     }
   }
 
@@ -238,7 +238,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label) = cf_scope.kind.matches_label(label) {
           if !is_closest_breakable || !breakable_without_label {
-            self.deoptimized_atoms.deoptimize_atom(AstKind2::LabeledStatement(label));
+            self.included_atoms.include_atom(AstKind2::LabeledStatement(label));
             label_used = true;
           }
           target_depth = Some(idx);
@@ -268,7 +268,7 @@ impl<'a> Analyzer<'a> {
       if let Some(label) = label {
         if let Some(label) = cf_scope.kind.matches_label(label) {
           if !is_closest_continuable {
-            self.deoptimized_atoms.deoptimize_atom(AstKind2::LabeledStatement(label));
+            self.included_atoms.include_atom(AstKind2::LabeledStatement(label));
             label_used = true;
           }
           target_depth = Some(idx);
@@ -311,16 +311,16 @@ impl<'a> Analyzer<'a> {
     let mut first_stage = true;
     for scope in self.scoping.cf.iter_stack_mut().rev() {
       if first_stage {
-        match scope.deoptimize_state {
-          DeoptimizeState::Never => {
-            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+        match scope.include_state {
+          IncludeState::Never => {
+            scope.include_state = IncludeState::IncludedClean;
             if let Some(dep) = scope.deps.take(self.factory) {
               deps.push(dep);
             }
           }
-          DeoptimizeState::DeoptimizedClean => break,
-          DeoptimizeState::DeoptimizedDirty => {
-            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+          IncludeState::IncludedClean => break,
+          IncludeState::IncludedDirty => {
+            scope.include_state = IncludeState::IncludedClean;
             if let Some(dep) = scope.deps.take(self.factory) {
               deps.push(dep);
             }
@@ -328,12 +328,12 @@ impl<'a> Analyzer<'a> {
           }
         }
       } else {
-        match scope.deoptimize_state {
-          DeoptimizeState::Never => unreachable!("Logic error in global_effect"),
-          DeoptimizeState::DeoptimizedClean => break,
-          DeoptimizeState::DeoptimizedDirty => {
+        match scope.include_state {
+          IncludeState::Never => unreachable!("Logic error in global_effect"),
+          IncludeState::IncludedClean => break,
+          IncludeState::IncludedDirty => {
             scope.deps.force_clear();
-            scope.deoptimize_state = DeoptimizeState::DeoptimizedClean;
+            scope.include_state = IncludeState::IncludedClean;
           }
         }
       }

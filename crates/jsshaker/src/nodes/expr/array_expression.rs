@@ -71,8 +71,8 @@ impl<'a> Transformer<'a> {
           }
         }
         _ => {
-          let deoptimized = self.is_deoptimized(AstKind2::ArrayExpressionElement(element));
-          let element = self.transform_expression(element.to_expression(), need_val && deoptimized);
+          let included = self.is_included(AstKind2::ArrayExpressionElement(element));
+          let element = self.transform_expression(element.to_expression(), need_val && included);
           if let Some(inner) = element {
             transformed_elements.push(inner.into());
           } else if need_val {

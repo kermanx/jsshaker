@@ -173,11 +173,11 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
-    let deoptimized_atoms = &self.deoptimized_atoms;
+    let included_atoms = &self.included_atoms;
     let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
 
     callsite_to_branches.retain(|callsite, branches| {
-      if deoptimized_atoms.is_deoptimized(*callsite) {
+      if included_atoms.is_included(*callsite) {
         let mut remaining_branches = vec![];
         for branch in branches {
           let data = node_to_data.get_mut(&branch.id).unwrap();

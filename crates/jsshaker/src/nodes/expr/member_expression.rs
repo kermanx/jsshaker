@@ -118,7 +118,7 @@ impl<'a> Transformer<'a> {
       return Err(object);
     }
 
-    let need_read = need_val || self.is_deoptimized(dep_id);
+    let need_read = need_val || self.is_included(dep_id);
 
     if !need_read {
       let object = self.transform_expression_in_chain(node.object(), need_optional)?;
@@ -198,7 +198,7 @@ impl<'a> Transformer<'a> {
     &self,
     node: &'a MemberExpression<'a>,
   ) -> Option<MemberExpression<'a>> {
-    let need_write = self.is_deoptimized(AstKind2::MemberExpression(node));
+    let need_write = self.is_included(AstKind2::MemberExpression(node));
 
     match node {
       MemberExpression::ComputedMemberExpression(node) => {

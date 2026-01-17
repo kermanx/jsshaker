@@ -21,7 +21,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<Expression<'a>> {
     let JSXMemberExpression { span, object, property } = node;
 
-    let need_access = need_val || self.is_deoptimized(AstKind2::JSXMemberExpression(node));
+    let need_access = need_val || self.is_included(AstKind2::JSXMemberExpression(node));
     if need_access {
       let object = self.transform_jsx_member_expression_object_effect_only(object, true).unwrap();
       Some(Expression::from(self.ast.member_expression_static(
