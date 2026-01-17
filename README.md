@@ -35,11 +35,7 @@ export function f() {
 
 </td></tr></tbody></table>
 
-### Remove Dead Code
-
-> The core of tree-shaking. The execution is simulated to know which code is useless.
->
-> And don't worry about the `&& true` in the output, minifier will remove it.
+### Dead Branch Elimination
 
 <table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
@@ -84,8 +80,6 @@ g(false);
 
 ### Object Property Mangling
 
-> This is beyond the scope of tree-shaking, we need a new name for this project 😇.
-
 <table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
 
@@ -116,8 +110,6 @@ export function main() {
 </td></tr></tbody></table>
 
 ### Class Tree Shaking
-
-> One of the hardest but the coolest.
 
 <table><tbody><tr><td width="500px"> Input </td><td width="500px"> Output </td></tr><tr>
 <td valign="top">
