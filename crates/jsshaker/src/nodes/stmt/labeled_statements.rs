@@ -1,6 +1,6 @@
 use oxc::ast::ast::{LabeledStatement, Statement};
 
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
+use crate::{analyzer::Analyzer, scope::CfScopeKind, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_labeled_statement(&mut self, node: &'a LabeledStatement<'a>) {
@@ -23,10 +23,6 @@ impl<'a> Transformer<'a> {
 
     let body = self.transform_statement(body);
 
-    if self.is_included(AstKind2::LabeledStatement(node)) {
-      body.map(|body| self.ast.statement_labeled(*span, label.clone(), body))
-    } else {
-      body
-    }
+    body.map(|body| self.ast.statement_labeled(*span, label.clone(), body))
   }
 }

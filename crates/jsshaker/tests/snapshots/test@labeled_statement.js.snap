@@ -1,11 +1,10 @@
 ---
-source: src/tests/mod.rs
-assertion_line: 32
-expression: tree_shake(input)
-input_file: src/tests/fixtures/labeled_statement.js
+source: crates/jsshaker/tests/mod.rs
+expression: do_tree_shake(input)
+input_file: crates/jsshaker/tests/fixtures/labeled_statement.js
 ---
 export function main() {
-	a: {
+	a: b: {
 		effect1();
 		c: {
 			effect2();

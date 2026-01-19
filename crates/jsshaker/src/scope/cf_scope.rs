@@ -1,10 +1,12 @@
-use oxc::{ast::ast::LabeledStatement, span::Atom};
+use oxc::{
+  ast::ast::{LabelIdentifier, LabeledStatement},
+  span::Atom,
+};
 
 use crate::{
   analyzer::{Analyzer, exhaustive::ExhaustiveData},
   define_stacked_tree_idx,
   dep::{Dep, DepCollector, DepVec},
-  utils::ast::AstKind2,
   value::cache::FnCacheTrackingData,
 };
 
@@ -33,7 +35,7 @@ impl<'a> CfScopeKind<'a> {
     matches!(self, CfScopeKind::Function(_))
   }
 
-  pub fn is_breakable_without_label(&self) -> bool {
+  pub fn is_breakable(&self) -> bool {
     matches!(self, CfScopeKind::LoopBreak | CfScopeKind::Switch)
   }
 
@@ -41,11 +43,8 @@ impl<'a> CfScopeKind<'a> {
     matches!(self, CfScopeKind::LoopContinue)
   }
 
-  pub fn matches_label(&self, label: &'a Atom<'a>) -> Option<&'a LabeledStatement<'a>> {
-    match self {
-      CfScopeKind::Labeled(stmt) if stmt.label.name == label => Some(stmt),
-      _ => None,
-    }
+  pub fn matches_label(&self, label: &'a Atom<'a>) -> bool {
+    matches!(self, CfScopeKind::Labeled(stmt) if stmt.label.name == label)
   }
 
   pub fn is_exhaustive(&self) -> bool {
@@ -171,10 +170,6 @@ impl<'a> Analyzer<'a> {
     self.exit_to_impl(target_depth, self.scoping.cf.stack_len(), true, None);
   }
 
-  pub fn exit_to_not_must(&mut self, target_depth: usize) {
-    self.exit_to_impl(target_depth, self.scoping.cf.stack_len(), false, None);
-  }
-
   /// `None` => Interrupted by if branch
   /// `Some` => Accumulated dependencies, may be `None`
   pub fn exit_to_impl(
@@ -225,66 +220,46 @@ impl<'a> Analyzer<'a> {
     Some(acc_dep)
   }
 
-  /// If the label is used, `true` is returned.
-  pub fn break_to_label(&mut self, label: Option<&'a Atom<'a>>) -> bool {
-    let mut is_closest_breakable = true;
+  pub fn break_to_label(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
     let mut target_depth = None;
-    let mut label_used = false;
-    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
+    for (depth, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
       if cf_scope.kind.is_function() {
         break;
       }
-      let breakable_without_label = cf_scope.kind.is_breakable_without_label();
       if let Some(label) = label {
-        if let Some(label) = cf_scope.kind.matches_label(label) {
-          if !is_closest_breakable || !breakable_without_label {
-            self.included_atoms.include_atom(AstKind2::LabeledStatement(label));
-            label_used = true;
-          }
-          target_depth = Some(idx);
+        if cf_scope.kind.matches_label(&label.name) {
+          target_depth = Some(depth);
           break;
         }
-        if breakable_without_label {
-          is_closest_breakable = false;
-        }
-      } else if breakable_without_label {
-        target_depth = Some(idx);
+      } else if cf_scope.kind.is_breakable() {
+        target_depth = Some(depth);
         break;
       }
     }
-    self.exit_to(target_depth.unwrap());
-    label_used
+    self.exit_to(target_depth.expect("No valid break target found"));
   }
 
-  /// If the label is used, `true` is returned.
-  pub fn continue_to_label(&mut self, label: Option<&'a Atom<'a>>) -> bool {
-    let mut is_closest_continuable = true;
+  pub fn continue_to_label(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
     let mut target_depth = None;
-    let mut label_used = false;
-    for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
+    for (depth, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
       if cf_scope.kind.is_function() {
         break;
       }
       if let Some(label) = label {
-        if let Some(label) = cf_scope.kind.matches_label(label) {
-          if !is_closest_continuable {
-            self.included_atoms.include_atom(AstKind2::LabeledStatement(label));
-            label_used = true;
+        if cf_scope.kind.matches_label(&label.name) {
+          let mut continue_depth = depth + 1;
+          while !self.scoping.cf.data_at(continue_depth).kind.is_continuable() {
+            continue_depth += 1;
           }
-          target_depth = Some(idx);
+          target_depth = Some(continue_depth);
           break;
         }
-        is_closest_continuable = false;
       } else if cf_scope.kind.is_continuable() {
-        target_depth = Some(idx);
+        target_depth = Some(depth);
         break;
       }
     }
-    if target_depth.is_none() {
-      panic!("label: {:?}, is_closest_continuable: {}", label, is_closest_continuable);
-    }
-    self.exit_to(target_depth.unwrap());
-    label_used
+    self.exit_to(target_depth.expect("No valid continue target found"));
   }
 
   pub fn exit_by_throw(&mut self, explicit: bool) -> usize {
@@ -294,9 +269,9 @@ impl<'a> Analyzer<'a> {
         return 0;
       }
       let mut target_depth = 0;
-      for (idx, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
+      for (depth, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
         if cf_scope.exited != Some(false) {
-          target_depth = idx;
+          target_depth = depth;
           break;
         }
       }
