@@ -124,7 +124,13 @@ impl<'a> Analyzer<'a> {
     match target {
       ReadWriteTarget::Variable(scope, symbol) => {
         let scope = self.scoping.variable.get(scope);
-        scope.variables[&symbol].borrow().value
+        let variable = scope.variables[&symbol].borrow();
+        let value = variable.value;
+        if let Some(dep) = variable.exhausted {
+          Some(self.factory.computed_unknown(dep))
+        } else {
+          value
+        }
       }
       _ => unreachable!(),
     }
