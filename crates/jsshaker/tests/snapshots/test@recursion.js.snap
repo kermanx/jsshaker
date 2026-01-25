@@ -30,7 +30,9 @@ export function complex2() {
 	function resolveTransitionHooks(postClone) {
 		const hooks = { clone() {
 			const hooks2 = resolveTransitionHooks(postClone);
-			if (postClone) postClone(hooks2);
+			{
+				postClone(hooks2);
+			}
 			return hooks2;
 		} };
 		return hooks;
