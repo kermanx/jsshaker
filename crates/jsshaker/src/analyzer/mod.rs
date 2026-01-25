@@ -6,6 +6,7 @@ mod post;
 mod pre;
 pub mod rw_tracking;
 
+use std::cell::RefCell;
 use std::collections::BTreeSet;
 
 use conditional::ConditionalDataMap;
@@ -28,6 +29,7 @@ use crate::{
   module::{ModuleId, Modules},
   scope::Scoping,
   utils::ExtraData,
+  value::FnStats,
   vfs::Vfs,
 };
 
@@ -55,6 +57,7 @@ pub struct Analyzer<'a> {
   pub mangler: Mangler<'a>,
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub diagnostics: BTreeSet<String>,
+  pub fn_stats: Option<RefCell<FnStats>>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -86,6 +89,7 @@ impl<'a> Analyzer<'a> {
       mangler,
       pending_deps: Default::default(),
       diagnostics: Default::default(),
+      fn_stats: config.enable_fn_stats.then(|| RefCell::new(FnStats::new())),
     }
   }
 

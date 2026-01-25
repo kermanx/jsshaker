@@ -82,7 +82,6 @@ pub struct CalleeInfo<'a> {
   pub module_id: ModuleId,
   pub node: CalleeNode<'a>,
   pub instance_id: CalleeInstanceId,
-  #[cfg(feature = "flame")]
   pub debug_name: &'a str,
 }
 
@@ -98,7 +97,6 @@ impl<'a> Analyzer<'a> {
       module_id: self.current_module,
       node,
       instance_id: self.factory.alloc_instance_id(),
-      #[cfg(feature = "flame")]
       debug_name: {
         let file_name = self.module_info().path.as_str();
         let line_col = self.line_index().line_col(node.span().start.into());

@@ -48,7 +48,6 @@ impl<'a> Scoping<'a> {
           module_id: ModuleId::from(0),
           node: CalleeNode::Root,
           instance_id: factory.alloc_instance_id(),
-          #[cfg(feature = "flame")]
           debug_name: "<Root>",
         },
         ModuleId::from(0),

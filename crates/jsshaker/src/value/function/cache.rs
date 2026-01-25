@@ -164,19 +164,57 @@ impl<'a> FnCache<'a> {
     analyzer: &Analyzer<'a>,
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
+    fn_name: &str,
   ) -> Option<FnCachedInput<'a>> {
     if !analyzer.config.enable_fn_cache {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.miss_config_disabled += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_config_disabled += 1;
+      }
       return None;
     }
 
-    let this = analyzer.factory.alloc(this.as_cacheable(analyzer)?);
+    let this_cacheable = this.as_cacheable(analyzer);
+    if this_cacheable.is_none() {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.miss_non_copyable_this += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_non_copyable_this += 1;
+      }
+      return None;
+    }
+    let this = analyzer.factory.alloc(this_cacheable.unwrap());
+
     if args.rest.is_some() {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.miss_rest_params += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_rest_params += 1;
+      }
       return None; // TODO: Support this case
     }
+
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
-      cargs.push(arg.as_cacheable(analyzer)?);
+      if let Some(cacheable) = arg.as_cacheable(analyzer) {
+        cargs.push(cacheable);
+      } else {
+        if let Some(stats) = &analyzer.fn_stats {
+          let mut stats = stats.borrow_mut();
+          stats.overall.miss_non_copyable_args += 1;
+          stats.get_or_create_fn_stats(fn_name).miss_non_copyable_args += 1;
+        }
+        return None;
+      }
     }
+
+    if let Some(stats) = &analyzer.fn_stats {
+      let mut stats = stats.borrow_mut();
+      stats.overall.cache_attempts += 1;
+      stats.get_or_create_fn_stats(fn_name).cache_attempts += 1;
+    }
+
     Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
   }
 
@@ -187,6 +225,7 @@ impl<'a> FnCache<'a> {
     call_dep: Dep<'a>,
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
+    fn_name: &str,
   ) -> Option<Entity<'a>> {
     let table = self.table.borrow();
     if let Some(cached) = table.get(key) {
@@ -200,13 +239,32 @@ impl<'a> FnCache<'a> {
               if c1.is_compatible(&c2) {
                 analyzer.add_assoc_entity_dep(tracking_dep, e2);
               } else {
+                if let Some(stats) = &analyzer.fn_stats {
+                  let mut stats = stats.borrow_mut();
+                  stats.overall.miss_read_dep_incompatible += 1;
+                  stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
+                }
                 return None;
               }
             }
           }
           (None, None) => {}
-          _ => return None,
+          _ => {
+            if let Some(stats) = &analyzer.fn_stats {
+              let mut stats = stats.borrow_mut();
+              stats.overall.miss_read_dep_incompatible += 1;
+              stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
+            }
+            return None;
+          }
         }
+      }
+
+      // Cache hit successful!
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.cache_hits += 1;
+        stats.get_or_create_fn_stats(fn_name).cache_hits += 1;
       }
 
       for (&target, &(non_det, cacheable)) in &cached.effects.writes {
@@ -237,6 +295,13 @@ impl<'a> FnCache<'a> {
 
       Some(ret)
     } else {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.cache_misses += 1;
+        stats.overall.miss_cache_empty += 1;
+        stats.get_or_create_fn_stats(fn_name).cache_misses += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_cache_empty += 1;
+      }
       None
     }
   }
@@ -249,11 +314,22 @@ impl<'a> FnCache<'a> {
     track_deps: FnCacheTrackDeps<'a>,
     tracking_data: FnCacheTrackingData<'a>,
     has_global_effects: bool,
+    fn_name: &str,
   ) {
     let FnCacheTrackingData::Tracked { effects } = tracking_data else {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.miss_state_untrackable += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_state_untrackable += 1;
+      }
       return;
     };
     if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copyable()) {
+      if let Some(stats) = &analyzer.fn_stats {
+        let mut stats = stats.borrow_mut();
+        stats.overall.miss_non_copyable_return += 1;
+        stats.get_or_create_fn_stats(fn_name).miss_non_copyable_return += 1;
+      }
       return;
     };
 
@@ -261,5 +337,12 @@ impl<'a> FnCache<'a> {
       .table
       .borrow_mut()
       .insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+
+    if let Some(stats) = &analyzer.fn_stats {
+      let mut stats = stats.borrow_mut();
+      stats.overall.cache_updates += 1;
+      stats.get_or_create_fn_stats(fn_name).cache_updates += 1;
+      stats.cache_table_size = self.table.borrow().len();
+    }
   }
 }

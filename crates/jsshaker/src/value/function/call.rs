@@ -29,12 +29,22 @@ impl<'a> FunctionValue<'a> {
     mut args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
+    let fn_name = self.callee.debug_name;
+
+    if let Some(stats) = &analyzer.fn_stats {
+      let mut stats = stats.borrow_mut();
+      stats.overall.total_calls += 1;
+      stats.get_or_create_fn_stats(fn_name).total_calls += 1;
+    }
+
     let call_id = DepAtom::from_counter();
     let call_dep = analyzer.dep((self.callee.into_node(), dep, call_id));
 
-    let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args);
+    let cache_key = FnCache::get_key::<IS_CTOR>(analyzer, this, args, fn_name);
     let track_deps = if let Some(cache_key) = cache_key {
-      if let Some(cached_ret) = self.cache.retrieve(analyzer, &cache_key, call_dep, this, args) {
+      if let Some(cached_ret) =
+        self.cache.retrieve(analyzer, &cache_key, call_dep, this, args, fn_name)
+      {
         return cached_ret;
       } else {
         Some(FnCacheTrackDeps::wrap(analyzer, call_id, &mut this, &mut args))
@@ -88,6 +98,7 @@ impl<'a> FunctionValue<'a> {
         track_deps.unwrap(),
         tracking_data,
         has_global_effects,
+        fn_name,
       );
     }
 
