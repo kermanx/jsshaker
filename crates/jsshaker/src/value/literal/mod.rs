@@ -400,7 +400,6 @@ impl<'a> LiteralValue<'a> {
 
   pub fn strict_eq(self, other: LiteralValue, object_is: bool) -> (bool, Option<MangleConstraint>) {
     if let (LiteralValue::Number(l), LiteralValue::Number(r)) = (self, other) {
-      // 0.0 === -0.0
       let eq = if object_is { l == r } else { l.0 == r.0 };
       return (eq, None);
     }

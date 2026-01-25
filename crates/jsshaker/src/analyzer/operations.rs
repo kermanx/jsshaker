@@ -55,6 +55,9 @@ impl<'a> Analyzer<'a> {
     object_is: bool,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
     if Entity::value_eq(lhs, rhs) {
+      if !object_is && Entity::value_eq(lhs, self.factory.nan) {
+        return (Some(false), Some(MangleConstraint::None));
+      }
       return (Some(true), Some(MangleConstraint::None));
     }
 
