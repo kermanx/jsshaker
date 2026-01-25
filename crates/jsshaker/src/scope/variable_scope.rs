@@ -18,7 +18,7 @@ use crate::{
   entity::Entity,
   module::ExportedValue,
   utils::ast::AstKind2,
-  value::{ArgumentsValue, cacheable::Cacheable},
+  value::ArgumentsValue,
 };
 
 define_box_bump_idx! {
@@ -193,18 +193,12 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       let cf_scope = variable.cf_scope;
-      let may_change = if let Some(value) = variable.value {
-        if variable.kind.is_const() {
-          false
-        } else if variable.kind.is_var() {
-          true
-        } else if value.as_cacheable(self) == Some(Cacheable::Unknown) {
-          false
-        } else {
-          !self.is_readonly_symbol(symbol)
-        }
-      } else {
+      let may_change = if variable.kind.is_const() {
+        false
+      } else if variable.kind.is_var() {
         true
+      } else {
+        !self.is_readonly_symbol(symbol)
       };
       drop(variable);
       let tracker_dep = self.track_read(
