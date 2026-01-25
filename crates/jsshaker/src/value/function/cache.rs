@@ -16,6 +16,7 @@ pub struct FnCachedInput<'a> {
   pub is_ctor: bool,
   pub this: &'a Cacheable<'a>,
   pub args: &'a [Cacheable<'a>],
+  pub rest: Option<&'a Cacheable<'a>>,
 }
 
 #[derive(Debug)]
@@ -175,25 +176,15 @@ impl<'a> FnCache<'a> {
       return None;
     }
 
-    let this_cacheable = this.as_cacheable(analyzer);
-    if this_cacheable.is_none() {
+    let Some(this_cacheable) = this.as_cacheable(analyzer) else {
       if let Some(stats) = &analyzer.fn_stats {
         let mut stats = stats.borrow_mut();
         stats.overall.miss_non_copyable_this += 1;
         stats.get_or_create_fn_stats(fn_name).miss_non_copyable_this += 1;
       }
       return None;
-    }
-    let this = analyzer.factory.alloc(this_cacheable.unwrap());
-
-    if args.rest.is_some() {
-      if let Some(stats) = &analyzer.fn_stats {
-        let mut stats = stats.borrow_mut();
-        stats.overall.miss_rest_params += 1;
-        stats.get_or_create_fn_stats(fn_name).miss_rest_params += 1;
-      }
-      return None; // TODO: Support this case
-    }
+    };
+    let this = analyzer.factory.alloc(this_cacheable);
 
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
@@ -209,13 +200,27 @@ impl<'a> FnCache<'a> {
       }
     }
 
+    let rest = if let Some(rest_arg) = args.rest {
+      let Some(rest_cacheable) = rest_arg.as_cacheable(analyzer) else {
+        if let Some(stats) = &analyzer.fn_stats {
+          let mut stats = stats.borrow_mut();
+          stats.overall.miss_rest_params += 1;
+          stats.get_or_create_fn_stats(fn_name).miss_rest_params += 1;
+        }
+        return None;
+      };
+      Some(analyzer.factory.alloc(rest_cacheable) as &'a Cacheable<'a>)
+    } else {
+      None
+    };
+
     if let Some(stats) = &analyzer.fn_stats {
       let mut stats = stats.borrow_mut();
       stats.overall.cache_attempts += 1;
       stats.get_or_create_fn_stats(fn_name).cache_attempts += 1;
     }
 
-    Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
+    Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice(), rest })
   }
 
   pub fn retrieve(
