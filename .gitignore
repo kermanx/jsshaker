@@ -1,7 +1,6 @@
 target
 node_modules
 .VSCodeCounter
-/tasks/test262/*.txt
 node_modules
 dist
 flamescope.json

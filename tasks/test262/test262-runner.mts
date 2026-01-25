@@ -114,9 +114,9 @@ if (outputStreams.SlowList) {
 // ------ Added Start
 const ignoredJsonPath = resolve(import.meta.dirname, 'ignored.json');
 const ignoredTests: Set<string> = new Set(JSON.parse(readFileSync(ignoredJsonPath, 'utf-8')));
-const agentAcceptPath = resolve(import.meta.dirname, 'agent-accept.txt');
-const agentAcceptTests: Set<string> = new Set(
-  (await readFile(agentAcceptPath, { encoding: 'utf-8' })).split('\n').map(l => l.split('\t')[0].trim()).filter(l => l)
+const ignored2Path = resolve(import.meta.dirname, 'ignored2.txt');
+const ignored2Tests: Set<string> = new Set(
+  (await readFile(ignored2Path, { encoding: 'utf-8' })).split('\n').map(l => l.split('\t')[0].trim()).filter(l => l)
 );
 // ------ Added End
 
@@ -140,8 +140,8 @@ function discoverTest(test: Test) {
   if (ignoredTests.has(test.file)) {
     return reporter.skipTest(test.id, 'feature-disabled', 'ignored by JSShaker');
   }
-  if (agentAcceptTests.has(test.file)) {
-    return reporter.skipTest(test.id, 'feature-disabled', 'accepted by JSShaker');
+  if (ignored2Tests.has(test.file)) {
+    return reporter.skipTest(test.id, 'feature-disabled', 'ignored by JSShaker (2)');
   }
   const match = test.content.match(/\b(with|eval|testLenientAndStrict)\s*\(/);
   if (match) {
