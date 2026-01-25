@@ -193,7 +193,9 @@ impl<'a> Analyzer<'a> {
       }
     } else {
       let cf_scope = variable.cf_scope;
-      let may_change = if variable.kind.is_const() {
+      let may_change = if variable.value.is_none() {
+        true
+      } else if variable.kind.is_const() {
         false
       } else if variable.kind.is_var() {
         true
