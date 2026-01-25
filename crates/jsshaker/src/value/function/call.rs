@@ -29,6 +29,10 @@ impl<'a> FunctionValue<'a> {
     mut args: ArgumentsValue<'a>,
     consume: bool,
   ) -> Entity<'a> {
+    if let Some(stats) = &analyzer.fn_cache_stats {
+      stats.borrow_mut().total_calls += 1;
+    }
+
     let call_id = DepAtom::from_counter();
     let call_dep = analyzer.dep((self.callee.into_node(), dep, call_id));
 

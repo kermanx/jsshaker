@@ -49,6 +49,9 @@ struct Args {
 
   #[arg(long, default_value_t = false)]
   no_fn_cache: bool,
+
+  #[arg(long, default_value_t = false)]
+  fn_cache_stats: bool,
 }
 
 fn main() {
@@ -77,7 +80,8 @@ fn main() {
   })
   .with_max_recursion_depth(args.recursion_depth)
   .with_remember_exhausted(!args.no_remember_exhausted)
-  .with_fn_cache(!args.no_fn_cache);
+  .with_fn_cache(!args.no_fn_cache)
+  .with_fn_cache_stats(args.fn_cache_stats);
 
   let minify_options = MinifierOptions {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),

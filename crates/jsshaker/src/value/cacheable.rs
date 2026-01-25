@@ -53,7 +53,9 @@ impl<'a> Cacheable<'a> {
 
   pub fn is_copyable(&self) -> bool {
     match self {
-      Self::Array(_) | Self::Object(_) => false,
+      // Enable identity-based caching for objects/arrays
+      // Object and Array IDs are copyable and provide identity-based equality
+      Self::Array(_) | Self::Object(_) => true,
       Self::Union(u) => u.iter().all(|c| c.is_copyable()),
       _ => true,
     }

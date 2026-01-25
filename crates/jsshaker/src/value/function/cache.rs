@@ -16,6 +16,7 @@ pub struct FnCachedInput<'a> {
   pub is_ctor: bool,
   pub this: &'a Cacheable<'a>,
   pub args: &'a [Cacheable<'a>],
+  pub rest: Option<&'a Cacheable<'a>>,
 }
 
 #[derive(Debug)]
@@ -166,18 +167,53 @@ impl<'a> FnCache<'a> {
     args: ArgumentsValue<'a>,
   ) -> Option<FnCachedInput<'a>> {
     if !analyzer.config.enable_fn_cache {
+      if let Some(stats) = &analyzer.fn_cache_stats {
+        stats.borrow_mut().miss_config_disabled += 1;
+      }
       return None;
     }
 
-    let this = analyzer.factory.alloc(this.as_cacheable(analyzer)?);
-    if args.rest.is_some() {
-      return None; // TODO: Support this case
-    }
+    let Some(this_cacheable) = this.as_cacheable(analyzer) else {
+      if let Some(stats) = &analyzer.fn_cache_stats {
+        stats.borrow_mut().miss_non_copyable_this += 1;
+      }
+      return None;
+    };
+    let this = analyzer.factory.alloc(this_cacheable);
+
+    let rest = match args.rest {
+      Some(rest_arg) => match rest_arg.as_cacheable(analyzer) {
+        Some(cacheable) => {
+          let rest_ref = &*analyzer.factory.alloc(cacheable);
+          Some(rest_ref)
+        }
+        None => {
+          if let Some(stats) = &analyzer.fn_cache_stats {
+            stats.borrow_mut().miss_rest_params += 1;
+          }
+          return None;
+        }
+      },
+      None => None,
+    };
+
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
-      cargs.push(arg.as_cacheable(analyzer)?);
+      if let Some(cacheable) = arg.as_cacheable(analyzer) {
+        cargs.push(cacheable);
+      } else {
+        if let Some(stats) = &analyzer.fn_cache_stats {
+          stats.borrow_mut().miss_non_copyable_args += 1;
+        }
+        return None;
+      }
     }
-    Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice() })
+
+    if let Some(stats) = &analyzer.fn_cache_stats {
+      stats.borrow_mut().cache_attempts += 1;
+    }
+
+    Some(FnCachedInput { is_ctor: IS_CTOR, this, args: cargs.into_bump_slice(), rest })
   }
 
   pub fn retrieve(
@@ -200,13 +236,26 @@ impl<'a> FnCache<'a> {
               if c1.is_compatible(&c2) {
                 analyzer.add_assoc_entity_dep(tracking_dep, e2);
               } else {
+                if let Some(stats) = &analyzer.fn_cache_stats {
+                  stats.borrow_mut().miss_read_dep_incompatible += 1;
+                }
                 return None;
               }
             }
           }
           (None, None) => {}
-          _ => return None,
+          _ => {
+            if let Some(stats) = &analyzer.fn_cache_stats {
+              stats.borrow_mut().miss_read_dep_incompatible += 1;
+            }
+            return None;
+          }
         }
+      }
+
+      // Cache hit successful!
+      if let Some(stats) = &analyzer.fn_cache_stats {
+        stats.borrow_mut().cache_hits += 1;
       }
 
       for (&target, &(non_det, cacheable)) in &cached.effects.writes {
@@ -237,6 +286,11 @@ impl<'a> FnCache<'a> {
 
       Some(ret)
     } else {
+      if let Some(stats) = &analyzer.fn_cache_stats {
+        let mut stats = stats.borrow_mut();
+        stats.cache_misses += 1;
+        stats.miss_cache_empty += 1;
+      }
       None
     }
   }
@@ -251,15 +305,24 @@ impl<'a> FnCache<'a> {
     has_global_effects: bool,
   ) {
     let FnCacheTrackingData::Tracked { effects } = tracking_data else {
+      if let Some(stats) = &analyzer.fn_cache_stats {
+        stats.borrow_mut().miss_state_untrackable += 1;
+      }
       return;
     };
-    if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copyable()) {
-      return;
-    };
+
+    // Removed copyability check - allow caching functions that return objects/arrays
+    // The return entity is properly wrapped with dependencies
 
     self
       .table
       .borrow_mut()
       .insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+
+    if let Some(stats) = &analyzer.fn_cache_stats {
+      let mut stats = stats.borrow_mut();
+      stats.cache_updates += 1;
+      stats.cache_table_size = self.table.borrow().len();
+    }
   }
 }

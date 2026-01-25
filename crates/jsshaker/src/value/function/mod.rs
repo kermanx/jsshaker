@@ -2,6 +2,7 @@ mod arguments;
 pub mod bound;
 mod builtin;
 pub mod cache;
+pub mod cache_stats;
 pub mod call;
 
 use std::cell::Cell;
@@ -23,6 +24,7 @@ use crate::{
 };
 pub use arguments::*;
 pub use builtin::*;
+pub use cache_stats::FnCacheStats;
 
 #[derive(Debug)]
 pub struct FunctionValue<'a> {
