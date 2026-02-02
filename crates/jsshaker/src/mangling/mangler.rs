@@ -41,7 +41,6 @@ pub struct Mangler<'a> {
 
   pub states: BoxBump<'a, MangleAtom, AtomState<'a>>,
   pub constant_nodes: FxHashMap<DepAtom, (Option<MangleAtom>, Value<'a>)>,
-  pub foldable_nodes: FxHashMap<DepAtom, Option<MangleAtom>>,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
@@ -58,7 +57,6 @@ impl<'a> Mangler<'a> {
       allocator,
       states,
       constant_nodes: FxHashMap::default(),
-      foldable_nodes: FxHashMap::default(),
       identity_groups: IndexVec::new(),
       uniqueness_groups: IndexVec::new(),
     }
@@ -83,27 +81,6 @@ impl<'a> Mangler<'a> {
         let value = self.allocator.alloc(LiteralValue::String(str, Some(atom)));
         entry.insert((Some(atom), value));
         value
-      }
-    }
-  }
-
-  pub fn use_foldable_node(&mut self, node: impl Into<DepAtom>) -> Option<MangleAtom> {
-    match self.foldable_nodes.entry(node.into()) {
-      hash_map::Entry::Occupied(mut entry) => {
-        let atom = entry.get_mut();
-        if let Some(a) = atom
-          && matches!(self.states[*a], AtomState::NonMangable)
-        {
-          *atom = None;
-        }
-        *atom
-      }
-      hash_map::Entry::Vacant(entry) => {
-        let atom = self
-          .states
-          .alloc(AtomState::Constrained(None, allocator::HashSet::new_in(self.allocator)));
-        entry.insert(Some(atom));
-        Some(atom)
       }
     }
   }
