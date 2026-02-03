@@ -78,10 +78,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if analyzer.config.unknown_property_read_side_effects {
-      self.consume(analyzer);
-    }
-    consumed_object::enumerate_properties(self, analyzer, dep)
+    self.statics.enumerate_properties(analyzer, self, dep)
   }
 
   fn call(
