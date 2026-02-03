@@ -114,15 +114,16 @@ pub trait ValueTrait<'a>: Debug {
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a>;
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a>;
 
-  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
-    analyzer.factory.no_dep
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
+
+  fn get_shallow_dep(&'a self, _analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
+    None
   }
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+  fn get_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     None
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
@@ -139,7 +140,7 @@ pub trait ValueTrait<'a>: Debug {
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     None
   }
-  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+  fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     None
   }
 

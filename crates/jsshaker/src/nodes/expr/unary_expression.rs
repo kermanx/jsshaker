@@ -28,7 +28,7 @@ impl<'a> Analyzer<'a> {
         }
         Expression::ComputedMemberExpression(node) => {
           let object = self.exec_expression(&node.object);
-          let key = self.exec_expression(&node.expression).get_to_property_key(self);
+          let key = self.exec_expression(&node.expression).coerce_property_key(self);
           object.delete_property(self, dep, key)
         }
         Expression::Identifier(_node) => {
@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
           argument,
         )
       }
-      UnaryOperator::UnaryPlus => argument.get_to_numeric(self),
+      UnaryOperator::UnaryPlus => argument.coerce_number(self),
       UnaryOperator::LogicalNot => self.factory.computed(
         match argument.test_truthy() {
           Some(value) => self.factory.boolean(!value),
@@ -71,7 +71,7 @@ impl<'a> Analyzer<'a> {
         argument,
       ),
       UnaryOperator::BitwiseNot => self.factory.computed(
-        if let Some(literals) = argument.get_to_numeric(self).get_to_literals(self) {
+        if let Some(literals) = argument.coerce_number(self).get_literals(self) {
           self.factory.union(allocator::Vec::from_iter_in(
             literals.into_iter().map(|lit| match lit {
               LiteralValue::Number(num) => {

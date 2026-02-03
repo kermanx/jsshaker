@@ -76,7 +76,7 @@ impl<'a> BuiltinPrototype<'a> {
     dep: Dep<'a>,
   ) -> Entity<'a> {
     let dep = (dep, target, key);
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let mut values = analyzer.factory.vec();
       for &key_literal in &key_literals {
         if let Some(property) = self.get_literal_keyed(key_literal) {

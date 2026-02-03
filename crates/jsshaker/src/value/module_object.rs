@@ -35,7 +35,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     key: Entity<'a>,
   ) -> Entity<'a> {
     let dep = analyzer.dep((dep, key));
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let rest_unknown =
         analyzer.does_module_reexport_unknown(self.module, &mut Default::default());
       let mut result = analyzer.factory.vec();
@@ -118,7 +118,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
@@ -126,7 +126,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
@@ -134,15 +134,15 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     analyzer.factory.computed_unknown(self)
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 

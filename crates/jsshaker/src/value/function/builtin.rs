@@ -126,23 +126,23 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     }
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.nan
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: analyzer.thrown_builtin_error("Functions are not valid JSX children");
     builtin_string!("")
   }

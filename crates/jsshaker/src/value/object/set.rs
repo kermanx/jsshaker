@@ -28,7 +28,7 @@ impl<'a> ObjectValue<'a> {
     }
 
     let (target_depth, is_exhaustive, mut non_det, deps) = self.prepare_mutation(analyzer, dep);
-    let key_literals = key.get_to_literals(analyzer);
+    let key_literals = key.get_literals(analyzer);
 
     if is_exhaustive && key_literals.is_none() {
       self.consume(analyzer);

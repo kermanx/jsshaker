@@ -41,7 +41,7 @@ impl<'a> ObjectValue<'a> {
     let mut exhaustive_deps = Some(vec![]);
 
     let mut check_rest = false;
-    let key_literals = key.get_to_literals(analyzer);
+    let key_literals = key.get_literals(analyzer);
     if let Some(key_literals) = &key_literals {
       mangable = self.check_mangable(analyzer, key_literals);
       for &key_literal in key_literals {

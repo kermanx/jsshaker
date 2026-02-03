@@ -75,7 +75,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     }
 
     let dep = analyzer.dep((dep, key));
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let mut result = analyzer.factory.vec();
       let mut rest_added = false;
       for &key_literal in &key_literals {
@@ -138,7 +138,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         break 'known;
       }
 
-      let Some(key_literals) = key.get_to_literals(analyzer) else {
+      let Some(key_literals) = key.get_literals(analyzer) else {
         break 'known;
       };
 
@@ -311,29 +311,29 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     )
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 

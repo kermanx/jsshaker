@@ -65,22 +65,22 @@ impl<'a> ValueTrait<'a> for NeverValue {
     (Vec::new(), None, analyzer.factory.no_dep)
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+  fn get_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     None
   }
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralValue<'a>> {

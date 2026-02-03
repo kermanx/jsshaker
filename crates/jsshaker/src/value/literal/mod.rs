@@ -177,7 +177,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer
       .factory
       .alloc(LiteralValue::String(
@@ -187,7 +187,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       .into()
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralValue::Number(_) | LiteralValue::BigInt(_) => self.into(),
       LiteralValue::Boolean(value) => {
@@ -198,7 +198,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
         }
       }
       LiteralValue::String(str, atom) => {
-        analyzer.factory.computed(str.get_to_numeric(analyzer), *atom)
+        analyzer.factory.computed(str.coerce_number(analyzer), *atom)
       }
       LiteralValue::Null => analyzer.factory.number(0.0),
       LiteralValue::Symbol(_, _) => {
@@ -209,29 +209,29 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(value) => analyzer.factory.boolean(value),
       None => analyzer.factory.computed_unknown_boolean(self),
     }
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
       LiteralValue::Symbol(_, _) => self.into(),
-      _ => self.get_to_string(analyzer),
+      _ => self.coerce_string(analyzer),
     }
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if (TypeofResult::String | TypeofResult::Number).contains(self.test_typeof()) {
-      self.get_to_string(analyzer)
+      self.coerce_string(analyzer)
     } else {
       builtin_string!("")
     }
   }
 
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+  fn get_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     Some(PossibleLiterals::Single(*self))
   }
 

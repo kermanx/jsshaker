@@ -67,8 +67,8 @@ impl<'a> Analyzer<'a> {
       return (Some(false), None);
     }
 
-    let lhs_lit = lhs.get_to_literals(self);
-    let rhs_lit = rhs.get_to_literals(self);
+    let lhs_lit = lhs.get_literals(self);
+    let rhs_lit = rhs.get_literals(self);
     if let (Some(lhs_lit), Some(rhs_lit)) = (lhs_lit, rhs_lit) {
       if let (PossibleLiterals::Single(lhs_lit), PossibleLiterals::Single(rhs_lit)) =
         (&lhs_lit, &rhs_lit)
@@ -136,7 +136,7 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    if let (Some(lhs), Some(rhs)) = (lhs.get_to_literals(self), rhs.get_to_literals(self)) {
+    if let (Some(lhs), Some(rhs)) = (lhs.get_literals(self), rhs.get_literals(self)) {
       let mut result = None;
       for &lhs in &lhs {
         for &rhs in &rhs {
@@ -234,8 +234,8 @@ impl<'a> Analyzer<'a> {
       values.push(self.factory.unknown_bigint);
     }
     if maybe_string {
-      let lhs_str = lhs.get_to_string(self);
-      let rhs_str = rhs.get_to_string(self);
+      let lhs_str = lhs.coerce_string(self);
+      let rhs_str = rhs.coerce_string(self);
 
       let lhs_str_lit = lhs_str.get_literal(self);
       let rhs_str_lit = rhs_str.get_literal(self);

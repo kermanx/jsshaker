@@ -228,45 +228,45 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     )
   }
 
-  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
+  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
     let mut deps = analyzer.factory.vec();
     for entity in self.values.iter() {
       deps.push(entity.get_shallow_dep(analyzer));
     }
-    analyzer.dep(deps)
+    if deps.is_empty() { None } else { Some(analyzer.dep(deps)) }
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
-    let values = self.values.map(analyzer.allocator, |v| v.get_to_string(analyzer));
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_string(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // TODO: dedupe
-    let values = self.values.map(analyzer.allocator, |v| v.get_to_numeric(analyzer));
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_number(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let values = self.values.map(analyzer.allocator, |v| v.get_to_boolean(analyzer));
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_boolean(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let values = self.values.map(analyzer.allocator, |v| v.get_to_property_key(analyzer));
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_property_key(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let values = self.values.map(analyzer.allocator, |v| v.get_to_jsx_child(analyzer));
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_jsx_child(analyzer));
     analyzer.factory.union(values)
   }
 
-  fn get_to_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+  fn get_literals(&'a self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     let mut result = FxHashSet::default();
     for entity in self.values.iter() {
-      result.extend(entity.get_to_literals(analyzer)?.into_iter());
+      result.extend(entity.get_literals(analyzer)?.into_iter());
     }
     Some(if result.len() == 1 {
       PossibleLiterals::Single(result.into_iter().next().unwrap())
@@ -304,7 +304,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     // TODO: Support this
     None
   }
-  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+  fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     // TODO: Support this
     None
   }

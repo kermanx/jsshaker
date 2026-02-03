@@ -48,7 +48,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
   ) -> Entity<'a> {
     let prototype = &analyzer.builtins.prototypes.string;
     let dep = analyzer.dep((dep, key));
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let mut values = analyzer.factory.vec();
       for &key_literal in &key_literals {
         if let Some(property) = get_known_instance_property(self.as_str(), analyzer, key_literal) {
@@ -152,29 +152,29 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     (vec![], (!value.is_empty()).then_some(analyzer.factory.unknown_string), dep)
   }
 
-  fn get_to_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     let value = self.as_str();
     let val = value.trim().string_to_number();
     if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val) }
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(!self.as_str().is_empty())
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+  fn get_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
     Some(PossibleLiterals::Single(LiteralValue::String(self, None)))
   }
 

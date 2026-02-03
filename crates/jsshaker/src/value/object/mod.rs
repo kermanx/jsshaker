@@ -173,7 +173,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_string(analyzer);
@@ -181,7 +181,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
       return consumed_object::get_to_numeric(analyzer);
@@ -189,15 +189,15 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer.factory.computed_unknown(self)
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(true)
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.get_to_string(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.coerce_string(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 
@@ -248,7 +248,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     Some(keys)
   }
 
-  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+  fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     Some(self)
   }
 

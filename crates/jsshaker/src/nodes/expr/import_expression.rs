@@ -7,7 +7,7 @@ use crate::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_import_expression(&mut self, node: &'a ImportExpression<'a>) -> Entity<'a> {
-    let specifier = self.exec_expression(&node.source).get_to_string(self);
+    let specifier = self.exec_expression(&node.source).coerce_string(self);
     let options = node.options.as_ref().map(|option| self.exec_expression(option));
     let dep = self.dep((AstKind2::ImportExpression(node), specifier, options));
 

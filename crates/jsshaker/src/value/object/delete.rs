@@ -28,7 +28,7 @@ impl<'a> ObjectValue<'a> {
       }
     }
 
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let non_det = non_det || key_literals.len() > 1;
       let mangable = self.check_mangable(analyzer, &key_literals);
       let deps = if mangable { deps } else { analyzer.dep((deps, key)) };

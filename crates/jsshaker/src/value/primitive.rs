@@ -116,26 +116,26 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     }
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown_string
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(val) => analyzer.factory.boolean(val),
       None => analyzer.factory.unknown_boolean,
     }
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.unknown
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if matches!(self, PrimitiveValue::Mixed | PrimitiveValue::String | PrimitiveValue::Number) {
       analyzer.factory.unknown_string
     } else {

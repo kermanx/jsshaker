@@ -143,7 +143,7 @@ impl<'a> Builtins<'a> {
 
       for (_, key, value) in enumerated.known.into_values() {
         let entry = analyzer.new_empty_array();
-        entry.push_element(key.get_to_string(analyzer));
+        entry.push_element(key.coerce_string(analyzer));
         entry.push_element(value);
         array.init_rest(entry.into());
       }
@@ -175,7 +175,7 @@ impl<'a> Builtins<'a> {
   fn create_object_define_property_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.defineProperty", |analyzer, dep, _, args| {
       let object = args.get(analyzer, 0);
-      let key = args.get(analyzer, 1).get_to_property_key(analyzer);
+      let key = args.get(analyzer, 1).coerce_property_key(analyzer);
       let descriptor = args.get(analyzer, 2);
 
       'trackable: {

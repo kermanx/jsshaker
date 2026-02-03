@@ -132,26 +132,26 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     consumed_object::iterate(analyzer, dep)
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.computed_unknown_string(self)
   }
 
-  fn get_to_numeric(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_number(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self.test_truthy() {
       Some(val) => analyzer.factory.boolean(val),
       None => analyzer.factory.unknown_boolean,
     }
   }
 
-  fn get_to_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 
-  fn get_to_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_jsx_child(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.into()
   }
 

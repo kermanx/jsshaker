@@ -12,7 +12,7 @@ impl<'a> Analyzer<'a> {
       PropertyKey::StaticIdentifier(node) => self.exec_identifier_name(node),
       PropertyKey::PrivateIdentifier(node) => self.exec_private_identifier(node),
       node => {
-        self.exec_expression_with_dependency(node.to_expression(), dep).get_to_property_key(self)
+        self.exec_expression_with_dependency(node.to_expression(), dep).coerce_property_key(self)
       }
     }
   }

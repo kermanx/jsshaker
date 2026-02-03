@@ -86,20 +86,20 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Dep<'a> {
-    self.value.get_shallow_dep(analyzer)
+  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
+    Some(self.value.get_shallow_dep(analyzer))
   }
 
-  fn get_to_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.value.get_to_string(analyzer)
+  fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.coerce_string(analyzer)
   }
 
-  fn get_to_numeric(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.value.get_to_numeric(analyzer)
+  fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.coerce_number(analyzer)
   }
 
-  fn get_to_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let value = self.value.get_to_boolean(analyzer);
+  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let value = self.value.coerce_boolean(analyzer);
     if self.is_coalesce {
       value
     } else {
@@ -107,12 +107,12 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     }
   }
 
-  fn get_to_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.value.get_to_property_key(analyzer)
+  fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.coerce_property_key(analyzer)
   }
 
-  fn get_to_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.value.get_to_jsx_child(analyzer)
+  fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.value.coerce_jsx_child(analyzer)
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
@@ -127,7 +127,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.get_constructor_prototype(analyzer, dep)
   }
 
-  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+  fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     self.value.get_object()
   }
 

@@ -128,30 +128,32 @@ impl<'a> Entity<'a> {
   ) -> IteratedElements<'a> {
     self.value.iterate(analyzer, self.forward_dep(dep, analyzer))
   }
+
+  pub fn coerce_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_string(analyzer), analyzer)
+  }
+  pub fn coerce_number(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_number(analyzer), analyzer)
+  }
+  pub fn coerce_boolean(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_boolean(analyzer), analyzer)
+  }
+  pub fn coerce_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_property_key(analyzer), analyzer)
+  }
+  pub fn coerce_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_jsx_child(analyzer), analyzer)
+  }
+
   pub fn get_shallow_dep(&self, analyzer: &Analyzer<'a>) -> Dep<'a> {
-    if let Some(dep) = self.dep {
-      analyzer.dep((dep, self.value.get_shallow_dep(analyzer)))
-    } else {
-      self.value.get_shallow_dep(analyzer)
+    match (self.dep, self.value.get_shallow_dep(analyzer)) {
+      (Some(d1), Some(d2)) => analyzer.dep((d1, d2)),
+      (Some(d), None) | (None, Some(d)) => d,
+      (None, None) => analyzer.factory.no_dep,
     }
   }
-  pub fn get_to_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_to_string(analyzer), analyzer)
-  }
-  pub fn get_to_numeric(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_to_numeric(analyzer), analyzer)
-  }
-  pub fn get_to_boolean(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_to_boolean(analyzer), analyzer)
-  }
-  pub fn get_to_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_to_property_key(analyzer), analyzer)
-  }
-  pub fn get_to_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.get_to_jsx_child(analyzer), analyzer)
-  }
-  pub fn get_to_literals(&self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
-    self.value.get_to_literals(analyzer)
+  pub fn get_literals(&self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
+    self.value.get_literals(analyzer)
   }
   pub fn get_literal(&self, analyzer: &Analyzer<'a>) -> Option<LiteralValue<'a>> {
     self.value.get_literal(analyzer)
@@ -168,7 +170,7 @@ impl<'a> Entity<'a> {
     self.value.get_constructor_prototype(analyzer, self.forward_dep(dep, analyzer))
   }
   pub fn get_object(&self) -> Option<&'a ObjectValue<'a>> {
-    self.value.get_object()
+    self.value.as_object()
   }
   pub fn test_typeof(&self) -> TypeofResult {
     self.value.test_typeof()

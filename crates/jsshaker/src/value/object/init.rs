@@ -19,7 +19,7 @@ impl<'a> ObjectValue<'a> {
     value: Entity<'a>,
     definite: bool,
   ) {
-    if let Some(key_literals) = key.get_to_literals(analyzer) {
+    if let Some(key_literals) = key.get_literals(analyzer) {
       let mangable = self.check_mangable(analyzer, &key_literals);
       let value = if mangable { value } else { analyzer.factory.computed(value, key) };
 
