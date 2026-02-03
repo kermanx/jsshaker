@@ -134,9 +134,12 @@ pub trait ValueTrait<'a>: Debug {
   }
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    None
+  }
+  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     None
   }
 

@@ -32,8 +32,6 @@ pub struct FunctionValue<'a> {
   pub lexical_scope: Option<VariableScopeId>,
   pub finite_recursion: bool,
   pub statics: &'a ObjectValue<'a>,
-  /// The `prototype` property. Not `__proto__`.
-  pub prototype: &'a ObjectValue<'a>,
 
   // Workaround: The lazy dep of `this` value
   body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
@@ -45,7 +43,6 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
     self.consume_body(analyzer, analyzer.factory.unknown);
     self.statics.consume(analyzer);
-    self.prototype.consume(analyzer);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -69,11 +66,6 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    // TODO: Support analyzing this kind of mutation
-    if analyzer.op_strict_eq(key, builtin_string!("prototype"), false).0 != Some(false) {
-      return consumed_object::set_property(analyzer, dep, key, value);
-    }
-
     self.statics.set_property(analyzer, dep, key, value);
   }
 
@@ -174,10 +166,19 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
-    Some((dep, ObjectPrototype::Custom(self.statics), ObjectPrototype::Custom(self.prototype)))
+    let prototype = self.get_prototype(analyzer, dep);
+    Some((
+      dep,
+      ObjectPrototype::Custom(self.statics),
+      if let Some(prototype) = prototype.get_object() {
+        ObjectPrototype::Custom(prototype)
+      } else {
+        ObjectPrototype::Unknown(analyzer.factory.dep(prototype))
+      },
+    ))
   }
 
   fn test_typeof(&self) -> TypeofResult {
@@ -198,6 +199,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 }
 
 impl<'a> FunctionValue<'a> {
+  fn get_prototype(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
+    self.statics.get_property(analyzer, self, dep, builtin_string!("prototype"))
+  }
+
   fn check_recursion(&self, analyzer: &Analyzer<'a>) -> bool {
     if !self.finite_recursion {
       let mut recursion_depth = 0usize;
@@ -242,14 +247,16 @@ impl<'a> FunctionValue<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
+  pub fn new_function_with_prototype(
+    &mut self,
+    node: CalleeNode<'a>,
+  ) -> (&'a FunctionValue<'a>, &'a ObjectValue<'a>) {
     let (statics, prototype) = self.new_function_object(Some(node.into()));
     let function = self.factory.alloc(FunctionValue {
       callee: self.new_callee_info(node),
       lexical_scope: self.scoping.variable.top(),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       statics,
-      prototype,
       body_consumed: Cell::new(None),
       cache: FnCache::new_in(self.allocator),
     });
@@ -266,6 +273,10 @@ impl<'a> Analyzer<'a> {
       function.consume_body(self, self.factory.unknown);
     }
 
-    function
+    (function, prototype)
+  }
+
+  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
+    self.new_function_with_prototype(node).0
   }
 }

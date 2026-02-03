@@ -12,7 +12,7 @@ use crate::{
   dep::Dep,
   entity::Entity,
   use_consumed_flag,
-  value::literal::PossibleLiterals,
+  value::{ObjectValue, literal::PossibleLiterals},
 };
 
 #[derive(Debug)]
@@ -298,9 +298,13 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
 
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
+    // TODO: Support this
+    None
+  }
+  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
     // TODO: Support this
     None
   }

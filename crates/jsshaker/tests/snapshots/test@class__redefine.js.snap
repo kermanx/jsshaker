@@ -3,14 +3,4 @@ source: crates/jsshaker/tests/mod.rs
 expression: do_tree_shake(input)
 input_file: crates/jsshaker/tests/fixtures/class/redefine.js
 ---
-function A(x) {
-	this.x = x;
-}
-A.prototype = {
-	constructor: A,
-	method: function(y) {
-		return this.x + y;
-	}
-};
-const a = new A(1);
-console.log(a.method(2));
+console.log(3);

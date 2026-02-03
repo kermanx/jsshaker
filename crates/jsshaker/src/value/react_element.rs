@@ -157,7 +157,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
 
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     None

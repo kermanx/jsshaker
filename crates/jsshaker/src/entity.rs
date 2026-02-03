@@ -4,7 +4,8 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
     ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
-    TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable, literal::PossibleLiterals,
+    ObjectValue, TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable,
+    literal::PossibleLiterals,
   },
 };
 
@@ -161,10 +162,13 @@ impl<'a> Entity<'a> {
   }
   pub fn get_constructor_prototype(
     &self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     dep: impl DepTrait<'a> + 'a,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.value.get_constructor_prototype(analyzer, self.forward_dep(dep, analyzer))
+  }
+  pub fn get_object(&self) -> Option<&'a ObjectValue<'a>> {
+    self.value.get_object()
   }
   pub fn test_typeof(&self) -> TypeofResult {
     self.value.test_typeof()

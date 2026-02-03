@@ -248,6 +248,10 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     Some(keys)
   }
 
+  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+    Some(self)
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Object
   }

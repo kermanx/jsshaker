@@ -41,7 +41,7 @@ impl<'a> DefaultIn<'a> for Data<'a> {
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let data = self.load_data::<Data>(AstKind2::Class(node));
-    let class = self.new_function(CalleeNode::ClassConstructor(node));
+    let (class, prototype) = self.new_function_with_prototype(CalleeNode::ClassConstructor(node));
 
     // 1. Execute super class
     data.super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
@@ -51,15 +51,15 @@ impl<'a> Analyzer<'a> {
         super_class.get_constructor_prototype(self, self.factory.no_dep)
       {
         class.statics.set_prototype(super_statics);
-        class.prototype.set_prototype(super_prototype);
-        class.prototype.unknown_mutate(self, prototype_dep);
+        prototype.set_prototype(super_prototype);
+        prototype.unknown_mutate(self, prototype_dep);
       } else {
         let dep = self.factory.dep(*super_class);
         class.statics.set_prototype(ObjectPrototype::Unknown(dep));
-        class.prototype.set_prototype(ObjectPrototype::Unknown(dep));
+        prototype.set_prototype(ObjectPrototype::Unknown(dep));
       }
     } else {
-      class.prototype.set_prototype(ObjectPrototype::ImplicitOrNull);
+      prototype.set_prototype(ObjectPrototype::ImplicitOrNull);
     };
 
     // Enter class statics scope
@@ -94,7 +94,7 @@ impl<'a> Analyzer<'a> {
         if node.r#static {
           class.statics.init_property(self, kind, key.unwrap(), value, true);
         } else {
-          class.prototype.init_property(self, kind, key.unwrap(), value, true);
+          prototype.init_property(self, kind, key.unwrap(), value, true);
         }
       }
     }

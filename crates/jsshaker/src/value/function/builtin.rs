@@ -149,7 +149,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
 
   fn get_constructor_prototype(
     &'a self,
-    _analyzer: &Analyzer<'a>,
+    _analyzer: &mut Analyzer<'a>,
     _dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     None

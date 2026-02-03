@@ -2,7 +2,7 @@ use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
   ValueTrait, cacheable::Cacheable,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
+use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, value::ObjectValue};
 
 #[derive(Debug, Clone)]
 pub struct LogicalResultValue<'a> {
@@ -121,10 +121,14 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
 
   fn get_constructor_prototype(
     &'a self,
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.value.get_constructor_prototype(analyzer, dep)
+  }
+
+  fn get_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+    self.value.get_object()
   }
 
   fn test_typeof(&self) -> TypeofResult {
