@@ -33,7 +33,7 @@ pub enum FoldingData<'a> {
 }
 
 define_box_bump_idx! {
-  pub struct FoldingDataId;
+  pub struct FoldingDataId for FoldingData<'static>;
 }
 
 pub struct ConstantFolder<'a> {

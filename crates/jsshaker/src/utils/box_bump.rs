@@ -17,21 +17,27 @@ pub trait Idx: Debug + Clone + Copy + PartialEq + Eq + Hash {
 
 #[macro_export]
 macro_rules! define_box_bump_idx {
-  ($v:vis struct $type:ident;) => {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+  ($v:vis struct $type:ident for $target:ty;) => {
+    #[derive(Clone, Copy, PartialEq, Eq, Hash)]
     #[repr(transparent)]
     $v struct $type {
-      ptr: std::ptr::NonNull<u8>,
+      ptr: std::ptr::NonNull<$target>,
     }
 
     impl $crate::utils::box_bump::Idx for $type {
       #[inline(always)]
       fn from_ptr(ptr: std::ptr::NonNull<u8>) -> Self {
-        Self { ptr }
+        Self { ptr: ptr.cast() }
       }
       #[inline(always)]
       fn as_ptr(&self) -> std::ptr::NonNull<u8> {
-        self.ptr
+        self.ptr.cast()
+      }
+    }
+
+    impl std::fmt::Debug for $type {
+      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.ptr.fmt(f)
       }
     }
   };
