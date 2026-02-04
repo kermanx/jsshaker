@@ -4,21 +4,17 @@ use std::{
 };
 
 use oxc::allocator::{self, Allocator};
-use oxc::{semantic::SymbolId, span::Atom};
-use oxc_syntax::operator::LogicalOperator;
 
 use crate::{
   TreeShakeConfig,
   dep::{CustomDepTrait, Dep, DepTrait, LazyDep, OnceDep},
   entity::Entity,
-  mangling::{AlwaysMangableDep, MangleAtom, MangleConstraint, ManglingDep},
+  mangling::{AlwaysMangableDep, MangleConstraint, ManglingDep},
   scope::CfScopeId,
-  utils::{CalleeInstanceId, F64WithEq},
+  utils::CalleeInstanceId,
   value::{
-    ArgumentsValue, BuiltinFnImplementation, ImplementedBuiltinFnValue, LiteralValue,
-    ObjectProperty, ObjectPrototype, ObjectValue, PureBuiltinFnValue, literal::string::ToAtomRef,
-    logical_result::LogicalResultValue, never::NeverValue, primitive::PrimitiveValue,
-    react_element::ReactElementValue, union::UnionValues, unknown::UnknownValue,
+    ArgumentsValue, LiteralValue, PureBuiltinFnValue, logical_result::LogicalResultValue,
+    never::NeverValue, primitive::PrimitiveValue, union::UnionValues, unknown::UnknownValue,
   },
 };
 
@@ -188,63 +184,6 @@ impl<'a> Factory<'a> {
     CalleeInstanceId::from_usize(id)
   }
 
-  pub fn builtin_object(
-    &self,
-    prototype: ObjectPrototype<'a>,
-    consumable: bool,
-  ) -> &'a mut ObjectValue<'a> {
-    self.alloc(ObjectValue {
-      consumable,
-      consumed: Cell::new(false),
-      consumed_as_prototype: Cell::new(false),
-      cf_scope: self.root_cf_scope.unwrap(),
-      keyed: allocator::HashMap::new_in(self.allocator).into(),
-      unknown: ObjectProperty::new_in(self.allocator).into(),
-      rest: Default::default(),
-      prototype: Cell::new(prototype),
-      mangling_group: Cell::new(None),
-    })
-  }
-
-  pub fn arguments(
-    &self,
-    elements: &'a [Entity<'a>],
-    rest: Option<Entity<'a>>,
-  ) -> ArgumentsValue<'a> {
-    ArgumentsValue { elements, rest }
-  }
-
-  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
-    &self,
-    name: &'static str,
-    implementation: F,
-  ) -> Entity<'a> {
-    self
-      .alloc(ImplementedBuiltinFnValue {
-        name,
-        implementation,
-        statics: None,
-        consumed: Cell::new(true),
-      })
-      .into()
-  }
-
-  pub fn implemented_builtin_fn_with_statics<F: BuiltinFnImplementation<'a> + 'a>(
-    &self,
-    name: &'static str,
-    implementation: F,
-    statics: &'a ObjectValue<'a>,
-  ) -> Entity<'a> {
-    self
-      .alloc(ImplementedBuiltinFnValue {
-        name,
-        implementation,
-        statics: Some(statics),
-        consumed: Cell::new(true),
-      })
-      .into()
-  }
-
   pub fn dep_no_once(&self, dep: impl CustomDepTrait<'a> + 'a) -> Dep<'a> {
     Dep(self.alloc(dep))
   }
@@ -274,71 +213,6 @@ impl<'a> Factory<'a> {
       Some(dep) => self.computed(val, dep),
       None => val,
     }
-  }
-
-  pub fn mangable_string(&self, value: impl ToAtomRef<'a>, atom: MangleAtom) -> Entity<'a> {
-    self.string(value, Some(atom))
-  }
-
-  pub fn unmangable_string(&self, value: impl ToAtomRef<'a>) -> Entity<'a> {
-    self.string(value, None)
-  }
-
-  pub fn string(&self, value: impl ToAtomRef<'a>, atom: Option<MangleAtom>) -> Entity<'a> {
-    if atom.is_some() {
-      self.alloc(LiteralValue::String(value.to_atom_ref(self.allocator), atom)).into()
-    } else {
-      value.to_atom_ref(self.allocator).into()
-    }
-  }
-
-  pub fn number(&self, value: impl Into<F64WithEq>) -> Entity<'a> {
-    self.alloc(LiteralValue::Number(value.into())).into()
-  }
-  pub fn big_int(&self, value: &'a Atom<'a>) -> Entity<'a> {
-    self.alloc(LiteralValue::BigInt(value)).into()
-  }
-
-  pub fn boolean(&self, value: bool) -> Entity<'a> {
-    if value { self.r#true } else { self.r#false }
-  }
-  pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
-    if let Some(value) = value { self.boolean(value) } else { self.unknown_boolean }
-  }
-
-  pub fn symbol(&self, id: SymbolId, str_rep: &'a Atom<'a>) -> Entity<'a> {
-    self.alloc(LiteralValue::Symbol(id, str_rep)).into()
-  }
-
-  /// Only used when (maybe_left, maybe_right) == (true, true)
-  pub fn logical_result(
-    &self,
-    left: Entity<'a>,
-    right: Entity<'a>,
-    operator: LogicalOperator,
-  ) -> Entity<'a> {
-    let value = self.union((left, right));
-    let result = match operator {
-      LogicalOperator::Or => match right.test_truthy() {
-        Some(true) => true,
-        _ => return value,
-      },
-      LogicalOperator::And => match right.test_truthy() {
-        Some(false) => false,
-        _ => return value,
-      },
-      LogicalOperator::Coalesce => match right.test_nullish() {
-        Some(false) => false,
-        _ => return value,
-      },
-    };
-    self
-      .alloc(LogicalResultValue {
-        value,
-        is_coalesce: operator == LogicalOperator::Coalesce,
-        result,
-      })
-      .into()
   }
 
   pub fn try_union<V: UnionValues<'a> + Debug + 'a>(&self, values: V) -> Option<Entity<'a>> {
@@ -379,17 +253,6 @@ impl<'a> Factory<'a> {
 
   pub fn lazy_dep<T: DepTrait<'a> + 'a>(&self, deps: allocator::Vec<'a, T>) -> LazyDep<'a, T> {
     LazyDep(self.alloc(RefCell::new(Some(deps))))
-  }
-
-  pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
-    self
-      .alloc(ReactElementValue {
-        consumed: Cell::new(false),
-        tag,
-        props,
-        deps: RefCell::new(self.vec()),
-      })
-      .into()
   }
 
   pub fn mangable(

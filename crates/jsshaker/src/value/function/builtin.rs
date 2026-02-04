@@ -276,3 +276,36 @@ impl<'a> PureBuiltinFnValue<'a> {
     Self { name, return_value }
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn implemented_builtin_fn<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    name: &'static str,
+    implementation: F,
+  ) -> Entity<'a> {
+    self
+      .alloc(ImplementedBuiltinFnValue {
+        name,
+        implementation,
+        statics: None,
+        consumed: Cell::new(true),
+      })
+      .into()
+  }
+
+  pub fn implemented_builtin_fn_with_statics<F: BuiltinFnImplementation<'a> + 'a>(
+    &self,
+    name: &'static str,
+    implementation: F,
+    statics: &'a ObjectValue<'a>,
+  ) -> Entity<'a> {
+    self
+      .alloc(ImplementedBuiltinFnValue {
+        name,
+        implementation,
+        statics: Some(statics),
+        consumed: Cell::new(true),
+      })
+      .into()
+  }
+}

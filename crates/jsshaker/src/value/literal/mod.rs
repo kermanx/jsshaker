@@ -465,3 +465,25 @@ impl<'a, 'b> IntoIterator for &'b PossibleLiterals<'a> {
     }
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn number(&self, value: impl Into<F64WithEq>) -> Entity<'a> {
+    self.alloc(LiteralValue::Number(value.into())).into()
+  }
+
+  pub fn big_int(&self, value: &'a Atom<'a>) -> Entity<'a> {
+    self.alloc(LiteralValue::BigInt(value)).into()
+  }
+
+  pub fn boolean(&self, value: bool) -> Entity<'a> {
+    if value { self.r#true } else { self.r#false }
+  }
+
+  pub fn boolean_maybe_unknown(&self, value: Option<bool>) -> Entity<'a> {
+    if let Some(value) = value { self.boolean(value) } else { self.unknown_boolean }
+  }
+
+  pub fn symbol(&self, id: SymbolId, str_rep: &'a Atom<'a>) -> Entity<'a> {
+    self.alloc(LiteralValue::Symbol(id, str_rep)).into()
+  }
+}

@@ -111,3 +111,13 @@ impl<'a> ArgumentsValue<'a> {
     }
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn arguments(
+    &self,
+    elements: &'a [Entity<'a>],
+    rest: Option<Entity<'a>>,
+  ) -> ArgumentsValue<'a> {
+    ArgumentsValue { elements, rest }
+  }
+}

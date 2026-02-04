@@ -224,3 +224,29 @@ fn get_known_instance_property<'a>(
     }
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn mangable_string(
+    &self,
+    value: impl ToAtomRef<'a>,
+    atom: crate::mangling::MangleAtom,
+  ) -> Entity<'a> {
+    self.string(value, Some(atom))
+  }
+
+  pub fn unmangable_string(&self, value: impl ToAtomRef<'a>) -> Entity<'a> {
+    self.string(value, None)
+  }
+
+  pub fn string(
+    &self,
+    value: impl ToAtomRef<'a>,
+    atom: Option<crate::mangling::MangleAtom>,
+  ) -> Entity<'a> {
+    if atom.is_some() {
+      self.alloc(LiteralValue::String(value.to_atom_ref(self.allocator), atom)).into()
+    } else {
+      value.to_atom_ref(self.allocator).into()
+    }
+  }
+}

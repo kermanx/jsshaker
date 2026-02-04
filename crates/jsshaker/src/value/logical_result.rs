@@ -147,3 +147,36 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.as_cacheable(analyzer)
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  /// Only used when (maybe_left, maybe_right) == (true, true)
+  pub fn logical_result(
+    &self,
+    left: Entity<'a>,
+    right: Entity<'a>,
+    operator: oxc_syntax::operator::LogicalOperator,
+  ) -> Entity<'a> {
+    let value = self.union((left, right));
+    let result = match operator {
+      oxc_syntax::operator::LogicalOperator::Or => match right.test_truthy() {
+        Some(true) => true,
+        _ => return value,
+      },
+      oxc_syntax::operator::LogicalOperator::And => match right.test_truthy() {
+        Some(false) => false,
+        _ => return value,
+      },
+      oxc_syntax::operator::LogicalOperator::Coalesce => match right.test_nullish() {
+        Some(false) => false,
+        _ => return value,
+      },
+    };
+    self
+      .alloc(LogicalResultValue {
+        value,
+        is_coalesce: operator == oxc_syntax::operator::LogicalOperator::Coalesce,
+        result,
+      })
+      .into()
+  }
+}

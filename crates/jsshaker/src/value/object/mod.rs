@@ -417,3 +417,23 @@ impl<'a> Analyzer<'a> {
     )
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn builtin_object(
+    &self,
+    prototype: ObjectPrototype<'a>,
+    consumable: bool,
+  ) -> &'a mut ObjectValue<'a> {
+    self.alloc(ObjectValue {
+      consumable,
+      consumed: Cell::new(false),
+      consumed_as_prototype: Cell::new(false),
+      cf_scope: self.root_cf_scope.unwrap(),
+      keyed: allocator::HashMap::new_in(self.allocator).into(),
+      unknown: ObjectProperty::new_in(self.allocator).into(),
+      rest: Default::default(),
+      prototype: Cell::new(prototype),
+      mangling_group: Cell::new(None),
+    })
+  }
+}

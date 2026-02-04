@@ -179,3 +179,16 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     None
   }
 }
+
+impl<'a> crate::analyzer::Factory<'a> {
+  pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
+    self
+      .alloc(ReactElementValue {
+        consumed: Cell::new(false),
+        tag,
+        props,
+        deps: RefCell::new(self.vec()),
+      })
+      .into()
+  }
+}
