@@ -10,6 +10,7 @@ mod binding_rest_element;
 mod callee;
 mod catch_clause;
 mod class;
+mod decorator;
 mod for_statement_left;
 mod formal_parameters;
 mod function;

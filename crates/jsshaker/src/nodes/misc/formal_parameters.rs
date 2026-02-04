@@ -97,7 +97,7 @@ impl<'a> Transformer<'a> {
 
       transformed_items.push(self.ast.formal_parameter(
         *span,
-        self.clone_node(decorators),
+        self.transform_decorators(decorators),
         pattern.unwrap_or_else(|| self.build_unused_binding_pattern(pattern_span)),
         NONE,
         if counting_length
@@ -147,7 +147,7 @@ impl<'a> Transformer<'a> {
 
       transformed_items.push(self.ast.formal_parameter(
         *span,
-        self.clone_node(decorators),
+        self.transform_decorators(decorators),
         self.build_unused_binding_pattern(*span),
         NONE,
         NONE,

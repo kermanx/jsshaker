@@ -33,7 +33,7 @@ impl<'a> Transformer<'a> {
     Some(self.ast.class_element_property_definition(
       *span,
       *r#type,
-      self.clone_node(decorators),
+      self.transform_decorators(decorators),
       key,
       NONE,
       value,

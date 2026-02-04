@@ -41,7 +41,7 @@ impl<'a> Transformer<'a> {
       Some(self.ast.class_element_method_definition(
         *span,
         *r#type,
-        self.clone_node(decorators),
+        self.transform_decorators(decorators),
         key,
         transformed_value,
         *kind,

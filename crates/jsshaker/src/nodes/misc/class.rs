@@ -99,6 +99,41 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    // 3.5. Execute member decorators (ES2025 Stage 3)
+    for (index, element) in node.body.body.iter().enumerate() {
+      match element {
+        ClassElement::MethodDefinition(method) if !method.decorators.is_empty() => {
+          // Skip constructor decorators (not allowed in ES2025 Stage 3)
+          if method.kind.is_constructor() {
+            continue;
+          }
+
+          let key = data.keys[index].unwrap();
+          let is_static = method.r#static;
+          let target = if is_static { class.statics } else { prototype };
+
+          // Get the original method value
+          let this: crate::value::Value<'a> = if is_static { class } else { prototype };
+          let original_value = target.get_property(self, this, self.factory.no_dep, key);
+
+          // Execute decorators
+          let decorated_value = self.exec_decorators(&method.decorators, original_value);
+
+          // Update the method value
+          target.set_property(self, self.factory.no_dep, key, decorated_value);
+        }
+        ClassElement::PropertyDefinition(prop) if !prop.decorators.is_empty() => {
+          // Field decorators receive undefined as the value
+          let _decorated_initializer =
+            self.exec_decorators(&prop.decorators, self.factory.undefined);
+
+          // TODO: Store decorated initializer for later execution
+          // For now, we just track that the decorator was executed
+        }
+        _ => {}
+      }
+    }
+
     // 4. Execute static blocks
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
@@ -118,9 +153,16 @@ impl<'a> Analyzer<'a> {
       }
     }
 
+    // 5. Execute class decorators (ES2025 Stage 3)
     let class = class.into();
-    data.value = Some(class);
-    class
+    let final_class = if !node.decorators.is_empty() {
+      self.exec_decorators(&node.decorators, class)
+    } else {
+      class
+    };
+
+    data.value = Some(final_class);
+    final_class
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: Option<DepAtom>) {
@@ -257,10 +299,12 @@ impl<'a> Transformer<'a> {
         self.ast.class_body(*span, transformed_body)
       };
 
+      let decorators = self.transform_decorators(&node.decorators);
+
       Some(self.ast.alloc_class(
         *span,
         *r#type,
-        self.ast.vec(),
+        decorators,
         id,
         NONE,
         super_class,

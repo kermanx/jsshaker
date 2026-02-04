@@ -136,6 +136,7 @@ ast_kind_2! {
   PropertyDefinition(&'a PropertyDefinition<'a>),
   PrivateIdentifier(&'a PrivateIdentifier<'a>),
   StaticBlock(&'a StaticBlock<'a>),
+  Decorator(&'a Decorator<'a>),
   ModuleDeclaration(&'a ModuleDeclaration<'a>),
   ImportExpression(&'a ImportExpression<'a>),
   ImportDeclaration(&'a ImportDeclaration<'a>),
