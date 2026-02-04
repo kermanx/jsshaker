@@ -121,7 +121,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
-      return consumed_object::get_to_string(analyzer);
+      return consumed_object::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
@@ -129,7 +129,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
-      return consumed_object::get_to_numeric(analyzer);
+      return consumed_object::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
   }

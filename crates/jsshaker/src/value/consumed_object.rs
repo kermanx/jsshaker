@@ -109,11 +109,11 @@ pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElement
   }
 }
 
-pub fn get_to_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn coerce_string<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
   analyzer.factory.unknown_string
 }
 
-pub fn get_to_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
+pub fn coerce_numeric<'a>(analyzer: &Analyzer<'a>) -> Entity<'a> {
   // Possibly number or bigint
   analyzer.factory.unknown
 }

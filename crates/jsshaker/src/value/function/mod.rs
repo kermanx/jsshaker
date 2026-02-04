@@ -138,11 +138,11 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    consumed_object::get_to_string(analyzer)
+    consumed_object::coerce_string(analyzer)
   }
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    consumed_object::get_to_numeric(analyzer)
+    consumed_object::coerce_numeric(analyzer)
   }
 
   fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

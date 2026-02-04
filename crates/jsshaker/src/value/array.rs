@@ -313,14 +313,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_to_string(analyzer);
+      return consumed_object::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_to_numeric(analyzer);
+      return consumed_object::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
   }
