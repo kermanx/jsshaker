@@ -1,55 +1,38 @@
-use std::fmt::Debug;
-use std::hash::Hash;
+use oxc::allocator::Allocator;
 
-pub trait Idx: Debug + Clone + Copy + PartialEq + Eq + Hash {
-  fn new(depth: usize, parent: usize) -> Self;
-  fn depth(self) -> usize;
-  fn parent(self) -> usize;
+use crate::utils::box_bump::{BoxBump, Idx};
+
+pub struct StackedTreeId<I: Idx> {
+  depth: usize,
+  parent: Option<I>,
 }
 
 #[macro_export]
 macro_rules! define_stacked_tree_idx {
   ($v:vis struct $type:ident;) => {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-    $v struct $type {
-      depth: u32,
-      parent: u32,
-    }
-
-    impl $crate::scope::stacked_tree::Idx for $type {
-      #[inline(always)]
-      fn new(depth: usize, parent: usize) -> Self {
-        Self { depth: depth as u32, parent: parent as u32 }
-      }
-      #[inline(always)]
-      fn depth(self) -> usize {
-        self.depth as usize
-      }
-      #[inline(always)]
-      fn parent(self) -> usize {
-        self.parent as usize
-      }
+    $crate::define_box_bump_idx! {
+      $v struct $type for $crate::scope::stacked_tree::StackedTreeId<$type>;
     }
   };
 }
 
 struct StackedTreeItem<I: Idx, T> {
   id: I,
-  id_idx: usize,
   data: T,
 }
 
-pub struct StackedTree<I: Idx, T> {
-  ids: Vec<I>,
+pub struct StackedTree<'a, I: Idx, T> {
+  ids: BoxBump<'a, I, StackedTreeId<I>>,
   stack: Vec<StackedTreeItem<I, T>>,
   pub root: I,
 }
 
-impl<I: Idx, T> StackedTree<I, T> {
-  pub fn new(root_data: T) -> Self {
-    let root_id = I::new(0, 0);
-    let root_item = StackedTreeItem { id: root_id, id_idx: 0, data: root_data };
-    StackedTree { ids: vec![root_id], stack: vec![root_item], root: root_id }
+impl<'a, I: Idx, T> StackedTree<'a, I, T> {
+  pub fn new(allocator: &'a Allocator, root_data: T) -> Self {
+    let ids = BoxBump::new(allocator);
+    let root_id = ids.alloc(StackedTreeId { depth: 0, parent: None });
+    let root_item = StackedTreeItem { id: root_id, data: root_data };
+    StackedTree { ids, stack: vec![root_item], root: root_id }
   }
 
   pub fn current_id(&self) -> I {
@@ -89,10 +72,11 @@ impl<I: Idx, T> StackedTree<I, T> {
   }
 
   pub fn push(&mut self, data: T) -> I {
-    let id = I::new(self.stack.len(), self.stack.last().unwrap().id_idx);
-    let id_idx = self.ids.len();
-    self.stack.push(StackedTreeItem { id, id_idx, data });
-    self.ids.push(id);
+    let id = self.ids.alloc(StackedTreeId {
+      depth: self.stack.len(),
+      parent: Some(self.stack.last().unwrap().id),
+    });
+    self.stack.push(StackedTreeItem { id, data });
     id
   }
 
@@ -104,20 +88,24 @@ impl<I: Idx, T> StackedTree<I, T> {
     self.stack[depth].id
   }
 
+  fn get_depth(&self, id: I) -> usize {
+    self.ids.get(id).depth
+  }
+
   fn get_parent(&self, id: I) -> Option<I> {
-    if id.depth() == 0 { None } else { Some(self.ids[id.parent()]) }
+    self.ids.get(id).parent
   }
 
   pub fn find_lca(&self, another: I) -> (usize, I) {
     let current_depth = self.stack.len() - 1;
-    let another_depth = another.depth();
+    let another_depth = self.get_depth(another);
     let min_depth = current_depth.min(another_depth);
 
     let mut another = another;
     for _ in min_depth..another_depth {
       another = self.get_parent(another).unwrap();
     }
-    debug_assert_eq!(min_depth, another.depth());
+    debug_assert_eq!(min_depth, self.get_depth(another));
 
     let mut depth = min_depth;
     loop {

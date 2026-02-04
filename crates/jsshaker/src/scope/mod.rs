@@ -26,7 +26,7 @@ use crate::{
 pub struct Scoping<'a> {
   pub call: Vec<CallScope<'a>>,
   pub variable: LinkedTree<'a, VariableScopeId, VariableScope<'a>>,
-  pub cf: StackedTree<CfScopeId, CfScope<'a>>,
+  pub cf: StackedTree<'a, CfScopeId, CfScope<'a>>,
   pub root_cf_scope: CfScopeId,
   pub try_catch_depth: Option<usize>,
   pub current_callsite: AstKind2<'a>,
@@ -38,7 +38,8 @@ impl<'a> Scoping<'a> {
     let mut variable = LinkedTree::new_in(factory.allocator);
     let root_variable_scope =
       variable.push(VariableScope::new_in_with_this(factory.allocator, factory.unknown));
-    let cf = StackedTree::new(CfScope::new(CfScopeKind::Root, factory.vec(), false));
+    let cf =
+      StackedTree::new(factory.allocator, CfScope::new(CfScopeKind::Root, factory.vec(), false));
     let root_cf_scope = cf.root;
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {

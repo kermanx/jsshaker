@@ -86,12 +86,6 @@ impl<'a> Analyzer<'a> {
     decl_node: AstKind2<'a>,
     fn_value: Option<Entity<'a>>,
   ) {
-    println!(
-      "Declare {:?} {:?} {:?}",
-      symbol,
-      self.scoping.cf.current_id(),
-      self.scoping.cf.current_data()
-    );
     if let Some(variable) = self.variable(scope, symbol) {
       // Here we can't use kind.is_untracked() because this time we are declaring a variable
       let old_kind = variable.borrow().kind;
