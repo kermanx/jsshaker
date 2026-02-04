@@ -17,7 +17,9 @@ impl<'a> Analyzer<'a> {
       VariableDeclarationKind::Var => DeclarationKind::Var,
       VariableDeclarationKind::Let => DeclarationKind::Let,
       VariableDeclarationKind::Const => DeclarationKind::Const,
-      _ => unimplemented!("using statement"),
+      VariableDeclarationKind::Using | VariableDeclarationKind::AwaitUsing => {
+        DeclarationKind::Const // Treat await using as const
+      }
     };
 
     for declarator in &node.declarations {

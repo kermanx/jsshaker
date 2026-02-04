@@ -39,6 +39,10 @@ impl<'a> Analyzer<'a> {
     }
     .map(|init| self.factory.computed(init, AstKind2::VariableDeclarator(node)));
 
+    if node.kind.is_using() {
+      self.consume(init);
+    }
+
     self.init_binding_pattern(&node.id, init);
   }
 }
