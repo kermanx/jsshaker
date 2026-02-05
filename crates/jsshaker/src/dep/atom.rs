@@ -18,6 +18,12 @@ impl Debug for DepAtom {
   }
 }
 
+impl DepAtom {
+  pub fn placeholder() -> Self {
+    AstKind2::ENVIRONMENT.into()
+  }
+}
+
 impl<'a> CustomDepTrait<'a> for DepAtom {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.include_atom(*self);

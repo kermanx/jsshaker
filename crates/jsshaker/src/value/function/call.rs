@@ -47,7 +47,7 @@ impl<'a> FunctionValue<'a> {
       {
         return cached_ret;
       } else {
-        Some(FnCacheTrackDeps::wrap(analyzer, call_id, &mut this, &mut args))
+        Some(FnCacheTrackDeps::wrap::<false>(analyzer, call_id, &mut this, &mut args))
       }
     } else {
       None

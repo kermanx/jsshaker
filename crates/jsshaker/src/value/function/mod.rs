@@ -16,11 +16,11 @@ use super::{
 use crate::{
   analyzer::Analyzer,
   builtin_string,
-  dep::{Dep, LazyDep},
+  dep::{Dep, DepAtom},
   entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
-  value::cache::FnCache,
+  value::cache::{FnCache, FnCacheTrackDeps},
 };
 pub use arguments::*;
 pub use builtin::*;
@@ -33,15 +33,14 @@ pub struct FunctionValue<'a> {
   pub finite_recursion: bool,
   pub statics: &'a ObjectValue<'a>,
 
-  // Workaround: The lazy dep of `this` value
-  body_consumed: Cell<Option<LazyDep<'a, Entity<'a>>>>,
+  body_consumed: Cell<Option<&'a FnCacheTrackDeps<'a>>>,
 
   cache: FnCache<'a>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    self.consume_body(analyzer, analyzer.factory.unknown);
+    self.consume_body(analyzer, analyzer.factory.unknown, analyzer.factory.unknown_arguments);
     self.statics.consume(analyzer);
   }
 
@@ -88,14 +87,16 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    if let Some(this_dep) = self.body_consumed.get() {
-      this_dep.push(analyzer, this);
-      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
+    if let Some(track_deps) = self.body_consumed.get() {
+      analyzer.global_effect();
+      track_deps.assoc(analyzer, dep, this, &args);
+      return analyzer.factory.unknown;
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, this);
-      return consumed_object::call(self, analyzer, dep, analyzer.factory.unknown, args);
+      analyzer.global_effect();
+      analyzer.consume(dep);
+      return self.consume_body(analyzer, this, args);
     }
 
     self.call_impl::<false>(analyzer, dep, this, args, false)
@@ -107,13 +108,16 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    if self.body_consumed.get().is_some() {
-      return consumed_object::construct(self, analyzer, dep, args);
+    if let Some(track_deps) = self.body_consumed.get() {
+      analyzer.global_effect();
+      track_deps.assoc(analyzer, dep, analyzer.factory.unknown, &args);
+      return analyzer.factory.unknown;
     }
 
     if self.check_recursion(analyzer) {
-      self.consume_body(analyzer, analyzer.factory.unknown);
-      return consumed_object::construct(self, analyzer, dep, args);
+      analyzer.global_effect();
+      analyzer.consume(dep);
+      return self.consume_body(analyzer, analyzer.factory.unknown, args);
     }
 
     self.construct_impl(analyzer, dep, args, false)
@@ -215,14 +219,19 @@ impl<'a> FunctionValue<'a> {
     false
   }
 
-  pub fn consume_body(&'a self, analyzer: &mut Analyzer<'a>, this: Entity<'a>) {
+  pub fn consume_body(
+    &'a self,
+    analyzer: &mut Analyzer<'a>,
+    mut this: Entity<'a>,
+    mut args: ArgumentsValue<'a>,
+  ) -> Entity<'a> {
     if self.body_consumed.get().is_some() {
-      return;
+      return analyzer.factory.unknown;
     }
 
-    let this_dep = analyzer.factory.lazy_dep(analyzer.factory.vec1(this));
-    let this = analyzer.factory.computed_unknown(this_dep);
-    self.body_consumed.set(Some(this_dep));
+    let track_deps =
+      FnCacheTrackDeps::wrap::<true>(analyzer, DepAtom::placeholder(), &mut this, &mut args);
+    self.body_consumed.set(Some(analyzer.allocator.alloc(track_deps)));
 
     analyzer.consume(self.callee.into_node());
 
@@ -232,14 +241,8 @@ impl<'a> FunctionValue<'a> {
     let name = "";
 
     analyzer.exec_consumed_fn(name, move |analyzer| {
-      self.call_impl::<false>(
-        analyzer,
-        analyzer.factory.no_dep,
-        this,
-        analyzer.factory.unknown_arguments,
-        true,
-      )
-    });
+      self.call_impl::<false>(analyzer, analyzer.factory.no_dep, this, args, true)
+    })
   }
 }
 
@@ -267,7 +270,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if created_in_self {
-      function.consume_body(self, self.factory.unknown);
+      function.consume_body(self, self.factory.unknown, self.factory.unknown_arguments);
     }
 
     (function, prototype)

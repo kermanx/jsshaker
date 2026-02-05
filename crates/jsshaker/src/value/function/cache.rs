@@ -115,7 +115,7 @@ pub struct FnCacheTrackDeps<'a> {
 }
 
 impl<'a> FnCacheTrackDeps<'a> {
-  pub fn wrap(
+  pub fn wrap<const UNKNOWN: bool>(
     analyzer: &Analyzer<'a>,
     call_id: DepAtom,
     this: &mut Entity<'a>,
@@ -129,17 +129,51 @@ impl<'a> FnCacheTrackDeps<'a> {
     for arg in args.elements {
       let arg_dep = EntityTrackerDep::default();
       arg_deps.push(arg_dep);
-      new_args.push(factory.computed(*arg, arg_dep));
+      new_args.push(if UNKNOWN {
+        factory.computed_unknown((*arg, arg_dep))
+      } else {
+        factory.computed(*arg, arg_dep)
+      });
     }
     args.elements = new_args.into_bump_slice();
     let rest_dep = if let Some(rest) = &mut args.rest {
       let rest_dep = EntityTrackerDep::default();
-      *rest = factory.computed(*rest, rest_dep);
+      *rest = if UNKNOWN {
+        factory.computed_unknown((*rest, rest_dep))
+      } else {
+        factory.computed(*rest, rest_dep)
+      };
+      Some(rest_dep)
+    } else if UNKNOWN {
+      let rest_dep = EntityTrackerDep::default();
+      args.rest = Some(factory.computed_unknown(rest_dep));
       Some(rest_dep)
     } else {
       None
     };
     Self { call_id, this: this_dep, args: arg_deps.into_bump_slice(), rest: rest_dep }
+  }
+
+  pub fn assoc(
+    self,
+    analyzer: &mut Analyzer<'a>,
+    call_dep: Dep<'a>,
+    this: Entity<'a>,
+    args: &ArgumentsValue<'a>,
+  ) {
+    analyzer.add_assoc_dep(self.call_id, call_dep);
+    analyzer.add_assoc_entity_dep(self.this, this);
+    for (dep, arg) in self.args.iter().zip(args.elements.iter()) {
+      analyzer.add_assoc_entity_dep(*dep, *arg);
+    }
+    if let Some(dep) = self.rest {
+      if let Some(rest) = args.rest {
+        analyzer.add_assoc_entity_dep(dep, rest);
+      }
+      for arg in args.elements.iter().skip(self.args.len()) {
+        analyzer.add_assoc_entity_dep(dep, *arg);
+      }
+    }
   }
 }
 
@@ -284,17 +318,7 @@ impl<'a> FnCache<'a> {
       let ret = analyzer.factory.computed(cached.ret, call_dep);
       let has_global_effects = cached.has_global_effects;
       drop(table);
-
-      analyzer.add_assoc_dep(track_deps.call_id, call_dep);
-
-      analyzer.add_assoc_entity_dep(track_deps.this, this);
-      for (dep, arg) in track_deps.args.iter().zip(args.elements.iter()) {
-        analyzer.add_assoc_entity_dep(*dep, *arg);
-      }
-      for (dep, rest) in track_deps.rest.iter().zip(args.rest.iter()) {
-        analyzer.add_assoc_entity_dep(*dep, *rest);
-      }
-
+      track_deps.assoc(analyzer, call_dep, this, &args);
       if has_global_effects {
         analyzer.global_effect();
       }

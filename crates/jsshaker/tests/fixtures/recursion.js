@@ -17,12 +17,13 @@ export function simple() {
 }
 
 export function complex1() {
-  function main(a) {
-    return () => g(a)
+  function main(a, b) {
+    console.log(a)
+    return () => g(a, b)
   }
 
-  function g(a) {
-    return () => main(a + 1)
+  function g(a, b) {
+    return () => main(a + 1, b * 2)
   }
 
   t = main(1)
