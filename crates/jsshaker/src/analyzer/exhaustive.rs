@@ -140,10 +140,10 @@ impl<'a> Analyzer<'a> {
   pub fn request_exhaustive_callbacks(&mut self, id: ReadWriteTarget<'a>) -> bool {
     let mut found = false;
     let mut do_request = |id: ReadWriteTarget<'a>| {
-      if let Some(runners) = self.exhaustive_callbacks.get_mut(&id)
-        && !runners.is_empty()
+      if let Some(callbacks) = self.exhaustive_callbacks.get_mut(&id)
+        && !callbacks.is_empty()
       {
-        self.pending_deps.extend(runners.drain());
+        self.pending_deps.extend(callbacks.drain());
         found = true;
       }
     };
@@ -158,13 +158,8 @@ impl<'a> Analyzer<'a> {
     }
     let old_try_catch_depth = self.scoping.try_catch_depth.take();
     loop {
-      let runners = mem::take(&mut self.pending_deps);
-      for runner in runners {
-        // let old_count = self.included_atoms.debug_count();
-        let ExhaustiveCallback { handler: runner, drain } = runner;
-        self.exec_exhaustively("dep", drain, true, runner.clone());
-        // let new_count = self.included_atoms.debug_count();
-        // self.debug += 1;
+      for ExhaustiveCallback { drain, handler } in mem::take(&mut self.pending_deps) {
+        self.exec_exhaustively("dep", drain, true, handler.clone());
       }
       if self.pending_deps.is_empty() {
         self.scoping.try_catch_depth = old_try_catch_depth;

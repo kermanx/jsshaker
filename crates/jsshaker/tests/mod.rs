@@ -13,7 +13,13 @@ fn do_tree_shake(input: String) -> String {
   let result = tree_shake(
     JsShakerOptions {
       vfs: SingleFileFs(input),
-      config: TreeShakeConfig::recommended().with_react_jsx(react_jsx),
+      config: {
+        let mut config = TreeShakeConfig::recommended();
+        if react_jsx {
+          config.jsx = jsshaker::TreeShakeJsxPreset::React;
+        }
+        config
+      },
       minify_options: do_minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
       codegen_options: CodegenOptions { comments: CommentOptions::default(), ..Default::default() },
       source_map: false,

@@ -100,42 +100,12 @@ impl TreeShakeConfig {
     Self { enabled: false, ..Default::default() }
   }
 
-  pub fn with_react_jsx(mut self, yes: bool) -> Self {
-    self.jsx = if yes { TreeShakeJsxPreset::React } else { TreeShakeJsxPreset::None };
-    self
-  }
-
   pub fn with_always_inline_literal(mut self, yes: bool) -> Self {
     if yes {
       self.min_simple_number_value = i64::MIN;
       self.max_simple_number_value = i64::MAX;
       self.max_simple_string_length = usize::MAX;
     }
-    self
-  }
-
-  pub fn with_mangling(mut self, yes: Option<bool>) -> Self {
-    self.mangling = yes;
-    self
-  }
-
-  pub fn with_max_recursion_depth(mut self, depth: usize) -> Self {
-    self.max_recursion_depth = depth;
-    self
-  }
-
-  pub fn with_remember_exhausted(mut self, yes: bool) -> Self {
-    self.remember_exhausted_variables = yes;
-    self
-  }
-
-  pub fn with_fn_cache(mut self, yes: bool) -> Self {
-    self.enable_fn_cache = yes;
-    self
-  }
-
-  pub fn with_fn_stats(mut self, yes: bool) -> Self {
-    self.enable_fn_stats = yes;
     self
   }
 }

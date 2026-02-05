@@ -3,7 +3,7 @@ use std::{fs::File, io::Write, path::PathBuf};
 use clap::Parser;
 use flate2::{Compression, write::GzEncoder};
 use jsshaker::{
-  JsShakerOptions, TreeShakeConfig, tree_shake,
+  JsShakerOptions, TreeShakeConfig, TreeShakeJsxPreset, tree_shake,
   vfs::{SingleFileFs, StdFs, Vfs},
 };
 use oxc::{
@@ -31,9 +31,6 @@ struct Args {
   #[arg(short, long, default_value_t = String::from("recommended"))]
   preset: String,
 
-  #[arg(short, long, default_value_t = false)]
-  always_inline_literal: bool,
-
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
 
@@ -57,31 +54,33 @@ struct Args {
 fn main() {
   let args = Args::parse();
 
-  let shake_disabled = TreeShakeConfig::disabled().with_react_jsx(args.jsx);
-  let shake_enabled = match args.preset.as_str() {
-    "safest" => TreeShakeConfig::safest(),
-    "recommended" => TreeShakeConfig::recommended(),
-    "smallest" => TreeShakeConfig::smallest(),
-    _ => {
-      eprintln!("Invalid preset: {}", args.preset);
-      std::process::exit(1);
+  let jsx = if args.jsx { TreeShakeJsxPreset::React } else { TreeShakeJsxPreset::None };
+  let shake_disabled = TreeShakeConfig { jsx, ..TreeShakeConfig::disabled() };
+  let shake_enabled = TreeShakeConfig {
+    jsx,
+    mangling: match args.mangle.as_str() {
+      "on" => Some(false),
+      "off" => None,
+      "only" => Some(true),
+      _ => {
+        eprintln!("Invalid --mangle: {}", args.mangle);
+        std::process::exit(1);
+      }
+    },
+    max_recursion_depth: args.recursion_depth,
+    remember_exhausted_variables: !args.no_remember_exhausted,
+    enable_fn_cache: !args.no_fn_cache,
+    enable_fn_stats: args.fn_stats,
+    ..match args.preset.as_str() {
+      "safest" => TreeShakeConfig::safest(),
+      "recommended" => TreeShakeConfig::recommended(),
+      "smallest" => TreeShakeConfig::smallest(),
+      _ => {
+        eprintln!("Invalid preset: {}", args.preset);
+        std::process::exit(1);
+      }
     }
-  }
-  .with_react_jsx(args.jsx)
-  .with_always_inline_literal(args.always_inline_literal)
-  .with_mangling(match args.mangle.as_str() {
-    "on" => Some(false),
-    "off" => None,
-    "only" => Some(true),
-    _ => {
-      eprintln!("Invalid --mangle: {}", args.mangle);
-      std::process::exit(1);
-    }
-  })
-  .with_max_recursion_depth(args.recursion_depth)
-  .with_remember_exhausted(!args.no_remember_exhausted)
-  .with_fn_cache(!args.no_fn_cache)
-  .with_fn_stats(args.fn_stats);
+  };
 
   let minify_options = MinifierOptions {
     mangle: Some(MangleOptions { top_level: true, ..Default::default() }),

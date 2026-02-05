@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 use jsshaker::{
-  JsShakerOptions,
+  JsShakerOptions, TreeShakeConfig, TreeShakeJsxPreset,
   vfs::{MultiModuleFs, SingleFileFs, StdFs, Vfs},
 };
 use napi_derive::napi;
@@ -18,6 +18,11 @@ pub struct Options {
   #[napi(ts_type = "'react'")]
   pub jsx: Option<String>,
   pub source_map: Option<bool>,
+
+  pub max_recursion_depth: Option<u32>,
+  pub remember_exhausted_variables: Option<bool>,
+  pub enable_fn_cache: Option<bool>,
+  pub enable_fn_stats: Option<bool>,
 }
 
 #[napi(object)]
@@ -34,20 +39,43 @@ impl From<oxc::codegen::CodegenReturn> for Chunk {
 
 fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   let preset = options.preset.as_deref().unwrap_or("recommended");
+
+  let mut config = match preset {
+    "safest" => TreeShakeConfig::safest(),
+    "recommended" => TreeShakeConfig::recommended(),
+    "smallest" => TreeShakeConfig::smallest(),
+    "disabled" => TreeShakeConfig::disabled(),
+    _ => panic!("Invalid tree shake option {:?}", preset),
+  };
+  if options.always_inline_literal == Some(true) {
+    config.min_simple_number_value = i64::MIN;
+    config.max_simple_number_value = i64::MAX;
+    config.max_simple_string_length = usize::MAX;
+  }
+  if options.jsx.as_deref() == Some("react") {
+    config.jsx = TreeShakeJsxPreset::React;
+  }
+  if let Some(depth) = options.max_recursion_depth {
+    config.max_recursion_depth = depth as usize;
+  }
+  if let Some(remember) = options.remember_exhausted_variables {
+    config.remember_exhausted_variables = remember;
+  }
+  if let Some(enable) = options.enable_fn_cache {
+    config.enable_fn_cache = enable;
+  }
+  if let Some(enable) = options.enable_fn_stats {
+    config.enable_fn_stats = enable;
+  }
+
   let minify = options.minify.unwrap_or(false);
-  let always_inline_literal = options.always_inline_literal.unwrap_or(false);
+  let minify_options =
+    if minify { Some(MinifierOptions { mangle: None, ..Default::default() }) } else { None };
+
   JsShakerOptions {
     vfs,
-    config: match preset {
-      "safest" => jsshaker::TreeShakeConfig::safest(),
-      "recommended" => jsshaker::TreeShakeConfig::recommended(),
-      "smallest" => jsshaker::TreeShakeConfig::smallest(),
-      "disabled" => jsshaker::TreeShakeConfig::disabled(),
-      _ => panic!("Invalid tree shake option {:?}", preset),
-    }
-    .with_always_inline_literal(always_inline_literal)
-    .with_react_jsx(options.jsx.as_deref() == Some("react")),
-    minify_options: minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),
+    config,
+    minify_options,
     codegen_options: CodegenOptions { minify, ..Default::default() },
     source_map: options.source_map.unwrap_or(false),
   }
