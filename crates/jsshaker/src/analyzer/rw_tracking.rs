@@ -68,7 +68,7 @@ impl<'a> Analyzer<'a> {
         }
       }
       if let Some(data) = scope.fn_cache_tracking_data_mut() {
-        data.track_read(target, cacheable, &mut tracker_dep);
+        data.track_read(&mut self.assoc_deps, target, cacheable, &mut tracker_dep);
       }
     }
     tracker_dep

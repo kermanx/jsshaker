@@ -5,7 +5,7 @@ use oxc::allocator;
 use crate::{
   Analyzer,
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
-  dep::{Dep, DepAtom, EntityTrackerDep},
+  dep::{AssocDepMap, Dep, DepAtom, EntityTrackerDep},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
   value::{ArgumentsValue, cacheable::Cacheable, call::FnCallInfo},
@@ -58,6 +58,7 @@ impl<'a> FnCacheTrackingData<'a> {
 
   pub fn track_read(
     &mut self,
+    assoc_deps: &mut AssocDepMap<'a>,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCacheable<'a>>,
     tracker_dep: &mut Option<EntityTrackerDep>,
@@ -84,7 +85,7 @@ impl<'a> FnCacheTrackingData<'a> {
         }
       }
       allocator::hash_map::Entry::Vacant(v) => {
-        let atom = *tracker_dep.get_or_insert_with(EntityTrackerDep::default);
+        let atom = *tracker_dep.get_or_insert_with(|| assoc_deps.alloc_entity_tracker());
         v.insert((current_value, atom));
       }
     }
@@ -116,18 +117,18 @@ pub struct FnCacheTrackDeps<'a> {
 
 impl<'a> FnCacheTrackDeps<'a> {
   pub fn wrap<const UNKNOWN: bool>(
-    analyzer: &Analyzer<'a>,
+    analyzer: &mut Analyzer<'a>,
     call_id: DepAtom,
     this: &mut Entity<'a>,
     args: &mut ArgumentsValue<'a>,
   ) -> Self {
     let factory = analyzer.factory;
-    let this_dep = EntityTrackerDep::default();
+    let this_dep = analyzer.assoc_deps.alloc_entity_tracker();
     *this = factory.computed(*this, this_dep);
     let mut arg_deps = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
     let mut new_args = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
     for arg in args.elements {
-      let arg_dep = EntityTrackerDep::default();
+      let arg_dep = analyzer.assoc_deps.alloc_entity_tracker();
       arg_deps.push(arg_dep);
       new_args.push(if UNKNOWN {
         factory.computed_unknown((*arg, arg_dep))
@@ -137,7 +138,7 @@ impl<'a> FnCacheTrackDeps<'a> {
     }
     args.elements = new_args.into_bump_slice();
     let rest_dep = if let Some(rest) = &mut args.rest {
-      let rest_dep = EntityTrackerDep::default();
+      let rest_dep = analyzer.assoc_deps.alloc_entity_tracker();
       *rest = if UNKNOWN {
         factory.computed_unknown((*rest, rest_dep))
       } else {
@@ -145,7 +146,7 @@ impl<'a> FnCacheTrackDeps<'a> {
       };
       Some(rest_dep)
     } else if UNKNOWN {
-      let rest_dep = EntityTrackerDep::default();
+      let rest_dep = analyzer.assoc_deps.alloc_entity_tracker();
       args.rest = Some(factory.computed_unknown(rest_dep));
       Some(rest_dep)
     } else {

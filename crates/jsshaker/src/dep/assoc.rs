@@ -1,5 +1,4 @@
 use std::{
-  collections::hash_map::Entry,
   mem,
   sync::atomic::{AtomicUsize, Ordering},
 };
@@ -16,24 +15,11 @@ use crate::{
 pub struct EntityTrackerDep(usize);
 
 static COUNTER: AtomicUsize = AtomicUsize::new(1);
-impl Default for EntityTrackerDep {
-  fn default() -> Self {
-    Self(COUNTER.fetch_add(1, Ordering::Relaxed))
-  }
-}
 
 impl<'a> CustomDepTrait<'a> for EntityTrackerDep {
   fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    // let entities = analyzer.assoc_deps.to_entities.entry(*self).or_default();
-    // analyzer.consume(entities.take());
-    match analyzer.assoc_deps.to_entities.entry(*self) {
-      Entry::Vacant(e) => {
-        e.insert(None);
-      }
-      Entry::Occupied(mut e) => {
-        let entities = e.get_mut().take();
-        analyzer.consume(entities);
-      }
+    if let Some(entities) = analyzer.assoc_deps.to_entities.remove(self) {
+      analyzer.consume(entities);
     }
   }
 }
@@ -41,7 +27,15 @@ impl<'a> CustomDepTrait<'a> for EntityTrackerDep {
 #[derive(Debug, Default)]
 pub struct AssocDepMap<'a> {
   to_deps: FxHashMap<DepAtom, Vec<Dep<'a>>>,
-  to_entities: FxHashMap<EntityTrackerDep, Option<Vec<Entity<'a>>>>,
+  to_entities: FxHashMap<EntityTrackerDep, Vec<Entity<'a>>>,
+}
+
+impl<'a> AssocDepMap<'a> {
+  pub fn alloc_entity_tracker(&mut self) -> EntityTrackerDep {
+    let dep = EntityTrackerDep(COUNTER.fetch_add(1, Ordering::Relaxed));
+    self.to_entities.insert(dep, vec![]);
+    dep
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -50,17 +44,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn add_assoc_entity_dep(&mut self, base: EntityTrackerDep, entity: Entity<'a>) {
-    match self.assoc_deps.to_entities.entry(base) {
-      Entry::Vacant(e) => {
-        e.insert(Some(vec![entity]));
-      }
-      Entry::Occupied(mut e) => {
-        if let Some(vec) = e.get_mut() {
-          vec.push(entity);
-        } else {
-          self.consume(entity);
-        }
-      }
+    if let Some(entities) = self.assoc_deps.to_entities.get_mut(&base) {
+      entities.push(entity);
+    } else {
+      self.consume(entity);
     }
   }
 
