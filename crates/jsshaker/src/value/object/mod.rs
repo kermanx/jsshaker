@@ -28,7 +28,7 @@ use crate::{
   scope::CfScopeId,
   use_consumed_flag,
   utils::ast::AstKind2,
-  value::literal::PossibleLiterals,
+  value::{UnionHint, literal::PossibleLiterals},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -266,6 +266,10 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Object(self.object_id()))
+  }
+
+  fn get_union_hint(&self) -> UnionHint {
+    UnionHint::Object
   }
 }
 

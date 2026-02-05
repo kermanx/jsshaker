@@ -66,6 +66,7 @@ pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>);
 pub enum UnionHint {
   Unknown,
   Never,
+  Object,
   Other,
 }
 

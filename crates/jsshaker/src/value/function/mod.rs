@@ -20,7 +20,10 @@ use crate::{
   entity::Entity,
   scope::VariableScopeId,
   utils::{CalleeInfo, CalleeNode},
-  value::cache::{FnCache, FnCacheTrackDeps},
+  value::{
+    UnionHint,
+    cache::{FnCache, FnCacheTrackDeps},
+  },
 };
 pub use arguments::*;
 pub use builtin::*;
@@ -192,6 +195,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn get_union_hint(&self) -> UnionHint {
+    UnionHint::Object
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {

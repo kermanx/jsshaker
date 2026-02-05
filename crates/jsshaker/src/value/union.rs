@@ -389,6 +389,11 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
           has_unknown = true;
           filtered.push(*value)
         }
+        UnionHint::Object => {
+          filtered = self;
+          has_unknown = false;
+          break;
+        }
         _ => filtered.push(*value),
       }
     }
@@ -435,17 +440,21 @@ impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
     (f(self.0), f(self.1))
   }
   fn union(self, factory: &Factory<'a>) -> Entity<'a> {
-    match (self.0.get_union_hint(), self.1.get_union_hint()) {
-      (UnionHint::Never, _) => self.1,
-      (_, UnionHint::Never) => self.0,
-      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => factory.computed_unknown(self),
-      _ => factory
+    let no_merge = || {
+      factory
         .alloc(UnionValue {
           values: self,
           consumed: Cell::new(false),
           phantom: std::marker::PhantomData,
         })
-        .into(),
+        .into()
+    };
+    match (self.0.get_union_hint(), self.1.get_union_hint()) {
+      (UnionHint::Object, _) | (_, UnionHint::Object) => no_merge(),
+      (UnionHint::Never, _) => self.1,
+      (_, UnionHint::Never) => self.0,
+      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => factory.computed_unknown(self),
+      _ => no_merge(),
     }
   }
 }
