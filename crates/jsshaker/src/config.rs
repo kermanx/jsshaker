@@ -19,6 +19,7 @@ pub struct TreeShakeConfig {
 
   pub max_recursion_depth: usize,
   pub remember_exhausted_variables: bool,
+  pub eager_exhaustive_callbacks: bool,
   pub enable_fn_cache: bool,
   pub enable_fn_stats: bool,
 
@@ -51,6 +52,7 @@ impl TreeShakeConfig {
 
       max_recursion_depth: 2,
       remember_exhausted_variables: true,
+      eager_exhaustive_callbacks: false,
       enable_fn_cache: true,
       enable_fn_stats: false,
 

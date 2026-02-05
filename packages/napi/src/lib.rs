@@ -21,6 +21,7 @@ pub struct Options {
 
   pub max_recursion_depth: Option<u32>,
   pub remember_exhausted_variables: Option<bool>,
+  pub eager_exhaustive_callbacks: Option<bool>,
   pub enable_fn_cache: Option<bool>,
   pub enable_fn_stats: Option<bool>,
 }
@@ -60,6 +61,9 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   }
   if let Some(remember) = options.remember_exhausted_variables {
     config.remember_exhausted_variables = remember;
+  }
+  if let Some(eager) = options.eager_exhaustive_callbacks {
+    config.eager_exhaustive_callbacks = eager;
   }
   if let Some(enable) = options.enable_fn_cache {
     config.enable_fn_cache = enable;

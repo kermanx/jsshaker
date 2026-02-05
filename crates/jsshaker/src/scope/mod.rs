@@ -55,7 +55,7 @@ impl<'a> Scoping<'a> {
         None,
         0,
         root_variable_scope,
-        false,
+        true,
         false,
       )],
       variable,

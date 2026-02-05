@@ -86,6 +86,11 @@ impl<'a> Analyzer<'a> {
       | Expression::TSSatisfiesExpression(_) => unreachable!(),
     };
     self.pop_span();
+
+    if self.config.eager_exhaustive_callbacks {
+      self.call_exhaustive_callbacks();
+    }
+
     if maybe_foldable_expr(node) {
       self.try_fold_node(AstKind2::Expression(node), value)
     } else {
