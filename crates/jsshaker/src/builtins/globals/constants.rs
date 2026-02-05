@@ -1,18 +1,32 @@
-use crate::{builtins::Builtins, init_map};
+use crate::{
+  builtins::Builtins,
+  init_map,
+  value::{ObjectPropertyValue, ObjectPrototype},
+};
 
 impl Builtins<'_> {
   pub fn init_global_constants(&mut self) {
     let factory = self.factory;
+
+    let unknown_object = {
+      let unknown_object = factory.builtin_object(ObjectPrototype::Unknown(factory.no_dep), false);
+      unknown_object
+        .unknown
+        .borrow_mut()
+        .possible_values
+        .push(ObjectPropertyValue::Field(factory.unknown, true));
+      unknown_object.into()
+    };
 
     init_map!(self.globals, {
       // Value properties
       "undefined" => factory.undefined,
       "Infinity" => factory.number(f64::INFINITY),
       "NaN" => factory.nan,
-      "globalThis" => factory.unknown,
+      "globalThis" => unknown_object,
 
       // Function properties
-      "eval" => factory.unknown,
+      "eval" => unknown_object,
       "isFinite" => factory.pure_fn_returns_boolean,
       "isNaN" => factory.pure_fn_returns_boolean,
       "parseFloat" => factory.pure_fn_returns_number,
@@ -26,73 +40,73 @@ impl Builtins<'_> {
       "unescape" => factory.pure_fn_returns_string,
 
       // Fundamental objects
-      "Function" => factory.unknown,
-      "Boolean" => factory.unknown,
+      "Function" => unknown_object,
+      "Boolean" => unknown_object,
 
       // Error objects
-      "Error" => factory.unknown,
-      "AggregateError" => factory.unknown,
-      "EvalError" => factory.unknown,
-      "RangeError" => factory.unknown,
-      "ReferenceError" => factory.unknown,
-      "SyntaxError" => factory.unknown,
-      "TypeError" => factory.unknown,
-      "URIError" => factory.unknown,
+      "Error" => unknown_object,
+      "AggregateError" => unknown_object,
+      "EvalError" => unknown_object,
+      "RangeError" => unknown_object,
+      "ReferenceError" => unknown_object,
+      "SyntaxError" => unknown_object,
+      "TypeError" => unknown_object,
+      "URIError" => unknown_object,
 
       // Numbers and dates
-      "Number" => factory.unknown,
-      "BigInt" => factory.unknown,
+      "Number" => unknown_object,
+      "BigInt" => unknown_object,
 
       // Text processing
-      "String" => factory.unknown,
-      "RegExp" => factory.unknown,
+      "String" => unknown_object,
+      "RegExp" => unknown_object,
 
       // Indexed collections (Array is in array_constructor.rs)
-      "Int8Array" => factory.unknown,
-      "Uint8Array" => factory.unknown,
-      "Uint8ClampedArray" => factory.unknown,
-      "Int16Array" => factory.unknown,
-      "Uint16Array" => factory.unknown,
-      "Int32Array" => factory.unknown,
-      "Uint32Array" => factory.unknown,
-      "BigInt64Array" => factory.unknown,
-      "BigUint64Array" => factory.unknown,
-      "Float32Array" => factory.unknown,
-      "Float64Array" => factory.unknown,
+      "Int8Array" => unknown_object,
+      "Uint8Array" => unknown_object,
+      "Uint8ClampedArray" => unknown_object,
+      "Int16Array" => unknown_object,
+      "Uint16Array" => unknown_object,
+      "Int32Array" => unknown_object,
+      "Uint32Array" => unknown_object,
+      "BigInt64Array" => unknown_object,
+      "BigUint64Array" => unknown_object,
+      "Float32Array" => unknown_object,
+      "Float64Array" => unknown_object,
 
       // Keyed collections
-      "Map" => factory.unknown,
-      "Set" => factory.unknown,
-      "WeakMap" => factory.unknown,
-      "WeakSet" => factory.unknown,
+      "Map" => unknown_object,
+      "Set" => unknown_object,
+      "WeakMap" => unknown_object,
+      "WeakSet" => unknown_object,
 
       // Structured data
-      "ArrayBuffer" => factory.unknown,
-      "SharedArrayBuffer" => factory.unknown,
-      "DataView" => factory.unknown,
-      "Atomics" => factory.unknown,
+      "ArrayBuffer" => unknown_object,
+      "SharedArrayBuffer" => unknown_object,
+      "DataView" => unknown_object,
+      "Atomics" => unknown_object,
       // JSON is in json_object.rs
 
       // Managing memory
-      "WeakRef" => factory.unknown,
-      "FinalizationRegistry" => factory.unknown,
+      "WeakRef" => unknown_object,
+      "FinalizationRegistry" => unknown_object,
 
       // Control abstraction objects
-      "Iterator" => factory.unknown,
-      "AsyncIterator" => factory.unknown,
-      "Promise" => factory.unknown,
-      "GeneratorFunction" => factory.unknown,
-      "AsyncGeneratorFunction" => factory.unknown,
-      "Generator" => factory.unknown,
-      "AsyncGenerator" => factory.unknown,
-      "AsyncFunction" => factory.unknown,
+      "Iterator" => unknown_object,
+      "AsyncIterator" => unknown_object,
+      "Promise" => unknown_object,
+      "GeneratorFunction" => unknown_object,
+      "AsyncGeneratorFunction" => unknown_object,
+      "Generator" => unknown_object,
+      "AsyncGenerator" => unknown_object,
+      "AsyncFunction" => unknown_object,
 
       // Reflection
-      "Reflect" => factory.unknown,
-      "Proxy" => factory.unknown,
+      "Reflect" => unknown_object,
+      "Proxy" => unknown_object,
 
       // Internationalization
-      "Intl" => factory.unknown,
+      "Intl" => unknown_object,
     });
 
     // Debug helpers (non-standard)
