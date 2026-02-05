@@ -5,7 +5,7 @@ use oxc::allocator;
 use crate::{
   Analyzer,
   analyzer::rw_tracking::{ReadWriteTarget, TrackReadCacheable},
-  dep::{Dep, DepAtom},
+  dep::{Dep, DepAtom, EntityTrackerDep},
   entity::Entity,
   scope::variable_scope::EntityOrTDZ,
   value::{ArgumentsValue, cacheable::Cacheable, call::FnCallInfo},
@@ -21,7 +21,7 @@ pub struct FnCachedInput<'a> {
 
 #[derive(Debug)]
 pub struct FnCachedEffects<'a> {
-  pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, (EntityOrTDZ<'a>, DepAtom)>,
+  pub reads: allocator::HashMap<'a, ReadWriteTarget<'a>, (EntityOrTDZ<'a>, EntityTrackerDep)>,
   pub writes: allocator::HashMap<'a, ReadWriteTarget<'a>, (bool, Entity<'a>)>,
 }
 
@@ -60,7 +60,7 @@ impl<'a> FnCacheTrackingData<'a> {
     &mut self,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCacheable<'a>>,
-    tracker_dep: &mut Option<DepAtom>,
+    tracker_dep: &mut Option<EntityTrackerDep>,
   ) {
     let Self::Tracked { effects, .. } = self else {
       return;
@@ -84,7 +84,7 @@ impl<'a> FnCacheTrackingData<'a> {
         }
       }
       allocator::hash_map::Entry::Vacant(v) => {
-        let atom = *tracker_dep.get_or_insert_with(DepAtom::from_counter);
+        let atom = *tracker_dep.get_or_insert_with(EntityTrackerDep::default);
         v.insert((current_value, atom));
       }
     }
@@ -106,12 +106,12 @@ impl<'a> FnCacheTrackingData<'a> {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct FnCacheTrackDeps<'a> {
   call_id: DepAtom,
-  this: DepAtom,
-  args: &'a [DepAtom],
-  rest: Option<DepAtom>,
+  this: EntityTrackerDep,
+  args: &'a [EntityTrackerDep],
+  rest: Option<EntityTrackerDep>,
 }
 
 impl<'a> FnCacheTrackDeps<'a> {
@@ -122,18 +122,18 @@ impl<'a> FnCacheTrackDeps<'a> {
     args: &mut ArgumentsValue<'a>,
   ) -> Self {
     let factory = analyzer.factory;
-    let this_dep = DepAtom::from_counter();
+    let this_dep = EntityTrackerDep::default();
     *this = factory.computed(*this, this_dep);
     let mut arg_deps = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
     let mut new_args = allocator::Vec::with_capacity_in(args.elements.len(), factory.allocator);
     for arg in args.elements {
-      let arg_dep = DepAtom::from_counter();
+      let arg_dep = EntityTrackerDep::default();
       arg_deps.push(arg_dep);
       new_args.push(factory.computed(*arg, arg_dep));
     }
     args.elements = new_args.into_bump_slice();
     let rest_dep = if let Some(rest) = &mut args.rest {
-      let rest_dep = DepAtom::from_counter();
+      let rest_dep = EntityTrackerDep::default();
       *rest = factory.computed(*rest, rest_dep);
       Some(rest_dep)
     } else {
@@ -280,20 +280,21 @@ impl<'a> FnCache<'a> {
         );
       }
 
-      analyzer.add_assoc_dep(cached.track_deps.call_id, call_dep);
+      let track_deps = cached.track_deps;
+      let ret = analyzer.factory.computed(cached.ret, call_dep);
+      let has_global_effects = cached.has_global_effects;
+      drop(table);
 
-      analyzer.add_assoc_entity_dep(cached.track_deps.this, this);
-      for (dep, arg) in cached.track_deps.args.iter().zip(args.elements.iter()) {
+      analyzer.add_assoc_dep(track_deps.call_id, call_dep);
+
+      analyzer.add_assoc_entity_dep(track_deps.this, this);
+      for (dep, arg) in track_deps.args.iter().zip(args.elements.iter()) {
         analyzer.add_assoc_entity_dep(*dep, *arg);
       }
-      for (dep, rest) in cached.track_deps.rest.iter().zip(args.rest.iter()) {
+      for (dep, rest) in track_deps.rest.iter().zip(args.rest.iter()) {
         analyzer.add_assoc_entity_dep(*dep, *rest);
       }
 
-      let ret = analyzer.factory.computed(cached.ret, call_dep);
-
-      let has_global_effects = cached.has_global_effects;
-      drop(table);
       if has_global_effects {
         analyzer.global_effect();
       }

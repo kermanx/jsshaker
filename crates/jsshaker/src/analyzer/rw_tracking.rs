@@ -2,7 +2,7 @@ use oxc::semantic::SymbolId;
 
 use crate::{
   Analyzer,
-  dep::DepAtom,
+  dep::EntityTrackerDep,
   entity::Entity,
   module::ModuleId,
   scope::{CfScopeId, VariableScopeId, variable_scope::EntityOrTDZ},
@@ -48,7 +48,7 @@ impl<'a> Analyzer<'a> {
     scope: CfScopeId,
     target: ReadWriteTarget<'a>,
     cacheable: Option<TrackReadCacheable<'a>>,
-  ) -> Option<DepAtom> {
+  ) -> Option<EntityTrackerDep> {
     let target_depth = self.find_first_different_cf_scope(scope);
     let mut registered = false;
     let mut tracker_dep = None;
