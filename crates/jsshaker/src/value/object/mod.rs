@@ -58,6 +58,8 @@ define_ptr_idx! {
 pub struct ObjectValue<'a> {
   /// A built-in object is usually non-consumable
   pub consumable: bool,
+  pub is_builtin_function: bool,
+
   pub consumed: Cell<bool>,
   pub consumed_as_prototype: Cell<bool>,
   /// Where the object is created
@@ -253,7 +255,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn test_typeof(&self) -> TypeofResult {
-    TypeofResult::Object
+    if self.is_builtin_function { TypeofResult::Function } else { TypeofResult::Object }
   }
 
   fn test_truthy(&self) -> Option<bool> {
@@ -356,6 +358,7 @@ impl<'a> Analyzer<'a> {
   ) -> &'a mut ObjectValue<'a> {
     self.allocator.alloc(ObjectValue {
       consumable: true,
+      is_builtin_function: false,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
       // deps: Default::default(),
@@ -430,6 +433,7 @@ impl<'a> crate::analyzer::Factory<'a> {
   ) -> &'a mut ObjectValue<'a> {
     self.alloc(ObjectValue {
       consumable,
+      is_builtin_function: false,
       consumed: Cell::new(false),
       consumed_as_prototype: Cell::new(false),
       cf_scope: self.root_cf_scope.unwrap(),
