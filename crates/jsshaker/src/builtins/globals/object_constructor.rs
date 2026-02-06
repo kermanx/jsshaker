@@ -1,5 +1,7 @@
 use std::borrow::BorrowMut;
 
+use oxc::allocator;
+
 use crate::{
   Analyzer,
   builtins::Builtins,
@@ -27,6 +29,10 @@ impl<'a> Builtins<'a> {
       "defineProperty" => self.create_object_define_property_impl(),
       "create" => self.create_object_create_impl(),
       "is" => self.create_object_is_impl(),
+      "setPrototypeOf" => factory.unknown,
+      "getPrototypeOf" => factory.pure_fn_returns_unknown,
+      "defineProperties" => factory.unknown,
+      "hasOwn" => factory.pure_fn_returns_boolean,
       "preventExtensions" => factory.unknown,
       "seal" => factory.unknown,
       "getOwnPropertyNames" => factory.unknown,
@@ -186,7 +192,8 @@ impl<'a> Builtins<'a> {
           break 'trackable;
         }
         let enumerated = descriptor.enumerate_properties(analyzer, dep);
-        let mut value = analyzer.factory.undefined;
+        let mut value = None;
+        let mut deps = vec![];
         for (definite, key, value2) in enumerated.known.into_values() {
           if !definite {
             break 'trackable;
@@ -196,25 +203,42 @@ impl<'a> Builtins<'a> {
           };
           match key_str.as_str() {
             "value" => {
-              value = self.factory.computed(value2, (key, value));
+              value = Some(self.factory.computed(value2, (key, value)));
             }
             "get" => {
               // FIXME: This is not safe, but OK for now.
-              value = self.factory.computed_unknown((value2, key, value));
+              value = Some(self.factory.computed_unknown((value2, key, value)));
             }
             "set" | "enumerable" | "configurable" | "writable" => {
               // TODO: actually handle these
-              value = self.factory.computed(value, (key, value2));
+              deps.push(key);
+              deps.push(value2);
             }
             _ => {}
           }
         }
+        if value.is_none() {
+          analyzer.push_non_det_cf_scope();
+        }
+
         object.set_property(
           analyzer,
           analyzer.factory.dep((enumerated.dep, descriptor.get_shallow_dep(analyzer))),
           key,
-          value,
+          {
+            let value = value.unwrap_or(analyzer.factory.undefined);
+            if deps.is_empty() {
+              value
+            } else {
+              analyzer
+                .factory
+                .computed(value, allocator::Vec::from_iter_in(deps, analyzer.allocator))
+            }
+          },
         );
+        if value.is_none() {
+          analyzer.pop_cf_scope();
+        }
         return object;
       }
 
