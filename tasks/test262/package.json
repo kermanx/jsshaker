@@ -8,6 +8,7 @@
 		"@xsai/generate-object": "^0.4.1",
 		"@xsai/generate-text": "^0.4.1",
 		"cli-highlight": "^2.1.11",
+		"diff": "^8.0.3",
 		"dotenv": "^17.2.3",
 		"ink": "^6.6.0",
 		"ink-task-list": "^2.0.0",

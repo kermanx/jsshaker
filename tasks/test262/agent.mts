@@ -3,6 +3,22 @@ import { generateObject } from '@xsai/generate-object'
 import { shakeSingleModule } from 'jsshaker'
 import { appendFile, readFile } from 'node:fs/promises'
 import * as v from 'valibot'
+import { diffLines } from 'diff'
+
+function generateDiff(original: string, optimized: string): string {
+  const changes = diffLines(original, optimized)
+  const lines: string[] = []
+
+  for (const change of changes) {
+    const prefix = change.added ? '+' : change.removed ? '-' : ' '
+    const text = change.value.replace(/\n$/, '')
+    for (const line of text.split('\n')) {
+      lines.push(prefix + ' ' + line)
+    }
+  }
+
+  return lines.join('\n')
+}
 
 async function readLines(path: string): Promise<Set<string>> {
   try {
@@ -36,7 +52,7 @@ Return "reason" in Chinese, max 30 characters, should be informative.`
 
 const ResponseSchema = v.object({
   reason: v.string(),
-  verdict: v.picklist(['illegal_testcase', 'definitely_correct', 'uncertain', 'incorrect_optimization',]),
+  verdict: v.picklist(['illegal_testcase', 'uncertain', 'incorrect_optimization',]),
 })
 
 const TIMEOUT_MS = 5_000
@@ -44,6 +60,12 @@ const SKIP_LLM = process.env.SKIP_LLM === '1' || process.argv.includes('--skip-l
 
 async function worker(path: string): Promise<boolean> {
   const original = await readFile('./test262/test/' + path, 'utf-8')
+
+  const normalized = shakeSingleModule(original, {
+    preset: 'disabled',
+    minify: false,
+  }).output.code
+
   let optimized: string
   try {
     optimized = shakeSingleModule(original, {
@@ -56,7 +78,7 @@ async function worker(path: string): Promise<boolean> {
   }
 
   if (SKIP_LLM) {
-    const entry = `## ${path}\n\n**Verdict**: incorrect_optimization\n**Reason**: (skipped LLM)\n\n### Original\n\n\`\`\`javascript\n${original}\n\`\`\`\n\n### Optimized\n\n\`\`\`javascript\n${optimized}\n\`\`\`\n\n---\n\n`
+    const entry = `## ${path}\n\n**Verdict**: incorrect_optimization\n**Reason**: (skipped LLM)\n\n### Original\n\n\`\`\`javascript\n${normalized}\n\`\`\`\n\n### Optimized\n\n\`\`\`javascript\n${optimized}\n\`\`\`\n\n---\n\n`
     await appendFile('./agent-declined.md', entry, 'utf-8')
     await appendFile('./agent-processed.txt', path + '\n', 'utf-8')
     console.log(`[DECLINE] ${path} - incorrect_optimization: (skipped LLM)`)
@@ -76,7 +98,7 @@ async function worker(path: string): Promise<boolean> {
           role: 'system',
         },
         {
-          content: `## ORIGINAL CODE:\n\`\`\`javascript\n${original}\n\`\`\`\n\n## OPTIMIZED CODE:\n\`\`\`javascript\n${optimized}\n\`\`\``,
+          content: `## ORIGINAL CODE:\n\`\`\`javascript\n${original}\n\`\`\`\n\n## OPTIMIZED CODE:\n\`\`\`javascript\n${optimized}\n\`\`\`\n\n## DIFF (- removed, + added):\n\`\`\`diff\n${generateDiff(normalized, optimized)}\n\`\`\``,
           role: 'user',
         },
       ],
@@ -89,11 +111,11 @@ async function worker(path: string): Promise<boolean> {
 
     const { verdict, reason } = object
 
-    if (verdict === 'definitely_correct' || verdict === 'illegal_testcase') {
+    if (verdict === 'illegal_testcase') {
       await appendFile('./agent-accept.txt', path + '\t|\t' + reason + '\n', 'utf-8')
       console.log(`[ACCEPT] ${path} - ${verdict}: ${reason}`)
     } else {
-      const entry = `## ${path}\n\n**Verdict**: ${verdict}\n**Reason**: ${reason}\n\n### Original\n\n\`\`\`javascript\n${original}\n\`\`\`\n\n### Optimized\n\n\`\`\`javascript\n${optimized}\n\`\`\`\n\n---\n\n`
+      const entry = `## ${path}\n\n**Verdict**: ${verdict}\n**Reason**: ${reason}\n\n### Original\n\n\`\`\`javascript\n${normalized}\n\`\`\`\n\n### Optimized\n\n\`\`\`javascript\n${optimized}\n\`\`\`\n\n---\n\n`
       await appendFile('./agent-declined.md', entry, 'utf-8')
       console.log(`[DECLINE] ${path} - ${verdict}: ${reason}`)
     }
