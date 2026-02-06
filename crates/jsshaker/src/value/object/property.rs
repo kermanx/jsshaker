@@ -90,10 +90,14 @@ impl<'a> ObjectProperty<'a> {
     for possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
-          context.values.push(*value)
+          context.values.push(analyzer.factory.optional_computed(*value, self.key))
         }
-        ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(*getter),
-        ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.undefined),
+        ObjectPropertyValue::Property(Some(getter), _) => {
+          context.getters.push(analyzer.factory.optional_computed(*getter, self.key))
+        }
+        ObjectPropertyValue::Property(None, _) => context
+          .values
+          .push(analyzer.factory.optional_computed(analyzer.factory.undefined, self.key)),
       }
     }
   }
