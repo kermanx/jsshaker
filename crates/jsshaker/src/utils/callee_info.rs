@@ -73,6 +73,15 @@ impl hash::Hash for CalleeNode<'_> {
   }
 }
 
+impl<'a> CalleeNode<'a> {
+  pub fn is_generator(self) -> bool {
+    match self {
+      CalleeNode::Function(f) => f.generator,
+      _ => false,
+    }
+  }
+}
+
 define_nonmax_u32_index_type! {
   pub struct CalleeInstanceId;
 }

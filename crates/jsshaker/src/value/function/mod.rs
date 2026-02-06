@@ -68,6 +68,11 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
+    if self.callee.node.is_generator()
+      && analyzer.op_strict_eq(key, builtin_string!("prototype"), true).0 == Some(true)
+    {
+      return consumed_object::set_property(analyzer, dep, key, value);
+    }
     self.statics.set_property(analyzer, dep, key, value);
   }
 

@@ -113,8 +113,10 @@ impl<'a> FunctionValue<'a> {
     consume: bool,
   ) -> Entity<'a> {
     let prototype = self.get_prototype(analyzer, dep);
-    let target = if let Some(prototype) = prototype.get_object() {
-      analyzer.new_empty_object(ObjectPrototype::Custom(prototype), prototype.mangling_group.get())
+    let target = if let Some(p) = prototype.get_object() {
+      let target = analyzer.new_empty_object(ObjectPrototype::Custom(p), p.mangling_group.get());
+      target.add_extra_dep(prototype.get_shallow_dep(analyzer));
+      target
     } else {
       analyzer.new_empty_object(ObjectPrototype::Unknown(analyzer.dep(prototype)), None)
     };
