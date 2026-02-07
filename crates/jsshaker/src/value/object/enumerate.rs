@@ -36,9 +36,9 @@ impl<'a> ObjectValue<'a> {
     {
       {
         let mut unknown_keyed = self.unknown.borrow_mut();
-        unknown_keyed.get(analyzer, &mut context, None);
+        unknown_keyed.get_value(analyzer, &mut context);
         if let Some(rest) = &self.rest {
-          rest.borrow_mut().get(analyzer, &mut context, None);
+          rest.borrow_mut().get_value(analyzer, &mut context);
         }
       }
 
@@ -77,7 +77,7 @@ impl<'a> ObjectValue<'a> {
           }
         });
 
-        property.get(analyzer, &mut context, None);
+        property.get_value(analyzer, &mut context);
         mem::drop(string_keyed);
         for getter in context.getters.drain(..) {
           context.values.push(getter.call_as_getter(

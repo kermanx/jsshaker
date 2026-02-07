@@ -64,7 +64,7 @@ impl<'a> ObjectValue<'a> {
 
     if check_rest {
       if let Some(rest) = &self.rest {
-        rest.borrow_mut().get(analyzer, &mut context, None);
+        rest.borrow_mut().get_value(analyzer, &mut context);
         exhaustive_deps = None;
       } else {
         context.values.push(analyzer.factory.undefined);
@@ -184,7 +184,7 @@ impl<'a> ObjectValue<'a> {
     context: &mut GetPropertyContext<'a>,
   ) -> bool {
     let mut unknown_keyed = self.unknown.borrow_mut();
-    unknown_keyed.get(analyzer, context, None);
+    unknown_keyed.get_value(analyzer, context);
     (match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => false,
       ObjectPrototype::Builtin(_) => false,

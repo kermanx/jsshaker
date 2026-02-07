@@ -86,22 +86,6 @@ impl<'a> ObjectProperty<'a> {
     }
   }
 
-  fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
-    for possible_value in &self.possible_values {
-      match possible_value {
-        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
-          context.values.push(analyzer.factory.optional_computed(*value, self.key))
-        }
-        ObjectPropertyValue::Property(Some(getter), _) => {
-          context.getters.push(analyzer.factory.optional_computed(*getter, self.key))
-        }
-        ObjectPropertyValue::Property(None, _) => context
-          .values
-          .push(analyzer.factory.optional_computed(analyzer.factory.undefined, self.key)),
-      }
-    }
-  }
-
   fn get_mangable(
     &mut self,
     analyzer: &Analyzer<'a>,
@@ -125,6 +109,41 @@ impl<'a> ObjectProperty<'a> {
           constraint,
         )),
       }
+    }
+  }
+
+  fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
+    for possible_value in &self.possible_values {
+      match possible_value {
+        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
+          context.values.push(analyzer.factory.optional_computed(*value, self.key))
+        }
+        ObjectPropertyValue::Property(Some(getter), _) => {
+          context.getters.push(analyzer.factory.optional_computed(*getter, self.key))
+        }
+        ObjectPropertyValue::Property(None, _) => context
+          .values
+          .push(analyzer.factory.optional_computed(analyzer.factory.undefined, self.key)),
+      }
+    }
+  }
+
+  pub(super) fn get_value(
+    &mut self,
+    analyzer: &Analyzer<'a>,
+    context: &mut GetPropertyContext<'a>,
+  ) {
+    for possible_value in &self.possible_values {
+      match possible_value {
+        ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
+          context.values.push(*value)
+        }
+        ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(*getter),
+        ObjectPropertyValue::Property(None, _) => context.values.push(analyzer.factory.undefined),
+      }
+    }
+    if let Some(dep) = self.non_existent.collect(analyzer.factory) {
+      context.extra_deps.push(dep);
     }
   }
 
