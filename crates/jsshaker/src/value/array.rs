@@ -5,7 +5,7 @@ use rustc_hash::FxHashMap;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
-  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object,
+  TypeofResult, ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
@@ -45,14 +45,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
-      return consumed_object::unknown_mutate(analyzer, dep);
+      return escaped::unknown_mutate(analyzer, dep);
     }
 
     let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
-      return consumed_object::unknown_mutate(analyzer, dep);
+      return escaped::unknown_mutate(analyzer, dep);
     }
 
     self.deps.borrow_mut().push(analyzer.dep((exec_deps, dep)));
@@ -65,7 +65,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::get_property(self, analyzer, dep, key);
+      return escaped::get_property(self, analyzer, dep, key);
     }
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
@@ -122,14 +122,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     value: Entity<'a>,
   ) {
     if self.consumed.get() {
-      return consumed_object::set_property(analyzer, dep, key, value);
+      return escaped::set_property(analyzer, dep, key, value);
     }
 
     let (is_exhaustive, non_det, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
-      return consumed_object::set_property(analyzer, dep, key, value);
+      return escaped::set_property(analyzer, dep, key, value);
     }
 
     let mut has_effect = false;
@@ -211,7 +211,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.consumed.get() {
-      return consumed_object::enumerate_properties(self, analyzer, dep);
+      return escaped::enumerate_properties(self, analyzer, dep);
     }
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
@@ -246,14 +246,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if self.consumed.get() {
-      return consumed_object::delete_property(analyzer, dep, key);
+      return escaped::delete_property(analyzer, dep, key);
     }
 
     let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
-      return consumed_object::delete_property(analyzer, dep, key);
+      return escaped::delete_property(analyzer, dep, key);
     }
 
     let mut deps = self.deps.borrow_mut();
@@ -267,7 +267,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::call(self, analyzer, dep, this, args)
+    escaped::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
@@ -276,23 +276,23 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(self, analyzer, dep, args)
+    escaped::construct(self, analyzer, dep, args)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(self, analyzer, props)
+    escaped::jsx(self, analyzer, props)
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::r#await(analyzer, dep);
+      return escaped::r#await(analyzer, dep);
     }
     analyzer.factory.computed(self.into(), dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     if self.consumed.get() {
-      return consumed_object::iterate(analyzer, dep);
+      return escaped::iterate(analyzer, dep);
     }
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
@@ -313,14 +313,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::coerce_string(analyzer);
+      return escaped::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     if self.consumed.get() {
-      return consumed_object::coerce_numeric(analyzer);
+      return escaped::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
   }

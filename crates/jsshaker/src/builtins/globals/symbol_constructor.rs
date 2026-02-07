@@ -1,7 +1,7 @@
 use crate::{
   builtins::Builtins,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype, consumed_object},
+  value::{ObjectPropertyValue, ObjectPrototype, escaped},
 };
 
 impl Builtins<'_> {
@@ -35,11 +35,7 @@ impl Builtins<'_> {
 
     self.globals.insert(
       "Symbol",
-      self.factory.implemented_builtin_fn_with_statics(
-        "Symbol",
-        consumed_object::builtin_call,
-        statics,
-      ),
+      self.factory.implemented_builtin_fn_with_statics("Symbol", escaped::builtin_call, statics),
     );
   }
 }

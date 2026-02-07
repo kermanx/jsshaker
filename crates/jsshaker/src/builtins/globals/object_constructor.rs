@@ -8,7 +8,7 @@ use crate::{
   entity::Entity,
   init_object,
   scope::CfScopeKind,
-  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult, consumed_object},
+  value::{LiteralValue, ObjectPropertyValue, ObjectPrototype, TypeofResult, escaped},
 };
 
 impl<'a> Builtins<'a> {
@@ -45,11 +45,7 @@ impl<'a> Builtins<'a> {
 
     self.globals.borrow_mut().insert(
       "Object",
-      self.factory.implemented_builtin_fn_with_statics(
-        "Object",
-        consumed_object::builtin_call,
-        statics,
-      ),
+      self.factory.implemented_builtin_fn_with_statics("Object", escaped::builtin_call, statics),
     );
   }
 

@@ -8,7 +8,7 @@ use crate::{
   entity::Entity,
   value::{
     ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
-    ValueTrait, cacheable::Cacheable, consumed_object,
+    ValueTrait, cacheable::Cacheable, escaped,
   },
 };
 
@@ -119,7 +119,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot call a non-function object {:?}", self));
     if analyzer.config.preserve_exceptions {
-      consumed_object::call(self, analyzer, dep, this, args)
+      escaped::call(self, analyzer, dep, this, args)
     } else {
       analyzer.factory.never
     }
@@ -133,7 +133,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
     if analyzer.config.preserve_exceptions {
-      consumed_object::construct(self, analyzer, dep, args)
+      escaped::construct(self, analyzer, dep, args)
     } else {
       analyzer.factory.never
     }

@@ -1,6 +1,6 @@
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
-  cacheable::Cacheable, consumed_object, never::NeverValue,
+  cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer, builtin_string, builtins::BuiltinPrototype, dep::Dep, entity::Entity,
@@ -75,7 +75,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call non-object");
     if analyzer.config.preserve_exceptions {
-      consumed_object::call(self, analyzer, dep, this, args)
+      escaped::call(self, analyzer, dep, this, args)
     } else {
       analyzer.factory.never
     }
@@ -89,7 +89,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot construct non-object");
     if analyzer.config.preserve_exceptions {
-      consumed_object::construct(self, analyzer, dep, args)
+      escaped::construct(self, analyzer, dep, args)
     } else {
       analyzer.factory.never
     }
@@ -110,7 +110,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     analyzer.throw_builtin_error("Cannot iterate non-object");
     if analyzer.config.preserve_exceptions {
       self.consume(analyzer);
-      consumed_object::iterate(analyzer, dep)
+      escaped::iterate(analyzer, dep)
     } else {
       NeverValue.iterate(analyzer, dep)
     }

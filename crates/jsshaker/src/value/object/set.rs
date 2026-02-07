@@ -6,7 +6,7 @@ use crate::{
   mangling::MangleAtom,
   scope::CfScopeKind,
   utils::Found,
-  value::{PropertyKeyValue, ValueTrait, consumed_object},
+  value::{PropertyKeyValue, ValueTrait, escaped},
 };
 
 pub struct PendingSetter<'a> {
@@ -24,7 +24,7 @@ impl<'a> ObjectValue<'a> {
     value: Entity<'a>,
   ) {
     if self.is_self_or_proto_consumed() {
-      return consumed_object::set_property(analyzer, dep, key, value);
+      return escaped::set_property(analyzer, dep, key, value);
     }
 
     let (target_depth, is_exhaustive, mut non_det, deps) = self.prepare_mutation(analyzer, dep);
@@ -32,7 +32,7 @@ impl<'a> ObjectValue<'a> {
 
     if is_exhaustive && key_literals.is_none() {
       self.consume(analyzer);
-      return consumed_object::set_property(analyzer, dep, key, value);
+      return escaped::set_property(analyzer, dep, key, value);
     }
 
     let value = analyzer.factory.computed(value, deps);
@@ -59,7 +59,7 @@ impl<'a> ObjectValue<'a> {
         if key_str.is_special_key() {
           drop(keyed);
           self.consume(analyzer);
-          return consumed_object::set_property(analyzer, dep, key, value);
+          return escaped::set_property(analyzer, dep, key, value);
         }
 
         let exists = if let Some(property) = keyed.get_mut(&key_str) {

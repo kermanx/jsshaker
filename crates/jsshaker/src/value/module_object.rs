@@ -8,7 +8,7 @@ use crate::{
   use_consumed_flag,
   value::{
     ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait,
-    cacheable::Cacheable, consumed_object,
+    cacheable::Cacheable, escaped,
   },
 };
 
@@ -82,7 +82,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     // TODO: Optimize this
-    consumed_object::enumerate_properties(self, analyzer, dep)
+    escaped::enumerate_properties(self, analyzer, dep)
   }
 
   fn call(
@@ -92,7 +92,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::call(self, analyzer, dep, this, args)
+    escaped::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
@@ -101,27 +101,27 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(self, analyzer, dep, args)
+    escaped::construct(self, analyzer, dep, args)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(self, analyzer, props)
+    escaped::jsx(self, analyzer, props)
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
-    consumed_object::r#await(analyzer, dep)
+    escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
-    consumed_object::iterate(analyzer, dep)
+    escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
-      return consumed_object::coerce_string(analyzer);
+      return escaped::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
@@ -129,7 +129,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
     if self.consumed.get() {
-      return consumed_object::coerce_numeric(analyzer);
+      return escaped::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
   }

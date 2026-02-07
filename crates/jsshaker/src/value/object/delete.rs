@@ -4,20 +4,20 @@ use crate::{
   dep::{CustomDepTrait, Dep},
   entity::Entity,
   mangling::{MangleConstraint, ManglingDep},
-  value::consumed_object,
+  value::escaped,
 };
 
 impl<'a> ObjectValue<'a> {
   pub fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     if self.is_self_or_proto_consumed() {
-      return consumed_object::delete_property(analyzer, dep, key);
+      return escaped::delete_property(analyzer, dep, key);
     }
 
     let (_target_depth, is_exhaustive, non_det, deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
       self.consume(analyzer);
-      return consumed_object::delete_property(analyzer, dep, key);
+      return escaped::delete_property(analyzer, dep, key);
     }
 
     let deps = analyzer.dep(deps);

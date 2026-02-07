@@ -8,7 +8,7 @@ use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   dep::Dep,
   scope::CfScopeKind,
-  value::{EnumeratedProperties, PropertyKeyValue, Value, consumed_object},
+  value::{EnumeratedProperties, PropertyKeyValue, Value, escaped},
 };
 
 impl<'a> ObjectValue<'a> {
@@ -19,7 +19,7 @@ impl<'a> ObjectValue<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if self.is_self_or_proto_consumed() {
-      return consumed_object::enumerate_properties(self, analyzer, dep);
+      return escaped::enumerate_properties(self, analyzer, dep);
     }
 
     analyzer.push_cf_scope_with_deps(CfScopeKind::Dependent, analyzer.factory.vec1(dep), true);

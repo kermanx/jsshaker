@@ -2,7 +2,7 @@ use std::cell::{Cell, RefCell};
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
-  cacheable::Cacheable, consumed_object,
+  cacheable::Cacheable, escaped,
 };
 use crate::{
   analyzer::Analyzer,
@@ -30,7 +30,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     let props = self.props;
     // Is this the best way to handle this?
     let group_id = analyzer.new_object_mangling_group();
-    analyzer.exec_consumed_fn("React_blackbox", move |analyzer| {
+    analyzer.exec_escaped_fn("React_blackbox", move |analyzer| {
       let copied_props = analyzer.new_empty_object(
         ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object),
         Some(group_id),
@@ -42,7 +42,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     if self.consumed.get() {
-      return consumed_object::unknown_mutate(analyzer, dep);
+      return escaped::unknown_mutate(analyzer, dep);
     }
 
     self.deps.borrow_mut().push(dep);
@@ -54,7 +54,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::get_property(self, analyzer, dep, key)
+    escaped::get_property(self, analyzer, dep, key)
   }
 
   fn set_property(
@@ -65,7 +65,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     value: Entity<'a>,
   ) {
     self.consume(analyzer);
-    consumed_object::set_property(analyzer, dep, key, value)
+    escaped::set_property(analyzer, dep, key, value)
   }
 
   fn enumerate_properties(
@@ -76,12 +76,12 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
     }
-    consumed_object::enumerate_properties(self, analyzer, dep)
+    escaped::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.consume(analyzer);
-    consumed_object::delete_property(analyzer, dep, key)
+    escaped::delete_property(analyzer, dep, key)
   }
 
   fn call(
@@ -93,7 +93,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
     if analyzer.config.preserve_exceptions {
-      consumed_object::call(self, analyzer, dep, this, args)
+      escaped::call(self, analyzer, dep, this, args)
     } else {
       analyzer.factory.never
     }
@@ -107,7 +107,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
     if analyzer.config.preserve_exceptions {
-      consumed_object::construct(self, analyzer, dep, args)
+      escaped::construct(self, analyzer, dep, args)
     } else {
       analyzer.factory.never
     }
@@ -116,7 +116,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
     analyzer.throw_builtin_error("Cannot call a React element");
     if analyzer.config.preserve_exceptions {
-      consumed_object::jsx(self, analyzer, props)
+      escaped::jsx(self, analyzer, props)
     } else {
       analyzer.factory.never
     }
@@ -124,12 +124,12 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
-    consumed_object::r#await(analyzer, dep)
+    escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
-    consumed_object::iterate(analyzer, dep)
+    escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

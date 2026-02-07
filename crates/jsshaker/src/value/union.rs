@@ -118,7 +118,6 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
       unknown: analyzer.factory.try_union(unknown),
       dep: analyzer.dep(deps),
     }
-    // consumed_object::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {

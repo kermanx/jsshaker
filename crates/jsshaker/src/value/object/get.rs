@@ -7,7 +7,7 @@ use crate::{
   entity::Entity,
   mangling::MangleAtom,
   scope::CfScopeKind,
-  value::{PropertyKeyValue, Value, consumed_object, object::ObjectPrototype},
+  value::{PropertyKeyValue, Value, escaped, object::ObjectPrototype},
 };
 
 pub(crate) struct GetPropertyContext<'a> {
@@ -27,7 +27,7 @@ impl<'a> ObjectValue<'a> {
     key: Entity<'a>,
   ) -> Entity<'a> {
     if self.is_self_or_proto_consumed() {
-      return consumed_object::get_property(self, analyzer, dep, key);
+      return escaped::get_property(self, analyzer, dep, key);
     }
 
     let mut mangable = false;

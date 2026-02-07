@@ -11,7 +11,7 @@ use oxc::span::GetSpan;
 
 use super::{
   EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  cacheable::Cacheable, consumed_object,
+  cacheable::Cacheable, escaped,
 };
 use crate::{
   analyzer::Analyzer,
@@ -49,7 +49,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     self.consume(analyzer);
-    consumed_object::unknown_mutate(analyzer, dep);
+    escaped::unknown_mutate(analyzer, dep);
   }
 
   fn get_property(
@@ -71,7 +71,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     if self.callee.node.is_generator()
       && analyzer.op_strict_eq(key, builtin_string!("prototype"), true).0 == Some(true)
     {
-      return consumed_object::set_property(analyzer, dep, key, value);
+      return escaped::set_property(analyzer, dep, key, value);
     }
     self.statics.set_property(analyzer, dep, key, value);
   }
@@ -141,20 +141,20 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    consumed_object::r#await(analyzer, dep)
+    escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
-    consumed_object::iterate(analyzer, dep)
+    escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    consumed_object::coerce_string(analyzer)
+    escaped::coerce_string(analyzer)
   }
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    consumed_object::coerce_numeric(analyzer)
+    escaped::coerce_numeric(analyzer)
   }
 
   fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -252,7 +252,7 @@ impl<'a> FunctionValue<'a> {
     #[cfg(not(feature = "flame"))]
     let name = "";
 
-    analyzer.exec_consumed_fn(name, move |analyzer| {
+    analyzer.exec_escaped_fn(name, move |analyzer| {
       self.call_impl::<false>(analyzer, analyzer.factory.no_dep, this, args, true)
     })
   }

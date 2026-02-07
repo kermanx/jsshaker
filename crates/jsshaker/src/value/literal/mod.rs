@@ -13,7 +13,7 @@ use oxc_syntax::number::ToJsString;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
-  ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
+  ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
   analyzer::Analyzer,
@@ -64,7 +64,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       LiteralValue::Null | LiteralValue::Undefined => {
         analyzer.throw_builtin_error("Cannot get property of null or undefined");
         if analyzer.config.preserve_exceptions {
-          consumed_object::get_property(self, analyzer, dep, key)
+          escaped::get_property(self, analyzer, dep, key)
         } else {
           analyzer.factory.never
         }
@@ -90,7 +90,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     if matches!(self, LiteralValue::Null | LiteralValue::Undefined) {
       analyzer.throw_builtin_error("Cannot set property of null or undefined");
       if analyzer.config.preserve_exceptions {
-        consumed_object::set_property(analyzer, dep, key, value)
+        escaped::set_property(analyzer, dep, key, value)
       }
     } else {
       // No effect
@@ -130,7 +130,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot call a non-function object {:?}", self));
     if analyzer.config.preserve_exceptions {
-      consumed_object::call(self, analyzer, dep, this, args)
+      escaped::call(self, analyzer, dep, this, args)
     } else {
       analyzer.factory.never
     }
@@ -144,7 +144,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   ) -> Entity<'a> {
     analyzer.throw_builtin_error(format!("Cannot construct a non-constructor object {:?}", self));
     if analyzer.config.preserve_exceptions {
-      consumed_object::construct(self, analyzer, dep, args)
+      escaped::construct(self, analyzer, dep, args)
     } else {
       analyzer.factory.never
     }
@@ -169,7 +169,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
         analyzer.throw_builtin_error("Cannot iterate over a non-iterable object");
         if analyzer.config.preserve_exceptions {
           self.consume(analyzer);
-          consumed_object::iterate(analyzer, dep)
+          escaped::iterate(analyzer, dep)
         } else {
           NeverValue.iterate(analyzer, dep)
         }

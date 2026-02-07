@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
-  cacheable::Cacheable, consumed_object,
+  cacheable::Cacheable, escaped,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
@@ -13,7 +13,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    consumed_object::unknown_mutate(analyzer, dep)
+    escaped::unknown_mutate(analyzer, dep)
   }
 
   fn get_property(
@@ -22,7 +22,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    consumed_object::get_property(self, analyzer, dep, key)
+    escaped::get_property(self, analyzer, dep, key)
   }
 
   fn set_property(
@@ -33,7 +33,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     value: Entity<'a>,
   ) {
     self.consume(analyzer);
-    consumed_object::set_property(analyzer, dep, key, value)
+    escaped::set_property(analyzer, dep, key, value)
   }
 
   fn enumerate_properties(
@@ -44,12 +44,12 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     if analyzer.config.unknown_property_read_side_effects {
       self.consume(analyzer);
     }
-    consumed_object::enumerate_properties(self, analyzer, dep)
+    escaped::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
     self.consume(analyzer);
-    consumed_object::delete_property(analyzer, dep, key)
+    escaped::delete_property(analyzer, dep, key)
   }
 
   fn call(
@@ -59,7 +59,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::call(self, analyzer, dep, this, args)
+    escaped::call(self, analyzer, dep, this, args)
   }
 
   fn construct(
@@ -68,21 +68,21 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(self, analyzer, dep, args)
+    escaped::construct(self, analyzer, dep, args)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    consumed_object::jsx(self, analyzer, props)
+    escaped::jsx(self, analyzer, props)
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
     self.consume(analyzer);
-    consumed_object::r#await(analyzer, dep)
+    escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     self.consume(analyzer);
-    consumed_object::iterate(analyzer, dep)
+    escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

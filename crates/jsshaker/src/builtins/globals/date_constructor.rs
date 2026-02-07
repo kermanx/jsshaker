@@ -1,7 +1,7 @@
 use crate::{
   builtins::Builtins,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype, consumed_object},
+  value::{ObjectPropertyValue, ObjectPrototype, escaped},
 };
 
 impl Builtins<'_> {
@@ -22,11 +22,7 @@ impl Builtins<'_> {
 
     self.globals.insert(
       "Date",
-      self.factory.implemented_builtin_fn_with_statics(
-        "Date",
-        consumed_object::builtin_call,
-        statics,
-      ),
+      self.factory.implemented_builtin_fn_with_statics("Date", escaped::builtin_call, statics),
     );
   }
 }

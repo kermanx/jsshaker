@@ -2,7 +2,7 @@ use crate::{
   builtins::Builtins,
   entity::Entity,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype, consumed_object},
+  value::{ObjectPropertyValue, ObjectPrototype, escaped},
 };
 
 impl<'a> Builtins<'a> {
@@ -23,11 +23,7 @@ impl<'a> Builtins<'a> {
 
     self.globals.insert(
       "Array",
-      self.factory.implemented_builtin_fn_with_statics(
-        "Array",
-        consumed_object::builtin_call,
-        statics,
-      ),
+      self.factory.implemented_builtin_fn_with_statics("Array", escaped::builtin_call, statics),
     );
   }
 

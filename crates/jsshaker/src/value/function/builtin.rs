@@ -2,7 +2,7 @@ use std::{cell::Cell, fmt::Debug};
 
 use super::super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
-  TypeofResult, ValueTrait, cacheable::Cacheable, consumed_object, never::NeverValue,
+  TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_consumed_flag};
 
@@ -62,7 +62,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
           self.name()
         )
     );
-      consumed_object::set_property(analyzer, dep, key, value)
+      escaped::set_property(analyzer, dep, key, value)
     }
   }
 
@@ -71,7 +71,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
       object.delete_property(analyzer, dep, key)
     } else {
       analyzer.add_diagnostic("Should not delete property of builtin function, it may cause unexpected tree-shaking behavior");
-      consumed_object::delete_property(analyzer, dep, key)
+      escaped::delete_property(analyzer, dep, key)
     }
   }
 
@@ -101,7 +101,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    consumed_object::construct(self, analyzer, dep, args)
+    escaped::construct(self, analyzer, dep, args)
   }
 
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
@@ -120,7 +120,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
     analyzer.throw_builtin_error("Cannot iterate over function");
     if analyzer.config.preserve_exceptions {
-      consumed_object::iterate(analyzer, dep)
+      escaped::iterate(analyzer, dep)
     } else {
       NeverValue.iterate(analyzer, dep)
     }
@@ -218,7 +218,7 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
 
     let name = self.name;
 
-    analyzer.exec_consumed_fn(name, move |analyzer| {
+    analyzer.exec_escaped_fn(name, move |analyzer| {
       self.call_impl(
         analyzer,
         analyzer.factory.no_dep,

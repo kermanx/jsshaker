@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_consumed_fn(
+  pub fn exec_escaped_fn(
     &mut self,
     kind: &str,
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
