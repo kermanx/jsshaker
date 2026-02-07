@@ -8,7 +8,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(argument) = &node.argument {
       let argument = self.exec_expression(argument);
-      argument.consume(self);
+      argument.include(self);
     }
     self.factory.unknown
   }

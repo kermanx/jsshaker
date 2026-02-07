@@ -215,8 +215,8 @@ impl<'a> Analyzer<'a> {
       self.cf_scope_mut().push_dep(dep);
       self.exec_formal_parameters(&function.params, info.args, DeclarationKind::FunctionParameter);
       self.exec_function_body(function.body.as_ref().unwrap());
-      if info.consume {
-        self.consume_return_values();
+      if info.include {
+        self.include_return_values();
       }
       let (ret_val, _) = self.pop_call_scope();
       let ret_val = self.factory.computed(ret_val, dep);

@@ -31,8 +31,8 @@ impl<'a> Analyzer<'a> {
     );
     self.return_value(ret, self.factory.no_dep);
 
-    if info.consume {
-      self.consume_return_values();
+    if info.include {
+      self.include_return_values();
     }
 
     self.pop_call_scope()

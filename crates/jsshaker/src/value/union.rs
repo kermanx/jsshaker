@@ -11,7 +11,7 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
-  use_consumed_flag,
+  use_included_flag,
   value::{ObjectValue, literal::PossibleLiterals},
 };
 
@@ -19,27 +19,27 @@ use crate::{
 pub struct UnionValue<'a, V: UnionValues<'a> + Debug + 'a> {
   /// Possible values
   pub values: V,
-  pub consumed: Cell<bool>,
+  pub included: Cell<bool>,
   pub phantom: std::marker::PhantomData<&'a ()>,
 }
 
 impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_included_flag!(self);
 
     for value in self.values.iter() {
-      value.consume(analyzer);
+      value.include(analyzer);
     }
   }
 
-  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
-    if !self.consumed.get() {
-      let mut consumed = true;
+  fn include_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
+    if !self.included.get() {
+      let mut included = true;
       for value in self.values.iter() {
-        consumed &= value.consume_mangable(analyzer);
+        included &= value.include_mangable(analyzer);
       }
-      self.consumed.set(consumed);
-      consumed
+      self.included.set(included);
+      included
     } else {
       true
     }
@@ -405,14 +405,14 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
       2 => factory
         .alloc(UnionValue {
           values: (filtered[0], filtered[1]),
-          consumed: Cell::new(false),
+          included: Cell::new(false),
           phantom: std::marker::PhantomData,
         })
         .into(),
       _ => factory
         .alloc(UnionValue {
           values: filtered,
-          consumed: Cell::new(false),
+          included: Cell::new(false),
           phantom: std::marker::PhantomData,
         })
         .into(),
@@ -443,7 +443,7 @@ impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
       factory
         .alloc(UnionValue {
           values: self,
-          consumed: Cell::new(false),
+          included: Cell::new(false),
           phantom: std::marker::PhantomData,
         })
         .into()

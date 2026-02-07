@@ -1,6 +1,6 @@
 use crate::value::PropertyKeyValue;
 
-pub fn escape_private_identifier_name(name: &str) -> String {
+pub fn include_private_identifier_name(name: &str) -> String {
   format!("__#private__{}", name)
 }
 

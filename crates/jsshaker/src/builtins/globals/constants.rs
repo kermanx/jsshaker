@@ -51,8 +51,8 @@ impl Builtins<'_> {
       "requestAnimationFrame" => unknown_function,
       "structuredClone" => unknown_function,
       // Deprecated but still part of the standard
-      "escape" => factory.pure_fn_returns_string,
-      "unescape" => factory.pure_fn_returns_string,
+      "include" => factory.pure_fn_returns_string,
+      "uninclude" => factory.pure_fn_returns_string,
 
       // Fundamental objects
       "Function" => unknown_function,

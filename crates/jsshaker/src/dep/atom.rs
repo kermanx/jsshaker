@@ -25,7 +25,7 @@ impl DepAtom {
 }
 
 impl<'a> CustomDepTrait<'a> for DepAtom {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.include_atom(*self);
   }
 }

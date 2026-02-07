@@ -13,9 +13,9 @@ pub struct ArgumentsValue<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for ArgumentsValue<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.consume(self.elements);
-    analyzer.consume(self.rest);
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.include(self.elements);
+    analyzer.include(self.rest);
   }
 }
 

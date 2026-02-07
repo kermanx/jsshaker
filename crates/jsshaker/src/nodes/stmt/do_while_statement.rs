@@ -36,7 +36,7 @@ impl<'a> Analyzer<'a> {
       self.pop_cf_scope();
       return;
     }
-    test.consume(self);
+    test.include(self);
 
     data.need_loop = true;
 
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
       analyzer.push_cf_scope(CfScopeKind::LoopContinue, true);
 
       analyzer.exec_statement(&node.body);
-      analyzer.exec_expression(&node.test).consume(analyzer);
+      analyzer.exec_expression(&node.test).include(analyzer);
 
       analyzer.pop_cf_scope();
     });

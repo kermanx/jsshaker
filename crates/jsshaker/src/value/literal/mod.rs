@@ -39,13 +39,13 @@ pub enum LiteralValue<'a> {
 }
 
 impl<'a> ValueTrait<'a> for LiteralValue<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     if let LiteralValue::String(_, Some(atom)) = self {
-      analyzer.consume(*atom);
+      analyzer.include(*atom);
     }
   }
 
-  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
+  fn include_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     !matches!(self, LiteralValue::String(_, Some(_)))
   }
@@ -114,7 +114,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     if matches!(self, LiteralValue::Null | LiteralValue::Undefined) {
       analyzer.throw_builtin_error("Cannot delete property of null or undefined");
       if analyzer.config.preserve_exceptions {
-        analyzer.consume(dep);
+        analyzer.include(dep);
       }
     } else {
       // No effect
@@ -168,7 +168,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       _ => {
         analyzer.throw_builtin_error("Cannot iterate over a non-iterable object");
         if analyzer.config.preserve_exceptions {
-          self.consume(analyzer);
+          self.include(analyzer);
           escaped::iterate(analyzer, dep)
         } else {
           NeverValue.iterate(analyzer, dep)

@@ -52,14 +52,15 @@ impl<'a> Entity<'a> {
     Entity { value: self.value, dep: Some(dep) }
   }
 
-  pub fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.consume(*self);
+  pub fn include(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.include(self.value);
+    analyzer.include(self.dep);
   }
 
-  /// Returns true if the entity is completely consumed
-  pub fn consume_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
-    analyzer.consume(self.dep);
-    self.value.consume_mangable(analyzer)
+  /// Returns true if the entity is completely included
+  pub fn include_mangable(&self, analyzer: &mut Analyzer<'a>) -> bool {
+    analyzer.include(self.dep);
+    self.value.include_mangable(analyzer)
   }
 
   pub fn unknown_mutate(&self, analyzer: &mut Analyzer<'a>, dep: impl DepTrait<'a> + 'a) {
@@ -228,9 +229,9 @@ impl<'a> Entity<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for Entity<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.consume(self.value);
-    analyzer.consume(self.dep);
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.include(self.value);
+    analyzer.include(self.dep);
   }
 }
 

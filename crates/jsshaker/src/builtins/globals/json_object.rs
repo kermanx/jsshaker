@@ -26,7 +26,7 @@ impl<'a> Builtins<'a> {
       let reviver = args.get(analyzer, 1);
       let deps = (dep, text, reviver);
       if reviver.test_is_undefined() != Some(true) {
-        analyzer.consume(deps);
+        analyzer.include(deps);
         analyzer.factory.unknown
       } else {
         analyzer.factory.computed_unknown(deps)
@@ -41,7 +41,7 @@ impl<'a> Builtins<'a> {
       let space = args.get(analyzer, 2);
       let deps = (dep, value, replacer, space);
       if replacer.test_is_undefined() != Some(true) {
-        analyzer.consume(deps);
+        analyzer.include(deps);
         analyzer.factory.unknown
       } else {
         analyzer

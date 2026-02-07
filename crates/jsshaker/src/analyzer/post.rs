@@ -6,7 +6,7 @@ impl Analyzer<'_> {
   pub fn post_analysis(&mut self) {
     self.set_current_module(ModuleId::new(0));
 
-    self.consume_exports(ModuleId::new(0));
+    self.include_exports(ModuleId::new(0));
 
     let mut round = 0usize;
     loop {

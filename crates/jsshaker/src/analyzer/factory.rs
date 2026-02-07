@@ -59,7 +59,7 @@ pub struct Factory<'a> {
   pub unmatched_prototype_property: Entity<'a>,
 
   pub no_dep: Dep<'a>,
-  pub consumed_lazy_dep: LazyDep<'a, Dep<'a>>,
+  pub included_lazy_dep: LazyDep<'a, Dep<'a>>,
 }
 
 impl<'a> Factory<'a> {
@@ -117,7 +117,7 @@ impl<'a> Factory<'a> {
       if config.unmatched_prototype_property_as_undefined { undefined } else { immutable_unknown };
 
     let no_dep = Dep(allocator.alloc(()));
-    let consumed_lazy_dep = LazyDep(allocator.alloc(RefCell::new(None)));
+    let included_lazy_dep = LazyDep(allocator.alloc(RefCell::new(None)));
 
     Factory {
       allocator,
@@ -160,7 +160,7 @@ impl<'a> Factory<'a> {
       unmatched_prototype_property,
 
       no_dep,
-      consumed_lazy_dep,
+      included_lazy_dep,
     }
   }
 

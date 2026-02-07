@@ -7,10 +7,10 @@ pub struct ManglingDep<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for ManglingDep<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.deps.0.consume_mangable(analyzer);
-    self.deps.1.consume_mangable(analyzer);
-    analyzer.consume(self.constraint);
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    self.deps.0.include_mangable(analyzer);
+    self.deps.1.include_mangable(analyzer);
+    analyzer.include(self.constraint);
   }
 }
 
@@ -20,7 +20,7 @@ pub struct AlwaysMangableDep<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for AlwaysMangableDep<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    self.dep.consume_mangable(analyzer);
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    self.dep.include_mangable(analyzer);
   }
 }

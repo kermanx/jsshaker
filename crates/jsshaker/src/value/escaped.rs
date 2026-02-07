@@ -3,7 +3,7 @@ use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
   analyzer.global_effect();
-  analyzer.consume(dep);
+  analyzer.include(dep);
 }
 
 pub fn get_property<'a>(
@@ -13,7 +13,7 @@ pub fn get_property<'a>(
   key: Entity<'a>,
 ) -> Entity<'a> {
   if analyzer.config.unknown_property_read_side_effects {
-    analyzer.consume((target, dep, key));
+    analyzer.include((target, dep, key));
     analyzer.global_effect();
     analyzer.factory.unknown
   } else {
@@ -28,7 +28,7 @@ pub fn set_property<'a>(
   value: Entity<'a>,
 ) {
   analyzer.global_effect();
-  analyzer.consume((dep, key, value));
+  analyzer.include((dep, key, value));
 }
 
 pub fn enumerate_properties<'a>(
@@ -40,7 +40,7 @@ pub fn enumerate_properties<'a>(
     known: Default::default(),
     unknown: Some(analyzer.factory.unknown),
     dep: if analyzer.config.unknown_property_read_side_effects {
-      analyzer.consume(dep);
+      analyzer.include(dep);
       analyzer.global_effect();
       analyzer.factory.no_dep
     } else {
@@ -51,7 +51,7 @@ pub fn enumerate_properties<'a>(
 
 pub fn delete_property<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
   analyzer.global_effect();
-  analyzer.consume((dep, key));
+  analyzer.include((dep, key));
 }
 
 pub fn call<'a>(
@@ -61,7 +61,7 @@ pub fn call<'a>(
   this: Entity<'a>,
   args: ArgumentsValue<'a>,
 ) -> Entity<'a> {
-  analyzer.consume((target, dep, this, args));
+  analyzer.include((target, dep, this, args));
   analyzer.global_effect();
   analyzer.factory.unknown
 }
@@ -72,7 +72,7 @@ pub fn builtin_call<'a>(
   this: Entity<'a>,
   args: ArgumentsValue<'a>,
 ) -> Entity<'a> {
-  analyzer.consume((dep, this, args));
+  analyzer.include((dep, this, args));
   analyzer.global_effect();
   analyzer.factory.unknown
 }
@@ -83,25 +83,25 @@ pub fn construct<'a>(
   dep: Dep<'a>,
   args: ArgumentsValue<'a>,
 ) -> Entity<'a> {
-  analyzer.consume((target, dep, args));
+  analyzer.include((target, dep, args));
   analyzer.global_effect();
   analyzer.factory.unknown
 }
 
 pub fn jsx<'a>(target: Value<'a>, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-  // No consume!
+  // No include!
   analyzer.factory.computed_unknown((target, props))
 }
 
 pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-  analyzer.consume(dep);
+  analyzer.include(dep);
   analyzer.global_effect();
   analyzer.factory.unknown
 }
 
 pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
   if analyzer.config.iterate_side_effects {
-    analyzer.consume(dep);
+    analyzer.include(dep);
     analyzer.global_effect();
     (vec![], Some(analyzer.factory.unknown), analyzer.factory.no_dep)
   } else {

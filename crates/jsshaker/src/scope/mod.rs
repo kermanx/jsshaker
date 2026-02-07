@@ -101,7 +101,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn push_call_scope(&mut self, info: FnCallInfo<'a>, is_async: bool, is_generator: bool) {
-    if info.consume {
+    if info.include {
       self.include_atom(info.call_id);
     }
 

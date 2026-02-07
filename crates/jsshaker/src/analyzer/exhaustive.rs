@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn exec_escaped_fn(
+  pub fn exec_included_fn(
     &mut self,
     kind: &str,
     runner: impl Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a,
@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
     let runner = Rc::new(move |analyzer: &mut Analyzer<'a>| {
       analyzer.scoping.current_callsite = AstKind2::ENVIRONMENT;
       let ret_val = runner(analyzer);
-      analyzer.consume(ret_val);
+      analyzer.include(ret_val);
       ret_val
     });
     self.exec_exhaustively(kind, true, true, runner)

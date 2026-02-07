@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
     let right = self.exec_expression(&node.right);
     let right = if node.r#await {
-      right.consume(self);
+      right.include(self);
       self.include_atom(AstKind2::ForOfStatement(node));
       self.factory.unknown
     } else {

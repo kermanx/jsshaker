@@ -103,7 +103,7 @@ impl<'a> Analyzer<'a> {
                     ExportedValue::Variable(scope, symbol, dep.into()),
                   );
                 } else {
-                  self.consume(dep);
+                  self.include(dep);
                 }
               }
               _ => unreachable!(),

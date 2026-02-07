@@ -27,16 +27,16 @@ impl<'a> Analyzer<'a> {
         test_results.push(test_result);
 
         if test_result != Some(false) {
-          self.consume(AstKind2::SwitchCaseTest(case));
+          self.include(AstKind2::SwitchCaseTest(case));
         }
 
-        self.consume(m);
+        self.include(m);
         if test_result != Some(false) {
           if m.is_some() {
-            test_val.consume_mangable(self);
-            discriminant.consume_mangable(self);
+            test_val.include_mangable(self);
+            discriminant.include_mangable(self);
           } else {
-            self.consume((test_val, discriminant));
+            self.include((test_val, discriminant));
           }
         }
 
@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
     if let Some(default_case) = default_case {
       test_results[default_case] = maybe_default_case;
       if maybe_default_case != Some(false) {
-        self.consume(AstKind2::SwitchCaseTest(&node.cases[default_case]));
+        self.include(AstKind2::SwitchCaseTest(&node.cases[default_case]));
       }
     }
 
@@ -85,7 +85,7 @@ impl<'a> Analyzer<'a> {
       };
 
       if entered != Some(false) {
-        self.consume(AstKind2::SwitchCase(case));
+        self.include(AstKind2::SwitchCase(case));
 
         let data = self.load_data::<StatementVecData>(AstKind2::SwitchCase(case));
 

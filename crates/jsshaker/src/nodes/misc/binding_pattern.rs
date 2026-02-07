@@ -62,7 +62,7 @@ impl<'a> Analyzer<'a> {
             self.throw_builtin_error("Cannot destructure nullish value");
           }
           if self.config.preserve_exceptions {
-            self.consume((init, AstKind2::ObjectPattern(node.as_ref())));
+            self.include((init, AstKind2::ObjectPattern(node.as_ref())));
           }
         }
 

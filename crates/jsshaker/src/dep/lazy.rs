@@ -9,8 +9,8 @@ use crate::analyzer::Analyzer;
 pub struct LazyDep<'a, T: DepTrait<'a> + 'a>(pub &'a RefCell<Option<allocator::Vec<'a, T>>>);
 
 impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for LazyDep<'a, T> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    analyzer.consume(self.0.take());
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    analyzer.include(self.0.take());
   }
 }
 
@@ -21,7 +21,7 @@ impl<'a, T: DepTrait<'a> + 'a> LazyDep<'a, T> {
       deps.push(dep);
     } else {
       drop(deps_ref);
-      analyzer.consume(dep);
+      analyzer.include(dep);
     }
   }
 
@@ -35,7 +35,7 @@ impl<'a, T: DepTrait<'a> + 'a> LazyDep<'a, T> {
     }
   }
 
-  pub fn is_consumed(&self) -> bool {
+  pub fn is_included(&self) -> bool {
     self.0.borrow().is_none()
   }
 }

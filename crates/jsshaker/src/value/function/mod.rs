@@ -36,19 +36,19 @@ pub struct FunctionValue<'a> {
   pub finite_recursion: bool,
   pub statics: &'a ObjectValue<'a>,
 
-  body_consumed: Cell<Option<&'a FnCacheTrackDeps<'a>>>,
+  body_included: Cell<Option<&'a FnCacheTrackDeps<'a>>>,
 
   cache: FnCache<'a>,
 }
 
 impl<'a> ValueTrait<'a> for FunctionValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    self.consume_body(analyzer, analyzer.factory.unknown, analyzer.factory.unknown_arguments);
-    self.statics.consume(analyzer);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    self.include_body(analyzer, analyzer.factory.unknown, analyzer.factory.unknown_arguments);
+    self.statics.include(analyzer);
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::unknown_mutate(analyzer, dep);
   }
 
@@ -95,7 +95,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    if let Some(track_deps) = self.body_consumed.get() {
+    if let Some(track_deps) = self.body_included.get() {
       analyzer.global_effect();
       track_deps.assoc(analyzer, dep, this, &args);
       return analyzer.factory.unknown;
@@ -103,8 +103,8 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
     if self.check_recursion(analyzer) {
       analyzer.global_effect();
-      analyzer.consume(dep);
-      return self.consume_body(analyzer, this, args);
+      analyzer.include(dep);
+      return self.include_body(analyzer, this, args);
     }
 
     self.call_impl::<false>(analyzer, dep, this, args, false)
@@ -116,7 +116,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    if let Some(track_deps) = self.body_consumed.get() {
+    if let Some(track_deps) = self.body_included.get() {
       analyzer.global_effect();
       track_deps.assoc(analyzer, dep, analyzer.factory.unknown, &args);
       return analyzer.factory.unknown;
@@ -124,8 +124,8 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
     if self.check_recursion(analyzer) {
       analyzer.global_effect();
-      analyzer.consume(dep);
-      return self.consume_body(analyzer, analyzer.factory.unknown, args);
+      analyzer.include(dep);
+      return self.include_body(analyzer, analyzer.factory.unknown, args);
     }
 
     self.construct_impl(analyzer, dep, args, false)
@@ -145,7 +145,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }
 
@@ -231,28 +231,28 @@ impl<'a> FunctionValue<'a> {
     false
   }
 
-  pub fn consume_body(
+  pub fn include_body(
     &'a self,
     analyzer: &mut Analyzer<'a>,
     mut this: Entity<'a>,
     mut args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    if self.body_consumed.get().is_some() {
+    if self.body_included.get().is_some() {
       return analyzer.factory.unknown;
     }
 
     let track_deps =
       FnCacheTrackDeps::wrap::<true>(analyzer, DepAtom::placeholder(), &mut this, &mut args);
-    self.body_consumed.set(Some(analyzer.allocator.alloc(track_deps)));
+    self.body_included.set(Some(analyzer.allocator.alloc(track_deps)));
 
-    analyzer.consume(self.callee.into_node());
+    analyzer.include(self.callee.into_node());
 
     #[cfg(feature = "flame")]
     let name = self.callee.debug_name;
     #[cfg(not(feature = "flame"))]
     let name = "";
 
-    analyzer.exec_escaped_fn(name, move |analyzer| {
+    analyzer.exec_included_fn(name, move |analyzer| {
       self.call_impl::<false>(analyzer, analyzer.factory.no_dep, this, args, true)
     })
   }
@@ -269,7 +269,7 @@ impl<'a> Analyzer<'a> {
       lexical_scope: self.scoping.variable.top(),
       finite_recursion: self.has_finite_recursion_notation(node.span()),
       statics,
-      body_consumed: Cell::new(None),
+      body_included: Cell::new(None),
       cache: FnCache::new_in(self.allocator),
     });
 
@@ -282,7 +282,7 @@ impl<'a> Analyzer<'a> {
     }
 
     if created_in_self {
-      function.consume_body(self, self.factory.unknown, self.factory.unknown_arguments);
+      function.include_body(self, self.factory.unknown, self.factory.unknown_arguments);
     }
 
     (function, prototype)

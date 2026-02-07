@@ -5,7 +5,7 @@ use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, value::literal::Possib
 pub struct NeverValue;
 
 impl<'a> ValueTrait<'a> for NeverValue {
-  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+  fn include(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {}
 

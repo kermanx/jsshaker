@@ -214,7 +214,7 @@ impl<'a> Analyzer<'a> {
     self.set_current_module(old_module);
   }
 
-  pub fn consume_exports(&mut self, module_id: ModuleId) {
+  pub fn include_exports(&mut self, module_id: ModuleId) {
     let module = &self.modules.modules[module_id];
     let call_id = module.call_id;
     let mut values = vec![];
@@ -225,7 +225,7 @@ impl<'a> Analyzer<'a> {
     for named_export in named_exports {
       values.push(self.get_named_export_value(module_id, named_export));
     }
-    self.consume((call_id, values));
+    self.include((call_id, values));
   }
 
   fn get_named_export_value(
@@ -334,7 +334,7 @@ impl<'a> Analyzer<'a> {
 }
 
 impl CustomDepTrait<'_> for ModuleId {
-  fn consume(&self, analyzer: &mut Analyzer) {
-    analyzer.consume_exports(*self);
+  fn include(&self, analyzer: &mut Analyzer) {
+    analyzer.include_exports(*self);
   }
 }

@@ -19,7 +19,7 @@ pub enum ObjectPropertyValue<'a> {
 }
 
 impl<'a> ObjectPropertyValue<'a> {
-  pub fn new_consumed(analyzer: &Analyzer<'a>, deps: allocator::Vec<'a, Entity<'a>>) -> Self {
+  pub fn new_included(analyzer: &Analyzer<'a>, deps: allocator::Vec<'a, Entity<'a>>) -> Self {
     let deps = analyzer.factory.lazy_dep(deps);
     Self::Consumed(analyzer.factory.computed_unknown(deps), deps)
   }
@@ -53,7 +53,7 @@ impl<'a> ObjectProperty<'a> {
     }
   }
 
-  pub(super) fn may_be_unconsumed_field(&self) -> bool {
+  pub(super) fn may_be_unincluded_field(&self) -> bool {
     for possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Consumed(_, _) => return false,
@@ -150,14 +150,14 @@ impl<'a> ObjectProperty<'a> {
     }
 
     let mut writable = false;
-    let mut was_consumed = None;
+    let mut was_included = None;
     let mut field_values = vec![value];
 
     for possible_value in &self.possible_values {
       match *possible_value {
         ObjectPropertyValue::Consumed(_, deps) => {
           writable = true;
-          was_consumed = Some(deps);
+          was_included = Some(deps);
         }
         ObjectPropertyValue::Field(value, readonly) => {
           writable |= !readonly;
@@ -192,12 +192,12 @@ impl<'a> ObjectProperty<'a> {
       }
 
       if is_exhaustive {
-        if let Some(was_consumed) = was_consumed {
+        if let Some(was_included) = was_included {
           for field_value in field_values {
-            was_consumed.push_defer(field_value, deferred_deps);
+            was_included.push_defer(field_value, deferred_deps);
           }
         } else {
-          self.possible_values.push(ObjectPropertyValue::new_consumed(
+          self.possible_values.push(ObjectPropertyValue::new_included(
             analyzer,
             allocator::Vec::from_iter_in(field_values, analyzer.allocator),
           ));
@@ -207,7 +207,7 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    writable && was_consumed.is_none()
+    writable && was_included.is_none()
   }
 
   pub fn lookup_setters(
@@ -242,7 +242,7 @@ impl<'a> ObjectProperty<'a> {
     self.non_existent.push(dep);
   }
 
-  pub fn consume(
+  pub fn include(
     &self,
     analyzer: &mut Analyzer<'a>,
     suspended: &mut allocator::Vec<'a, Entity<'a>>,
@@ -263,7 +263,7 @@ impl<'a> ObjectProperty<'a> {
       }
     }
 
-    self.non_existent.consume_all(analyzer);
+    self.non_existent.include_all(analyzer);
 
     if let Some(key) = self.key {
       suspended.push(key);

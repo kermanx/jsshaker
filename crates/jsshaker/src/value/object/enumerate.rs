@@ -18,7 +18,7 @@ impl<'a> ObjectValue<'a> {
     this: Value<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if self.is_self_or_proto_consumed() {
+    if self.is_self_or_proto_included() {
       return escaped::enumerate_properties(self, analyzer, dep);
     }
 

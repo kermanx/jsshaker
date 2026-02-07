@@ -18,7 +18,7 @@ struct ConditionalData<'a> {
   maybe_false: bool,
   impure_true: bool,
   impure_false: bool,
-  tests_to_consume: Vec<Entity<'a>>,
+  tests_to_include: Vec<Entity<'a>>,
 }
 
 #[derive(Debug, Default)]
@@ -34,17 +34,17 @@ struct ConditionalBranch<'a> {
   maybe_true: bool,
   maybe_false: bool,
   test: Entity<'a>,
-  consumed: &'a Cell<bool>,
+  included: &'a Cell<bool>,
 }
 
 impl<'a> ConditionalBranch<'a> {
-  fn consume_with_data(&self, data: &mut ConditionalData<'a>) {
-    if self.consumed.replace(true) {
+  fn include_with_data(&self, data: &mut ConditionalData<'a>) {
+    if self.included.replace(true) {
       return;
     }
     data.maybe_true |= self.maybe_true;
     data.maybe_false |= self.maybe_false;
-    data.tests_to_consume.push(self.test);
+    data.tests_to_include.push(self.test);
     if self.is_true_branch {
       data.impure_true = true;
     } else {
@@ -54,9 +54,9 @@ impl<'a> ConditionalBranch<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for ConditionalBranch<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     let data = analyzer.get_conditional_data_mut(self.id);
-    self.consume_with_data(data);
+    self.include_with_data(data);
   }
 }
 
@@ -152,7 +152,7 @@ impl<'a> Analyzer<'a> {
     let data = node_to_data.entry(id).or_insert_with(ConditionalData::default);
 
     if data.maybe_true && data.maybe_false {
-      self.consume(test);
+      self.include(test);
       return None;
     }
 
@@ -162,7 +162,7 @@ impl<'a> Analyzer<'a> {
       maybe_true,
       maybe_false,
       test,
-      consumed: self.allocator.alloc(Cell::new(false)),
+      included: self.allocator.alloc(Cell::new(false)),
     });
 
     if has_contra {
@@ -184,7 +184,7 @@ impl<'a> Analyzer<'a> {
           let is_opposite_impure =
             if branch.is_true_branch { data.impure_false } else { data.impure_true };
           if is_opposite_impure {
-            branch.consume_with_data(data);
+            branch.include_with_data(data);
           } else {
             remaining_branches.push(branch);
           }
@@ -195,17 +195,17 @@ impl<'a> Analyzer<'a> {
       }
     });
 
-    let mut tests_to_consume = vec![];
+    let mut tests_to_include = vec![];
     for data in node_to_data.values_mut() {
       if data.maybe_true && data.maybe_false {
-        tests_to_consume.push(mem::take(&mut data.tests_to_consume));
+        tests_to_include.push(mem::take(&mut data.tests_to_include));
       }
     }
 
     let mut dirty = false;
-    for tests in tests_to_consume {
+    for tests in tests_to_include {
       for test in tests {
-        test.consume(self);
+        test.include(self);
         dirty = true;
       }
     }
@@ -230,7 +230,7 @@ impl Transformer<'_> {
     };
 
     if data.maybe_true && data.maybe_false {
-      debug_assert!(data.tests_to_consume.is_empty());
+      debug_assert!(data.tests_to_include.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)
   }

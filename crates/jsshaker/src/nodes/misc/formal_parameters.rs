@@ -32,10 +32,10 @@ impl<'a> Analyzer<'a> {
       }
     }
 
-    // In case of `function(x=arguments, y)`, `y` should also be consumed
-    if self.call_scope_mut().need_consume_arguments {
-      let arguments_consumed = self.consume_arguments();
-      assert!(arguments_consumed);
+    // In case of `function(x=arguments, y)`, `y` should also be included
+    if self.call_scope_mut().need_include_arguments {
+      let arguments_included = self.include_arguments();
+      assert!(arguments_included);
     }
 
     if let Some(rest) = &node.rest {

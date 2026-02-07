@@ -17,9 +17,9 @@ pub struct EntityTrackerDep(usize);
 static COUNTER: AtomicUsize = AtomicUsize::new(1);
 
 impl<'a> CustomDepTrait<'a> for EntityTrackerDep {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     if let Some(entities) = analyzer.assoc_deps.to_entities.remove(self) {
-      analyzer.consume(entities);
+      analyzer.include(entities);
     }
   }
 }
@@ -47,22 +47,22 @@ impl<'a> Analyzer<'a> {
     if let Some(entities) = self.assoc_deps.to_entities.get_mut(&base) {
       entities.push(entity);
     } else {
-      self.consume(entity);
+      self.include(entity);
     }
   }
 
   pub fn post_analyze_handle_assoc_deps(&mut self) -> bool {
-    let mut to_consume = vec![];
+    let mut to_include = vec![];
     self.assoc_deps.to_deps.retain(|base, deps| {
       if self.included_atoms.is_included(*base) {
-        to_consume.push(mem::take(deps));
+        to_include.push(mem::take(deps));
         false
       } else {
         true
       }
     });
-    let changed = !to_consume.is_empty();
-    self.consume(to_consume);
+    let changed = !to_include.is_empty();
+    self.include(to_include);
 
     changed
   }

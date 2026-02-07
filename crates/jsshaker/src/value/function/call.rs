@@ -17,7 +17,7 @@ pub struct FnCallInfo<'a> {
   pub cache_key: Option<FnCachedInput<'a>>,
   pub this: Entity<'a>,
   pub args: ArgumentsValue<'a>,
-  pub consume: bool,
+  pub include: bool,
 }
 
 impl<'a> FunctionValue<'a> {
@@ -27,7 +27,7 @@ impl<'a> FunctionValue<'a> {
     dep: Dep<'a>,
     mut this: Entity<'a>,
     mut args: ArgumentsValue<'a>,
-    consume: bool,
+    include: bool,
   ) -> Entity<'a> {
     let fn_name = self.callee.debug_name;
 
@@ -53,7 +53,7 @@ impl<'a> FunctionValue<'a> {
       None
     };
 
-    let info = FnCallInfo { func: self, call_id, call_dep, cache_key, this, args, consume };
+    let info = FnCallInfo { func: self, call_id, call_dep, cache_key, this, args, include };
 
     let (ret_val, tracking_data) = match self.callee.node {
       CalleeNode::Function(node) => analyzer.call_function(node, info),
@@ -110,7 +110,7 @@ impl<'a> FunctionValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
     args: ArgumentsValue<'a>,
-    consume: bool,
+    include: bool,
   ) -> Entity<'a> {
     let prototype = self.get_prototype(analyzer, dep);
     let target = if let Some(p) = prototype.get_object() {
@@ -120,6 +120,6 @@ impl<'a> FunctionValue<'a> {
     } else {
       analyzer.new_empty_object(ObjectPrototype::Unknown(analyzer.dep(prototype)), None)
     };
-    self.call_impl::<true>(analyzer, dep, target.into(), args, consume)
+    self.call_impl::<true>(analyzer, dep, target.into(), args, include)
   }
 }

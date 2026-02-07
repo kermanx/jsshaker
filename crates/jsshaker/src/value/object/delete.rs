@@ -9,14 +9,14 @@ use crate::{
 
 impl<'a> ObjectValue<'a> {
   pub fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    if self.is_self_or_proto_consumed() {
+    if self.is_self_or_proto_included() {
       return escaped::delete_property(analyzer, dep, key);
     }
 
     let (_target_depth, is_exhaustive, non_det, deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
-      self.consume(analyzer);
+      self.include(analyzer);
       return escaped::delete_property(analyzer, dep, key);
     }
 

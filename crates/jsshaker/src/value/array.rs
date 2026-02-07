@@ -13,13 +13,13 @@ use crate::{
   dep::{CustomDepTrait, Dep, DepCollector, DepVec},
   entity::Entity,
   scope::CfScopeId,
-  use_consumed_flag,
+  use_included_flag,
   value::literal::string::ToAtomRef,
 };
 
 #[derive(Debug)]
 pub struct ArrayValue<'a> {
-  pub consumed: Cell<bool>,
+  pub included: Cell<bool>,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
@@ -31,12 +31,12 @@ define_ptr_idx! {
 }
 
 impl<'a> ValueTrait<'a> for ArrayValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_included_flag!(self);
 
-    self.deps.borrow().consume_all(analyzer);
-    self.elements.borrow().consume(analyzer);
-    self.rest.borrow().consume(analyzer);
+    self.deps.borrow().include_all(analyzer);
+    self.elements.borrow().include(analyzer);
+    self.rest.borrow().include(analyzer);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     analyzer.track_write(target_depth, ReadWriteTarget::Array(self.array_id()), None);
@@ -44,14 +44,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
     let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
-      self.consume(analyzer);
+      self.include(analyzer);
       return escaped::unknown_mutate(analyzer, dep);
     }
 
@@ -64,7 +64,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::get_property(self, analyzer, dep, key);
     }
 
@@ -121,14 +121,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::set_property(analyzer, dep, key, value);
     }
 
     let (is_exhaustive, non_det, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
-      self.consume(analyzer);
+      self.include(analyzer);
       return escaped::set_property(analyzer, dep, key, value);
     }
 
@@ -210,7 +210,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::enumerate_properties(self, analyzer, dep);
     }
 
@@ -245,14 +245,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::delete_property(analyzer, dep, key);
     }
 
     let (is_exhaustive, _, exec_deps) = self.prepare_mutation(analyzer, dep);
 
     if is_exhaustive {
-      self.consume(analyzer);
+      self.include(analyzer);
       return escaped::delete_property(analyzer, dep, key);
     }
 
@@ -284,14 +284,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::r#await(analyzer, dep);
     }
     analyzer.factory.computed(self.into(), dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::iterate(analyzer, dep);
     }
 
@@ -312,14 +312,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
   }
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
@@ -404,7 +404,7 @@ impl<'a> Analyzer<'a> {
   pub fn new_empty_array(&mut self) -> &'a mut ArrayValue<'a> {
     let cf_scope = self.scoping.cf.current_id();
     self.factory.alloc(ArrayValue {
-      consumed: Cell::new(false),
+      included: Cell::new(false),
       deps: RefCell::new(DepCollector::new(self.factory.vec())),
       cf_scope,
       elements: RefCell::new(self.factory.vec()),

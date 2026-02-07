@@ -10,7 +10,7 @@ use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 pub struct UnknownValue<'a>(PhantomData<&'a ()>);
 
 impl<'a> ValueTrait<'a> for UnknownValue<'a> {
-  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+  fn include(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
     escaped::unknown_mutate(analyzer, dep)
@@ -32,7 +32,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::set_property(analyzer, dep, key, value)
   }
 
@@ -42,13 +42,13 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
-      self.consume(analyzer);
+      self.include(analyzer);
     }
     escaped::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::delete_property(analyzer, dep, key)
   }
 
@@ -76,12 +76,12 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }
 

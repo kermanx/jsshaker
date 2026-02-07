@@ -5,7 +5,7 @@ use crate::{
   dep::Dep,
   entity::Entity,
   module::ModuleId,
-  use_consumed_flag,
+  use_included_flag,
   value::{
     ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait,
     cacheable::Cacheable, escaped,
@@ -14,14 +14,14 @@ use crate::{
 
 #[derive(Debug)]
 pub struct ModuleObjectValue {
-  consumed: Cell<bool>,
+  included: Cell<bool>,
   module: ModuleId,
 }
 
 impl<'a> ValueTrait<'a> for ModuleObjectValue {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
-    analyzer.consume_exports(self.module);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_included_flag!(self);
+    analyzer.include_exports(self.module);
   }
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
@@ -109,18 +109,18 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
@@ -128,7 +128,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
@@ -178,6 +178,6 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
 
 impl ModuleObjectValue {
   pub fn new(module: ModuleId) -> Self {
-    Self { consumed: Cell::new(false), module }
+    Self { included: Cell::new(false), module }
   }
 }

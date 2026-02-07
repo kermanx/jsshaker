@@ -55,7 +55,7 @@ impl<'a> Analyzer<'a> {
       let factory = analyzer.factory;
       let variable_scope = analyzer.variable_scope_mut();
       variable_scope.this = Some(info.this);
-      variable_scope.super_class = info.consume.then_some(factory.unknown);
+      variable_scope.super_class = info.include.then_some(factory.unknown);
       variable_scope.arguments =
         Some((info.args, factory.vec(/* later filled by formal parameters */)));
 
@@ -74,17 +74,17 @@ impl<'a> Analyzer<'a> {
       analyzer.exec_formal_parameters(&node.params, info.args, DeclarationKind::FunctionParameter);
       analyzer.exec_function_body(node.body.as_ref().unwrap());
 
-      if info.consume {
-        analyzer.consume_return_values();
+      if info.include {
+        analyzer.include_return_values();
       }
 
       analyzer.pop_call_scope()
     };
 
-    if !info.consume && (node.r#async || node.generator) {
+    if !info.include && (node.r#async || node.generator) {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
-        runner(analyzer).0.consume(analyzer);
+        runner(analyzer).0.include(analyzer);
         analyzer.factory.never
       });
       (self.factory.unknown, FnCacheTrackingData::worst_case())

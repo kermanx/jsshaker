@@ -23,7 +23,7 @@ impl<'a> ObjectValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    if self.is_self_or_proto_consumed() {
+    if self.is_self_or_proto_included() {
       return escaped::set_property(analyzer, dep, key, value);
     }
 
@@ -31,7 +31,7 @@ impl<'a> ObjectValue<'a> {
     let key_literals = key.get_literals(analyzer);
 
     if is_exhaustive && key_literals.is_none() {
-      self.consume(analyzer);
+      self.include(analyzer);
       return escaped::set_property(analyzer, dep, key, value);
     }
 
@@ -58,7 +58,7 @@ impl<'a> ObjectValue<'a> {
 
         if key_str.is_special_key() {
           drop(keyed);
-          self.consume(analyzer);
+          self.include(analyzer);
           return escaped::set_property(analyzer, dep, key, value);
         }
 
@@ -124,7 +124,7 @@ impl<'a> ObjectValue<'a> {
             definite: !non_det && found.must_not_found(),
             enumerable: true, /* TODO: Object.defineProperty */
             possible_values: analyzer.factory.vec1(if is_exhaustive {
-              ObjectPropertyValue::new_consumed(analyzer, analyzer.factory.vec1(value))
+              ObjectPropertyValue::new_included(analyzer, analyzer.factory.vec1(value))
             } else {
               ObjectPropertyValue::Field(value, false)
             }),
@@ -173,7 +173,7 @@ impl<'a> ObjectValue<'a> {
       analyzer.pop_cf_scope();
     }
 
-    analyzer.consume(deferred_deps);
+    analyzer.include(deferred_deps);
   }
 
   fn lookup_unknown_keyed_setters(

@@ -39,17 +39,17 @@ impl<'a> Analyzer<'a> {
         analyzer.exec_function_body(&node.body);
       }
 
-      if info.consume {
-        analyzer.consume_return_values();
+      if info.include {
+        analyzer.include_return_values();
       }
 
       analyzer.pop_call_scope()
     };
 
-    if !info.consume && node.r#async {
+    if !info.include && node.r#async {
       // Too complex to analyze the control flow, thus run exhaustively
       self.exec_async_or_generator_fn(move |analyzer| {
-        runner(analyzer).0.consume(analyzer);
+        runner(analyzer).0.include(analyzer);
         analyzer.factory.never
       });
       (self.factory.unknown, FnCacheTrackingData::worst_case())

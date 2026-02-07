@@ -71,10 +71,10 @@ pub enum UnionHint {
 }
 
 pub trait ValueTrait<'a>: Debug {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>);
-  /// Returns true if the entity is completely consumed
-  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
-    self.consume(analyzer);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>);
+  /// Returns true if the entity is completely included
+  fn include_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
+    self.include(analyzer);
     true
   }
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>);
@@ -226,8 +226,8 @@ pub trait ValueTrait<'a>: Debug {
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
-    (*self).consume(analyzer)
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
+    (*self).include(analyzer)
   }
 }
 

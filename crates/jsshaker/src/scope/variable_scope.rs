@@ -91,9 +91,9 @@ impl<'a> Analyzer<'a> {
       let old_kind = variable.borrow().kind;
 
       if old_kind.is_untracked() {
-        self.consume(decl_node);
+        self.include(decl_node);
         if let Some(val) = fn_value {
-          val.consume(self)
+          val.include(self)
         }
         return;
       }
@@ -188,7 +188,7 @@ impl<'a> Analyzer<'a> {
       if let Some(value) = value {
         Some(self.factory.computed(value, dep))
       } else {
-        self.consume(dep);
+        self.include(dep);
         None
       }
     } else {
@@ -221,7 +221,7 @@ impl<'a> Analyzer<'a> {
 
     if value.is_none() {
       // TDZ
-      self.consume(decl_node);
+      self.include(decl_node);
       self.handle_tdz();
     }
 
@@ -243,12 +243,12 @@ impl<'a> Analyzer<'a> {
     let decl_node = variable.decl_node;
     if kind.is_untracked() {
       drop(variable);
-      self.consume(new_val);
+      self.include(new_val);
     } else if kind.is_const() {
       drop(variable);
       self.throw_builtin_error("Cannot assign to const variable");
-      self.consume(decl_node);
-      new_val.consume(self);
+      self.include(decl_node);
+      new_val.include(self);
     } else {
       let target_cf_scope = self.find_first_different_cf_scope(variable.cf_scope);
       let (exec_dep, cf_non_det) = self.get_exec_dep(target_cf_scope);
@@ -256,9 +256,9 @@ impl<'a> Analyzer<'a> {
 
       if let Some(deps) = &variable.exhausted {
         let dep = (exec_dep, decl_node, new_val);
-        if deps.is_consumed() {
+        if deps.is_included() {
           drop(variable);
-          self.consume(dep);
+          self.include(dep);
         } else if non_det {
           deps.push(self, self.dep(dep));
         } else {
@@ -312,19 +312,19 @@ impl<'a> Analyzer<'a> {
     true
   }
 
-  pub fn consume_on_scope(&mut self, scope: VariableScopeId, symbol: SymbolId) -> bool {
+  pub fn include_on_scope(&mut self, scope: VariableScopeId, symbol: SymbolId) -> bool {
     if let Some(variable_cell) = self.variable(scope, symbol) {
       let mut variable = variable_cell.borrow_mut();
       if let Some(dep) = variable.exhausted {
-        self.consume(dep);
+        self.include(dep);
       } else {
         let old_variable = *variable;
-        variable.exhausted = Some(self.factory.consumed_lazy_dep);
+        variable.exhausted = Some(self.factory.included_lazy_dep);
         variable.value = Some(self.factory.unknown);
         drop(variable);
 
-        self.consume(old_variable.decl_node);
-        self.consume(old_variable.value);
+        self.include(old_variable.decl_node);
+        self.include(old_variable.value);
       }
       true
     } else {
@@ -335,7 +335,7 @@ impl<'a> Analyzer<'a> {
   fn mark_untracked_on_scope(&mut self, symbol: SymbolId) {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = self.allocator.alloc(RefCell::new(Variable {
-      exhausted: Some(self.factory.consumed_lazy_dep),
+      exhausted: Some(self.factory.included_lazy_dep),
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.depth_to_id(cf_scope_depth),
       value: Some(self.factory.unknown),
@@ -345,19 +345,19 @@ impl<'a> Analyzer<'a> {
     assert!(old.is_none());
   }
 
-  pub fn consume_arguments_on_scope(&mut self, scope: VariableScopeId) -> bool {
+  pub fn include_arguments_on_scope(&mut self, scope: VariableScopeId) -> bool {
     if let Some((args_value, args_symbols)) = &mut self.scoping.variable.get_mut(scope).arguments {
       let args_value = *args_value;
       let args_symbols = args_symbols.drain(..).collect::<Vec<_>>();
-      self.consume(args_value);
-      let mut arguments_consumed = true;
+      self.include(args_value);
+      let mut arguments_included = true;
       for symbol in args_symbols {
-        if !self.consume_on_scope(scope, symbol) {
+        if !self.include_on_scope(scope, symbol) {
           // Still inside parameter declaration
-          arguments_consumed = false;
+          arguments_included = false;
         }
       }
-      arguments_consumed
+      arguments_included
     } else {
       true
     }
@@ -426,7 +426,7 @@ impl<'a> Analyzer<'a> {
       }
       scope = self.scoping.variable.get_parent(s);
     }
-    self.consume(new_val);
+    self.include(new_val);
     self.mark_unresolved_reference(symbol);
   }
 

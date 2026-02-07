@@ -4,7 +4,7 @@ use super::super::{
   ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
   TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
-use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_consumed_flag};
+use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag};
 
 trait BuiltinFnImpl<'a>: Debug {
   fn name(&self) -> &'static str;
@@ -18,15 +18,15 @@ trait BuiltinFnImpl<'a>: Debug {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a>;
-  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+  fn include(&'a self, _analyzer: &mut Analyzer<'a>) {}
 }
 
 impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
     if let Some(object) = self.statics() {
-      object.consume(analyzer);
+      object.include(analyzer);
     }
-    self.consume(analyzer);
+    self.include(analyzer);
   }
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
@@ -186,7 +186,7 @@ pub struct ImplementedBuiltinFnValue<'a, F: BuiltinFnImplementation<'a> + 'a> {
   pub name: &'static str,
   pub implementation: F,
   pub statics: Option<&'a ObjectValue<'a>>,
-  pub consumed: Cell<bool>,
+  pub included: Cell<bool>,
 }
 
 impl<'a, F: BuiltinFnImplementation<'a> + 'a> Debug for ImplementedBuiltinFnValue<'a, F> {
@@ -213,12 +213,12 @@ impl<'a, F: BuiltinFnImplementation<'a> + 'a> BuiltinFnImpl<'a>
   ) -> Entity<'a> {
     (self.implementation)(analyzer, dep, this, args)
   }
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_included_flag!(self);
 
     let name = self.name;
 
-    analyzer.exec_escaped_fn(name, move |analyzer| {
+    analyzer.exec_included_fn(name, move |analyzer| {
       self.call_impl(
         analyzer,
         analyzer.factory.no_dep,
@@ -241,7 +241,7 @@ impl<'a> Analyzer<'a> {
         name,
         implementation,
         statics: Some(self.new_function_object(None).0),
-        consumed: Cell::new(false),
+        included: Cell::new(false),
       })
       .into()
   }
@@ -288,7 +288,7 @@ impl<'a> crate::analyzer::Factory<'a> {
         name,
         implementation,
         statics: None,
-        consumed: Cell::new(true),
+        included: Cell::new(true),
       })
       .into()
   }
@@ -304,7 +304,7 @@ impl<'a> crate::analyzer::Factory<'a> {
         name,
         implementation,
         statics: Some(statics),
-        consumed: Cell::new(true),
+        included: Cell::new(true),
       })
       .into()
   }

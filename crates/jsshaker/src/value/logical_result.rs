@@ -12,12 +12,12 @@ pub struct LogicalResultValue<'a> {
 }
 
 impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    self.value.consume(analyzer);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    self.value.include(analyzer);
   }
 
-  fn consume_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
-    self.value.consume_mangable(analyzer)
+  fn include_mangable(&'a self, analyzer: &mut Analyzer<'a>) -> bool {
+    self.value.include_mangable(analyzer)
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {

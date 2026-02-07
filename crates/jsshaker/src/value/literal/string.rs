@@ -27,11 +27,11 @@ impl<'a> ToAtomRef<'a> for String {
 }
 
 impl<'a> ValueTrait<'a> for Atom<'a> {
-  fn consume(&self, _analyzer: &mut Analyzer<'a>) {
+  fn include(&self, _analyzer: &mut Analyzer<'a>) {
     // No effect
   }
 
-  fn consume_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
+  fn include_mangable(&self, _analyzer: &mut Analyzer<'a>) -> bool {
     // No effect
     true
   }

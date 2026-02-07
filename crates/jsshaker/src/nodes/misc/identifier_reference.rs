@@ -21,13 +21,13 @@ impl<'a> Analyzer<'a> {
         value
       } else {
         // TDZ
-        self.consume(dep);
+        self.include(dep);
         self.factory.unknown
       }
     } else if node.name == "arguments" {
       // The `arguments` object
-      let arguments_consumed = self.consume_arguments();
-      self.call_scope_mut().need_consume_arguments = !arguments_consumed;
+      let arguments_included = self.include_arguments();
+      self.call_scope_mut().need_include_arguments = !arguments_included;
       self.factory.unknown
     } else if let Some(global) = self.builtins.globals.get(node.name.as_str()) {
       // Known global
@@ -35,7 +35,7 @@ impl<'a> Analyzer<'a> {
     } else {
       // Unknown global
       if self.config.unknown_global_side_effects {
-        self.consume(dep);
+        self.include(dep);
         self.global_effect();
       }
       self.factory.unknown
@@ -61,8 +61,8 @@ impl<'a> Analyzer<'a> {
         "Should not write to builtin object, it may cause unexpected tree-shaking behavior",
       );
     } else {
-      self.consume(dep);
-      self.consume(value);
+      self.include(dep);
+      self.include(value);
       self.global_effect();
     }
   }

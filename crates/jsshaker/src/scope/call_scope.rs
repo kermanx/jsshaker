@@ -21,7 +21,7 @@ pub struct CallScope<'a> {
   pub returned_values: Vec<Entity<'a>>,
   pub is_async: bool,
   pub is_generator: bool,
-  pub need_consume_arguments: bool,
+  pub need_include_arguments: bool,
 
   #[cfg(feature = "flame")]
   pub scope_guard: flame::SpanGuard,
@@ -48,7 +48,7 @@ impl<'a> CallScope<'a> {
       returned_values: Vec::new(),
       is_async,
       is_generator,
-      need_consume_arguments: false,
+      need_include_arguments: false,
 
       #[cfg(feature = "flame")]
       scope_guard: flame::start_guard(callee.debug_name.to_string()),
@@ -80,16 +80,16 @@ impl<'a> Analyzer<'a> {
     self.exit_to(target_depth);
   }
 
-  pub fn consume_arguments(&mut self) -> bool {
+  pub fn include_arguments(&mut self) -> bool {
     let scope = self.call_scope().body_variable_scope;
-    self.consume_arguments_on_scope(scope)
+    self.include_arguments_on_scope(scope)
   }
 
-  pub fn consume_return_values(&mut self) {
+  pub fn include_return_values(&mut self) {
     let call_scope = self.call_scope_mut();
     let values = mem::take(&mut call_scope.returned_values);
     for value in values {
-      self.consume(value);
+      self.include(value);
     }
   }
 }

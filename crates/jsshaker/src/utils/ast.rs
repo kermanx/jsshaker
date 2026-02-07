@@ -173,7 +173,7 @@ ast_kind_2! {
 }
 
 impl<'a> CustomDepTrait<'a> for AstKind2<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.include_atom(*self);
   }
 }

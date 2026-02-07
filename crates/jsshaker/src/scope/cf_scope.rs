@@ -313,7 +313,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    self.consume(deps);
+    self.include(deps);
     self.call_exhaustive_callbacks();
   }
 }

@@ -47,7 +47,7 @@ impl<'a> MangleConstraint<'a> {
 }
 
 impl<'a> CustomDepTrait<'a> for MangleConstraint<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       MangleConstraint::None => {}
       MangleConstraint::Eq(a, b) => {
@@ -60,7 +60,7 @@ impl<'a> CustomDepTrait<'a> for MangleConstraint<'a> {
         analyzer.mangler.add_to_uniqueness_group(*g, *a);
       }
       MangleConstraint::Multiple(cs) => {
-        analyzer.consume(*cs);
+        analyzer.include(*cs);
       }
     }
   }

@@ -14,7 +14,7 @@ use crate::{
 #[derive(Debug)]
 pub struct ReactContextData<'a> {
   object_id: ObjectId,
-  consumed: bool,
+  included: bool,
   default_value: Entity<'a>,
   stack: Vec<Entity<'a>>,
   dep: Dep<'a>,
@@ -23,7 +23,7 @@ pub struct ReactContextData<'a> {
 impl<'a> ReactContextData<'a> {
   pub fn get_current(&self, factory: &'a Factory<'a>) -> Entity<'a> {
     factory.computed(
-      if self.consumed {
+      if self.included {
         factory.unknown
       } else {
         self.stack.last().copied().unwrap_or(self.default_value)
@@ -49,14 +49,14 @@ pub fn create_react_create_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<
 
     let context_id = analyzer.builtins.react_data.contexts.push(ReactContextData {
       object_id: context.object_id(),
-      consumed: false,
+      included: false,
       default_value,
       stack: Vec::new(),
       dep,
     });
 
     init_object!(context, factory, {
-      "__#internal__consumed_hook" => analyzer.factory.computed_unknown(context_id),
+      "__#internal__included_hook" => analyzer.factory.computed_unknown(context_id),
       "__#internal__context_id" => analyzer.serialize_internal_id(context_id),
       "Provider" => create_react_context_provider_impl(analyzer, context_id),
       "Consumer" => create_react_context_consumer_impl(analyzer, context_id),
@@ -67,16 +67,16 @@ pub fn create_react_create_context_impl<'a>(factory: &'a Factory<'a>) -> Entity<
 }
 
 impl<'a> CustomDepTrait<'a> for ContextId {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     let data = &mut analyzer.builtins.react_data.contexts[*self];
-    data.consumed = true;
+    data.included = true;
     let default_value = data.default_value;
     let dep = data.dep;
     let stack = mem::take(&mut data.stack);
-    analyzer.consume(default_value);
-    analyzer.consume(dep);
+    analyzer.include(default_value);
+    analyzer.include(dep);
     for value in stack {
-      analyzer.consume(value);
+      analyzer.include(value);
     }
   }
 }
@@ -93,23 +93,23 @@ fn create_react_context_provider_impl<'a>(
 
       let data = &mut analyzer.builtins.react_data.contexts[context_id];
       let mut need_pop = false;
-      if data.consumed {
-        analyzer.consume(value);
+      if data.included {
+        analyzer.include(value);
       } else {
         data.stack.push(analyzer.factory.computed_unknown(value));
 
         let object_id = data.object_id;
         let dep = data.dep;
 
-        let should_consume =
+        let should_include =
           analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(object_id));
 
-        if should_consume {
-          analyzer.consume(context_id);
+        if should_include {
+          analyzer.include(context_id);
         } else {
           // Currently we can't remove <Context.Provider> from the tree,
-          // so we need to consume the dep here.
-          analyzer.consume(dep);
+          // so we need to include the dep here.
+          analyzer.include(dep);
 
           let data = &mut analyzer.builtins.react_data.contexts[context_id];
           data.stack.pop();
@@ -120,7 +120,7 @@ fn create_react_context_provider_impl<'a>(
       }
 
       let children = props.get_property(analyzer, dep, builtin_string!("children"));
-      children.consume(analyzer);
+      children.include(analyzer);
 
       if need_pop {
         analyzer.builtins.react_data.contexts[context_id].stack.pop();
@@ -138,8 +138,8 @@ fn create_react_context_consumer_impl<'a>(
   analyzer.dynamic_implemented_builtin(
     "React::Context::Consumer",
     move |analyzer, dep, _this, _args| {
-      analyzer.consume(dep);
-      analyzer.consume(context_id);
+      analyzer.include(dep);
+      analyzer.include(context_id);
 
       analyzer.factory.unknown
     },

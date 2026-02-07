@@ -86,7 +86,7 @@ impl<'a> Analyzer<'a> {
       FoldingData::NonFoldable | FoldingData::Initial => {}
       FoldingData::Foldable { used_values, .. } => {
         for value in used_values {
-          value.consume_mangable(self);
+          value.include_mangable(self);
         }
       }
     }

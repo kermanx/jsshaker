@@ -19,7 +19,7 @@ pub enum PrimitiveValue {
 }
 
 impl<'a> ValueTrait<'a> for PrimitiveValue {
-  fn consume(&'a self, _analyzer: &mut Analyzer<'a>) {}
+  fn include(&'a self, _analyzer: &mut Analyzer<'a>) {}
 
   fn unknown_mutate(&'a self, _analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) {
     // No effect
@@ -109,7 +109,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
     if analyzer.config.preserve_exceptions {
-      self.consume(analyzer);
+      self.include(analyzer);
       escaped::iterate(analyzer, dep)
     } else {
       NeverValue.iterate(analyzer, dep)

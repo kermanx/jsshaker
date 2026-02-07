@@ -26,7 +26,7 @@ use crate::{
   entity::Entity,
   mangling::{BUILTIN_ATOM, MangleAtom, UniquenessGroupId, is_literal_mangable},
   scope::CfScopeId,
-  use_consumed_flag,
+  use_included_flag,
   utils::ast::AstKind2,
   value::{UnionHint, literal::PossibleLiterals},
 };
@@ -40,12 +40,12 @@ pub enum ObjectPrototype<'a> {
 }
 
 impl<'a> ObjectPrototype<'a> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     match self {
       ObjectPrototype::ImplicitOrNull => {}
       ObjectPrototype::Builtin(_prototype) => {}
-      ObjectPrototype::Custom(object) => object.consume_as_prototype(analyzer),
-      ObjectPrototype::Unknown(dep) => analyzer.consume(*dep),
+      ObjectPrototype::Custom(object) => object.include_as_prototype(analyzer),
+      ObjectPrototype::Unknown(dep) => analyzer.include(*dep),
     }
   }
 }
@@ -60,8 +60,8 @@ pub struct ObjectValue<'a> {
   pub consumable: bool,
   pub is_builtin_function: bool,
 
-  pub consumed: Cell<bool>,
-  pub consumed_as_prototype: Cell<bool>,
+  pub included: Cell<bool>,
+  pub included_as_prototype: Cell<bool>,
   /// Where the object is created
   pub cf_scope: CfScopeId,
   pub prototype: Cell<ObjectPrototype<'a>>,
@@ -78,14 +78,14 @@ pub struct ObjectValue<'a> {
 }
 
 impl<'a> ValueTrait<'a> for ObjectValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
     if !self.consumable {
       return;
     }
 
-    use_consumed_flag!(self);
+    use_included_flag!(self);
 
-    self.consume_as_prototype(analyzer);
+    self.include_as_prototype(analyzer);
 
     self.keyed.borrow_mut().clear();
     self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
@@ -96,18 +96,18 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
     self.add_extra_dep(dep);
 
     let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
-    let should_consume =
+    let should_include =
       analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
-    if should_consume {
-      self.consume(analyzer);
+    if should_include {
+      self.include(analyzer);
     }
   }
 
@@ -166,18 +166,18 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_string(analyzer);
     }
     analyzer.factory.computed_unknown_string(self)
@@ -185,7 +185,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
 
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     // FIXME: Special methods
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::coerce_numeric(analyzer);
     }
     analyzer.factory.computed_unknown(self)
@@ -204,7 +204,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    if self.is_self_or_proto_consumed() {
+    if self.is_self_or_proto_included() {
       return None;
     }
 
@@ -280,21 +280,21 @@ impl<'a> ObjectValue<'a> {
     ObjectId::from_ref(self)
   }
 
-  fn consume_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
-    if self.consumed_as_prototype.replace(true) {
+  fn include_as_prototype(&self, analyzer: &mut Analyzer<'a>) {
+    if self.included_as_prototype.replace(true) {
       return;
     }
 
     self.disable_mangling(analyzer);
 
-    self.prototype.get().consume(analyzer);
+    self.prototype.get().include(analyzer);
 
     let mut suspended = analyzer.factory.vec();
     for property in self.keyed.borrow().values() {
-      property.consume(analyzer, &mut suspended);
+      property.include(analyzer, &mut suspended);
     }
-    self.unknown.borrow().consume(analyzer, &mut suspended);
-    analyzer.consume(suspended);
+    self.unknown.borrow().include(analyzer, &mut suspended);
+    analyzer.include(suspended);
   }
 
   pub fn is_mangable(&self) -> bool {
@@ -337,12 +337,12 @@ impl<'a> ObjectValue<'a> {
     self.unknown.borrow_mut().non_existent.push(dep);
   }
 
-  pub fn is_self_or_proto_consumed(&self) -> bool {
-    if self.consumed.get() {
+  pub fn is_self_or_proto_included(&self) -> bool {
+    if self.included.get() {
       return true;
     }
     match self.prototype.get() {
-      ObjectPrototype::Custom(object) => object.is_self_or_proto_consumed(),
+      ObjectPrototype::Custom(object) => object.is_self_or_proto_included(),
       ObjectPrototype::Builtin(_) => false,
       ObjectPrototype::Unknown(_) => true,
       ObjectPrototype::ImplicitOrNull => false,
@@ -359,8 +359,8 @@ impl<'a> Analyzer<'a> {
     self.allocator.alloc(ObjectValue {
       consumable: true,
       is_builtin_function: false,
-      consumed: Cell::new(false),
-      consumed_as_prototype: Cell::new(false),
+      included: Cell::new(false),
+      included_as_prototype: Cell::new(false),
       // deps: Default::default(),
       cf_scope: self.scoping.cf.current_id(),
       keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
@@ -434,8 +434,8 @@ impl<'a> crate::analyzer::Factory<'a> {
     self.alloc(ObjectValue {
       consumable,
       is_builtin_function: false,
-      consumed: Cell::new(false),
-      consumed_as_prototype: Cell::new(false),
+      included: Cell::new(false),
+      included_as_prototype: Cell::new(false),
       cf_scope: self.root_cf_scope.unwrap(),
       keyed: allocator::HashMap::new_in(self.allocator).into(),
       unknown: ObjectProperty::new_in(self.allocator).into(),

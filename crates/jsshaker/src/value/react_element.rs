@@ -8,29 +8,29 @@ use crate::{
   analyzer::Analyzer,
   dep::{Dep, DepVec},
   entity::Entity,
-  use_consumed_flag,
+  use_included_flag,
   value::ObjectPrototype,
 };
 
 #[derive(Debug)]
 pub struct ReactElementValue<'a> {
-  pub consumed: Cell<bool>,
+  pub included: Cell<bool>,
   pub tag: Entity<'a>,
   pub props: Entity<'a>,
   pub deps: RefCell<DepVec<'a>>,
 }
 
 impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
-  fn consume(&'a self, analyzer: &mut Analyzer<'a>) {
-    use_consumed_flag!(self);
+  fn include(&'a self, analyzer: &mut Analyzer<'a>) {
+    use_included_flag!(self);
 
-    analyzer.consume(&self.deps);
+    analyzer.include(&self.deps);
 
     let tag = self.tag;
     let props = self.props;
     // Is this the best way to handle this?
     let group_id = analyzer.new_object_mangling_group();
-    analyzer.exec_escaped_fn("React_blackbox", move |analyzer| {
+    analyzer.exec_included_fn("React_blackbox", move |analyzer| {
       let copied_props = analyzer.new_empty_object(
         ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object),
         Some(group_id),
@@ -41,7 +41,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
-    if self.consumed.get() {
+    if self.included.get() {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
@@ -64,7 +64,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::set_property(analyzer, dep, key, value)
   }
 
@@ -74,13 +74,13 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     if analyzer.config.unknown_property_read_side_effects {
-      self.consume(analyzer);
+      self.include(analyzer);
     }
     escaped::enumerate_properties(self, analyzer, dep)
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::delete_property(analyzer, dep, key)
   }
 
@@ -123,12 +123,12 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   }
 
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::r#await(analyzer, dep)
   }
 
   fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
-    self.consume(analyzer);
+    self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }
 
@@ -184,7 +184,7 @@ impl<'a> crate::analyzer::Factory<'a> {
   pub fn react_element(&self, tag: Entity<'a>, props: Entity<'a>) -> Entity<'a> {
     self
       .alloc(ReactElementValue {
-        consumed: Cell::new(false),
+        included: Cell::new(false),
         tag,
         props,
         deps: RefCell::new(self.vec()),

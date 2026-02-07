@@ -12,9 +12,9 @@ impl<'a, T: CustomDepTrait<'a> + 'a> Debug for OnceDep<'a, T> {
 }
 
 impl<'a, T: CustomDepTrait<'a> + 'a> CustomDepTrait<'a> for OnceDep<'a, T> {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     if let Some(value) = self.0.take() {
-      value.consume(analyzer)
+      value.include(analyzer)
     }
   }
 }

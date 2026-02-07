@@ -26,7 +26,7 @@ impl<'a> ObjectValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.is_self_or_proto_consumed() {
+    if self.is_self_or_proto_included() {
       return escaped::get_property(self, analyzer, dep, key);
     }
 
@@ -131,7 +131,7 @@ impl<'a> ObjectValue<'a> {
     let mut string_keyed = self.keyed.borrow_mut();
     if let Some(property) = string_keyed.get_mut(&key) {
       if let Some(exhaustive_deps) = exhaustive_deps
-        && property.may_be_unconsumed_field()
+        && property.may_be_unincluded_field()
       {
         exhaustive_deps.push(key);
       }

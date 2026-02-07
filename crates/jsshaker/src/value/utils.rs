@@ -1,7 +1,7 @@
 #[macro_export]
-macro_rules! use_consumed_flag {
+macro_rules! use_included_flag {
   ($self: expr) => {
-    if $self.consumed.replace(true) {
+    if $self.included.replace(true) {
       return;
     }
   };

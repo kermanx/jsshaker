@@ -7,7 +7,7 @@ define_box_bump_idx! {
 }
 
 impl<'a> CustomDepTrait<'a> for MangleAtom {
-  fn consume(&self, analyzer: &mut Analyzer<'a>) {
+  fn include(&self, analyzer: &mut Analyzer<'a>) {
     analyzer.mangler.mark_atom_non_mangable(*self);
   }
 }

@@ -45,13 +45,13 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
     dep
   }
 
-  pub fn consume_all(&self, analyzer: &mut Analyzer<'a>) {
+  pub fn include_all(&self, analyzer: &mut Analyzer<'a>) {
     for value in &self.current {
-      value.consume(analyzer);
+      value.include(analyzer);
     }
 
     if let Some(node) = self.node {
-      node.consume(analyzer);
+      node.include(analyzer);
     }
   }
 
