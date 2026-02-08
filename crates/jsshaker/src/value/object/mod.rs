@@ -56,8 +56,8 @@ define_ptr_idx! {
 
 #[derive(Debug)]
 pub struct ObjectValue<'a> {
-  /// A built-in object is usually non-consumable
-  pub consumable: bool,
+  /// A built-in object is usually immutable
+  pub immutable: bool,
   pub is_builtin_function: bool,
 
   pub included: Cell<bool>,
@@ -79,7 +79,7 @@ pub struct ObjectValue<'a> {
 
 impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   fn include(&'a self, analyzer: &mut Analyzer<'a>) {
-    if !self.consumable {
+    if self.immutable {
       return;
     }
 
@@ -96,6 +96,10 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn unknown_mutate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
+    if self.immutable {
+      return;
+    }
+
     if self.included.get() {
       return escaped::unknown_mutate(analyzer, dep);
     }
@@ -371,7 +375,7 @@ impl<'a> Analyzer<'a> {
     mangling_group: Option<UniquenessGroupId>,
   ) -> &'a mut ObjectValue<'a> {
     self.allocator.alloc(ObjectValue {
-      consumable: true,
+      immutable: false,
       is_builtin_function: false,
       included: Cell::new(false),
       included_as_prototype: Cell::new(false),
@@ -440,13 +444,9 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> crate::analyzer::Factory<'a> {
-  pub fn builtin_object(
-    &self,
-    prototype: ObjectPrototype<'a>,
-    consumable: bool,
-  ) -> &'a mut ObjectValue<'a> {
+  pub fn builtin_object(&self, prototype: ObjectPrototype<'a>) -> &'a mut ObjectValue<'a> {
     self.alloc(ObjectValue {
-      consumable,
+      immutable: true,
       is_builtin_function: false,
       included: Cell::new(false),
       included_as_prototype: Cell::new(false),

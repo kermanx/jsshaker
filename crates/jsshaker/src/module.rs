@@ -57,6 +57,7 @@ pub struct ModuleInfo<'a> {
   pub reexport_all: FxHashSet<ModuleId>,
   pub reexport_unknown: bool,
 
+  pub import_meta: Entity<'a>,
   pub module_object: Entity<'a>,
   pub initializing: bool,
   pub initialized: bool,
@@ -129,6 +130,7 @@ impl<'a> Analyzer<'a> {
     let semantic = SemanticBuilder::new().build(program).semantic;
     let module_id: ModuleId = ModuleId::from_usize(self.modules.modules.len());
     let variable_scope = self.push_variable_scope();
+    let import_meta = self.create_import_meta();
     self.modules.modules.push(ModuleInfo {
       id: module_id,
       path: Atom::from_in(path.clone(), self.allocator),
@@ -142,6 +144,7 @@ impl<'a> Analyzer<'a> {
       default_export: None,
       reexport_all: Default::default(),
       reexport_unknown: false,
+      import_meta,
       module_object: self.factory.alloc(ModuleObjectValue::new(module_id)).into(),
       initializing: false,
       initialized: false,

@@ -16,7 +16,7 @@ impl<'a> Builtins<'a> {
     let factory = self.factory;
 
     let statics =
-      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function), false);
+      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function));
     statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_object!(statics, factory, {

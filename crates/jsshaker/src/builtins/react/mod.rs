@@ -38,7 +38,7 @@ pub fn create_react_namespace<'a>(
   factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let namespace = factory.builtin_object(ObjectPrototype::ImplicitOrNull, false);
+  let namespace = factory.builtin_object(ObjectPrototype::ImplicitOrNull);
   namespace.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(namespace, factory, {
@@ -57,7 +57,7 @@ pub fn create_react_jsx_runtime_namespace<'a>(
   factory: &'a Factory<'a>,
   _prototypes: &'a BuiltinPrototypes<'a>,
 ) -> Entity<'a> {
-  let object = factory.builtin_object(ObjectPrototype::ImplicitOrNull, false);
+  let object = factory.builtin_object(ObjectPrototype::ImplicitOrNull);
   object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
   init_namespace!(object, factory, {

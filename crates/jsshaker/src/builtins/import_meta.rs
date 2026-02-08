@@ -1,21 +1,16 @@
-use super::{Builtins, prototypes::BuiltinPrototypes};
 use crate::{
-  analyzer::Factory,
-  builtin_atom,
+  Analyzer, builtin_atom,
   dep::DepCollector,
   entity::Entity,
   value::{ObjectProperty, ObjectPropertyValue, ObjectPrototype, PropertyKeyValue},
 };
 
-impl<'a> Builtins<'a> {
-  pub fn create_import_meta(
-    factory: &'a Factory<'a>,
-    _prototypes: &'a BuiltinPrototypes<'a>,
-  ) -> Entity<'a> {
-    let object = factory.builtin_object(ObjectPrototype::ImplicitOrNull, true);
+impl<'a> Analyzer<'a> {
+  pub fn create_import_meta(&mut self) -> Entity<'a> {
+    let object = self.new_empty_object(ObjectPrototype::ImplicitOrNull, None);
     object.init_rest(
-      factory,
-      ObjectPropertyValue::Property(Some(factory.unknown), Some(factory.unknown)),
+      self.factory,
+      ObjectPropertyValue::Property(Some(self.factory.unknown), Some(self.factory.unknown)),
     );
 
     // import.meta.url
@@ -24,13 +19,13 @@ impl<'a> Builtins<'a> {
       ObjectProperty {
         definite: true,
         enumerable: true,
-        possible_values: factory.vec1(ObjectPropertyValue::Property(
-          Some(factory.implemented_builtin_fn("import.meta.url", |analyzer, _, _, _| {
+        possible_values: self.factory.vec1(ObjectPropertyValue::Property(
+          Some(self.factory.implemented_builtin_fn("import.meta.url", |analyzer, _, _, _| {
             analyzer.factory.unknown_string
           })),
           None,
         )),
-        non_existent: DepCollector::new(factory.vec()),
+        non_existent: DepCollector::new(self.factory.vec()),
         key: None,
         mangling: None,
       },

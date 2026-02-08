@@ -19,7 +19,6 @@ pub struct Builtins<'a> {
 
   pub prototypes: &'a BuiltinPrototypes<'a>,
   pub globals: FxHashMap<&'static str, Entity<'a>>,
-  pub import_meta: Entity<'a>,
   pub known_modules: FxHashMap<&'static str, KnownModule<'a>>,
 
   pub react_data: AnalyzerDataForReact<'a>,
@@ -33,7 +32,6 @@ impl<'a> Builtins<'a> {
       factory,
 
       prototypes,
-      import_meta: Self::create_import_meta(factory, prototypes),
       globals: Default::default(),       // Initialize later
       known_modules: Default::default(), // Initialize later
 

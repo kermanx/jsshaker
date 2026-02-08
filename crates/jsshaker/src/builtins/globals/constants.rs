@@ -9,7 +9,7 @@ impl Builtins<'_> {
     let factory = self.factory;
 
     let make_unknown_object = || {
-      let unknown_object = factory.builtin_object(ObjectPrototype::Unknown(factory.no_dep), false);
+      let unknown_object = factory.builtin_object(ObjectPrototype::Unknown(factory.no_dep));
       unknown_object
         .unknown
         .borrow_mut()

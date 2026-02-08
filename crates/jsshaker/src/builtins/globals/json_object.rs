@@ -9,7 +9,7 @@ impl<'a> Builtins<'a> {
   pub fn init_json_object(&mut self) {
     let factory = self.factory;
 
-    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.object), false);
+    let object = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.object));
     object.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_namespace!(object, factory, {
