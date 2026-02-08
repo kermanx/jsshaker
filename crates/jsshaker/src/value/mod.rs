@@ -131,7 +131,11 @@ pub trait ValueTrait<'a>: Debug {
     None
   }
   /// Returns vec![(definite, key)]
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    _analyzer: &Analyzer<'a>,
+    _check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     None
   }
   fn get_constructor_prototype(

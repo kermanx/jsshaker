@@ -115,8 +115,12 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.coerce_jsx_child(analyzer)
   }
 
-  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    self.value.get_own_keys(analyzer)
+  fn get_keys(
+    &'a self,
+    analyzer: &Analyzer<'a>,
+    check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
+    self.value.get_keys(analyzer, check_proto)
   }
 
   fn get_constructor_prototype(

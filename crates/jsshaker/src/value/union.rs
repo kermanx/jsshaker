@@ -286,10 +286,14 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     Some(result)
   }
 
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    analyzer: &Analyzer<'a>,
+    check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     let mut result = Vec::new();
     for entity in self.values.iter() {
-      let keys = entity.get_own_keys(_analyzer)?;
+      let keys = entity.get_keys(analyzer, check_proto)?;
       result.extend(keys.into_iter().map(|(_, key)| (false, key)));
     }
     Some(result)

@@ -239,7 +239,11 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     Some(*self)
   }
 
-  fn get_own_keys(&self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &self,
+    _analyzer: &Analyzer<'a>,
+    _check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     match self {
       LiteralValue::String(_, _) => None,
       _ => Some(vec![]),

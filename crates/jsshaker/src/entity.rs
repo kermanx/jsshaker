@@ -164,8 +164,12 @@ impl<'a> Entity<'a> {
     self.value.get_literal(analyzer)
   }
   /// Returns vec![(definite, key)]
-  pub fn get_own_keys(&self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    self.value.get_own_keys(analyzer)
+  pub fn get_keys(
+    &self,
+    analyzer: &Analyzer<'a>,
+    check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
+    self.value.get_keys(analyzer, check_proto)
   }
   pub fn get_constructor_prototype(
     &self,

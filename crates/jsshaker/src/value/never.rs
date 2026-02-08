@@ -86,7 +86,11 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn get_literal(&'a self, _analyzer: &Analyzer<'a>) -> Option<super::LiteralValue<'a>> {
     None
   }
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    _analyzer: &Analyzer<'a>,
+    _check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     Some(vec![])
   }
 

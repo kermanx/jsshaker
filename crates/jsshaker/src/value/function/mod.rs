@@ -169,8 +169,12 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     analyzer.factory.unknown
   }
 
-  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
-    self.statics.get_own_keys(analyzer)
+  fn get_keys(
+    &'a self,
+    analyzer: &Analyzer<'a>,
+    check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
+    self.statics.get_keys(analyzer, check_proto)
   }
 
   fn get_constructor_prototype(

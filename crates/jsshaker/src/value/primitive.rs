@@ -142,7 +142,11 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
       builtin_string!("")
     }
   }
-  fn get_own_keys(&'a self, _analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    _analyzer: &Analyzer<'a>,
+    _check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     if self.maybe_string() { None } else { Some(vec![]) }
   }
 

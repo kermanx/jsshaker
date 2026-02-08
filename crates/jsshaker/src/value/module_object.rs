@@ -146,7 +146,11 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     self.into()
   }
 
-  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    analyzer: &Analyzer<'a>,
+    _check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     if analyzer.does_module_reexport_unknown(self.module, &mut Default::default()) {
       return None;
     }

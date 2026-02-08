@@ -103,7 +103,7 @@ impl<'a> Builtins<'a> {
     self.factory.implemented_builtin_fn("Object.keys", |analyzer, dep, _, args| {
       let object = args.get(analyzer, 0);
       let array = analyzer.new_empty_array();
-      if let Some(keys) = object.get_own_keys(analyzer) {
+      if let Some(keys) = object.get_keys(analyzer, false) {
         for (_, key) in keys {
           if key.test_typeof().contains(TypeofResult::String) {
             array.init_rest(key);

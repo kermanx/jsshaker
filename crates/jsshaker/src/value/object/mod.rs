@@ -203,7 +203,11 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.into()
   }
 
-  fn get_own_keys(&'a self, analyzer: &Analyzer<'a>) -> Option<Vec<(bool, Entity<'a>)>> {
+  fn get_keys(
+    &'a self,
+    analyzer: &Analyzer<'a>,
+    check_proto: bool,
+  ) -> Option<Vec<(bool, Entity<'a>)>> {
     if self.is_self_or_proto_included() {
       return None;
     }
@@ -214,6 +218,16 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     }
 
     let mut keys = Vec::new();
+
+    if check_proto {
+      match self.prototype.get() {
+        ObjectPrototype::Custom(proto) => keys = proto.get_keys(analyzer, true)?,
+        ObjectPrototype::Builtin(_) => {}
+        ObjectPrototype::Unknown(_) => return None,
+        ObjectPrototype::ImplicitOrNull => {}
+      }
+    }
+
     for (key, property) in self.keyed.borrow_mut().iter_mut() {
       let key_entity = property.key.unwrap_or_else(|| {
         if let PropertyKeyValue::String(key) = key {

@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_for_in_statement(&mut self, node: &'a ForInStatement<'a>) {
     let right = self.exec_expression(&node.right);
 
-    if let Some(keys) = right.get_own_keys(self) {
+    if let Some(keys) = right.get_keys(self, true) {
       let dep = self.factory.dep((right.get_shallow_dep(self), AstKind2::ForInStatement(node)));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
       for (definite, key) in keys {
