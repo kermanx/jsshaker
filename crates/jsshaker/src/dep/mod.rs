@@ -23,6 +23,7 @@ pub trait CustomDepTrait<'a>: Debug {
 pub trait DepTrait<'a>: Debug {
   fn include(&self, analyzer: &mut Analyzer<'a>);
   fn uniform(self, allocator: &'a Allocator) -> Dep<'a>;
+  fn as_dep(&self) -> Option<Dep<'a>>;
 }
 
 impl<'a, T: CustomDepTrait<'a> + 'a> DepTrait<'a> for T {
@@ -31,6 +32,9 @@ impl<'a, T: CustomDepTrait<'a> + 'a> DepTrait<'a> for T {
   }
   fn uniform(self, allocator: &'a Allocator) -> Dep<'a> {
     Dep(allocator.alloc(self))
+  }
+  fn as_dep(&self) -> Option<Dep<'a>> {
+    None
   }
 }
 
@@ -43,6 +47,9 @@ impl<'a> DepTrait<'a> for Dep<'a> {
   }
   fn uniform(self, _: &'a Allocator) -> Dep<'a> {
     self
+  }
+  fn as_dep(&self) -> Option<Dep<'a>> {
+    Some(*self)
   }
 }
 

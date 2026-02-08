@@ -21,7 +21,13 @@ impl<'a, T: DepTrait<'a> + 'a> DepCollector<'a, T> {
   }
 
   pub fn push(&mut self, value: T) {
-    self.current.push(value);
+    if self.node.is_none()
+      && let Some(dep) = value.as_dep()
+    {
+      self.node = Some(dep);
+    } else {
+      self.current.push(value);
+    }
   }
 
   pub fn collect(&mut self, factory: &Factory<'a>) -> Option<Dep<'a>> {
