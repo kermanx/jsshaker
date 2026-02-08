@@ -87,14 +87,16 @@ impl<'a> Analyzer<'a> {
       cacheable = None;
     }
 
-    let mut exhaustive = None;
+    let mut exhaustive_drain = false;
+    let mut exhaustive_register = false;
     let mut must_mark = true;
     let mut has_fn_scope = false;
     for depth in scope_depth..self.scoping.cf.stack_len() {
       let scope = self.scoping.cf.data_at_mut(depth);
       has_fn_scope |= scope.kind.is_function();
       if let Some(data) = scope.exhaustive_data_mut() {
-        exhaustive = Some(data.is_callback);
+        exhaustive_drain |= data.drain;
+        exhaustive_register |= data.register;
         if (must_mark || data.register_deps.is_some())
           && data.clean
           && let Some(temp_deps) = &data.temp_deps
@@ -118,7 +120,7 @@ impl<'a> Analyzer<'a> {
         }
       }
     }
-    exhaustive
+    exhaustive_drain.then_some(exhaustive_register)
   }
 
   pub fn get_rw_target_current_value(&self, target: ReadWriteTarget<'a>) -> EntityOrTDZ<'a> {

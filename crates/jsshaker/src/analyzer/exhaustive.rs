@@ -15,7 +15,8 @@ use crate::{
 
 #[derive(Debug)]
 pub struct ExhaustiveData<'a> {
-  pub is_callback: bool,
+  pub drain: bool,
+  pub register: bool,
   pub clean: bool,
   pub temp_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
   pub register_deps: Option<allocator::HashSet<'a, ReadWriteTarget<'a>>>,
@@ -83,7 +84,8 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     self.push_cf_scope(
       CfScopeKind::Exhaustive(Box::new(ExhaustiveData {
-        is_callback: register,
+        drain,
+        register,
         clean: true,
         temp_deps: drain.then(|| allocator::HashSet::new_in(self.allocator)),
         register_deps: register.then(|| allocator::HashSet::new_in(self.allocator)),
