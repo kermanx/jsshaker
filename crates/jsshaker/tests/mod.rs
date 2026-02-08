@@ -18,6 +18,7 @@ fn do_tree_shake(input: String) -> String {
         if react_jsx {
           config.jsx = jsshaker::TreeShakeJsxPreset::React;
         }
+        config.unknown_global_side_effects = true;
         config
       },
       minify_options: do_minify.then(|| MinifierOptions { mangle: None, ..Default::default() }),

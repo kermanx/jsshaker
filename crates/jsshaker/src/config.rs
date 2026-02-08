@@ -76,6 +76,7 @@ impl TreeShakeConfig {
 
   pub fn recommended() -> Self {
     Self {
+      unknown_global_side_effects: false,
       preserve_function_name: false,
       preserve_function_length: false,
       preserve_exceptions: false,
@@ -88,7 +89,6 @@ impl TreeShakeConfig {
 
   pub fn smallest() -> Self {
     Self {
-      unknown_global_side_effects: false,
       iterate_side_effects: false,
       unknown_property_read_side_effects: false,
       unmatched_prototype_property_as_undefined: true,
