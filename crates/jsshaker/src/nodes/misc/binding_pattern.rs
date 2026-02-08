@@ -66,19 +66,19 @@ impl<'a> Analyzer<'a> {
           }
         }
 
-        let mut enumerated = vec![];
+        let mut enumerated = node.rest.is_some().then(Vec::new);
         for property in &node.properties {
           let dep = AstKind2::BindingProperty(property);
-
           let key = self.exec_property_key(&property.key, Some(init));
-
-          enumerated.push(key);
+          if let Some(enumerated) = &mut enumerated {
+            enumerated.push(self.factory.computed(key, dep));
+          }
           let init = init.get_property(self, dep, key);
           self.init_binding_pattern(&property.value, Some(init));
         }
         if let Some(rest) = &node.rest {
           let dep = AstKind2::BindingRestElement(rest.as_ref());
-          let init = self.exec_object_rest(dep, init, enumerated);
+          let init = self.exec_object_rest(dep, init, enumerated.unwrap());
           self.init_binding_rest_element(rest, init);
         }
         self.pop_cf_scope();

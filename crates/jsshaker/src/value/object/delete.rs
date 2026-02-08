@@ -1,10 +1,10 @@
 use super::ObjectValue;
 use crate::{
   analyzer::Analyzer,
-  dep::{CustomDepTrait, Dep},
+  dep::{CustomDepTrait, Dep, DepCollector},
   entity::Entity,
   mangling::{MangleConstraint, ManglingDep},
-  value::escaped,
+  value::{ObjectProperty, escaped},
 };
 
 impl<'a> ObjectValue<'a> {
@@ -33,10 +33,10 @@ impl<'a> ObjectValue<'a> {
       let mangable = self.check_mangable(analyzer, &key_literals);
       let deps = if mangable { deps } else { analyzer.dep((deps, key)) };
 
-      let mut string_keyed = self.keyed.borrow_mut();
+      let mut keyed = self.keyed.borrow_mut();
       for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
-        if let Some(property) = string_keyed.get_mut(&key_str) {
+        if let Some(property) = keyed.get_mut(&key_str) {
           property.delete(
             non_det,
             if mangable {
@@ -55,8 +55,21 @@ impl<'a> ObjectValue<'a> {
           );
         } else if let Some(rest) = &self.rest {
           rest.borrow_mut().delete(true, analyzer.dep((deps, key)));
-        } else if mangable {
-          self.add_to_mangling_group(analyzer, key_atom.unwrap());
+        } else {
+          if mangable {
+            self.add_to_mangling_group(analyzer, key_atom.unwrap());
+          }
+          keyed.insert(
+            key_str,
+            ObjectProperty {
+              definite: false,
+              enumerable: true,
+              possible_values: analyzer.factory.vec(),
+              non_existent: DepCollector::new(analyzer.factory.vec1(deps)),
+              key: Some(key),
+              mangling: mangable.then(|| key_atom.unwrap()),
+            },
+          );
         }
       }
     } else {

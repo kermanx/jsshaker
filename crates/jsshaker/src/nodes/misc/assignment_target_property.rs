@@ -14,19 +14,16 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a AssignmentTargetProperty<'a>,
     value: Entity<'a>,
+    has_rest: bool,
   ) -> Entity<'a> {
     let dep = AstKind2::AssignmentTargetProperty(node);
-    match node {
+    let key = match node {
       AssignmentTargetProperty::AssignmentTargetPropertyIdentifier(node) => {
         let key = self.exec_identifier_reference_as_key(&node.binding);
-
         let value = value.get_property(self, dep, key);
-
         let value =
           if let Some(init) = &node.init { self.exec_with_default(init, value) } else { value };
-
         self.exec_identifier_reference_write(&node.binding, value);
-
         key
       }
       AssignmentTargetProperty::AssignmentTargetPropertyProperty(node) => {
@@ -35,6 +32,11 @@ impl<'a> Analyzer<'a> {
         self.exec_assignment_target_maybe_default(&node.binding, value);
         key
       }
+    };
+    if has_rest {
+      self.factory.computed(key, AstKind2::AssignmentTargetProperty(node))
+    } else {
+      key
     }
   }
 }

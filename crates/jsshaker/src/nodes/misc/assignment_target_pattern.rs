@@ -42,7 +42,11 @@ impl<'a> Analyzer<'a> {
 
         let mut enumerated = vec![];
         for property in &node.properties {
-          enumerated.push(self.exec_assignment_target_property(property, value));
+          enumerated.push(self.exec_assignment_target_property(
+            property,
+            value,
+            node.rest.is_some(),
+          ));
         }
         if let Some(rest) = &node.rest {
           let dep = AstKind2::ObjectAssignmentTarget(node);
