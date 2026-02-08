@@ -74,26 +74,27 @@ impl<'a> Analyzer<'a> {
     tracker_dep
   }
 
+  /// Returns `Some` for exhaustive write tracking, `Some(true)` if exhausted_forever
   pub fn track_write(
     &mut self,
     scope_depth: usize,
     target: ReadWriteTarget<'a>,
     mut cacheable: Option<Entity<'a>>,
-  ) -> bool {
+  ) -> Option<bool> {
     if let Some(c) = cacheable
       && !c.as_cacheable(self).is_some_and(|c| c.is_copyable())
     {
       cacheable = None;
     }
 
-    let mut exhaustive = false;
+    let mut exhaustive = None;
     let mut must_mark = true;
     let mut has_fn_scope = false;
     for depth in scope_depth..self.scoping.cf.stack_len() {
       let scope = self.scoping.cf.data_at_mut(depth);
       has_fn_scope |= scope.kind.is_function();
       if let Some(data) = scope.exhaustive_data_mut() {
-        exhaustive = true;
+        exhaustive = Some(data.is_callback);
         if (must_mark || data.register_deps.is_some())
           && data.clean
           && let Some(temp_deps) = &data.temp_deps

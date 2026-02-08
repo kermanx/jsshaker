@@ -32,6 +32,7 @@ pub struct Variable<'a> {
   pub kind: DeclarationKind,
   pub cf_scope: CfScopeId,
   pub exhausted: Option<LazyDep<'a, Dep<'a>>>,
+  pub exhausted_forever: bool,
   pub value: EntityOrTDZ<'a>,
   pub decl_node: AstKind2<'a>,
 }
@@ -132,6 +133,7 @@ impl<'a> Analyzer<'a> {
         },
         exhausted: exhausted
           .then(|| self.factory.lazy_dep(self.factory.vec1(self.dep((fn_value, decl_node))))),
+        exhausted_forever: false,
         value: if exhausted { Some(self.factory.unknown) } else { fn_value },
         decl_node,
       }));
@@ -259,7 +261,7 @@ impl<'a> Analyzer<'a> {
         if deps.is_included() {
           drop(variable);
           self.include(dep);
-        } else if non_det {
+        } else if non_det || variable.exhausted_forever {
           deps.push(self, self.dep(dep));
         } else {
           drop(variable);
@@ -278,12 +280,12 @@ impl<'a> Analyzer<'a> {
         } else {
           // TDZ write
           self.handle_tdz();
-          true
+          Some(false)
         };
         drop(variable);
 
         let mut variable = variable_cell.borrow_mut();
-        if exhaustive {
+        if let Some(exhaustive_forever) = exhaustive {
           let module_id = self.current_module;
           if let Some(exhausted_variables) = &mut self.exhausted_variables {
             exhausted_variables.insert((module_id, symbol));
@@ -293,6 +295,7 @@ impl<'a> Analyzer<'a> {
               .factory
               .lazy_dep(self.factory.vec1(self.dep((exec_dep, decl_node, new_val, old_val)))),
           );
+          variable.exhausted_forever = exhaustive_forever;
           variable.value = Some(self.factory.unknown);
         } else {
           variable.value = Some(self.factory.computed(
@@ -336,6 +339,7 @@ impl<'a> Analyzer<'a> {
     let cf_scope_depth = self.call_scope().cf_scope_depth;
     let variable = self.allocator.alloc(RefCell::new(Variable {
       exhausted: Some(self.factory.included_lazy_dep),
+      exhausted_forever: true,
       kind: DeclarationKind::UntrackedVar,
       cf_scope: self.scoping.cf.depth_to_id(cf_scope_depth),
       value: Some(self.factory.unknown),

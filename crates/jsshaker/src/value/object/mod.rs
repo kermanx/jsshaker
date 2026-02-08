@@ -110,7 +110,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     let should_include =
       analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
-    if should_include {
+    if should_include.is_some() {
       self.include(analyzer);
     }
   }
