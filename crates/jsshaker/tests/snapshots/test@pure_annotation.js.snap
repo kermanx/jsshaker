@@ -28,6 +28,7 @@ nested2(other1());
 export const e = nested2(other2());
 function mutate(obj) {
 	obj.a = b;
+	delete obj.g;
 	return obj.f();
 }
 mutate({ f: () => effect() });
