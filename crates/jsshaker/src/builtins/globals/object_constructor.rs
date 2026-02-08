@@ -15,8 +15,7 @@ impl<'a> Builtins<'a> {
   pub fn init_object_constructor(&mut self) {
     let factory = self.factory;
 
-    let statics =
-      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function));
+    let statics = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function));
     statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_object!(statics, factory, {
@@ -164,7 +163,7 @@ impl<'a> Builtins<'a> {
   fn create_object_freeze_impl(&self) -> Entity<'a> {
     self.factory.implemented_builtin_fn("Object.freeze", |analyzer, dep, _, args| {
       let object = args.get(analyzer, 0);
-      if analyzer.config.preserve_writablity {
+      if analyzer.config.preserve_property_attributes {
         object.unknown_mutate(analyzer, dep);
         object
       } else {
@@ -181,7 +180,8 @@ impl<'a> Builtins<'a> {
       let descriptor = args.get(analyzer, 2);
 
       'trackable: {
-        if analyzer.config.preserve_writablity {
+        if analyzer.config.preserve_property_attributes {
+          object.delete_property(analyzer, dep, analyzer.factory.unknown);
           break 'trackable;
         }
         if key.get_literal(analyzer).is_none() {
