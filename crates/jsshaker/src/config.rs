@@ -32,6 +32,7 @@ pub struct TreeShakeConfig {
   pub unmatched_prototype_property_as_undefined: bool,
   pub preserve_writablity: bool,
   pub preserve_exceptions: bool,
+  pub impure_json_stringify: bool,
 
   pub min_simple_number_value: i64,
   pub max_simple_number_value: i64,
@@ -65,6 +66,7 @@ impl TreeShakeConfig {
       unmatched_prototype_property_as_undefined: false,
       preserve_writablity: true,
       preserve_exceptions: true,
+      impure_json_stringify: true,
 
       min_simple_number_value: -1_000_000,
       max_simple_number_value: 1_000_000,
@@ -78,6 +80,7 @@ impl TreeShakeConfig {
       preserve_function_length: false,
       preserve_writablity: false,
       preserve_exceptions: false,
+      impure_json_stringify: false,
 
       ..Default::default()
     }

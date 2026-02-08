@@ -35,18 +35,17 @@ impl<'a> Builtins<'a> {
   }
 
   fn create_json_stringify_impl(&self) -> Entity<'a> {
-    self.factory.implemented_builtin_fn("JSON.stringify", |analyzer, dep, _, args| {
+    let ret_type = self.factory.union((self.factory.unknown_string, self.factory.undefined));
+    self.factory.implemented_builtin_fn("JSON.stringify", move |analyzer, dep, _, args| {
       let value = args.get(analyzer, 0);
       let replacer = args.get(analyzer, 1);
       let space = args.get(analyzer, 2);
       let deps = (dep, value, replacer, space);
-      if replacer.test_is_undefined() != Some(true) {
+      if analyzer.config.impure_json_stringify || replacer.test_is_undefined() != Some(true) {
         analyzer.include(deps);
-        analyzer.factory.unknown
+        ret_type
       } else {
-        analyzer
-          .factory
-          .computed_union((analyzer.factory.unknown_string, analyzer.factory.undefined), deps)
+        analyzer.factory.computed(ret_type, deps)
       }
     })
   }
