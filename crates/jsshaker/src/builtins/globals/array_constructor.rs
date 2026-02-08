@@ -9,8 +9,7 @@ impl<'a> Builtins<'a> {
   pub fn init_array_constructor(&mut self) {
     let factory = self.factory;
 
-    let statics =
-      factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function));
+    let statics = factory.builtin_object(ObjectPrototype::Builtin(&self.prototypes.function));
     statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_object!(statics, factory, {
