@@ -8,7 +8,7 @@ impl Builtins<'_> {
   pub fn init_global_constants(&mut self) {
     let factory = self.factory;
 
-    let make_unknown_object = || {
+    let make_builtin_object = || {
       let unknown_object = factory.builtin_object(ObjectPrototype::Unknown(factory.no_dep));
       unknown_object
         .unknown
@@ -17,9 +17,9 @@ impl Builtins<'_> {
         .push(ObjectPropertyValue::Field(factory.unknown, true));
       unknown_object
     };
-    let unknown_object = make_unknown_object().into();
-    let unknown_function = {
-      let object = make_unknown_object();
+    let builtin_object = make_builtin_object().into();
+    let builtin_function = {
+      let object = make_builtin_object();
       object.is_builtin_function = true;
       object.into()
     };
@@ -29,10 +29,10 @@ impl Builtins<'_> {
       "undefined" => factory.undefined,
       "Infinity" => factory.number(f64::INFINITY),
       "NaN" => factory.nan,
-      "globalThis" => unknown_object,
+      "globalThis" => factory.unknown_truthy,
 
       // Function properties
-      "eval" => unknown_function,
+      "eval" => builtin_function,
       "isFinite" => factory.pure_fn_returns_boolean,
       "isNaN" => factory.pure_fn_returns_boolean,
       "parseFloat" => factory.pure_fn_returns_number,
@@ -41,87 +41,87 @@ impl Builtins<'_> {
       "decodeURIComponent" => factory.pure_fn_returns_string,
       "encodeURI" => factory.pure_fn_returns_string,
       "encodeURIComponent" => factory.pure_fn_returns_string,
-      "setTimeout" => unknown_function,
-      "clearTimeout" => unknown_function,
-      "setInterval" => unknown_function,
-      "clearInterval" => unknown_function,
-      "setImmediate" => unknown_function,
-      "clearImmediate" => unknown_function,
-      "queueMicrotask" => unknown_function,
-      "requestAnimationFrame" => unknown_function,
-      "structuredClone" => unknown_function,
+      "setTimeout" => builtin_function,
+      "clearTimeout" => builtin_function,
+      "setInterval" => builtin_function,
+      "clearInterval" => builtin_function,
+      "setImmediate" => builtin_function,
+      "clearImmediate" => builtin_function,
+      "queueMicrotask" => builtin_function,
+      "requestAnimationFrame" => builtin_function,
+      "structuredClone" => builtin_function,
       // Deprecated but still part of the standard
       "include" => factory.pure_fn_returns_string,
       "uninclude" => factory.pure_fn_returns_string,
 
       // Fundamental objects
-      "Function" => unknown_function,
-      "Boolean" => unknown_function,
+      "Function" => builtin_function,
+      "Boolean" => builtin_function,
 
       // Error objects
-      "Error" => unknown_function,
-      "AggregateError" => unknown_function,
-      "EvalError" => unknown_function,
-      "RangeError" => unknown_function,
-      "ReferenceError" => unknown_function,
-      "SyntaxError" => unknown_function,
-      "TypeError" => unknown_function,
-      "URIError" => unknown_function,
+      "Error" => builtin_function,
+      "AggregateError" => builtin_function,
+      "EvalError" => builtin_function,
+      "RangeError" => builtin_function,
+      "ReferenceError" => builtin_function,
+      "SyntaxError" => builtin_function,
+      "TypeError" => builtin_function,
+      "URIError" => builtin_function,
 
       // Numbers and dates
-      "Number" => unknown_function,
-      "BigInt" => unknown_function,
+      "Number" => builtin_function,
+      "BigInt" => builtin_function,
 
       // Text processing
-      "String" => unknown_function,
-      "RegExp" => unknown_function,
+      "String" => builtin_function,
+      "RegExp" => builtin_function,
 
       // Indexed collections (Array is in array_constructor.rs)
-      "Int8Array" => unknown_function,
-      "Uint8Array" => unknown_function,
-      "Uint8ClampedArray" => unknown_function,
-      "Int16Array" => unknown_function,
-      "Uint16Array" => unknown_function,
-      "Int32Array" => unknown_function,
-      "Uint32Array" => unknown_function,
-      "BigInt64Array" => unknown_function,
-      "BigUint64Array" => unknown_function,
-      "Float32Array" => unknown_function,
-      "Float64Array" => unknown_function,
+      "Int8Array" => builtin_function,
+      "Uint8Array" => builtin_function,
+      "Uint8ClampedArray" => builtin_function,
+      "Int16Array" => builtin_function,
+      "Uint16Array" => builtin_function,
+      "Int32Array" => builtin_function,
+      "Uint32Array" => builtin_function,
+      "BigInt64Array" => builtin_function,
+      "BigUint64Array" => builtin_function,
+      "Float32Array" => builtin_function,
+      "Float64Array" => builtin_function,
 
       // Keyed collections
-      "Map" => unknown_function,
-      "Set" => unknown_function,
-      "WeakMap" => unknown_function,
-      "WeakSet" => unknown_function,
+      "Map" => builtin_function,
+      "Set" => builtin_function,
+      "WeakMap" => builtin_function,
+      "WeakSet" => builtin_function,
 
       // Structured data
-      "ArrayBuffer" => unknown_function,
-      "SharedArrayBuffer" => unknown_function,
-      "DataView" => unknown_function,
-      "Atomics" => unknown_object,
+      "ArrayBuffer" => builtin_function,
+      "SharedArrayBuffer" => builtin_function,
+      "DataView" => builtin_function,
+      "Atomics" => builtin_object,
       // JSON is in json_object.rs
 
       // Managing memory
-      "WeakRef" => unknown_function,
-      "FinalizationRegistry" => unknown_function,
+      "WeakRef" => builtin_function,
+      "FinalizationRegistry" => builtin_function,
 
       // Control abstraction objects
-      "Iterator" => unknown_function,
-      "AsyncIterator" => unknown_function,
-      "Promise" => unknown_function,
-      "GeneratorFunction" => unknown_function,
-      "AsyncGeneratorFunction" => unknown_function,
-      "Generator" => unknown_function,
-      "AsyncGenerator" => unknown_function,
-      "AsyncFunction" => unknown_function,
+      "Iterator" => builtin_function,
+      "AsyncIterator" => builtin_function,
+      "Promise" => builtin_function,
+      "GeneratorFunction" => builtin_function,
+      "AsyncGeneratorFunction" => builtin_function,
+      "Generator" => builtin_function,
+      "AsyncGenerator" => builtin_function,
+      "AsyncFunction" => builtin_function,
 
       // Reflection
-      "Reflect" => unknown_object,
-      "Proxy" => unknown_function,
+      "Reflect" => builtin_object,
+      "Proxy" => builtin_function,
 
       // Internationalization
-      "Intl" => unknown_object,
+      "Intl" => builtin_object,
     });
 
     // Debug helpers (non-standard)

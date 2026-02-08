@@ -144,7 +144,13 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   }
 
   fn test_nullish(&self) -> Option<bool> {
-    if self.is_coalesce { Some(self.result) } else { self.value.test_nullish() }
+    if self.is_coalesce {
+      Some(self.result)
+    } else if self.result {
+      Some(false) // Truthy value can't be nullish
+    } else {
+      self.value.test_nullish()
+    }
   }
 
   fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
