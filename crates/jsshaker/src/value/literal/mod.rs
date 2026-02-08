@@ -367,25 +367,25 @@ impl<'a> LiteralValue<'a> {
     }
   }
 
-  // `None` for unresolvable, `Some(None)` for NaN, `Some(Some(value))` for number
-  pub fn to_number(self) -> Option<Option<F64WithEq>> {
+  // `None` for unresolvable
+  pub fn to_number(self) -> Option<F64WithEq> {
     match self {
-      LiteralValue::Number(value) => Some(Some(value)),
+      LiteralValue::Number(value) => Some(value),
       LiteralValue::BigInt(_value) => {
         // TODO: warn: TypeError: Cannot convert a BigInt value to a number
         None
       }
-      LiteralValue::Boolean(value) => Some(Some(if value { 1.0 } else { 0.0 }.into())),
+      LiteralValue::Boolean(value) => Some(if value { 1.0 } else { 0.0 }.into()),
       LiteralValue::String(value, _) => {
         let val = value.trim().string_to_number();
-        Some(if val.is_nan() { None } else { Some(val.into()) })
+        Some(val.into())
       }
-      LiteralValue::Null => Some(Some(0.0.into())),
+      LiteralValue::Null => Some(0.0.into()),
       LiteralValue::Symbol(_, _) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         None
       }
-      LiteralValue::Undefined => Some(None),
+      LiteralValue::Undefined => Some(f64::NAN.into()),
     }
   }
 

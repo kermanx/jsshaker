@@ -1023,3 +1023,7 @@ built-ins/Array/prototype/map/create-proto-from-ctor-realm-array.js	|	修改了�
 built-ins/Array/prototype/splice/create-proto-from-ctor-realm-array.js	|	修改了内置对象
 built-ins/Array/prototype/filter/create-proto-from-ctor-realm-array.js	|	修改了内置对象
 staging/sm/RegExp/split-trace.js	|	修改了内置对象
+built-ins/Array/prototype/toLocaleString/S15.4.4.3_A3_T1.js	|	修改了内置对象
+built-ins/Array/prototype/concat/S15.4.4.4_A3_T2.js	|	修改了内置对象
+built-ins/Array/prototype/concat/S15.4.4.4_A3_T3.js	|	修改了内置对象
+built-ins/Array/S15.4.5.1_A1.2_T2.js	|	修改了内置对象

@@ -20,6 +20,7 @@ use crate::{
 #[derive(Debug)]
 pub struct ArrayValue<'a> {
   pub included: Cell<bool>,
+  pub trackable: Cell<bool>,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
@@ -34,6 +35,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   fn include(&'a self, analyzer: &mut Analyzer<'a>) {
     use_included_flag!(self);
 
+    self.trackable.set(false);
     self.deps.borrow().include_all(analyzer);
     self.elements.borrow().include(analyzer);
     self.rest.borrow().include(analyzer);
@@ -55,6 +57,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
+    self.trackable.set(false);
     self.deps.borrow_mut().push(analyzer.dep((exec_deps, dep)));
   }
 
@@ -70,11 +73,11 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.deps.borrow().is_empty() {
+    if !self.trackable.get() {
       return analyzer.factory.computed_unknown((self, dep, key));
     }
 
-    let dep = analyzer.dep((dep, key));
+    let dep = analyzer.dep((dep, key, self.deps(analyzer)));
     if let Some(key_literals) = key.get_literals(analyzer) {
       let mut result = analyzer.factory.vec();
       let mut rest_added = false;
@@ -132,9 +135,9 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return escaped::set_property(analyzer, dep, key, value);
     }
 
-    let mut has_effect = false;
+    let deps = analyzer.dep((exec_deps, key));
     'known: {
-      if !self.deps.borrow().is_empty() {
+      if !self.trackable.get() {
         break 'known;
       }
 
@@ -143,12 +146,13 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       };
 
       let definite = !non_det && key_literals.len() == 1;
+      let mut has_effect = false;
       let mut rest_added = false;
       for &key_literal in &key_literals {
         match key_literal {
           LiteralValue::String(key_str, _) => {
             if let Ok(index) = key_str.parse::<usize>() {
-              has_effect = true;
+              let value = analyzer.factory.computed(value, deps);
               if let Some(element) = self.elements.borrow_mut().get_mut(index) {
                 *element = if definite { value } else { analyzer.factory.union((*element, value)) };
               } else if !rest_added {
@@ -156,31 +160,33 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
                 self.rest.borrow_mut().push(value);
               }
             } else if key_str == "length" {
-              if let Some(length) = value.get_literal(analyzer).and_then(|lit| lit.to_number()) {
-                if let Some(length) = length.map(|l| l.0.trunc()) {
-                  let length = length as usize;
-                  if length > 1024 {
-                    break 'known;
-                  }
+              if let Some(literal) = value.get_literal(analyzer)
+                && let Some(length) = literal.to_number()
+              {
+                if length.0.is_nan() || length.0 < 0.0 {
+                  break 'known;
+                }
+                let length = length.0.trunc() as usize;
+                if length > 1024 {
+                  break 'known;
+                }
 
-                  let mut elements = self.elements.borrow_mut();
-                  let mut rest = self.rest.borrow_mut();
-                  if elements.len() > length {
-                    has_effect = true;
-                    elements.truncate(length);
-                    rest.clear();
-                  } else if !rest.is_empty() {
-                    has_effect = true;
-                    rest.push(analyzer.factory.undefined);
-                  } else if elements.len() < length {
-                    has_effect = true;
-                    for _ in elements.len()..length {
-                      elements.push(analyzer.factory.undefined);
-                    }
+                self.deps.borrow_mut().push(analyzer.dep(value));
+
+                let mut elements = self.elements.borrow_mut();
+                let mut rest = self.rest.borrow_mut();
+                if elements.len() > length {
+                  has_effect = true;
+                  elements.truncate(length);
+                  rest.clear();
+                } else if !rest.is_empty() {
+                  has_effect = true;
+                  rest.push(analyzer.factory.undefined);
+                } else if elements.len() < length {
+                  has_effect = true;
+                  for _ in elements.len()..length {
+                    elements.push(analyzer.factory.undefined);
                   }
-                } else {
-                  analyzer.throw_builtin_error("Invalid array length");
-                  has_effect = analyzer.config.preserve_exceptions;
                 }
               } else {
                 has_effect = true;
@@ -194,15 +200,14 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         }
       }
       if has_effect {
-        let mut deps = self.deps.borrow_mut();
-        deps.push(analyzer.dep((exec_deps, key)));
+        self.deps.borrow_mut().push(deps);
       }
       return;
     }
 
     // Unknown
-    let mut deps = self.deps.borrow_mut();
-    deps.push(analyzer.dep((exec_deps, key, value)));
+    self.deps.borrow_mut().push(analyzer.dep((deps, value)));
+    self.trackable.set(false);
   }
 
   fn enumerate_properties(
@@ -216,7 +221,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.deps.borrow().is_empty() {
+    if !self.trackable.get() {
       return EnumeratedProperties {
         known: Default::default(),
         unknown: Some(analyzer.factory.unknown),
@@ -237,11 +242,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       analyzer.factory.union(allocator::Vec::from_iter_in(rest.iter().copied(), analyzer.allocator))
     });
 
-    EnumeratedProperties {
-      known,
-      unknown,
-      dep: analyzer.dep((self.deps.borrow_mut().collect(analyzer.factory), dep)),
-    }
+    EnumeratedProperties { known, unknown, dep: analyzer.dep((self.deps(analyzer), dep)) }
   }
 
   fn delete_property(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>, key: Entity<'a>) {
@@ -258,6 +259,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     let mut deps = self.deps.borrow_mut();
     deps.push(analyzer.dep((exec_deps, key)));
+    self.trackable.set(false);
   }
 
   fn call(
@@ -297,7 +299,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.deps.borrow().is_empty() {
+    if !self.trackable.get() {
       return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
     }
 
@@ -307,7 +309,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         self.rest.borrow().iter().copied(),
         analyzer.allocator,
       )),
-      dep,
+      analyzer.dep((self.deps(analyzer), dep)),
     )
   }
 
@@ -398,6 +400,10 @@ impl<'a> ArrayValue<'a> {
 
     (is_exhaustive, non_det, exec_deps)
   }
+
+  fn deps(&self, analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
+    self.deps.borrow_mut().collect(analyzer.factory)
+  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -405,6 +411,7 @@ impl<'a> Analyzer<'a> {
     let cf_scope = self.scoping.cf.current_id();
     self.factory.alloc(ArrayValue {
       included: Cell::new(false),
+      trackable: Cell::new(true),
       deps: RefCell::new(DepCollector::new(self.factory.vec())),
       cf_scope,
       elements: RefCell::new(self.factory.vec()),

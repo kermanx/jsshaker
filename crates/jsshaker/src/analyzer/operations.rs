@@ -129,8 +129,7 @@ impl<'a> Analyzer<'a> {
           let rhs = rhs.to_number();
           match (lhs, rhs) {
             (None, _) | (_, None) => None,
-            (Some(None), _) | (_, Some(None)) => Some(false),
-            (Some(Some(l)), Some(Some(r))) => Some(if eq { l.0 <= r.0 } else { l.0 < r.0 }),
+            (Some(l), Some(r)) => Some(if eq { l.0 <= r.0 } else { l.0 < r.0 }),
           }
         }
       }
@@ -215,15 +214,10 @@ impl<'a> Analyzer<'a> {
     if maybe_number {
       // Possibly number
       match (lhs_lit.and_then(|v| v.to_number()), rhs_lit.and_then(|v| v.to_number())) {
-        (Some(l), Some(r)) => match (l, r) {
-          (Some(l), Some(r)) => {
-            let val = l.0 + r.0;
-            values.push(self.factory.number(val));
-          }
-          _ => {
-            values.push(self.factory.nan);
-          }
-        },
+        (Some(l), Some(r)) => {
+          let val = l.0 + r.0;
+          values.push(self.factory.number(val));
+        }
         _ => {
           values.push(self.factory.unknown_number);
         }
@@ -279,21 +273,12 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn op_update(&self, input: Entity<'a>, operator: UpdateOperator) -> Entity<'a> {
-    let apply_update = |v: f64| {
-      self.factory.number(match operator {
-        UpdateOperator::Increment => v + 1.0,
-        UpdateOperator::Decrement => v - 1.0,
-      })
-    };
-
     if let Some(num) = input.get_literal(self).and_then(|lit| lit.to_number()) {
-      return self.factory.computed(
-        match num {
-          Some(num) => apply_update(num.0),
-          None => self.factory.nan,
-        },
-        input,
-      );
+      let updated = self.factory.number(match operator {
+        UpdateOperator::Increment => num.0 + 1.0,
+        UpdateOperator::Decrement => num.0 - 1.0,
+      });
+      return self.factory.computed(updated, input);
     }
 
     let input_t = input.test_typeof();

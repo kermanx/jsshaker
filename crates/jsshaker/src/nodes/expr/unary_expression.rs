@@ -49,12 +49,7 @@ impl<'a> Analyzer<'a> {
       UnaryOperator::UnaryNegation => {
         self.factory.computed(
           if let Some(num) = argument.get_literal(self).and_then(|lit| lit.to_number()) {
-            if let Some(num) = num {
-              let num = -num.0;
-              self.factory.number(num)
-            } else {
-              self.factory.nan
-            }
+            self.factory.number(-num.0)
           } else {
             // Maybe number or bigint
             self.factory.unknown_primitive
