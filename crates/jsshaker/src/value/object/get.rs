@@ -38,7 +38,7 @@ impl<'a> ObjectValue<'a> {
       getters: vec![],
       extra_deps: analyzer.factory.vec(),
     };
-    let mut exhaustive_deps = Some(vec![]);
+    let mut exhaustive_deps = (!self.immutable).then(Vec::new);
 
     let mut check_rest = false;
     let key_literals = key.get_literals(analyzer);
@@ -97,7 +97,7 @@ impl<'a> ObjectValue<'a> {
           None,
         );
       }
-    } else {
+    } else if !self.immutable {
       analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id()), None);
     }
 

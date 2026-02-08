@@ -23,6 +23,10 @@ impl<'a> ObjectValue<'a> {
     key: Entity<'a>,
     value: Entity<'a>,
   ) {
+    if self.immutable {
+      return;
+    }
+
     if self.is_self_or_proto_included() {
       return escaped::set_property(analyzer, dep, key, value);
     }

@@ -98,7 +98,9 @@ impl<'a> ObjectValue<'a> {
 
     analyzer.pop_cf_scope();
 
-    analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id()), None);
+    if !self.immutable {
+      analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id()), None);
+    }
 
     EnumeratedProperties { known, unknown, dep: analyzer.dep((dep, context.extra_deps)) }
   }
