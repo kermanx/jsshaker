@@ -1,4 +1,8 @@
 {
+  "diffEditor.renderIndicators": false,
+  "diffEditor.diffAlgorithm": "legacy",
+
+  
   "rust-analyzer.procMacro.ignored": { "napi-derive": ["napi"] },
   "rust-analyzer.cargo.features": "all",
 

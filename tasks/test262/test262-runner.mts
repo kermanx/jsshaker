@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { join, resolve, relative } from 'node:path';
-import { createWriteStream, readFileSync } from 'node:fs';
+import { createWriteStream, readFileSync, write, writeFileSync } from 'node:fs';
 import { opendir, readFile, stat } from 'node:fs/promises';
 import { stripVTControlCharacters, styleText } from 'node:util';
 import { fork } from 'node:child_process';
@@ -118,6 +118,7 @@ const ignored2Path = resolve(import.meta.dirname, 'ignored2.txt');
 const ignored2Tests: Set<string> = new Set(
   (await readFile(ignored2Path, { encoding: 'utf-8' })).split('\n').map(l => l.split('\t')[0].trim()).filter(l => l)
 );
+const UPDATE_MODE = !!process.env.UPDATE_MODE;
 // ------ Added End
 
 function discoverTest(test: Test) {
@@ -137,10 +138,10 @@ function discoverTest(test: Test) {
   }
 
   // ------ Added Start
-  if (ignoredTests.has(test.file)) {
+  if (ignoredTests.has(test.file) && !UPDATE_MODE) {
     return reporter.skipTest(test.id, 'feature-disabled', 'ignored by JSShaker');
   }
-  if (ignored2Tests.has(test.file)) {
+  if (ignored2Tests.has(test.file) && !UPDATE_MODE) {
     return reporter.skipTest(test.id, 'feature-disabled', 'ignored by JSShaker (2)');
   }
   const match = test.content.match(/\b(with|eval|testLenientAndStrict)\s*\(/);
@@ -236,6 +237,30 @@ reporter.onExit.promise.then(() => {
         console.log(`- ./test/test262/test262/test/${test}`);
       }
     }
+  }
+
+  if (UPDATE_MODE) {
+    const newPassed: string[] = [];
+    for (const test of reporter.tests.values()) {
+      if ((test.status === 'passed'||test.status=== 'skipped') && (ignoredTests.has(test.file) || ignored2Tests.has(test.file))) {
+        newPassed.push(test.file);
+      }
+    }
+    let removed = 0;
+    function filter(l: string) {
+      for (const p of newPassed) {
+        if (l.includes(p)) {
+          removed++;
+          return false;
+        }
+      }
+      return true;
+    }
+    const ignored1 = readFileSync(ignoredJsonPath, 'utf-8').split('\n').map(l => l.trim()).filter(l => filter(l));
+    writeFileSync(ignoredJsonPath, ignored1.join('\n'), 'utf-8');
+    const ignored2 = (readFileSync(ignored2Path, 'utf-8')).split('\n').map(l => l.trim()).filter(l => filter(l));
+    writeFileSync(ignored2Path, ignored2.join('\n'), 'utf-8');
+    console.log(`Updated ignored tests, removed ${removed} tests.`);
   }
 });
 

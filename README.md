@@ -249,7 +249,7 @@ This project has been done in the spirit of soundiness. When building practical 
 Our analysis does not have a fully sound handling of the following features:
 
 - eval
-- implicit conversions (==, valueOf, toString)
+- implicit conversions (valueOf, toString)
 - exceptions and flow related to that
 - prototype semantics
 
