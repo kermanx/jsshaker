@@ -12,11 +12,11 @@ impl<'a> Analyzer<'a> {
     if let Some(keys) = right.get_keys(self, true) {
       let dep = self.factory.dep((right.get_shallow_dep(self), AstKind2::ForInStatement(node)));
       self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
-      for (definite, key) in keys {
+      for (_, key) in keys {
         self.push_cf_scope_with_deps(
           CfScopeKind::LoopContinue,
           self.factory.vec1(self.factory.always_mangable_dep(key)),
-          !definite,
+          true,
         );
         self.declare_for_statement_left(&node.left);
         self.init_for_statement_left(&node.left, key);
