@@ -220,7 +220,7 @@ impl<'a> Analyzer<'a> {
     Some(acc_dep)
   }
 
-  pub fn break_to_label(&mut self, label: Option<&'a LabelIdentifier<'a>>) {
+  pub fn break_to_label(&mut self, label: Option<&'a LabelIdentifier<'a>>, non_det: bool) {
     let mut target_depth = None;
     for (depth, cf_scope) in self.scoping.cf.iter_stack().enumerate().rev() {
       if cf_scope.kind.is_function() {
@@ -236,7 +236,7 @@ impl<'a> Analyzer<'a> {
         break;
       }
     }
-    self.exit_to(target_depth.expect("No valid break target found"));
+    self.exit_to_impl(target_depth.unwrap(), self.scoping.cf.stack_len(), !non_det, None);
   }
 
   pub fn continue_to_label(&mut self, label: Option<&'a LabelIdentifier<'a>>) {

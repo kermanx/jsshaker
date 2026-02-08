@@ -28,8 +28,12 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
 
       let test = analyzer.exec_expression(&node.test);
-      let test = analyzer.dep(test);
-      analyzer.cf_scope_mut().push_dep(test);
+      let dep = analyzer.dep(test);
+      analyzer.cf_scope_mut().push_dep(dep);
+      let truthy = test.test_truthy();
+      if truthy != Some(true) {
+        analyzer.break_to_label(None, truthy.is_none());
+      }
     });
     self.pop_cf_scope();
   }
