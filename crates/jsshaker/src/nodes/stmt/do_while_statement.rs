@@ -29,7 +29,7 @@ impl<'a> Analyzer<'a> {
 
     let data = self.load_data::<Data>(AstKind2::DoWhileStatement(node));
     data.need_test = true;
-    let test = self.exec_expression(&node.test);
+    let test = self.exec_expression(&node.test).coerce_boolean(self);
 
     // The rest is the same as while statement.
     if test.test_truthy() == Some(false) {
@@ -44,7 +44,7 @@ impl<'a> Analyzer<'a> {
       analyzer.push_cf_scope(CfScopeKind::LoopContinue, true);
 
       analyzer.exec_statement(&node.body);
-      analyzer.exec_expression(&node.test).include(analyzer);
+      analyzer.exec_expression(&node.test).coerce_boolean(analyzer).include(analyzer);
 
       analyzer.pop_cf_scope();
     });

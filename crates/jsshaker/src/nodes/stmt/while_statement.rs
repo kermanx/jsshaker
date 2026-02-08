@@ -10,7 +10,7 @@ impl<'a> Analyzer<'a> {
     // This may be non_det. However, we can't know it until we execute the test.
     // And there should be no same level break/continue statement in test.
     // `a: while(() => { break a }) { }` is illegal.
-    let test = self.exec_expression(&node.test);
+    let test = self.exec_expression(&node.test).coerce_boolean(self);
 
     if test.test_truthy() == Some(false) {
       return;
@@ -27,7 +27,7 @@ impl<'a> Analyzer<'a> {
 
       analyzer.pop_cf_scope();
 
-      let test = analyzer.exec_expression(&node.test);
+      let test = analyzer.exec_expression(&node.test).coerce_boolean(analyzer);
       let dep = analyzer.dep(test);
       analyzer.cf_scope_mut().push_dep(dep);
       let truthy = test.test_truthy();
