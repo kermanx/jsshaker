@@ -29,7 +29,7 @@ use crate::{
   module::{ModuleId, Modules},
   scope::Scoping,
   utils::ExtraData,
-  value::FnStats,
+  value::{FnStats, literal::symbol::SymbolRegistry},
   vfs::Vfs,
 };
 
@@ -58,6 +58,7 @@ pub struct Analyzer<'a> {
   pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub diagnostics: BTreeSet<String>,
   pub fn_stats: Option<RefCell<FnStats>>,
+  pub symbol_registry: SymbolRegistry<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -90,6 +91,7 @@ impl<'a> Analyzer<'a> {
       pending_deps: Default::default(),
       diagnostics: Default::default(),
       fn_stats: config.enable_fn_stats.then(|| RefCell::new(FnStats::new())),
+      symbol_registry: SymbolRegistry::default(),
     }
   }
 

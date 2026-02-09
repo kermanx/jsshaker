@@ -52,7 +52,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
               result.push(analyzer.factory.undefined);
             }
           }
-          LiteralValue::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(_key) => todo!(),
           _ => unreachable!("Invalid property key"),
         }
       }

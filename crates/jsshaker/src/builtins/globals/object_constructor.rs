@@ -63,7 +63,7 @@ impl<'a> Builtins<'a> {
         }
         target.unknown_mutate(analyzer, (dep, deps));
         analyzer.pop_cf_scope();
-        return analyzer.factory.computed_unknown(target);
+        return analyzer.factory.computed_unknown((dep, target));
       }
 
       let mut deps = analyzer.factory.vec();

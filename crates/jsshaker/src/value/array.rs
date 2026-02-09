@@ -107,7 +107,17 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
               result.push(analyzer.factory.unmatched_prototype_property);
             }
           }
-          LiteralValue::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(key) => {
+            if let Some(property) = analyzer.builtins.prototypes.array.get_keyed(
+              analyzer,
+              PropertyKeyValue::Symbol(key),
+              self,
+            ) {
+              result.push(property);
+            } else {
+              result.push(analyzer.factory.unmatched_prototype_property);
+            }
+          }
           _ => unreachable!("Invalid property key"),
         }
       }
@@ -195,7 +205,10 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
               break 'known;
             }
           }
-          LiteralValue::Symbol(_key, _) => todo!(),
+          LiteralValue::Symbol(_key) => {
+            // TODO: Support symbol properties
+            break 'known;
+          }
           _ => unreachable!("Invalid property key"),
         }
       }

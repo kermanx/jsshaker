@@ -1,4 +1,5 @@
 pub mod string;
+pub mod symbol;
 
 use std::{fmt::Debug, vec};
 
@@ -33,7 +34,7 @@ pub enum LiteralValue<'a> {
   Number(F64WithEq),
   BigInt(&'a Atom<'a>),
   Boolean(bool),
-  Symbol(SymbolId, &'a Atom<'a>),
+  Symbol(SymbolId),
   Null,
   Undefined,
 }
@@ -178,6 +179,10 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if let LiteralValue::Symbol(_) = self {
+      return analyzer.factory.unknown_string;
+    }
+
     analyzer
       .factory
       .alloc(LiteralValue::String(
@@ -201,7 +206,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
         analyzer.factory.computed(str.coerce_number(analyzer), *atom)
       }
       LiteralValue::Null => analyzer.factory.number(0.0),
-      LiteralValue::Symbol(_, _) => {
+      LiteralValue::Symbol(_) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         analyzer.factory.unknown
       }
@@ -218,7 +223,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
 
   fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     match self {
-      LiteralValue::Symbol(_, _) => self.into(),
+      LiteralValue::Symbol(_) => self.into(),
       _ => self.coerce_string(analyzer),
     }
   }
@@ -256,7 +261,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       LiteralValue::Number(_) => TypeofResult::Number,
       LiteralValue::BigInt(_) => TypeofResult::BigInt,
       LiteralValue::Boolean(_) => TypeofResult::Boolean,
-      LiteralValue::Symbol(_, _) => TypeofResult::Symbol,
+      LiteralValue::Symbol(_) => TypeofResult::Symbol,
       LiteralValue::Null => TypeofResult::Object,
       LiteralValue::Undefined => TypeofResult::Undefined,
     }
@@ -270,7 +275,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
       }
       LiteralValue::BigInt(value) => !value.chars().all(|c| c == '0'),
       LiteralValue::Boolean(value) => *value,
-      LiteralValue::Symbol(_, _) => true,
+      LiteralValue::Symbol(_) => true,
       LiteralValue::Null | LiteralValue::Undefined => false,
     })
   }
@@ -321,7 +326,7 @@ impl<'a> LiteralValue<'a> {
         ast.expression_big_int_literal(span, **value, None, BigintBase::Decimal)
       }
       LiteralValue::Boolean(value) => ast.expression_boolean_literal(span, *value),
-      LiteralValue::Symbol(_, _) => unreachable!("Cannot build expression for Symbol"),
+      LiteralValue::Symbol(_) => unreachable!("Cannot build expression for Symbol"),
       LiteralValue::Null => ast.expression_null_literal(span),
       LiteralValue::Undefined => ast.expression_unary(
         span,
@@ -343,7 +348,7 @@ impl<'a> LiteralValue<'a> {
       }
       LiteralValue::BigInt(_) => false,
       LiteralValue::Boolean(_) => true,
-      LiteralValue::Symbol(_, _) => false,
+      LiteralValue::Symbol(_) => false,
       LiteralValue::Null => true,
       LiteralValue::Undefined => true,
     }
@@ -361,7 +366,7 @@ impl<'a> LiteralValue<'a> {
           builtin_atom!("false")
         }
       }
-      LiteralValue::Symbol(_, str_rep) => str_rep,
+      LiteralValue::Symbol(_) => unreachable!(),
       LiteralValue::Null => builtin_atom!("null"),
       LiteralValue::Undefined => builtin_atom!("undefined"),
     }
@@ -381,7 +386,7 @@ impl<'a> LiteralValue<'a> {
         Some(val.into())
       }
       LiteralValue::Null => Some(0.0.into()),
-      LiteralValue::Symbol(_, _) => {
+      LiteralValue::Symbol(_) => {
         // TODO: warn: TypeError: Cannot convert a Symbol value to a number
         None
       }
@@ -395,7 +400,7 @@ impl<'a> LiteralValue<'a> {
       LiteralValue::Number(_) => &analyzer.builtins.prototypes.number,
       LiteralValue::BigInt(_) => &analyzer.builtins.prototypes.bigint,
       LiteralValue::Boolean(_) => &analyzer.builtins.prototypes.boolean,
-      LiteralValue::Symbol(_, _) => &analyzer.builtins.prototypes.symbol,
+      LiteralValue::Symbol(_) => &analyzer.builtins.prototypes.symbol,
       LiteralValue::Null | LiteralValue::Undefined => {
         unreachable!("Cannot get prototype of null or undefined")
       }
@@ -425,7 +430,7 @@ impl<'a> From<LiteralValue<'a>> for PropertyKeyValue<'a> {
   fn from(val: LiteralValue<'a>) -> Self {
     match val {
       LiteralValue::String(s, _) => PropertyKeyValue::String(s),
-      LiteralValue::Symbol(s, _) => PropertyKeyValue::Symbol(s),
+      LiteralValue::Symbol(s) => PropertyKeyValue::Symbol(s),
       _ => unreachable!(),
     }
   }
@@ -487,7 +492,7 @@ impl<'a> crate::analyzer::Factory<'a> {
     if let Some(value) = value { self.boolean(value) } else { self.unknown_boolean }
   }
 
-  pub fn symbol(&self, id: SymbolId, str_rep: &'a Atom<'a>) -> Entity<'a> {
-    self.alloc(LiteralValue::Symbol(id, str_rep)).into()
+  pub fn symbol(&self, id: SymbolId) -> Entity<'a> {
+    self.alloc(LiteralValue::Symbol(id)).into()
   }
 }

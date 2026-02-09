@@ -60,6 +60,7 @@ impl<'a> ObjectValue<'a> {
 
       for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
+        let value = if key_atom.is_none() { non_mangable_value } else { value };
 
         if key_str.is_special_key() {
           drop(keyed);
@@ -74,7 +75,7 @@ impl<'a> ObjectValue<'a> {
             key_str.is_private_identifier(),
             non_det,
             key,
-            mangable.then(|| key_atom.unwrap()),
+            if mangable { key_atom } else { None },
             value,
             &mut setters,
             &mut deferred_deps,
@@ -120,8 +121,8 @@ impl<'a> ObjectValue<'a> {
           continue;
         }
 
-        if mangable {
-          self.add_to_mangling_group(analyzer, key_atom.unwrap());
+        if mangable && let Some(key_atom) = key_atom {
+          self.add_to_mangling_group(analyzer, key_atom);
         }
         keyed.insert(
           key_str,
@@ -135,7 +136,7 @@ impl<'a> ObjectValue<'a> {
             }),
             non_existent: DepCollector::new(analyzer.factory.vec()),
             key: Some(key),
-            mangling: mangable.then(|| key_atom.unwrap()),
+            mangling: if mangable { key_atom } else { None },
           },
         );
       }

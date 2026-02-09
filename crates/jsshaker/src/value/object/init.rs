@@ -26,6 +26,12 @@ impl<'a> ObjectValue<'a> {
       let definite = definite && key_literals.len() == 1;
       for &key_literal in &key_literals {
         let (key_str, key_atom) = key_literal.into();
+        let value = if mangable && key_atom.is_none() {
+          analyzer.factory.computed(value, key)
+        } else {
+          value
+        };
+
         let mut keyed = self.keyed.borrow_mut();
         let existing = keyed.get_mut(&key_str);
         let reused_property = if definite {
@@ -40,12 +46,12 @@ impl<'a> ObjectValue<'a> {
         } else {
           None
         };
-        let constraint = if mangable {
+        let constraint = if mangable && let Some(key_atom) = key_atom {
           if let Some(existing) = &existing {
             let prev_atom = existing.mangling.unwrap();
-            Some(MangleConstraint::Eq(prev_atom, key_atom.unwrap()))
+            Some(MangleConstraint::Eq(prev_atom, key_atom))
           } else {
-            self.add_to_mangling_group(analyzer, key_atom.unwrap());
+            self.add_to_mangling_group(analyzer, key_atom);
             None
           }
         } else {
@@ -75,7 +81,7 @@ impl<'a> ObjectValue<'a> {
             possible_values: analyzer.factory.vec1(property_val),
             non_existent: DepCollector::new(analyzer.factory.vec()),
             key: Some(key),
-            mangling: mangable.then(|| key_atom.unwrap()),
+            mangling: if mangable { key_atom } else { None },
           };
           keyed.insert(key_str, property);
         } else {

@@ -205,7 +205,7 @@ impl<'a> PrimitiveValue {
         | (PrimitiveValue::Number, LiteralValue::Number(_))
         | (PrimitiveValue::String, LiteralValue::String(_, _))
         | (PrimitiveValue::Boolean, LiteralValue::Boolean(_))
-        | (PrimitiveValue::Symbol, LiteralValue::Symbol(_, _))
+        | (PrimitiveValue::Symbol, LiteralValue::Symbol(_))
     )
   }
 }

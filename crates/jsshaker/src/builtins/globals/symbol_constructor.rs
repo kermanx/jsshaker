@@ -1,10 +1,13 @@
 use crate::{
+  Analyzer,
   builtins::Builtins,
+  dep::Dep,
+  entity::Entity,
   init_object,
-  value::{ObjectPropertyValue, ObjectPrototype, escaped},
+  value::{ArgumentsValue, LiteralValue, ObjectPropertyValue, ObjectPrototype},
 };
 
-impl Builtins<'_> {
+impl<'a> Builtins<'a> {
   pub fn init_symbol_constructor(&mut self) {
     let factory = self.factory;
 
@@ -28,13 +31,42 @@ impl Builtins<'_> {
       "toStringTag" => factory.unknown_symbol,
       "unscopables" => factory.unknown_symbol,
       // Static methods
-      "for" => factory.pure_fn_returns_symbol,
+      "for" => self.create_symbol_for_impl(),
       "keyFor" => factory.pure_fn_returns_string,
     });
 
     self.globals.insert(
       "Symbol",
-      self.factory.implemented_builtin_fn_with_statics("Symbol", escaped::builtin_call, statics),
+      self.factory.implemented_builtin_fn_with_statics("Symbol", symbol_constructor_impl, statics),
     );
   }
+
+  fn create_symbol_for_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Symbol.for", |analyzer, dep, _this, args| {
+      // Symbol.for() returns the same symbol for the same key
+      let key = args.get(analyzer, 0).coerce_string(analyzer);
+
+      if let Some(LiteralValue::String(key_str, _)) = key.get_literal(analyzer) {
+        // For constant keys, use the global symbol registry
+        let symbol = analyzer
+          .symbol_registry
+          .get_or_create_global_symbol(key_str.as_str(), analyzer.allocator);
+        analyzer.factory.computed(symbol.into(), (dep, key))
+      } else {
+        // For dynamic keys, return unknown symbol
+        analyzer.factory.computed(analyzer.factory.unknown_symbol, (dep, key))
+      }
+    })
+  }
+}
+
+fn symbol_constructor_impl<'a>(
+  analyzer: &mut Analyzer<'a>,
+  dep: Dep<'a>,
+  _this: Entity<'a>,
+  args: ArgumentsValue<'a>,
+) -> Entity<'a> {
+  let desc = args.get(analyzer, 0).coerce_string(analyzer);
+  let symbol_id = analyzer.symbol_registry.alloc_symbol_id();
+  analyzer.factory.computed(analyzer.factory.symbol(symbol_id), (dep, desc))
 }

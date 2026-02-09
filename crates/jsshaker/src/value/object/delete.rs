@@ -39,14 +39,14 @@ impl<'a> ObjectValue<'a> {
         if let Some(property) = keyed.get_mut(&key_str) {
           property.delete(
             non_det,
-            if mangable {
+            if mangable && let Some(key_atom) = key_atom {
               let prev_key = property.key.unwrap();
               let prev_atom = property.mangling.unwrap();
               analyzer.dep((
                 deps,
                 ManglingDep {
                   deps: (prev_key, key),
-                  constraint: MangleConstraint::Eq(prev_atom, key_atom.unwrap()),
+                  constraint: MangleConstraint::Eq(prev_atom, key_atom),
                 },
               ))
             } else {
@@ -56,8 +56,8 @@ impl<'a> ObjectValue<'a> {
         } else if let Some(rest) = &self.rest {
           rest.borrow_mut().delete(true, analyzer.dep((deps, key)));
         } else {
-          if mangable {
-            self.add_to_mangling_group(analyzer, key_atom.unwrap());
+          if mangable && let Some(key_atom) = key_atom {
+            self.add_to_mangling_group(analyzer, key_atom);
           }
           keyed.insert(
             key_str,
@@ -67,7 +67,7 @@ impl<'a> ObjectValue<'a> {
               possible_values: analyzer.factory.vec(),
               non_existent: DepCollector::new(analyzer.factory.vec1(deps)),
               key: Some(key),
-              mangling: mangable.then(|| key_atom.unwrap()),
+              mangling: if mangable { key_atom } else { None },
             },
           );
         }
