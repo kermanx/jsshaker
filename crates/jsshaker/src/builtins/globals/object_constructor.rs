@@ -291,6 +291,8 @@ impl<'a> Builtins<'a> {
       let proto = args.get(analyzer, 1);
 
       analyzer.add_callsite_dep(object.get_shallow_dep(analyzer));
+      analyzer.add_callsite_dep(proto.get_shallow_dep(analyzer));
+
       if let Some(object) = object.as_object() {
         object.set_prototype_from_value(analyzer, false, dep, builtin_string!("__proto__"), proto);
       } else {
