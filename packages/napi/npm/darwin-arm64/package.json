@@ -1,6 +1,6 @@
 {
   "name": "@jsshaker/binding-darwin-arm64",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "cpu": [
     "arm64"
   ],

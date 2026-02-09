@@ -119,6 +119,9 @@ jobs:
           version: 10
       - name: Install dependencies
         run: pnpm install
+      - name: Build index.js
+        run: pnpm build
+        working-directory: ./packages/napi
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
