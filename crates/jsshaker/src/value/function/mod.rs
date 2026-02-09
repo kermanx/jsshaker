@@ -186,7 +186,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     Some((
       dep,
       ObjectPrototype::Custom(self.statics),
-      if let Some(prototype) = prototype.get_object() {
+      if let Some(prototype) = prototype.as_object() {
         ObjectPrototype::Custom(prototype)
       } else {
         ObjectPrototype::Unknown(analyzer.factory.dep(prototype))

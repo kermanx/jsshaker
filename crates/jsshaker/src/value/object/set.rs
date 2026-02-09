@@ -24,10 +24,11 @@ impl<'a> ObjectValue<'a> {
     value: Entity<'a>,
   ) {
     if self.immutable {
-      return;
+      return escaped::set_property(analyzer, dep, key, value);
     }
 
     if self.is_self_or_proto_included() {
+      analyzer.include(self);
       return escaped::set_property(analyzer, dep, key, value);
     }
 

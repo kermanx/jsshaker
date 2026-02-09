@@ -178,7 +178,7 @@ impl<'a> Entity<'a> {
   ) -> Option<(Dep<'a>, ObjectPrototype<'a>, ObjectPrototype<'a>)> {
     self.value.get_constructor_prototype(analyzer, self.forward_dep(dep, analyzer))
   }
-  pub fn get_object(&self) -> Option<&'a ObjectValue<'a>> {
+  pub fn as_object(&self) -> Option<&'a ObjectValue<'a>> {
     self.value.as_object()
   }
   pub fn test_typeof(&self) -> TypeofResult {

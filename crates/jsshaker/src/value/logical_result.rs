@@ -132,7 +132,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   }
 
   fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
-    self.value.get_object()
+    self.value.as_object()
   }
 
   fn test_typeof(&self) -> TypeofResult {
