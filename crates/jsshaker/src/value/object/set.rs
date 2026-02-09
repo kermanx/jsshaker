@@ -62,10 +62,9 @@ impl<'a> ObjectValue<'a> {
         let (key_str, key_atom) = key_literal.into();
         let value = if key_atom.is_none() { non_mangable_value } else { value };
 
-        if key_str.is_special_key() {
+        if key_str.is_proto() {
           drop(keyed);
-          self.include(analyzer);
-          return escaped::set_property(analyzer, dep, key, value);
+          return self.set_prototype_from_value(analyzer, non_det, dep, key, value);
         }
 
         let exists = if let Some(property) = keyed.get_mut(&key_str) {
@@ -290,5 +289,44 @@ impl<'a> ObjectValue<'a> {
       }
     }
     (target_depth, exhaustive, non_det, deps)
+  }
+
+  pub fn set_prototype_from_value(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    non_det: bool,
+    dep: Dep<'a>,
+    key: Entity<'a>,
+    value: Entity<'a>,
+  ) {
+    if analyzer.config.precise_dynamic_prototype {
+      self.set_prototype(ObjectPrototype::Unknown(analyzer.factory.no_dep));
+      return escaped::set_property(analyzer, dep, key, value);
+    }
+
+    let is_nullish = value.test_nullish();
+    if non_det {
+      let old_proto = match self.prototype.get() {
+        ObjectPrototype::ImplicitOrNull => {
+          if is_nullish == Some(true) {
+            self.add_extra_dep(analyzer.dep((dep, key, value)));
+            return;
+          }
+          None
+        }
+        ObjectPrototype::Builtin(_) => None,
+        ObjectPrototype::Custom(prototype) => Some(analyzer.dep(prototype)),
+        ObjectPrototype::Unknown(dep) => Some(dep),
+      };
+      self.set_prototype(ObjectPrototype::Unknown(analyzer.dep((old_proto, dep, key, value))));
+    } else if is_nullish == Some(true) {
+      self.set_prototype(ObjectPrototype::ImplicitOrNull);
+      self.add_extra_dep(analyzer.dep((dep, key, value)));
+    } else if let Some(object) = value.as_object() {
+      self.set_prototype(ObjectPrototype::Custom(object));
+      self.add_extra_dep(analyzer.dep((dep, key, value.get_shallow_dep(analyzer))));
+    } else {
+      self.set_prototype(ObjectPrototype::Unknown(analyzer.dep((dep, key, value))));
+    }
   }
 }

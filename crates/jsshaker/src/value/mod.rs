@@ -37,7 +37,7 @@ pub enum PropertyKeyValue<'a> {
 }
 
 impl<'a> PropertyKeyValue<'a> {
-  pub fn is_special_key(&self) -> bool {
+  pub fn is_proto(&self) -> bool {
     matches!(self, PropertyKeyValue::String(s) if s.as_str() == "__proto__")
   }
 }

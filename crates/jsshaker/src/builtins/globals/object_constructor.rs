@@ -3,7 +3,7 @@ use std::borrow::BorrowMut;
 use oxc::allocator;
 
 use crate::{
-  Analyzer,
+  Analyzer, builtin_string,
   builtins::Builtins,
   entity::Entity,
   init_object,
@@ -19,7 +19,7 @@ impl<'a> Builtins<'a> {
     statics.init_rest(factory, ObjectPropertyValue::Field(factory.unknown, true));
 
     init_object!(statics, factory, {
-      "prototype" => factory.unknown,
+      "prototype" => factory.unknown_truthy,
       "assign" => self.create_object_assign_impl(),
       "keys" => self.create_object_keys_impl(),
       "values" => self.create_object_values_impl(),
@@ -28,15 +28,15 @@ impl<'a> Builtins<'a> {
       "defineProperty" => self.create_object_define_property_impl(),
       "create" => self.create_object_create_impl(),
       "is" => self.create_object_is_impl(),
-      "setPrototypeOf" => factory.unknown,
+      "setPrototypeOf" => self.create_object_set_prototype_of_impl(),
       "getPrototypeOf" => factory.pure_fn_returns_unknown,
-      "defineProperties" => factory.unknown,
+      "defineProperties" => factory.unknown_truthy,
       "hasOwn" => factory.pure_fn_returns_boolean,
-      "preventExtensions" => factory.unknown,
-      "seal" => factory.unknown,
-      "getOwnPropertyNames" => factory.unknown,
-      "getOwnPropertySymbols" => factory.unknown,
-      "getOwnPropertyDescriptor" => factory.unknown,
+      "preventExtensions" => factory.unknown_truthy,
+      "seal" => factory.unknown_truthy,
+      "getOwnPropertyNames" => factory.unknown_truthy,
+      "getOwnPropertySymbols" => factory.unknown_truthy,
+      "getOwnPropertyDescriptor" => factory.unknown_truthy,
       "isExtensible" => factory.pure_fn_returns_boolean,
       "isFrozen" => factory.pure_fn_returns_boolean,
       "isSealed" => factory.pure_fn_returns_boolean,
@@ -282,6 +282,22 @@ impl<'a> Builtins<'a> {
       } else {
         self.factory.computed(self.factory.boolean_maybe_unknown(equality), (dep, lhs, rhs))
       }
+    })
+  }
+
+  fn create_object_set_prototype_of_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.setPrototypeOf", |analyzer, dep, _, args| {
+      let object = args.get(analyzer, 0);
+      let proto = args.get(analyzer, 1);
+
+      analyzer.add_callsite_dep(object.get_shallow_dep(analyzer));
+      if let Some(object) = object.as_object() {
+        object.set_prototype_from_value(analyzer, false, dep, builtin_string!("__proto__"), proto);
+      } else {
+        object.unknown_mutate(analyzer, analyzer.factory.dep((dep, proto)));
+      }
+
+      analyzer.factory.computed(object, (dep, proto))
     })
   }
 }

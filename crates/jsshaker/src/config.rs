@@ -33,6 +33,7 @@ pub struct TreeShakeConfig {
   pub preserve_exceptions: bool,
   pub preserve_property_attributes: bool, // enumerable, configurable, writable
   pub impure_json_stringify: bool,
+  pub precise_dynamic_prototype: bool,
 
   pub min_simple_number_value: i64,
   pub max_simple_number_value: i64,
@@ -67,6 +68,7 @@ impl TreeShakeConfig {
       preserve_exceptions: true,
       preserve_property_attributes: true,
       impure_json_stringify: true,
+      precise_dynamic_prototype: true,
 
       min_simple_number_value: -1_000_000,
       max_simple_number_value: 1_000_000,
@@ -82,6 +84,7 @@ impl TreeShakeConfig {
       preserve_exceptions: false,
       preserve_property_attributes: false,
       impure_json_stringify: false,
+      precise_dynamic_prototype: false,
 
       ..Self::default()
     }

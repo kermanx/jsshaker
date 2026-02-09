@@ -47,7 +47,7 @@ impl<'a> ObjectValue<'a> {
       for &key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
 
-        if key_str.is_special_key() {
+        if key_str.is_proto() {
           return analyzer.factory.computed_unknown((self, dep, key));
         }
 

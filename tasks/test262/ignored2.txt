@@ -1055,3 +1055,5 @@ built-ins/String/prototype/at/index-non-numeric-argument-tointeger-invalid.js	|	
 built-ins/Symbol/desc-to-string.js	|	依赖异常行为
 built-ins/Symbol/desc-to-string-symbol.js	|	依赖异常行为
 built-ins/Object/freeze/frozen-object-contains-symbol-properties-strict.js	|	依赖异常行为
+built-ins/Object/setPrototypeOf/bigint.js	|	依赖异常行为
+built-ins/Object/setPrototypeOf/o-not-obj-coercible.js	|	依赖异常行为

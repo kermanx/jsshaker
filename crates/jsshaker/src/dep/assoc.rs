@@ -43,6 +43,10 @@ impl<'a> Analyzer<'a> {
     self.assoc_deps.to_deps.entry(base.into()).or_default().push(dep);
   }
 
+  pub fn add_callsite_dep(&mut self, dep: Dep<'a>) {
+    self.add_assoc_dep(self.scoping.current_callsite, dep);
+  }
+
   pub fn add_assoc_entity_dep(&mut self, base: EntityTrackerDep, entity: Entity<'a>) {
     if let Some(entities) = self.assoc_deps.to_entities.get_mut(&base) {
       entities.push(entity);

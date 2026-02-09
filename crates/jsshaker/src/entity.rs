@@ -107,7 +107,7 @@ impl<'a> Entity<'a> {
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     let shallow_dep = self.get_shallow_dep(analyzer);
-    analyzer.add_assoc_dep(analyzer.scoping.current_callsite, shallow_dep);
+    analyzer.add_callsite_dep(shallow_dep);
     self.value.call(analyzer, self.forward_dep(dep, analyzer), this, args)
   }
   pub fn construct(
@@ -117,7 +117,7 @@ impl<'a> Entity<'a> {
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
     let shallow_dep = self.get_shallow_dep(analyzer);
-    analyzer.add_assoc_dep(analyzer.scoping.current_callsite, shallow_dep);
+    analyzer.add_callsite_dep(shallow_dep);
     self.value.construct(analyzer, self.forward_dep(dep, analyzer), args)
   }
   pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {

@@ -194,6 +194,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     ))
   }
 
+  fn as_object(&'a self) -> Option<&'a ObjectValue<'a>> {
+    self.statics.as_object()
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     TypeofResult::Function
   }
