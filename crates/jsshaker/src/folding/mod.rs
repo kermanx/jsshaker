@@ -113,6 +113,8 @@ pub fn maybe_foldable_expr(node: &Expression) -> bool {
   match node {
     match_member_expression!(Expression) => true,
 
+    Expression::AssignmentExpression(_) => false, // Avoid (a=(b=1),1)
+
     Expression::StringLiteral(_)
     | Expression::NumericLiteral(_)
     | Expression::BigIntLiteral(_)
@@ -141,7 +143,6 @@ pub fn maybe_foldable_expr(node: &Expression) -> bool {
     | Expression::AwaitExpression(_)
     | Expression::YieldExpression(_)
     | Expression::ArrayExpression(_)
-    | Expression::AssignmentExpression(_)
     | Expression::ChainExpression(_)
     | Expression::MetaProperty(_)
     | Expression::PrivateInExpression(_)
