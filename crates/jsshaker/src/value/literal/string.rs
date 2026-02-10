@@ -20,9 +20,14 @@ impl<'a> ToAtomRef<'a> for &'a Atom<'a> {
     self
   }
 }
+impl<'a> ToAtomRef<'a> for &'a str {
+  fn to_atom_ref(self, allocator: &'a Allocator) -> &'a Atom<'a> {
+    allocator.alloc(Atom::from(self))
+  }
+}
 impl<'a> ToAtomRef<'a> for String {
   fn to_atom_ref(self, allocator: &'a Allocator) -> &'a Atom<'a> {
-    allocator.alloc(Atom::from(allocator.alloc_str(&self)))
+    allocator.alloc_str(&self).to_atom_ref(allocator)
   }
 }
 

@@ -1,9 +1,10 @@
 use std::mem;
 
-use oxc::allocator::{self, Allocator};
+use rustc_hash::FxHashSet;
 
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
+use crate::mangling::UniquenessConstraint;
 use crate::utils::get_two_mut_from_vec;
 use crate::{analyzer::Analyzer, dep::CustomDepTrait};
 
@@ -26,22 +27,6 @@ impl<'a> MangleConstraint<'a> {
       Some(if eq { MangleConstraint::Eq(a, b) } else { MangleConstraint::Neq(a, b) })
     } else {
       None
-    }
-  }
-
-  pub fn negate_equality(self, allocator: &'a Allocator) -> Self {
-    match self {
-      MangleConstraint::None => MangleConstraint::None,
-      MangleConstraint::Eq(a, b) => MangleConstraint::Neq(a, b),
-      MangleConstraint::Neq(a, b) => MangleConstraint::Eq(a, b),
-      MangleConstraint::Multiple(c) => MangleConstraint::Multiple({
-        let mut negated = allocator::Vec::new_in(allocator);
-        for constraint in c {
-          negated.push(constraint.negate_equality(allocator));
-        }
-        allocator.alloc(negated)
-      }),
-      _ => unreachable!(),
     }
   }
 }
@@ -72,30 +57,27 @@ impl<'a> Mangler<'a> {
       return;
     }
 
-    let Mangler { states: atoms, identity_groups, uniqueness_groups, .. } = self;
+    let Mangler { states, identity_groups, uniqueness_groups, .. } = self;
 
-    match atoms.get_two_mut(a, b) {
-      (AtomState::Preserved, AtomState::Preserved) => {}
-      (AtomState::Preserved, x) | (x, AtomState::Preserved) => {
+    match states.get_two_mut(a, b) {
+      (AtomState::Builtin, AtomState::Builtin) => {}
+      (AtomState::Builtin, x) | (x, AtomState::Builtin) => {
         if eq {
-          *x = AtomState::Preserved;
+          *x = AtomState::Builtin;
         }
         // If neq, do nothing because currently the preserved strings are builtin strings
         // which is long enough to not conflict with mangled strings.
       }
-      (AtomState::Constant(a), AtomState::Constant(b)) => assert_eq!(a, b),
+      (AtomState::Constant(a), AtomState::Constant(b)) => assert_eq!(a == b, eq),
       (AtomState::Constant(a), _) => {
         let s = *a;
-        self.mark_atom_constant(b, s);
+        self.mark_atom_constant(eq, b, s);
       }
       (_, AtomState::Constant(b)) => {
         let s = *b;
-        self.mark_atom_constant(a, s);
+        self.mark_atom_constant(eq, a, s);
       }
-      (AtomState::NonMangable, AtomState::NonMangable) => {}
-      (AtomState::NonMangable, _) => self.mark_atom_non_mangable(b),
-      (_, AtomState::NonMangable) => self.mark_atom_non_mangable(a),
-      (AtomState::Constrained(ea, ua), AtomState::Constrained(eb, ub)) => {
+      (AtomState::Constrained(_, ea, ua), AtomState::Constrained(_, eb, ub)) => {
         if eq {
           match ((ea, ua), (eb, ub)) {
             ((Some(ia), _), (Some(ib), _)) => {
@@ -112,7 +94,7 @@ impl<'a> Mangler<'a> {
                 let index = *ia;
                 for atom in mem::take(from) {
                   to.push(atom);
-                  let AtomState::Constrained(group, _) = &mut atoms[atom] else {
+                  let AtomState::Constrained(_, group, _) = &mut states[atom] else {
                     unreachable!();
                   };
                   *group = Some(index);
@@ -128,15 +110,15 @@ impl<'a> Mangler<'a> {
               identity_groups[*ib].0.push(a);
             }
             ((ia @ None, _), (ib @ None, _)) => {
-              let id = identity_groups.push((vec![a, b], None));
-              *ia = Some(id);
-              *ib = Some(id);
+              let group = identity_groups.push((vec![a, b], None));
+              *ia = Some(group);
+              *ib = Some(group);
             }
           }
         } else {
-          let id = uniqueness_groups.push((vec![a, b], 0));
-          ua.insert(id);
-          ub.insert(id);
+          let group = uniqueness_groups.push((vec![a, b], 0, FxHashSet::default()));
+          ua.insert(UniquenessConstraint::Group(group));
+          ub.insert(UniquenessConstraint::Group(group));
         }
       }
     }
@@ -144,21 +126,17 @@ impl<'a> Mangler<'a> {
 
   pub fn mark_atom_non_mangable(&mut self, atom: MangleAtom) {
     let state = &mut self.states[atom];
-    if matches!(state, AtomState::Constrained(_, _)) {
-      let AtomState::Constrained(identity_group, uniqueness_groups) =
-        mem::replace(state, AtomState::NonMangable)
+    if let AtomState::Constrained(s, _, _) = state {
+      let s = *s;
+      let AtomState::Constrained(_, identity_group, _) =
+        mem::replace(state, AtomState::Constant(s))
       else {
         unreachable!()
       };
 
       if let Some(index) = identity_group {
         for atom in mem::take(&mut self.identity_groups[index].0) {
-          self.mark_atom_non_mangable(atom);
-        }
-      }
-      for index in uniqueness_groups {
-        for atom in mem::take(&mut self.uniqueness_groups[index].0) {
-          self.mark_atom_non_mangable(atom);
+          self.mark_atom_constant(true, atom, s);
         }
       }
     }
@@ -172,35 +150,37 @@ impl<'a> Mangler<'a> {
 
   pub fn add_to_uniqueness_group(&mut self, group: UniquenessGroupId, atom: MangleAtom) {
     match &mut self.states[atom] {
-      AtomState::Constrained(_, uniqueness_groups) => {
-        uniqueness_groups.insert(group);
+      AtomState::Constrained(_, _, uniqueness_groups) => {
+        uniqueness_groups.insert(UniquenessConstraint::Group(group));
         self.uniqueness_groups[group].0.push(atom);
       }
-      AtomState::Constant(_) => {
-        self.uniqueness_groups[group].0.push(atom);
+      AtomState::Constant(s) => {
+        self.uniqueness_groups[group].2.insert(s);
       }
-      AtomState::NonMangable => {
-        self.mark_uniqueness_group_non_mangable(group);
-      }
-      AtomState::Preserved => {
+      AtomState::Builtin => {
         // Do nothing, explained above
       }
     }
   }
 
-  fn mark_atom_constant(&mut self, atom: MangleAtom, value: &'a str) {
+  fn mark_atom_constant(&mut self, eq: bool, atom: MangleAtom, value: &'a str) {
     let Mangler { identity_groups, states, .. } = self;
 
-    if matches!(states[atom], AtomState::Preserved) {
+    if matches!(states[atom], AtomState::Builtin) {
       return;
     }
 
-    let atom = mem::replace(&mut states[atom], AtomState::Constant(value));
-
-    if let AtomState::Constrained(Some(identity_group), _) = atom {
-      for atom in mem::take(&mut identity_groups[identity_group].0) {
-        states[atom] = AtomState::Constant(value);
+    if eq {
+      let atom = mem::replace(&mut states[atom], AtomState::Constant(value));
+      if let AtomState::Constrained(s, Some(identity_group), _) = atom {
+        assert_eq!(s, value);
+        for atom in mem::take(&mut identity_groups[identity_group].0) {
+          states[atom] = AtomState::Constant(value);
+        }
       }
+    } else if let AtomState::Constrained(s, _, uniqueness_groups) = &mut states[atom] {
+      assert_ne!(s, &value);
+      uniqueness_groups.insert(UniquenessConstraint::Constant(value));
     }
   }
 }

@@ -33,7 +33,7 @@ impl<'a> Analyzer<'a> {
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
     if let (Some(eq), m) = self.op_loose_eq(lhs, rhs) {
-      return (Some(!eq), m.map(|m| m.negate_equality(self.allocator)));
+      return (Some(!eq), m);
     }
 
     let lhs_lit = lhs.get_literal(self);
@@ -42,7 +42,7 @@ impl<'a> Analyzer<'a> {
       && lhs_lit.test_typeof() == rhs_lit.test_typeof()
     {
       let (eq, m) = lhs_lit.strict_eq(rhs_lit, false);
-      return (Some(!eq), m.map(|m| m.negate_equality(self.allocator)));
+      return (Some(!eq), m);
     }
 
     (None, None)
@@ -108,7 +108,7 @@ impl<'a> Analyzer<'a> {
     rhs: Entity<'a>,
   ) -> (Option<bool>, Option<MangleConstraint<'a>>) {
     let (eq, m) = self.op_strict_eq(lhs, rhs, false);
-    (eq.map(|v| !v), m.map(|m| m.negate_equality(self.allocator)))
+    (eq.map(|v| !v), m)
   }
 
   pub fn op_lt(&self, lhs: Entity<'a>, rhs: Entity<'a>, eq: bool) -> Option<bool> {
@@ -236,8 +236,8 @@ impl<'a> Analyzer<'a> {
 
       match (lhs_str_lit, rhs_str_lit) {
         (Some(LiteralValue::String(l, _)), Some(LiteralValue::String(r, _))) => {
-          let val = l.to_string() + r;
-          values.push(self.factory.mangable_string(val, self.mangler.new_atom()));
+          let val = self.allocator.alloc_str(&(l.to_string() + r));
+          values.push(self.factory.mangable_string(val, self.mangler.new_atom(val)));
         }
         _ => {
           values.push(self.factory.unknown_string);

@@ -12,4 +12,4 @@ impl<'a> CustomDepTrait<'a> for MangleAtom {
   }
 }
 
-pub const BUILTIN_ATOM: MangleAtom = MangleAtom { ptr: NonNull::from_ref(&AtomState::Preserved) };
+pub const BUILTIN_ATOM: MangleAtom = MangleAtom { ptr: NonNull::from_ref(&AtomState::Builtin) };
