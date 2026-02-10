@@ -70,7 +70,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn try_fold_node(&mut self, node: AstKind2<'a>, value: Entity<'a>) -> Entity<'a> {
-    if !self.config.folding {
+    if !self.config.folding || self.config.mangling == Some(true) {
       return value;
     }
 
