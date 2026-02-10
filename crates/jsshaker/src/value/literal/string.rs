@@ -81,7 +81,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     dep: Dep<'a>,
   ) -> EnumeratedProperties<'a> {
     let value = self.as_str();
-    if value.len() <= analyzer.config.max_simple_string_length {
+    if value.len() < analyzer.config.max_folding_string_length {
       EnumeratedProperties {
         known: value
           .char_indices()

@@ -14,10 +14,14 @@ pub struct Options {
   #[napi(ts_type = "'safest' | 'recommended' | 'smallest' | 'disabled'")]
   pub preset: Option<String>,
   pub minify: Option<bool>,
-  pub always_inline_literal: Option<bool>,
   #[napi(ts_type = "'react'")]
   pub jsx: Option<String>,
   pub source_map: Option<bool>,
+
+  #[napi(ts_type = "'enabled' | 'disabled' | 'all'")]
+  pub constant_folding: Option<String>,
+  #[napi(ts_type = "'enabled' | 'disabled' | 'only'")]
+  pub property_mangling: Option<String>,
 
   pub max_recursion_depth: Option<u32>,
   pub remember_exhausted_variables: Option<bool>,
@@ -48,14 +52,27 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
     "disabled" => TreeShakeConfig::disabled(),
     _ => panic!("Invalid tree shake option {:?}", preset),
   };
-  if options.always_inline_literal == Some(true) {
-    config.min_simple_number_value = i64::MIN;
-    config.max_simple_number_value = i64::MAX;
-    config.max_simple_string_length = usize::MAX;
-  }
   if options.jsx.as_deref() == Some("react") {
     config.jsx = TreeShakeJsxPreset::React;
   }
+
+  if let Some(constant_folding) = options.constant_folding.as_deref() {
+    match constant_folding {
+      "enabled" => {}
+      "disabled" => config.folding = false,
+      "all" => config.max_folding_string_length = usize::MAX,
+      _ => panic!("Invalid constant_folding option {:?}", constant_folding),
+    };
+  }
+  if let Some(property_mangling) = options.property_mangling.as_deref() {
+    config.mangling = match property_mangling {
+      "enabled" => Some(false),
+      "disabled" => None,
+      "only" => Some(true),
+      _ => panic!("Invalid property_mangling option {:?}", property_mangling),
+    };
+  }
+
   if let Some(depth) = options.max_recursion_depth {
     config.max_recursion_depth = depth as usize;
   }

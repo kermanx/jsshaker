@@ -35,6 +35,10 @@ struct Args {
   jsx: bool,
 
   #[arg(long, default_value_t = String::from("on"))]
+  // on/off/all
+  folding: String,
+
+  #[arg(long, default_value_t = String::from("on"))]
   // on/off/only
   mangle: String,
 
@@ -58,6 +62,20 @@ fn main() {
   let shake_disabled = TreeShakeConfig { jsx, ..TreeShakeConfig::disabled() };
   let shake_enabled = TreeShakeConfig {
     jsx,
+    folding: match args.folding.as_str() {
+      "on" => true,
+      "off" => false,
+      "all" => true,
+      _ => {
+        eprintln!("Invalid --folding: {}", args.folding);
+        std::process::exit(1);
+      }
+    },
+    max_folding_string_length: if args.folding == "all" {
+      usize::MAX
+    } else {
+      TreeShakeConfig::recommended().max_folding_string_length
+    },
     mangling: match args.mangle.as_str() {
       "on" => Some(false),
       "off" => None,

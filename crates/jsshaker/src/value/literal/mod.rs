@@ -336,24 +336,6 @@ impl<'a> LiteralValue<'a> {
     }
   }
 
-  pub fn can_build_expr(&self, analyzer: &Analyzer<'a>) -> bool {
-    let config = &analyzer.config;
-    match self {
-      LiteralValue::String(value, _) => value.len() <= config.max_simple_string_length,
-      LiteralValue::Number(value) => {
-        !value.0.is_finite()
-          || (value.0.fract() == 0.0
-            && config.min_simple_number_value <= (value.0 as i64)
-            && (value.0 as i64) <= config.max_simple_number_value)
-      }
-      LiteralValue::BigInt(_) => false,
-      LiteralValue::Boolean(_) => true,
-      LiteralValue::Symbol(_) => false,
-      LiteralValue::Null => true,
-      LiteralValue::Undefined => true,
-    }
-  }
-
   pub fn to_string(self, allocator: &'a Allocator) -> &'a Atom<'a> {
     match self {
       LiteralValue::String(value, _) => value,

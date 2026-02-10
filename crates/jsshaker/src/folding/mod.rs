@@ -8,7 +8,7 @@ use oxc::{
   ast::{ast::Expression, match_member_expression},
   span::GetSpan,
 };
-use rustc_hash::FxHashMap;
+use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
   analyzer::Analyzer,
@@ -39,11 +39,16 @@ define_box_bump_idx! {
 pub struct ConstantFolder<'a> {
   bump: BoxBump<'a, FoldingDataId, FoldingData<'a>>,
   nodes: FxHashMap<DepAtom, FoldingDataId>,
+  long_strings: FxHashMap<LiteralValue<'a>, Option<FxHashSet<FoldingDataId>>>,
 }
 
 impl<'a> ConstantFolder<'a> {
   pub fn new(allocator: &'a allocator::Allocator) -> Self {
-    Self { bump: BoxBump::new(allocator), nodes: FxHashMap::default() }
+    Self {
+      bump: BoxBump::new(allocator),
+      nodes: FxHashMap::default(),
+      long_strings: FxHashMap::default(),
+    }
   }
 
   pub fn get(&self, atom: DepAtom) -> Option<&FoldingData<'a>> {
@@ -55,7 +60,10 @@ impl<'a> ConstantFolder<'a> {
 impl<'a> Analyzer<'a> {
   fn get_foldable_literal(&mut self, value: Entity<'a>) -> Option<LiteralValue<'a>> {
     if let Some(lit) = value.get_literal(self) {
-      lit.can_build_expr(self).then_some(lit)
+      match lit {
+        LiteralValue::BigInt(_) | LiteralValue::Symbol(_) => None,
+        _ => Some(lit),
+      }
     } else {
       None
     }

@@ -1,6 +1,6 @@
 use oxc::ast::ast::{
-  BigIntLiteral, BooleanLiteral, Expression, NullLiteral, NumberBase, NumericLiteral,
-  RegExpLiteral, StringLiteral,
+  BigIntLiteral, BooleanLiteral, Expression, NullLiteral, NumericLiteral, RegExpLiteral,
+  StringLiteral,
 };
 
 use crate::{Analyzer, entity::Entity, transformer::Transformer, utils::ast::AstKind2};
@@ -11,11 +11,7 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn exec_numeric_literal(&mut self, node: &'a NumericLiteral) -> Entity<'a> {
-    if node.base == NumberBase::Float {
-      self.factory.unknown_number
-    } else {
-      self.factory.number(node.value)
-    }
+    self.factory.number(node.value)
   }
 
   pub fn exc_big_int_literal(&mut self, node: &'a BigIntLiteral) -> Entity<'a> {

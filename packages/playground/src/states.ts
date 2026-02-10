@@ -6,7 +6,6 @@ export const onInputUpdate: (() => void)[] = [];
 export const input = ref("");
 export const preset = ref("recommended");
 export const doMinify = ref(false);
-export const alwaysInline = ref(false);
 
 export const debouncedInput = ref("");
 let debounceTimeout: any = Number.NaN;
@@ -39,7 +38,6 @@ export function load(reset = false) {
         : "disabled"
       : "recommended");
   doMinify.value = parsed.doMinify ?? false;
-  alwaysInline.value = parsed.alwaysInline ?? false;
   save();
 }
 
@@ -49,7 +47,6 @@ function save() {
       input: input.value,
       preset: preset.value,
       doMinify: doMinify.value,
-      alwaysInline: alwaysInline.value,
     }),
   );
 }
@@ -92,7 +89,6 @@ const copyOnly = computed(() =>
   treeShake(debouncedInput.value, {
     preset: "disabled",
     minify: false,
-    alwaysInlineLiteral: false,
     jsx: "react",
   }),
 );
@@ -100,7 +96,6 @@ const minifiedOnly = computed(() =>
   treeShake(debouncedInput.value, {
     preset: "disabled",
     minify: true,
-    alwaysInlineLiteral: false,
     jsx: "react",
   }),
 );
@@ -108,7 +103,6 @@ const treeShakedOnly = computed(() =>
   treeShake(debouncedInput.value, {
     preset: preset.value as any,
     minify: false,
-    alwaysInlineLiteral: alwaysInline.value,
     jsx: "react",
   }),
 );
@@ -116,7 +110,6 @@ const treeShakedMinified = computed(() =>
   treeShake(treeShakedOnly.value.output.code, {
     preset: "disabled",
     minify: true,
-    alwaysInlineLiteral: false,
     jsx: "react",
   }),
 );

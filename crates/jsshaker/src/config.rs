@@ -23,7 +23,10 @@ pub struct TreeShakeConfig {
   pub enable_fn_cache: bool,
   pub enable_fn_stats: bool,
 
+  pub folding: bool,
+  pub max_folding_string_length: usize,
   pub mangling: Option<bool>,
+
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
   pub preserve_function_length: bool,
@@ -34,10 +37,6 @@ pub struct TreeShakeConfig {
   pub preserve_property_attributes: bool, // enumerable, configurable, writable
   pub impure_json_stringify: bool,
   pub precise_dynamic_prototype: bool,
-
-  pub min_simple_number_value: i64,
-  pub max_simple_number_value: i64,
-  pub max_simple_string_length: usize,
 }
 
 impl Default for TreeShakeConfig {
@@ -58,7 +57,10 @@ impl TreeShakeConfig {
       enable_fn_cache: true,
       enable_fn_stats: false,
 
+      folding: true,
+      max_folding_string_length: 12,
       mangling: Some(false),
+
       unknown_global_side_effects: true,
       preserve_function_name: true,
       preserve_function_length: true,
@@ -69,10 +71,6 @@ impl TreeShakeConfig {
       preserve_property_attributes: true,
       impure_json_stringify: true,
       precise_dynamic_prototype: true,
-
-      min_simple_number_value: -1_000_000,
-      max_simple_number_value: 1_000_000,
-      max_simple_string_length: 12,
     }
   }
 
@@ -102,14 +100,5 @@ impl TreeShakeConfig {
 
   pub fn disabled() -> Self {
     Self { enabled: false, ..Self::default() }
-  }
-
-  pub fn with_always_inline_literal(mut self, yes: bool) -> Self {
-    if yes {
-      self.min_simple_number_value = i64::MIN;
-      self.max_simple_number_value = i64::MAX;
-      self.max_simple_string_length = usize::MAX;
-    }
-    self
   }
 }

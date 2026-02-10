@@ -1,3 +1,5 @@
+use rustc_hash::FxHashSet;
+
 use super::FoldingData;
 use crate::{
   analyzer::Analyzer,
@@ -21,6 +23,30 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
     let data = analyzer.folder.bump.get_mut(self.data);
     match data {
       FoldingData::Initial => {
+        if matches!(self.literal, LiteralValue::String(s,_) if s.len() > analyzer.config.max_folding_string_length)
+        {
+          let same_folding = analyzer
+            .folder
+            .long_strings
+            .entry(self.literal)
+            .or_insert_with(|| Some(FxHashSet::default()));
+          if let Some(set) = same_folding {
+            if set.len() > 1 {
+              for data_id in same_folding.take().unwrap() {
+                analyzer.mark_non_foldable(data_id);
+              }
+              analyzer.mark_non_foldable(self.data);
+              self.value.include_mangable(analyzer);
+              return;
+            }
+            set.insert(self.data);
+          } else {
+            analyzer.mark_non_foldable(self.data);
+            self.value.include_mangable(analyzer);
+            return;
+          }
+        }
+
         *data = FoldingData::Foldable {
           literal: self.literal,
           used_values: analyzer.factory.vec1(self.value),
@@ -28,20 +54,21 @@ impl<'a> CustomDepTrait<'a> for FoldableDep<'a> {
         };
       }
       FoldingData::Foldable { literal, used_values, mangle_atom, .. } => {
-        if literal.strict_eq(self.literal, true).0 {
-          used_values.push(self.value);
-          match (*mangle_atom, self.mangle_atom) {
-            (Some(m1), Some(m2)) => {
-              analyzer.include(MangleConstraint::Eq(m1, m2));
-            }
-            (None, Some(m)) | (Some(m), None) => {
-              analyzer.include(m);
-            }
-            _ => {}
-          }
-        } else {
+        if !literal.strict_eq(self.literal, true).0 {
           analyzer.mark_non_foldable(self.data);
           self.value.include_mangable(analyzer);
+          return;
+        }
+
+        used_values.push(self.value);
+        match (*mangle_atom, self.mangle_atom) {
+          (Some(m1), Some(m2)) => {
+            analyzer.include(MangleConstraint::Eq(m1, m2));
+          }
+          (None, Some(m)) | (Some(m), None) => {
+            analyzer.include(m);
+          }
+          _ => {}
         }
       }
       FoldingData::NonFoldable => {

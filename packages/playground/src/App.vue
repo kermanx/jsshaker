@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import Editor from './Editor.vue';
-import { alwaysInline, copyOutput, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
+import { copyOutput, debouncedInput, diagnostics, doMinify, hideDiagnostics, input, load, onlyMinifiedSize, output, preset, treeShakedMinifiedSize, treeShakedUnminifiedSize, treeShakeRate } from './states';
 import DiffEditor from './DiffEditor.vue';
 
 const showDiff = ref(false);
@@ -33,12 +33,6 @@ const showDiff = ref(false);
             <option value="safest">Safest</option>
             <option value="disabled">Disabled</option>
           </select>
-        </label>
-        <label flex align-center gap-1 select-none>
-          <span op-80>
-            Always inline:
-          </span>
-          <input v-model="alwaysInline" type="checkbox">
         </label>
         <label flex align-center gap-1 select-none>
           <span op-80>
