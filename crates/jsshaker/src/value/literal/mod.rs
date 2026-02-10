@@ -214,10 +214,14 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    match self.test_truthy() {
-      Some(value) => analyzer.factory.boolean(value),
-      None => analyzer.factory.computed_unknown_boolean(self),
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    if matches!(self, LiteralValue::Null | LiteralValue::Undefined) {
+      self.into()
+    } else {
+      match self.test_truthy() {
+        Some(value) => analyzer.factory.boolean(value),
+        None => analyzer.factory.unknown_boolean,
+      }
     }
   }
 

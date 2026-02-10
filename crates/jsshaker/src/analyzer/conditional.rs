@@ -66,7 +66,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     id: impl Into<DepAtom>,
     kind: CfScopeKind<'a>,
-    test: Entity<'a>,
+    test_prim: Entity<'a>,
     maybe_consequent: bool,
     maybe_alternate: bool,
     is_consequent: bool,
@@ -75,7 +75,7 @@ impl<'a> Analyzer<'a> {
     self.push_conditional_cf_scope(
       id,
       kind,
-      test,
+      test_prim,
       maybe_consequent,
       maybe_alternate,
       is_consequent,
@@ -87,18 +87,19 @@ impl<'a> Analyzer<'a> {
     &mut self,
     id: impl Into<DepAtom>,
     left: Entity<'a>,
+    left_prim: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
   ) -> Entity<'a> {
     assert!(maybe_left);
-    let dep = self.register_conditional_data(id, left, maybe_left, maybe_right, true, true);
+    let dep = self.register_conditional_data(id, left_prim, maybe_left, maybe_right, true, true);
     self.factory.computed(left, dep)
   }
 
   pub fn push_logical_right_cf_scope(
     &mut self,
     id: impl Into<DepAtom>,
-    left: Entity<'a>,
+    left_prim: Entity<'a>,
     maybe_left: bool,
     maybe_right: bool,
   ) -> Option<Dep<'a>> {
@@ -106,7 +107,7 @@ impl<'a> Analyzer<'a> {
     self.push_conditional_cf_scope(
       id,
       CfScopeKind::NonDet,
-      left,
+      left_prim,
       maybe_left,
       maybe_right,
       false,
@@ -119,14 +120,14 @@ impl<'a> Analyzer<'a> {
     &mut self,
     id: impl Into<DepAtom>,
     kind: CfScopeKind<'a>,
-    test: Entity<'a>,
+    test_prim: Entity<'a>,
     maybe_true: bool,
     maybe_false: bool,
     is_true: bool,
     has_contra: bool,
   ) -> Option<Dep<'a>> {
     let dep =
-      self.register_conditional_data(id, test, maybe_true, maybe_false, is_true, has_contra);
+      self.register_conditional_data(id, test_prim, maybe_true, maybe_false, is_true, has_contra);
 
     let non_det = maybe_true && maybe_false;
 

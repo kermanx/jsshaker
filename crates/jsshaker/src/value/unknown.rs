@@ -93,11 +93,8 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     self.into()
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    match self.test_truthy() {
-      Some(val) => analyzer.factory.boolean(val),
-      None => analyzer.factory.unknown_boolean,
-    }
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.unknown
   }
 
   fn coerce_property_key(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {

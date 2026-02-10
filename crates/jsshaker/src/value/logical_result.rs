@@ -98,8 +98,8 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.coerce_number(analyzer)
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let value = self.value.coerce_boolean(analyzer);
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let value = self.value.coerce_primitive(analyzer);
     if self.is_coalesce {
       value
     } else {

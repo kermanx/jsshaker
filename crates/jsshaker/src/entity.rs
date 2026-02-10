@@ -140,8 +140,8 @@ impl<'a> Entity<'a> {
   pub fn coerce_number(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.coerce_number(analyzer), analyzer)
   }
-  pub fn coerce_boolean(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_boolean(analyzer), analyzer)
+  pub fn coerce_primitive(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    self.forward_value(self.value.coerce_primitive(analyzer), analyzer)
   }
   pub fn coerce_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     self.forward_value(self.value.coerce_property_key(analyzer), analyzer)

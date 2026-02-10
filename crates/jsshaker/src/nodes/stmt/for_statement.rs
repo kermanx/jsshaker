@@ -20,7 +20,7 @@ impl<'a> Analyzer<'a> {
     }
 
     let dep = if let Some(test) = &node.test {
-      let test = self.exec_expression(test).coerce_boolean(self);
+      let test = self.exec_expression(test).coerce_primitive(self);
       if test.test_truthy() == Some(false) {
         return;
       }
@@ -43,7 +43,7 @@ impl<'a> Analyzer<'a> {
       analyzer.pop_cf_scope();
 
       if let Some(test) = &node.test {
-        let test = analyzer.exec_expression(test).coerce_boolean(analyzer);
+        let test = analyzer.exec_expression(test).coerce_primitive(analyzer);
         let dep = analyzer.dep(test);
         analyzer.cf_scope_mut().push_dep(dep);
         let truthy = test.test_truthy();

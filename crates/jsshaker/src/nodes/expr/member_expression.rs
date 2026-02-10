@@ -40,15 +40,24 @@ impl<'a> Analyzer<'a> {
     let dep_id = AstKind2::MemberExpression(node);
 
     if node.optional() {
-      let maybe_left = match object.test_nullish() {
+      let object_prim = object.coerce_primitive(self);
+
+      let maybe_left = match object_prim.test_nullish() {
         Some(true) => {
           self.pop_multiple_cf_scopes(scope_count);
-          return Err(self.forward_logical_left_val(dep_id, self.factory.undefined, true, false));
+          return Err(self.forward_logical_left_val(
+            dep_id,
+            self.factory.undefined,
+            self.factory.undefined,
+            true,
+            false,
+          ));
         }
         Some(false) => false,
         None => {
           undefined = Some(self.forward_logical_left_val(
             dep_id,
+            undefined.unwrap_or(self.factory.undefined),
             undefined.unwrap_or(self.factory.undefined),
             true,
             false,
@@ -57,7 +66,7 @@ impl<'a> Analyzer<'a> {
         }
       };
 
-      self.push_logical_right_cf_scope(dep_id, object, maybe_left, true);
+      self.push_logical_right_cf_scope(dep_id, object_prim, maybe_left, true);
       scope_count += 1;
     }
 

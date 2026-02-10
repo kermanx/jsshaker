@@ -9,7 +9,8 @@ impl<'a> Analyzer<'a> {
     default: &'a Expression<'a>,
     original: Entity<'a>,
   ) -> Entity<'a> {
-    let (maybe_original, maybe_fallback) = match original.test_is_undefined() {
+    let original_prim = original.coerce_primitive(self);
+    let (maybe_original, maybe_fallback) = match original_prim.test_is_undefined() {
       Some(true) => (false, true),
       Some(false) => (true, false),
       None => (true, true),
@@ -19,6 +20,7 @@ impl<'a> Analyzer<'a> {
       analyzer.forward_logical_left_val(
         AstKind2::WithDefault(default),
         original,
+        original_prim,
         maybe_original,
         maybe_fallback,
       )
@@ -26,7 +28,7 @@ impl<'a> Analyzer<'a> {
     let exec_fallback = |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_logical_right_cf_scope(
         AstKind2::WithDefault(default),
-        original,
+        original_prim,
         maybe_original,
         maybe_fallback,
       );

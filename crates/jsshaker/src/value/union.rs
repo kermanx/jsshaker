@@ -247,8 +247,8 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     analyzer.factory.union(values)
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    let values = self.values.map(analyzer.allocator, |v| v.coerce_boolean(analyzer));
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    let values = self.values.map(analyzer.allocator, |v| v.coerce_primitive(analyzer));
     analyzer.factory.union(values)
   }
 

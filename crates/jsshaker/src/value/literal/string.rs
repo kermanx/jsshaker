@@ -167,7 +167,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     if val.is_nan() { analyzer.factory.nan } else { analyzer.factory.number(val) }
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.boolean(!self.as_str().is_empty())
   }
 

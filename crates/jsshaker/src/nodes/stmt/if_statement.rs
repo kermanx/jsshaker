@@ -9,7 +9,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_if_statement(&mut self, node: &'a IfStatement) {
     let factory = self.factory;
 
-    let test = self.exec_expression(&node.test).coerce_boolean(self);
+    let test = self.exec_expression(&node.test).coerce_primitive(self);
 
     let (maybe_consequent, maybe_alternate) = match test.test_truthy() {
       Some(true) => (true, false),

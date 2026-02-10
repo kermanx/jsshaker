@@ -12,19 +12,20 @@ impl<'a> Analyzer<'a> {
       rhs
     } else if node.operator.is_logical() {
       let (left, cache) = self.exec_assignment_target_read(&node.left);
+      let left_prim = left.coerce_primitive(self);
 
       let (maybe_left, maybe_right) = match &node.operator {
-        AssignmentOperator::LogicalAnd => match left.test_truthy() {
+        AssignmentOperator::LogicalAnd => match left_prim.test_truthy() {
           Some(true) => (false, true),
           Some(false) => (true, false),
           None => (true, true),
         },
-        AssignmentOperator::LogicalOr => match left.test_truthy() {
+        AssignmentOperator::LogicalOr => match left_prim.test_truthy() {
           Some(true) => (true, false),
           Some(false) => (false, true),
           None => (true, true),
         },
-        AssignmentOperator::LogicalNullish => match left.test_nullish() {
+        AssignmentOperator::LogicalNullish => match left_prim.test_nullish() {
           Some(true) => (false, true),
           Some(false) => (true, false),
           None => (true, true),
@@ -36,6 +37,7 @@ impl<'a> Analyzer<'a> {
         analyzer.forward_logical_left_val(
           AstKind2::LogicalAssignmentExpressionLeft(node),
           left,
+          left_prim,
           maybe_left,
           maybe_right,
         )
@@ -43,7 +45,7 @@ impl<'a> Analyzer<'a> {
       let exec_right = |analyzer: &mut Analyzer<'a>| {
         let conditional_dep = analyzer.push_logical_right_cf_scope(
           AstKind2::LogicalAssignmentExpressionLeft(node),
-          left,
+          left_prim,
           maybe_left,
           maybe_right,
         );

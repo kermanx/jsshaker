@@ -71,7 +71,7 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
   fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

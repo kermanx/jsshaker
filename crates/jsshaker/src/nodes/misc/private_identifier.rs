@@ -1,8 +1,13 @@
 use oxc::ast::ast::PrivateIdentifier;
 
 use crate::{
-  analyzer::Analyzer, ast::AstKind2, entity::Entity, transformer::Transformer,
-  utils::private_identifier_name::include_private_identifier_name,
+  analyzer::Analyzer,
+  ast::AstKind2,
+  entity::Entity,
+  transformer::Transformer,
+  utils::private_identifier_name::{
+    escape_private_identifier_name, unescape_private_identifier_name,
+  },
 };
 
 impl<'a> Analyzer<'a> {
@@ -11,7 +16,7 @@ impl<'a> Analyzer<'a> {
     self.factory.computed(
       self.exec_mangable_static_string(
         AstKind2::PrivateIdentifier(node),
-        include_private_identifier_name(node.name.as_str()),
+        escape_private_identifier_name(node.name.as_str()),
       ),
       AstKind2::PrivateIdentifier(node),
     )
@@ -26,10 +31,8 @@ impl<'a> Transformer<'a> {
   ) -> Option<PrivateIdentifier<'a>> {
     if need_val || self.is_included(AstKind2::PrivateIdentifier(node)) {
       let PrivateIdentifier { span, name } = node;
-      Some(self.ast.private_identifier(
-        *span,
-        self.transform_mangable_static_string(AstKind2::PrivateIdentifier(node), name),
-      ))
+      let name = self.transform_mangable_static_string(AstKind2::PrivateIdentifier(node), name);
+      Some(self.ast.private_identifier(*span, unescape_private_identifier_name(name)))
     } else {
       None
     }

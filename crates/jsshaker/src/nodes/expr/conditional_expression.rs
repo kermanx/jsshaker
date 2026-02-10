@@ -7,7 +7,7 @@ use crate::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_conditional_expression(&mut self, node: &'a ConditionalExpression<'a>) -> Entity<'a> {
-    let test = self.exec_expression(&node.test);
+    let test = self.exec_expression(&node.test).coerce_primitive(self);
 
     let (maybe_true, maybe_false) = match test.test_truthy() {
       Some(true) => (true, false),

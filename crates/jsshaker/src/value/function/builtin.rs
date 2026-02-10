@@ -134,8 +134,8 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     analyzer.factory.nan
   }
 
-  fn coerce_boolean(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    analyzer.factory.boolean(true)
+  fn coerce_primitive(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
+    analyzer.factory.r#true
   }
 
   fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

@@ -7,19 +7,20 @@ use crate::{
 impl<'a> Analyzer<'a> {
   pub fn exec_logical_expression(&mut self, node: &'a LogicalExpression<'a>) -> Entity<'a> {
     let left = self.exec_expression(&node.left);
+    let left_prim = left.coerce_primitive(self);
 
     let (maybe_left, maybe_right) = match &node.operator {
-      LogicalOperator::And => match left.test_truthy() {
+      LogicalOperator::And => match left_prim.test_truthy() {
         Some(true) => (false, true),
         Some(false) => (true, false),
         None => (true, true),
       },
-      LogicalOperator::Or => match left.test_truthy() {
+      LogicalOperator::Or => match left_prim.test_truthy() {
         Some(true) => (true, false),
         Some(false) => (false, true),
         None => (true, true),
       },
-      LogicalOperator::Coalesce => match left.test_nullish() {
+      LogicalOperator::Coalesce => match left_prim.test_nullish() {
         Some(true) => (false, true),
         Some(false) => (true, false),
         None => (true, true),
@@ -30,6 +31,7 @@ impl<'a> Analyzer<'a> {
       analyzer.forward_logical_left_val(
         AstKind2::LogicalExpressionLeft(node),
         left,
+        left_prim,
         maybe_left,
         maybe_right,
       )
@@ -38,7 +40,7 @@ impl<'a> Analyzer<'a> {
     let exec_right = |analyzer: &mut Analyzer<'a>| {
       let conditional_dep = analyzer.push_logical_right_cf_scope(
         AstKind2::LogicalExpressionLeft(node),
-        left,
+        left_prim,
         maybe_left,
         maybe_right,
       );
