@@ -212,7 +212,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer: &Analyzer<'a>,
     check_proto: bool,
   ) -> Option<Vec<(bool, Entity<'a>)>> {
-    if self.is_self_or_proto_included() {
+    if self.included.get() {
       return None;
     }
 
@@ -344,27 +344,10 @@ impl<'a> ObjectValue<'a> {
 
   pub fn set_prototype(&self, prototype: ObjectPrototype<'a>) {
     self.prototype.set(prototype);
-    match prototype {
-      ObjectPrototype::Custom(s) => self.mangling_group.set(s.mangling_group.get()),
-      ObjectPrototype::Builtin(_) | ObjectPrototype::Unknown(_) => self.mangling_group.set(None),
-      ObjectPrototype::ImplicitOrNull => {}
-    }
   }
 
   pub fn add_extra_dep(&self, dep: Dep<'a>) {
     self.unknown.borrow_mut().non_existent.push(dep);
-  }
-
-  pub fn is_self_or_proto_included(&self) -> bool {
-    if self.included.get() {
-      return true;
-    }
-    match self.prototype.get() {
-      ObjectPrototype::Custom(object) => object.is_self_or_proto_included(),
-      ObjectPrototype::Builtin(_) => false,
-      ObjectPrototype::Unknown(_) => true,
-      ObjectPrototype::ImplicitOrNull => false,
-    }
   }
 }
 

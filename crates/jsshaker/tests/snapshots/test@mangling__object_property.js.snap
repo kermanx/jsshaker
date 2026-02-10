@@ -56,7 +56,7 @@ export function object_assign(aaa, bbb) {
 export function dunder_proto(aaa) {
 	const obj = {
 		__proto__: aaa,
-		prop: aaa
+		a: aaa
 	};
-	console.log(obj.prop);
+	console.log(obj.a);
 }

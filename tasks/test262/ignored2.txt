@@ -1057,3 +1057,14 @@ built-ins/Symbol/desc-to-string-symbol.js	|	依赖异常行为
 built-ins/Object/freeze/frozen-object-contains-symbol-properties-strict.js	|	依赖异常行为
 built-ins/Object/setPrototypeOf/bigint.js	|	依赖异常行为
 built-ins/Object/setPrototypeOf/o-not-obj-coercible.js	|	依赖异常行为
+staging/sm/class/superCallOrder.js	|	依赖异常行为
+built-ins/Number/MIN_VALUE/S15.7.3.3_A3.js	|	修改了内置对象
+built-ins/Number/MAX_VALUE/S15.7.3.2_A3.js	|	修改了内置对象
+language/statements/class/subclass/builtin-objects/Symbol/new-symbol-with-super-throws.js	|	依赖异常行为
+language/statements/class/definition/fn-name-method.js	|	依赖函数名称
+language/statements/class/definition/fn-name-gen-method.js	|	依赖函数名称
+language/expressions/object/method-definition/fn-name-fn.js	|	依赖函数名称
+language/expressions/object/method-definition/fn-name-gen.js	|	依赖函数名称
+language/expressions/object/fn-name-arrow.js	|	依赖函数名称
+language/expressions/object/fn-name-class.js	|	依赖函数名称
+language/expressions/object/fn-name-cover.js	|	依赖函数名称

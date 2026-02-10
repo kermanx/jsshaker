@@ -27,8 +27,7 @@ impl<'a> ObjectValue<'a> {
       return escaped::set_property(analyzer, dep, key, value);
     }
 
-    if self.is_self_or_proto_included() {
-      analyzer.include(self);
+    if self.included.get() {
       return escaped::set_property(analyzer, dep, key, value);
     }
 
@@ -244,7 +243,14 @@ impl<'a> ObjectValue<'a> {
 
         found1 + found2
       }
-      ObjectPrototype::Unknown(_dep) => Found::Unknown,
+      ObjectPrototype::Unknown(dep) => {
+        setters.push(PendingSetter {
+          non_det: false,
+          dep: None,
+          setter: analyzer.factory.computed_unknown((dep, key_atom)),
+        });
+        Found::Unknown
+      }
     }
   }
 

@@ -26,7 +26,7 @@ impl<'a> ObjectValue<'a> {
     dep: Dep<'a>,
     key: Entity<'a>,
   ) -> Entity<'a> {
-    if self.is_self_or_proto_included() {
+    if self.included.get() {
       return escaped::get_property(self, analyzer, dep, key);
     }
 
@@ -120,11 +120,16 @@ impl<'a> ObjectValue<'a> {
     mut key_atom: Option<MangleAtom>,
     exhaustive_deps: Option<&mut Vec<PropertyKeyValue<'a>>>,
   ) -> bool {
-    if self.is_mangable() {
-      if key_atom.is_none() {
-        self.disable_mangling(analyzer);
+    if self.included.get() {
+      let unknown = analyzer.factory.optional_computed(analyzer.factory.unknown, key_atom);
+      if analyzer.config.unknown_property_read_side_effects {
+        context.getters.push(unknown);
+      } else {
+        context.values.push(unknown);
       }
-    } else {
+    }
+
+    if !self.is_mangable() {
       key_atom = None;
     }
 
@@ -141,6 +146,10 @@ impl<'a> ObjectValue<'a> {
       }
     } else if let Some(exhaustive_deps) = exhaustive_deps {
       exhaustive_deps.push(key);
+    }
+
+    if let Some(key_atom) = key_atom {
+      self.add_to_mangling_group(analyzer, key_atom);
     }
 
     match self.prototype.get() {
@@ -160,7 +169,15 @@ impl<'a> ObjectValue<'a> {
       ObjectPrototype::Custom(prototype) => {
         prototype.get_keyed(analyzer, context, key, key_atom, None)
       }
-      ObjectPrototype::Unknown(_unknown) => false,
+      ObjectPrototype::Unknown(dep) => {
+        let unknown = analyzer.factory.computed_unknown((dep, key_atom));
+        if analyzer.config.unknown_property_read_side_effects {
+          context.getters.push(unknown);
+        } else {
+          context.values.push(unknown);
+        }
+        false
+      }
     }
   }
 
