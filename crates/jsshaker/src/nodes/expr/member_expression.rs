@@ -89,6 +89,7 @@ impl<'a> Analyzer<'a> {
       (object, key)
     });
 
+    self.add_assoc_dep(AstKind2::MemberExpression(node), object.get_shallow_dep(self));
     object.set_property(self, AstKind2::MemberExpression(node), key, value);
   }
 
