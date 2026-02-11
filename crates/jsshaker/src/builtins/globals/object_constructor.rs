@@ -247,18 +247,20 @@ impl<'a> Builtins<'a> {
     self.factory.implemented_builtin_fn("Object.create", |analyzer, dep, _, args| {
       let proto = args.get(analyzer, 0);
       let properties = args.get(analyzer, 1);
-      let deps = analyzer.dep((proto, dep));
       if properties.test_is_undefined() != Some(true) {
         // Has properties
-        let enumerated = properties.enumerate_properties(analyzer, deps);
+        let enumerated = properties.enumerate_properties(analyzer, (proto, dep));
         if !enumerated.known.is_empty() || enumerated.unknown.is_some() {
           return analyzer.factory.computed_unknown((enumerated.dep, properties));
         }
       }
-      let prototype = if proto.test_nullish() == Some(true) {
-        ObjectPrototype::ImplicitOrNull
+      let (deps, prototype) = if proto.test_nullish() == Some(true) {
+        (analyzer.dep((proto, dep)), ObjectPrototype::ImplicitOrNull)
+      } else if let Some(proto_obj) = proto.as_object() {
+        (analyzer.dep((proto.get_shallow_dep(analyzer), dep)), ObjectPrototype::Custom(proto_obj))
       } else {
-        ObjectPrototype::Unknown(deps)
+        let deps = analyzer.dep((proto, dep));
+        (deps, ObjectPrototype::Unknown(deps))
       };
       let mangling = analyzer.new_object_mangling_group();
       let object = analyzer.new_empty_object(prototype, Some(mangling));
