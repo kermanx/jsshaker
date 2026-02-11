@@ -113,17 +113,23 @@ impl<'a> ObjectProperty<'a> {
   }
 
   fn get_unmangable(&mut self, analyzer: &Analyzer<'a>, context: &mut GetPropertyContext<'a>) {
+    let computed = |v: Entity<'a>| {
+      if context.mangable && self.mangling.is_none() {
+        analyzer.factory.computed(v, (context.key, self.key))
+      } else {
+        analyzer.factory.optional_computed(v, self.key)
+      }
+    };
+
     for possible_value in &self.possible_values {
       match possible_value {
         ObjectPropertyValue::Consumed(value, _) | ObjectPropertyValue::Field(value, _) => {
-          context.values.push(analyzer.factory.optional_computed(*value, self.key))
+          context.values.push(computed(*value))
         }
-        ObjectPropertyValue::Property(Some(getter), _) => {
-          context.getters.push(analyzer.factory.optional_computed(*getter, self.key))
+        ObjectPropertyValue::Property(Some(getter), _) => context.getters.push(computed(*getter)),
+        ObjectPropertyValue::Property(None, _) => {
+          context.values.push(computed(analyzer.factory.undefined))
         }
-        ObjectPropertyValue::Property(None, _) => context
-          .values
-          .push(analyzer.factory.optional_computed(analyzer.factory.undefined, self.key)),
       }
     }
   }

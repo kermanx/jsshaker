@@ -100,7 +100,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       return;
     }
 
-    if self.included.get() {
+    if self.included_as_prototype.get() {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
@@ -112,6 +112,19 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
     if should_include.is_some() {
       self.include(analyzer);
+    } else {
+      let mut unknown = self.unknown.borrow_mut();
+      if let Some(ObjectPropertyValue::Property(Some(v1), Some(v2))) =
+        unknown.possible_values.last()
+        && v1.exactly_same(*v2)
+        && v2.exactly_same(analyzer.factory.unknown)
+      {
+      } else {
+        unknown.possible_values.push(ObjectPropertyValue::Property(
+          Some(analyzer.factory.unknown),
+          Some(analyzer.factory.unknown),
+        ));
+      }
     }
   }
 

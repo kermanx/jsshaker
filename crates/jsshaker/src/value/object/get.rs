@@ -16,6 +16,7 @@ pub(crate) struct GetPropertyContext<'a> {
   pub values: Vec<Entity<'a>>,
   pub getters: Vec<Entity<'a>>,
   pub extra_deps: DepVec<'a>,
+  pub mangable: bool,
 }
 
 impl<'a> ObjectValue<'a> {
@@ -30,20 +31,20 @@ impl<'a> ObjectValue<'a> {
       return escaped::get_property(self, analyzer, dep, key);
     }
 
-    let mut mangable = false;
     let mut context = GetPropertyContext {
       this,
       key,
       values: vec![],
       getters: vec![],
       extra_deps: analyzer.factory.vec(),
+      mangable: false,
     };
     let mut exhaustive_deps = (!self.immutable).then(Vec::new);
 
     let mut check_rest = false;
     let key_literals = key.get_literals(analyzer);
     if let Some(key_literals) = &key_literals {
-      mangable = self.check_mangable(analyzer, key_literals);
+      context.mangable = self.check_mangable(analyzer, key_literals);
       for &key_literal in key_literals {
         let (key_str, key_atom) = key_literal.into();
 
@@ -79,7 +80,7 @@ impl<'a> ObjectValue<'a> {
       let non_det = check_rest || !context.values.is_empty() || context.getters.len() > 1;
       analyzer.push_cf_scope_with_deps(
         CfScopeKind::Dependent,
-        analyzer.factory.vec1(if mangable { dep } else { analyzer.dep((dep, key)) }),
+        analyzer.factory.vec1(if context.mangable { dep } else { analyzer.dep((dep, key)) }),
         non_det,
       );
       for getter in context.getters {
@@ -105,7 +106,7 @@ impl<'a> ObjectValue<'a> {
       .factory
       .try_union(allocator::Vec::from_iter_in(context.values.iter().copied(), analyzer.allocator))
       .unwrap_or(analyzer.factory.undefined);
-    if mangable {
+    if context.mangable {
       analyzer.factory.computed(value, (context.extra_deps, dep))
     } else {
       analyzer.factory.computed(value, (context.extra_deps, dep, key))
@@ -133,8 +134,8 @@ impl<'a> ObjectValue<'a> {
       key_atom = None;
     }
 
-    let mut string_keyed = self.keyed.borrow_mut();
-    if let Some(property) = string_keyed.get_mut(&key) {
+    let mut keyed = self.keyed.borrow_mut();
+    if let Some(property) = keyed.get_mut(&key) {
       if let Some(exhaustive_deps) = exhaustive_deps
         && property.may_be_unincluded_field()
       {
@@ -158,6 +159,8 @@ impl<'a> ObjectValue<'a> {
         if let Some(value) = prototype.get_keyed(analyzer, key, context.this) {
           context.values.push(if let Some(key_atom) = key_atom {
             analyzer.factory.computed(value, key_atom)
+          } else if context.mangable {
+            analyzer.factory.computed(value, context.key)
           } else {
             value
           });
@@ -170,7 +173,7 @@ impl<'a> ObjectValue<'a> {
         prototype.get_keyed(analyzer, context, key, key_atom, None)
       }
       ObjectPrototype::Unknown(dep) => {
-        let unknown = analyzer.factory.computed_unknown((dep, key_atom));
+        let unknown = analyzer.factory.computed_unknown((dep, context.key));
         if analyzer.config.unknown_property_read_side_effects {
           context.getters.push(unknown);
         } else {

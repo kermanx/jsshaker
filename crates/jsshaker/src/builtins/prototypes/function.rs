@@ -6,7 +6,7 @@ use crate::{
   value::{ArgumentsValue, bound::BoundFunction},
 };
 
-pub fn create_function_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
+pub fn create_function_prototype<'a>(factory: &'a Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Function", create_object_prototype(factory), {
     "apply": factory.implemented_builtin_fn("Function::apply", |analyzer, dep, this, args| {
       let this_arg = args.get(analyzer, 0);

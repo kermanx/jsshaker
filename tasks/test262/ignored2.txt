@@ -1068,3 +1068,5 @@ language/expressions/object/method-definition/fn-name-gen.js	|	依赖函数名�
 language/expressions/object/fn-name-arrow.js	|	依赖函数名称
 language/expressions/object/fn-name-class.js	|	依赖函数名称
 language/expressions/object/fn-name-cover.js	|	依赖函数名称
+built-ins/Object/defineProperty/15.2.3.6-1-2.js	|	依赖异常行为
+built-ins/Object/defineProperty/15.2.3.6-1-1.js	|	依赖异常行为

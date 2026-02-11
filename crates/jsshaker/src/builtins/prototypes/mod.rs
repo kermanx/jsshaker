@@ -26,6 +26,7 @@ use crate::{
 pub struct BuiltinPrototype<'a> {
   name: &'static str,
   fields: allocator::HashMap<'a, PropertyKeyValue<'a>, (bool, Entity<'a>)>,
+  factory: &'a Factory<'a>,
 }
 
 impl fmt::Debug for BuiltinPrototype<'_> {
@@ -35,8 +36,8 @@ impl fmt::Debug for BuiltinPrototype<'_> {
 }
 
 impl<'a> BuiltinPrototype<'a> {
-  pub fn new_in(factory: &Factory<'a>) -> Self {
-    Self { name: "", fields: allocator::HashMap::new_in(factory.allocator) }
+  pub fn new_in(factory: &'a Factory<'a>) -> Self {
+    Self { name: "", fields: allocator::HashMap::new_in(factory.allocator), factory }
   }
 
   pub fn with_name(mut self, name: &'static str) -> Self {
@@ -53,19 +54,29 @@ impl<'a> BuiltinPrototype<'a> {
     self.fields.insert(PropertyKeyValue::String(key), (is_getter, value.into()));
   }
 
+  fn get(&self, key: &PropertyKeyValue) -> Option<(bool, Entity<'a>)> {
+    if let Some(&v) = self.fields.get(key) {
+      Some(v)
+    } else if let PropertyKeyValue::Symbol(_) = key {
+      Some((false, self.factory.unknown)) // TODO: Actually look up symbol properties
+    } else {
+      None
+    }
+  }
+
   pub fn get_keyed(
     &self,
     analyzer: &Analyzer<'a>,
     key: PropertyKeyValue,
     this: Value<'a>,
   ) -> Option<Entity<'a>> {
-    let (is_getter, value) = self.fields.get(&key).copied()?;
+    let (is_getter, value) = self.get(&key)?;
     Some(if is_getter { analyzer.factory.computed(value, this) } else { value })
   }
 
   pub fn get_literal_keyed(&self, key: LiteralValue) -> Option<Entity<'a>> {
     let (key, _) = key.into();
-    self.fields.get(&key).map(|(_, v)| *v)
+    self.get(&key).map(|(_, v)| v)
   }
 
   pub fn get_property(
@@ -107,7 +118,7 @@ pub struct BuiltinPrototypes<'a> {
 }
 
 impl<'a> Builtins<'a> {
-  pub fn create_builtin_prototypes(factory: &Factory<'a>) -> &'a BuiltinPrototypes<'a> {
+  pub fn create_builtin_prototypes(factory: &'a Factory<'a>) -> &'a BuiltinPrototypes<'a> {
     factory.alloc(BuiltinPrototypes {
       array: array::create_array_prototype(factory),
       bigint: bigint::create_bigint_prototype(factory),

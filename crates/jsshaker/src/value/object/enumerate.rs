@@ -30,6 +30,7 @@ impl<'a> ObjectValue<'a> {
       values: vec![],
       getters: vec![],
       extra_deps: analyzer.factory.vec(),
+      mangable: false,
     };
 
     let mut unknown = None;

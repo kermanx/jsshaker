@@ -1,7 +1,7 @@
 use super::{BuiltinPrototype, object::create_object_prototype};
 use crate::{analyzer::Factory, init_prototype};
 
-pub fn create_array_prototype<'a>(factory: &Factory<'a>) -> BuiltinPrototype<'a> {
+pub fn create_array_prototype<'a>(factory: &'a Factory<'a>) -> BuiltinPrototype<'a> {
   init_prototype!("Array", create_object_prototype(factory), {
     "at": factory.unknown,
     "concat": factory.unknown /*pure_fn_returns_array*/,

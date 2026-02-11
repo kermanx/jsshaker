@@ -17,7 +17,7 @@ use crate::{
   entity::Entity,
   transformer::Transformer,
   utils::{CalleeNode, DefaultIn},
-  value::{ObjectPrototype, ValueTrait, cache::FnCacheTrackingData, call::FnCallInfo},
+  value::{ObjectPrototype, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
 struct Data<'a> {
@@ -52,7 +52,7 @@ impl<'a> Analyzer<'a> {
       {
         class.statics.set_prototype(super_statics);
         prototype.set_prototype(super_prototype);
-        prototype.unknown_mutate(self, prototype_dep);
+        prototype.add_extra_dep(prototype_dep);
       } else {
         let dep = self.factory.dep(*super_class);
         class.statics.set_prototype(ObjectPrototype::Unknown(dep));

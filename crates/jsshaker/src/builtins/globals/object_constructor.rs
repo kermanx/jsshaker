@@ -109,7 +109,7 @@ impl<'a> Builtins<'a> {
           }
         }
       } else {
-        array.init_rest(analyzer.factory.unknown_string);
+        array.init_rest(analyzer.factory.computed_unknown_string(object));
       }
 
       analyzer.factory.computed(array.into(), (dep, object.get_shallow_dep(analyzer)))
@@ -181,7 +181,6 @@ impl<'a> Builtins<'a> {
 
       'trackable: {
         if analyzer.config.preserve_property_attributes {
-          object.delete_property(analyzer, dep, analyzer.factory.unknown);
           break 'trackable;
         }
         if key.get_literal(analyzer).is_none() {
