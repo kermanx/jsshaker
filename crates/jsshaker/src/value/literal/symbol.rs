@@ -12,7 +12,7 @@ pub struct SymbolRegistry<'a> {
 
 impl<'a> SymbolRegistry<'a> {
   pub fn default() -> Self {
-    Self { counter: Cell::new(0), global_symbols: RefCell::new(FxHashMap::default()) }
+    Self { counter: Cell::new(128), global_symbols: RefCell::new(FxHashMap::default()) }
   }
 
   pub fn alloc_symbol_id(&self) -> SymbolId {
@@ -36,4 +36,13 @@ impl<'a> SymbolRegistry<'a> {
     map.insert(key, symbol);
     symbol
   }
+}
+
+#[macro_export]
+macro_rules! builtin_symbol {
+  ($n:literal) => {{
+    use $crate::value::LiteralValue;
+    const V: LiteralValue = LiteralValue::Symbol(oxc::semantic::SymbolId::from_usize($n));
+    (&V).into()
+  }};
 }

@@ -74,6 +74,7 @@ impl<'a> Analyzer<'a> {
 
       modules: Modules::default(),
       builtins: Builtins::new(config, factory),
+      symbol_registry: SymbolRegistry::default(),
 
       current_module: ModuleId::new(0),
       span_stack: vec![],
@@ -91,7 +92,6 @@ impl<'a> Analyzer<'a> {
       pending_deps: Default::default(),
       diagnostics: Default::default(),
       fn_stats: config.enable_fn_stats.then(|| RefCell::new(FnStats::new())),
-      symbol_registry: SymbolRegistry::default(),
     }
   }
 
