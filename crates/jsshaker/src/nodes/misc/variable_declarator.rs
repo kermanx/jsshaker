@@ -24,6 +24,7 @@ impl<'a> Analyzer<'a> {
   pub fn init_variable_declarator(
     &mut self,
     node: &'a VariableDeclarator,
+    kind: DeclarationKind,
     init: Option<Entity<'a>>,
   ) {
     let init = match init {
@@ -43,7 +44,7 @@ impl<'a> Analyzer<'a> {
       self.include(init);
     }
 
-    self.init_binding_pattern(&node.id, init);
+    self.init_binding_pattern(&node.id, kind, init);
   }
 }
 

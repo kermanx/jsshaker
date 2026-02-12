@@ -16,8 +16,6 @@ impl<'a> Analyzer<'a> {
       right
     };
 
-    self.declare_for_statement_left(&node.left);
-
     let (elements, rest, dep) = right.iterate(self, AstKind2::ForOfStatement(node));
 
     self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
@@ -27,11 +25,14 @@ impl<'a> Analyzer<'a> {
         self.factory.vec1(element.get_shallow_dep(self)),
         false,
       );
+
+      self.push_variable_scope();
       self.declare_for_statement_left(&node.left);
       self.init_for_statement_left(&node.left, element);
 
       self.exec_statement(&node.body);
 
+      self.pop_variable_scope();
       self.pop_cf_scope();
 
       if self.cf_scope().must_exited() {

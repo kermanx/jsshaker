@@ -1,11 +1,6 @@
-use oxc::{
-  allocator,
-  ast::ast::{VariableDeclaration, VariableDeclarationKind},
-};
+use oxc::{allocator, ast::ast::VariableDeclaration};
 
-use crate::{
-  analyzer::Analyzer, ast::DeclarationKind, dep::DepAtom, entity::Entity, transformer::Transformer,
-};
+use crate::{analyzer::Analyzer, dep::DepAtom, entity::Entity, transformer::Transformer};
 
 impl<'a> Analyzer<'a> {
   pub fn declare_variable_declaration(
@@ -13,17 +8,8 @@ impl<'a> Analyzer<'a> {
     node: &'a VariableDeclaration<'a>,
     exporting: Option<DepAtom>,
   ) {
-    let kind = match &node.kind {
-      VariableDeclarationKind::Var => DeclarationKind::Var,
-      VariableDeclarationKind::Let => DeclarationKind::Let,
-      VariableDeclarationKind::Const => DeclarationKind::Const,
-      VariableDeclarationKind::Using | VariableDeclarationKind::AwaitUsing => {
-        DeclarationKind::Const // Treat await using as const
-      }
-    };
-
     for declarator in &node.declarations {
-      self.declare_variable_declarator(declarator, exporting, kind);
+      self.declare_variable_declarator(declarator, exporting, node.kind.into());
     }
   }
 
@@ -37,7 +23,7 @@ impl<'a> Analyzer<'a> {
     }
 
     for declarator in &node.declarations {
-      self.init_variable_declarator(declarator, init);
+      self.init_variable_declarator(declarator, node.kind.into(), init);
     }
   }
 }

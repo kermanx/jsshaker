@@ -44,10 +44,15 @@ impl<'a> Analyzer<'a> {
     }
   }
 
-  pub fn init_binding_pattern(&mut self, node: &'a BindingPattern<'a>, init: Option<Entity<'a>>) {
+  pub fn init_binding_pattern(
+    &mut self,
+    node: &'a BindingPattern<'a>,
+    kind: DeclarationKind,
+    init: Option<Entity<'a>>,
+  ) {
     match node {
       BindingPattern::BindingIdentifier(node) => {
-        self.init_binding_identifier(node, init);
+        self.init_binding_identifier(node, kind, init);
       }
       BindingPattern::ObjectPattern(node) => {
         let init = init.unwrap_or_else(|| {
@@ -74,12 +79,12 @@ impl<'a> Analyzer<'a> {
             enumerated.push(self.factory.computed(key, dep));
           }
           let init = init.get_property(self, dep, key);
-          self.init_binding_pattern(&property.value, Some(init));
+          self.init_binding_pattern(&property.value, kind, Some(init));
         }
         if let Some(rest) = &node.rest {
           let dep = AstKind2::BindingRestElement(rest.as_ref());
           let init = self.exec_object_rest(dep, init, enumerated.unwrap());
-          self.init_binding_rest_element(rest, init);
+          self.init_binding_rest_element(rest, kind, init);
         }
         self.pop_cf_scope();
       }
@@ -111,11 +116,11 @@ impl<'a> Analyzer<'a> {
 
         for (element, value) in node.elements.iter().zip(element_values) {
           if let Some(element) = element {
-            self.init_binding_pattern(element, Some(value));
+            self.init_binding_pattern(element, kind, Some(value));
           }
         }
         if let Some(rest) = &node.rest {
-          self.init_binding_rest_element(rest, rest_value.unwrap());
+          self.init_binding_rest_element(rest, kind, rest_value.unwrap());
         }
 
         if !is_simple {
@@ -124,7 +129,7 @@ impl<'a> Analyzer<'a> {
       }
       BindingPattern::AssignmentPattern(node) => {
         let binding_val = self.exec_with_default(&node.right, init.unwrap());
-        self.init_binding_pattern(&node.left, Some(binding_val));
+        self.init_binding_pattern(&node.left, kind, Some(binding_val));
       }
     }
   }

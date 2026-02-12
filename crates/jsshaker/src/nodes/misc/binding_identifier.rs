@@ -22,10 +22,11 @@ impl<'a> Analyzer<'a> {
   pub fn init_binding_identifier(
     &mut self,
     node: &'a BindingIdentifier<'a>,
+    kind: DeclarationKind,
     init: Option<Entity<'a>>,
   ) {
     let symbol = node.symbol_id.get().unwrap();
-    self.init_symbol(symbol, init, AstKind2::BindingIdentifier(node));
+    self.init_symbol(symbol, init, kind, AstKind2::BindingIdentifier(node));
   }
 }
 

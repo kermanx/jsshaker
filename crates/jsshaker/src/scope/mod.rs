@@ -17,9 +17,8 @@ use crate::{
   analyzer::{Analyzer, Factory},
   dep::{Dep, DepTrait, DepVec},
   entity::Entity,
-  module::ModuleId,
   scope::linked_tree::LinkedTree,
-  utils::{CalleeInfo, CalleeNode, ast::AstKind2},
+  utils::ast::AstKind2,
   value::{cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
@@ -35,30 +34,13 @@ pub struct Scoping<'a> {
 
 impl<'a> Scoping<'a> {
   pub fn new(factory: &mut Factory<'a>) -> Self {
-    let mut variable = LinkedTree::new_in(factory.allocator);
-    let root_variable_scope =
-      variable.push(VariableScope::new_in_with_this(factory.allocator, factory.unknown));
     let cf =
       StackedTree::new(factory.allocator, CfScope::new(CfScopeKind::Root, factory.vec(), false));
     let root_cf_scope = cf.root;
     factory.root_cf_scope = Some(root_cf_scope);
     Scoping {
-      call: vec![CallScope::new_in(
-        AstKind2::ENVIRONMENT,
-        CalleeInfo {
-          module_id: ModuleId::from(0),
-          node: CalleeNode::Root,
-          instance_id: factory.alloc_instance_id(),
-          debug_name: "<Root>",
-        },
-        ModuleId::from(0),
-        None,
-        0,
-        root_variable_scope,
-        true,
-        false,
-      )],
-      variable,
+      call: vec![],
+      variable: LinkedTree::new_in(factory.allocator),
       cf,
       root_cf_scope,
       try_catch_depth: None,
@@ -106,7 +88,7 @@ impl<'a> Analyzer<'a> {
     }
 
     let old_module = self.set_current_module(info.func.callee.module_id);
-    let old_variable_scope_stack = self.replace_variable_scope(info.func.lexical_scope);
+    let old_variable_scope = self.replace_variable_scope(info.func.lexical_scope);
     let body_variable_scope = self.push_variable_scope();
     let cf_scope_depth = self.push_cf_scope_with_deps(
       CfScopeKind::Function(Box::new(FnCacheTrackingData::new_in(self.allocator, info))),
@@ -118,7 +100,7 @@ impl<'a> Analyzer<'a> {
       self.scoping.current_callsite,
       info.func.callee,
       old_module,
-      old_variable_scope_stack,
+      old_variable_scope,
       cf_scope_depth,
       body_variable_scope,
       is_async,

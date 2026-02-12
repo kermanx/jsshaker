@@ -137,7 +137,7 @@ impl<'a> Analyzer<'a> {
     // 4. Execute static blocks
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, Some(class.into()));
+      self.init_binding_identifier(id, DeclarationKind::NamedFunctionInBody, Some(class.into()));
     }
 
     for (index, element) in node.body.body.iter().enumerate() {
@@ -172,7 +172,7 @@ impl<'a> Analyzer<'a> {
   pub fn init_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
     let value = self.exec_class(node);
 
-    self.init_binding_identifier(node.id.as_ref().unwrap(), Some(value));
+    self.init_binding_identifier(node.id.as_ref().unwrap(), DeclarationKind::Class, Some(value));
 
     value
   }
@@ -195,7 +195,7 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, data.value);
+      self.init_binding_identifier(id, DeclarationKind::NamedFunctionInBody, data.value);
     }
 
     // 1. Init properties

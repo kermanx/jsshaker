@@ -16,7 +16,8 @@ use crate::{
   builtin_string,
   dep::{CustomDepTrait, DepAtom},
   entity::Entity,
-  scope::{VariableScopeId, variable_scope::EntityOrTDZ},
+  scope::{CfScopeKind, VariableScopeId, call_scope::CallScope, variable_scope::EntityOrTDZ},
+  utils::{CalleeInfo, CalleeNode, ast::AstKind2},
   value::module_object::ModuleObjectValue,
 };
 
@@ -47,6 +48,7 @@ pub struct ModuleInfo<'a> {
   pub line_index: LineIndex,
   pub program: UnsafeCell<&'a mut Program<'a>>,
   pub semantic: Semantic<'a>,
+  pub callee: CalleeInfo<'a>,
   pub call_id: DepAtom,
 
   pub readonly_symbol_cache: FxHashMap<SymbolId, bool>,
@@ -128,15 +130,25 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
     let semantic = SemanticBuilder::new().build(program).semantic;
-    let module_id: ModuleId = ModuleId::from_usize(self.modules.modules.len());
+    let module_id = ModuleId::from_usize(self.modules.modules.len());
     let variable_scope = self.push_variable_scope();
+    self.variable_scope_mut().this = Some(self.factory.unknown);
     let import_meta = self.create_import_meta();
+    let callee = CalleeInfo {
+      module_id,
+      node: CalleeNode::Module,
+      instance_id: self.factory.alloc_instance_id(),
+      debug_name: "<Module>",
+    };
+    let cf_scope_depth =
+      self.push_cf_scope_with_deps(CfScopeKind::Module, self.factory.vec(), false);
     self.modules.modules.push(ModuleInfo {
       id: module_id,
       path: Atom::from_in(path.clone(), self.allocator),
       line_index,
       program: program_cell,
       semantic,
+      callee,
       call_id: DepAtom::from_counter(),
       readonly_symbol_cache: Default::default(),
       resolved_imports: Default::default(),
@@ -154,16 +166,28 @@ impl<'a> Analyzer<'a> {
     self.modules.paths.insert(path.clone(), module_id);
 
     let old_module = self.set_current_module(module_id);
+    self.scoping.call.push(CallScope::new_in(
+      AstKind2::ENVIRONMENT,
+      callee,
+      old_module,
+      None,
+      cf_scope_depth,
+      variable_scope,
+      true,
+      false,
+    ));
     for node in &program.body {
       self.declare_statement(node);
     }
+    self.scoping.call.pop();
+    self.pop_variable_scope();
+    self.set_current_module(old_module);
+
     for specifier in parsed.module_record.requested_modules.keys() {
       if let Some(id) = self.resolve_and_parse_module(specifier) {
         self.module_info_mut().resolved_imports.insert(*specifier, id);
       }
     }
-    self.pop_variable_scope();
-    self.set_current_module(old_module);
 
     module_id
   }
@@ -176,9 +200,22 @@ impl<'a> Analyzer<'a> {
     module.initializing = true;
     let program = unsafe { &*module.program.get() };
     let variable_scope = module.variable_scope;
+    let callee = module.callee;
 
     let old_module = self.set_current_module(module_id);
     let old_variable_scope = self.replace_variable_scope(Some(variable_scope));
+    let cf_scope_depth = self.scoping.cf.current_depth();
+    self.scoping.call.push(CallScope::new_in(
+      AstKind2::ENVIRONMENT,
+      callee,
+      old_module,
+      None,
+      cf_scope_depth,
+      variable_scope,
+      true,
+      false,
+    ));
+
     for node in &program.body {
       match node {
         Statement::ImportDeclaration(node) => {
@@ -202,6 +239,8 @@ impl<'a> Analyzer<'a> {
     for node in &program.body {
       self.init_statement(node);
     }
+
+    self.scoping.call.pop();
 
     let module = self.module_info_mut();
     module.initializing = false;

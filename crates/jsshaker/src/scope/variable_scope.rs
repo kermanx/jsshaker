@@ -64,10 +64,6 @@ impl<'a> VariableScope<'a> {
       super_class: None,
     }
   }
-
-  pub fn new_in_with_this(allocator: &'a allocator::Allocator, this: Entity<'a>) -> Self {
-    Self { this: Some(this), ..Self::new_in(allocator) }
-  }
 }
 
 impl<'a> Analyzer<'a> {
@@ -369,6 +365,15 @@ impl<'a> Analyzer<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  fn top_variable_scope(&self, kind: DeclarationKind) -> VariableScopeId {
+    // println!("kind: {:?}", kind);
+    if kind.is_var() {
+      self.scoping.call.last().unwrap().body_variable_scope
+    } else {
+      self.scoping.variable.top().unwrap()
+    }
+  }
+
   pub fn declare_symbol(
     &mut self,
     symbol: SymbolId,
@@ -377,7 +382,7 @@ impl<'a> Analyzer<'a> {
     kind: DeclarationKind,
     fn_value: Option<Entity<'a>>,
   ) {
-    let variable_scope = self.scoping.variable.top().unwrap();
+    let variable_scope = self.top_variable_scope(kind);
     self.declare_on_scope(variable_scope, kind, symbol, decl_node, fn_value);
 
     if let Some(exporting) = exporting {
@@ -403,9 +408,10 @@ impl<'a> Analyzer<'a> {
     &mut self,
     symbol: SymbolId,
     value: Option<Entity<'a>>,
+    kind: DeclarationKind,
     init_node: AstKind2<'a>,
   ) {
-    let variable_scope = self.scoping.variable.top().unwrap();
+    let variable_scope = self.top_variable_scope(kind);
     self.init_on_scope(variable_scope, symbol, value, init_node);
   }
 

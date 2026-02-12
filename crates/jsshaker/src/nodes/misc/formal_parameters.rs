@@ -23,12 +23,12 @@ impl<'a> Analyzer<'a> {
     }
 
     for (param, &init) in node.items.iter().zip(args.elements) {
-      self.exec_formal_parameter(param, init);
+      self.exec_formal_parameter(param, kind, init);
     }
     if node.items.len() > args.elements.len() {
       let value = args.rest.unwrap_or(self.factory.undefined);
       for param in &node.items[args.elements.len()..] {
-        self.exec_formal_parameter(param, value);
+        self.exec_formal_parameter(param, kind, value);
       }
     }
 
@@ -50,17 +50,22 @@ impl<'a> Analyzer<'a> {
       }
 
       self.declare_binding_rest_element(&rest.rest, None, kind);
-      self.init_binding_rest_element(&rest.rest, arr.into());
+      self.init_binding_rest_element(&rest.rest, kind, arr.into());
     }
   }
 
-  fn exec_formal_parameter(&mut self, node: &'a FormalParameter<'a>, arg: Entity<'a>) {
+  fn exec_formal_parameter(
+    &mut self,
+    node: &'a FormalParameter<'a>,
+    kind: DeclarationKind,
+    arg: Entity<'a>,
+  ) {
     let binding_val = if let Some(initializer) = &node.initializer {
       self.exec_with_default(initializer, arg)
     } else {
       arg
     };
-    self.init_binding_pattern(&node.pattern, Some(binding_val));
+    self.init_binding_pattern(&node.pattern, kind, Some(binding_val));
   }
 }
 

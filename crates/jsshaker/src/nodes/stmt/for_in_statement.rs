@@ -18,11 +18,14 @@ impl<'a> Analyzer<'a> {
           self.factory.vec1(self.factory.always_mangable_dep(key)),
           true,
         );
+
+        self.push_variable_scope();
         self.declare_for_statement_left(&node.left);
         self.init_for_statement_left(&node.left, key);
 
         self.exec_statement(&node.body);
 
+        self.pop_variable_scope();
         self.pop_cf_scope();
 
         if self.cf_scope().must_exited() {

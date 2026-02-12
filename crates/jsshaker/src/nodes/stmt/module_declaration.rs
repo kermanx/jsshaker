@@ -163,7 +163,7 @@ impl<'a> Analyzer<'a> {
         } else {
           self.builtins.factory.unknown
         };
-        self.init_binding_identifier(specifier.local(), Some(value));
+        self.init_binding_identifier(specifier.local(), DeclarationKind::Import, Some(value));
       }
     }
   }

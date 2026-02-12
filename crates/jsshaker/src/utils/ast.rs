@@ -193,6 +193,19 @@ pub enum DeclarationKind {
   ArrowFunctionParameter,
 }
 
+impl From<VariableDeclarationKind> for DeclarationKind {
+  fn from(kind: VariableDeclarationKind) -> Self {
+    match kind {
+      VariableDeclarationKind::Var => DeclarationKind::Var,
+      VariableDeclarationKind::Let => DeclarationKind::Let,
+      VariableDeclarationKind::Const => DeclarationKind::Const,
+      VariableDeclarationKind::Using | VariableDeclarationKind::AwaitUsing => {
+        DeclarationKind::Const // Treat await using as const
+      }
+    }
+  }
+}
+
 impl DeclarationKind {
   pub fn is_var(self) -> bool {
     matches!(self, DeclarationKind::Var | DeclarationKind::UntrackedVar)
