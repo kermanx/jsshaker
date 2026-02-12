@@ -4,7 +4,7 @@ use oxc::allocator;
 use rustc_hash::FxHashMap;
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, PropertyKeyValue,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, LiteralValue, PropertyKeyValue,
   TypeofResult, ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
@@ -14,13 +14,14 @@ use crate::{
   entity::Entity,
   scope::CfScopeId,
   use_included_flag,
+  utils::version::Version,
   value::literal::string::ToAtomRef,
 };
 
 #[derive(Debug)]
 pub struct ArrayValue<'a> {
   pub included: Cell<bool>,
-  pub trackable: Cell<bool>,
+  pub version: Version,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
   pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
@@ -35,7 +36,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
   fn include(&'a self, analyzer: &mut Analyzer<'a>) {
     use_included_flag!(self);
 
-    self.trackable.set(false);
+    self.version.untrack();
     self.deps.borrow().include_all(analyzer);
     self.elements.borrow().include(analyzer);
     self.rest.borrow().include(analyzer);
@@ -57,7 +58,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
-    self.trackable.set(false);
+    self.version.untrack();
     self.deps.borrow_mut().push(analyzer.dep((exec_deps, dep)));
   }
 
@@ -73,7 +74,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.trackable.get() {
+    if !self.version.trackable() {
       return analyzer.factory.computed_unknown((self, dep, key));
     }
 
@@ -147,7 +148,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     let deps = analyzer.dep((exec_deps, key));
     'known: {
-      if !self.trackable.get() {
+      if !self.version.increment() {
         break 'known;
       }
 
@@ -220,7 +221,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     // Unknown
     self.deps.borrow_mut().push(analyzer.dep((deps, value)));
-    self.trackable.set(false);
+    self.version.untrack();
   }
 
   fn enumerate_properties(
@@ -234,7 +235,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.trackable.get() {
+    if !self.version.trackable() {
       return EnumeratedProperties {
         known: Default::default(),
         unknown: Some(analyzer.factory.unknown),
@@ -272,7 +273,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
 
     let mut deps = self.deps.borrow_mut();
     deps.push(analyzer.dep((exec_deps, key)));
-    self.trackable.set(false);
+    self.version.untrack();
   }
 
   fn call(
@@ -305,15 +306,20 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     analyzer.factory.computed(self.into(), dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     if self.included.get() {
       return escaped::iterate(analyzer, dep);
     }
 
     analyzer.track_read(self.cf_scope, ReadWriteTarget::Array(self.array_id()), None);
 
-    if !self.trackable.get() {
-      return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
+    if !self.version.trackable() {
+      return (
+        vec![],
+        Some(analyzer.factory.unknown),
+        analyzer.dep((self, dep)),
+        Default::default(),
+      );
     }
 
     (
@@ -323,6 +329,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
         analyzer.allocator,
       )),
       analyzer.dep((self.deps(analyzer), dep)),
+      Vec::from_iter([self.array_id()]),
     )
   }
 
@@ -424,7 +431,7 @@ impl<'a> Analyzer<'a> {
     let cf_scope = self.scoping.cf.current_id();
     self.factory.alloc(ArrayValue {
       included: Cell::new(false),
-      trackable: Cell::new(true),
+      version: Version::default(),
       deps: RefCell::new(DepCollector::new(self.factory.vec())),
       cf_scope,
       elements: RefCell::new(self.factory.vec()),

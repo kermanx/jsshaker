@@ -1,7 +1,7 @@
 use std::{cell::Cell, fmt::Debug};
 
 use super::super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, ObjectPrototype, ObjectValue,
   TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag};
@@ -117,7 +117,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     self.into()
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     analyzer.throw_builtin_error("Cannot iterate over function");
     if analyzer.config.preserve_exceptions {
       escaped::iterate(analyzer, dep)

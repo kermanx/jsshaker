@@ -1,5 +1,5 @@
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, TypeofResult, ValueTrait,
   cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
@@ -103,9 +103,14 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     analyzer.factory.entity_with_dep(self, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     if self.maybe_string() {
-      return (vec![], Some(analyzer.factory.unknown), analyzer.dep((self, dep)));
+      return (
+        vec![],
+        Some(analyzer.factory.unknown),
+        analyzer.dep((self, dep)),
+        Default::default(),
+      );
     }
     analyzer.throw_builtin_error("Cannot iterate non-object");
     if analyzer.config.preserve_exceptions {

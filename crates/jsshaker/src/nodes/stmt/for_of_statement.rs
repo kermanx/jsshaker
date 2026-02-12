@@ -3,7 +3,9 @@ use oxc::{
   span::GetSpan,
 };
 
-use crate::{analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::AstKind2, scope::CfScopeKind, transformer::Transformer,
+};
 
 impl<'a> Analyzer<'a> {
   pub fn exec_for_of_statement(&mut self, node: &'a ForOfStatement<'a>) {
@@ -16,7 +18,10 @@ impl<'a> Analyzer<'a> {
       right
     };
 
-    let (elements, rest, dep) = right.iterate(self, AstKind2::ForOfStatement(node));
+    let (elements, mut rest, dep, array_ids) = right.iterate(self, AstKind2::ForOfStatement(node));
+
+    let original_versions =
+      array_ids.iter().map(|array_id| array_id.as_ref().version.get()).collect::<Vec<_>>();
 
     self.push_cf_scope_with_deps(CfScopeKind::LoopBreak, self.factory.vec1(dep), false);
     for element in elements {
@@ -34,6 +39,15 @@ impl<'a> Analyzer<'a> {
 
       self.pop_variable_scope();
       self.pop_cf_scope();
+
+      for (array_id, original_version) in array_ids.iter().zip(&original_versions) {
+        let array = array_id.as_ref();
+        if array.version.get() != *original_version {
+          self.include(array);
+          rest = Some(self.factory.unknown);
+          break;
+        }
+      }
 
       if self.cf_scope().must_exited() {
         break;

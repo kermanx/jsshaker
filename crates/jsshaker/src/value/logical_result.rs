@@ -1,5 +1,5 @@
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, ObjectPrototype, TypeofResult,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, ObjectPrototype, TypeofResult,
   ValueTrait, cacheable::Cacheable,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, value::ObjectValue};
@@ -82,7 +82,7 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.value.iterate(analyzer, dep)
   }
 

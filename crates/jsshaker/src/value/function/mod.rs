@@ -10,7 +10,7 @@ use std::cell::Cell;
 use oxc::span::GetSpan;
 
 use super::{
-  EnumeratedProperties, IteratedElements, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
+  AbstractIterator, EnumeratedProperties, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
   cacheable::Cacheable, escaped,
 };
 use crate::{
@@ -144,7 +144,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     escaped::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }

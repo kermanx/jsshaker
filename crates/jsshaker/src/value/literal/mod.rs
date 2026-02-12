@@ -13,7 +13,7 @@ use oxc_ecmascript::StringToNumber;
 use oxc_syntax::number::ToJsString;
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, PropertyKeyValue, TypeofResult,
   ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
@@ -159,12 +159,13 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     analyzer.factory.computed(self.into(), dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     match self {
       LiteralValue::String(value, atom) => (
         vec![],
         (!value.is_empty()).then_some(analyzer.factory.unknown_string),
         analyzer.dep((self, dep, *atom)),
+        Default::default(),
       ),
       _ => {
         analyzer.throw_builtin_error("Cannot iterate over a non-iterable object");

@@ -1,7 +1,7 @@
 use std::cell::{Cell, RefCell};
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, ValueTrait,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, TypeofResult, ValueTrait,
   cacheable::Cacheable, escaped,
 };
 use crate::{
@@ -127,7 +127,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     escaped::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }

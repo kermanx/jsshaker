@@ -32,7 +32,7 @@ pub fn check_dependencies<'a>(
   current: Entity<'a>,
 ) -> (bool, Dep<'a>) {
   let factory = analyzer.factory;
-  let (elements, rest, iterate_dep) = current.iterate(analyzer, dep);
+  let (elements, rest, iterate_dep) = current.iterated(analyzer, dep);
 
   let span = (analyzer.current_module, analyzer.current_span());
   let data = analyzer

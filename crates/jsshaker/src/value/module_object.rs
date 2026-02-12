@@ -7,7 +7,7 @@ use crate::{
   module::ModuleId,
   use_included_flag,
   value::{
-    ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, TypeofResult, ValueTrait,
+    AbstractIterator, ArgumentsValue, EnumeratedProperties, LiteralValue, TypeofResult, ValueTrait,
     cacheable::Cacheable, escaped,
   },
 };
@@ -113,7 +113,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     escaped::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }

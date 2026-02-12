@@ -11,6 +11,7 @@ mod get_two_mut;
 pub mod private_identifier_name;
 pub mod ptr_idx;
 mod symbol_id;
+pub mod version;
 
 pub use callee_info::*;
 pub use data::*;

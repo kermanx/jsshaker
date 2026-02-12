@@ -1,4 +1,4 @@
-use super::{ArgumentsValue, EnumeratedProperties, IteratedElements, Value};
+use super::{AbstractIterator, ArgumentsValue, EnumeratedProperties, Value};
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
 
 pub fn unknown_mutate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) {
@@ -99,13 +99,13 @@ pub fn r#await<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a> {
   analyzer.factory.unknown
 }
 
-pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+pub fn iterate<'a>(analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
   if analyzer.config.iterate_side_effects {
     analyzer.include(dep);
     analyzer.global_effect();
-    (vec![], Some(analyzer.factory.unknown), analyzer.factory.no_dep)
+    (vec![], Some(analyzer.factory.unknown), analyzer.factory.no_dep, Default::default())
   } else {
-    (vec![], Some(analyzer.factory.unknown), dep)
+    (vec![], Some(analyzer.factory.unknown), dep, Default::default())
   }
 }
 

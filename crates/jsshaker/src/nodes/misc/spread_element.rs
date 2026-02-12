@@ -6,7 +6,7 @@ impl<'a> Analyzer<'a> {
   pub fn exec_spread_element(&mut self, node: &'a SpreadElement<'a>) -> IteratedElements<'a> {
     let argument = self.exec_expression(&node.argument);
     let base = AstKind2::SpreadElement(node);
-    let (elements, rest, dep) = argument.iterate(self, base);
+    let (elements, rest, dep) = argument.iterated(self, base);
     self.add_assoc_dep(base, dep);
     (elements, rest, dep)
   }

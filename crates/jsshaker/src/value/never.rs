@@ -61,8 +61,8 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> Entity<'a> {
     analyzer.factory.never
   }
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> super::IteratedElements<'a> {
-    (Vec::new(), None, analyzer.factory.no_dep)
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, _dep: Dep<'a>) -> super::AbstractIterator<'a> {
+    (Vec::new(), None, analyzer.factory.no_dep, Default::default())
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {

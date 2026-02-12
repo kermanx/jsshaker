@@ -34,7 +34,7 @@ impl<'a> Builtins<'a> {
 
       let array = analyzer.new_empty_array();
 
-      let (elements, rest, dep) = iterable.iterate(analyzer, dep);
+      let (elements, rest, dep) = iterable.iterated(analyzer, dep);
       let no_map_fn = map_fn.test_is_undefined();
 
       for (i, element) in elements.into_iter().enumerate() {

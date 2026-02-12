@@ -4,7 +4,7 @@ use oxc::allocator::{self, Allocator};
 use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, LiteralValue, ObjectPrototype,
   PropertyKeyValue, TypeofResult, UnionHint, ValueTrait, cacheable::Cacheable,
 };
 use crate::{
@@ -180,16 +180,17 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     analyzer.factory.union(values)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     let mut elements = Vec::new();
     let mut max_elements = usize::MAX;
     let mut rest = analyzer.factory.vec();
     let mut deps = analyzer.factory.vec();
+    let mut array_ids = Vec::new();
 
     analyzer.push_non_det_cf_scope();
     for entity in self.values.iter() {
       analyzer.cf_scope_mut().reset_non_det();
-      let (e, r, d) = entity.iterate(analyzer, dep);
+      let (e, r, d, arr) = entity.iterate(analyzer, dep);
       let n = max_elements.min(e.len());
       if r.is_some() {
         max_elements = n;
@@ -204,6 +205,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
         rest.push(el);
       }
       deps.push(d);
+      array_ids.extend(arr);
     }
     if elements.len() > max_elements {
       for e in elements.drain(max_elements..) {
@@ -224,6 +226,7 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
         .collect(),
       analyzer.factory.try_union(rest),
       analyzer.factory.dep(deps),
+      array_ids,
     )
   }
 

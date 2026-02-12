@@ -7,7 +7,7 @@ use crate::{
   dep::Dep,
   entity::Entity,
   value::{
-    ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
+    AbstractIterator, ArgumentsValue, EnumeratedProperties, PropertyKeyValue, TypeofResult,
     ValueTrait, cacheable::Cacheable, escaped,
   },
 };
@@ -152,9 +152,14 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     analyzer.factory.computed(self.into(), dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     let value = self.as_str();
-    (vec![], (!value.is_empty()).then_some(analyzer.factory.unknown_string), dep)
+    (
+      vec![],
+      (!value.is_empty()).then_some(analyzer.factory.unknown_string),
+      dep,
+      Default::default(),
+    )
   }
 
   fn coerce_string(&'a self, _analyzer: &Analyzer<'a>) -> Entity<'a> {

@@ -14,7 +14,7 @@ use oxc::allocator;
 pub use property::{ObjectProperty, ObjectPropertyValue};
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, PropertyKeyValue, TypeofResult,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, PropertyKeyValue, TypeofResult,
   ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
@@ -187,7 +187,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     escaped::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }

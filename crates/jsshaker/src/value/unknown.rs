@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use super::{
-  ArgumentsValue, EnumeratedProperties, IteratedElements, TypeofResult, UnionHint, ValueTrait,
+  AbstractIterator, ArgumentsValue, EnumeratedProperties, TypeofResult, UnionHint, ValueTrait,
   cacheable::Cacheable, escaped,
 };
 use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
@@ -80,7 +80,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     escaped::r#await(analyzer, dep)
   }
 
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a> {
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a> {
     self.include(analyzer);
     escaped::iterate(analyzer, dep)
   }

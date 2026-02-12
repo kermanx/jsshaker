@@ -27,7 +27,7 @@ use crate::{
   analyzer::Analyzer,
   dep::{CustomDepTrait, Dep},
   entity::Entity,
-  value::literal::PossibleLiterals,
+  value::{array::ArrayId, literal::PossibleLiterals},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -62,6 +62,7 @@ impl<'a> EnumeratedProperties<'a> {
 
 /// (vec![known_elements], rest, dep)
 pub type IteratedElements<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>);
+pub type AbstractIterator<'a> = (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>, Vec<ArrayId>);
 
 pub enum UnionHint {
   Unknown,
@@ -113,7 +114,7 @@ pub trait ValueTrait<'a>: Debug {
   ) -> Entity<'a>;
   fn jsx(&'a self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a>;
   fn r#await(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> Entity<'a>;
-  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> IteratedElements<'a>;
+  fn iterate(&'a self, analyzer: &mut Analyzer<'a>, dep: Dep<'a>) -> AbstractIterator<'a>;
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn coerce_number(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
@@ -168,7 +169,7 @@ pub trait ValueTrait<'a>: Debug {
     length: usize,
     need_rest: bool,
   ) -> (Vec<Entity<'a>>, Option<Entity<'a>>, Dep<'a>) {
-    let (mut elements, rest, dep) = self.iterate(analyzer, dep);
+    let (mut elements, rest, dep, _) = self.iterate(analyzer, dep);
     let iterated_len = elements.len();
     let extras = match iterated_len.cmp(&length) {
       Ordering::Equal => Vec::new(),

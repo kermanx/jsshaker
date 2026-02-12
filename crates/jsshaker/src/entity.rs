@@ -3,8 +3,8 @@ use crate::{
   analyzer::Factory,
   dep::{CustomDepTrait, Dep, DepTrait},
   value::{
-    ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue, ObjectPrototype,
-    ObjectValue, TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable,
+    AbstractIterator, ArgumentsValue, EnumeratedProperties, IteratedElements, LiteralValue,
+    ObjectPrototype, ObjectValue, TypeofResult, UnionHint, Value, ValueTrait, cacheable::Cacheable,
     literal::PossibleLiterals,
   },
 };
@@ -130,8 +130,16 @@ impl<'a> Entity<'a> {
     &self,
     analyzer: &mut Analyzer<'a>,
     dep: impl DepTrait<'a> + 'a,
-  ) -> IteratedElements<'a> {
+  ) -> AbstractIterator<'a> {
     self.value.iterate(analyzer, self.forward_dep(dep, analyzer))
+  }
+  pub fn iterated(
+    &self,
+    analyzer: &mut Analyzer<'a>,
+    dep: impl DepTrait<'a> + 'a,
+  ) -> IteratedElements<'a> {
+    let (elements, rest, dep, _) = self.iterate(analyzer, dep);
+    (elements, rest, dep)
   }
 
   pub fn coerce_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
