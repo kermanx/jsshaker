@@ -90,7 +90,15 @@ impl<'a> Analyzer<'a> {
     });
 
     self.add_assoc_dep(AstKind2::MemberExpression(node), object.get_shallow_dep(self));
-    object.set_property(self, AstKind2::MemberExpression(node), key, value);
+
+    if node.object().is_super() {
+      self.push_non_det_cf_scope();
+      object.set_property(self, AstKind2::MemberExpression(node), key, value);
+      self.get_this().set_property(self, AstKind2::MemberExpression(node), key, value);
+      self.pop_cf_scope();
+    } else {
+      object.set_property(self, AstKind2::MemberExpression(node), key, value);
+    }
   }
 
   fn exec_key(&mut self, node: &'a MemberExpression<'a>, dep: Option<Entity<'a>>) -> Entity<'a> {
