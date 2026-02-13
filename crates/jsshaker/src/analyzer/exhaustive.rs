@@ -1,10 +1,12 @@
 use std::{
+  cell::RefCell,
   hash::{Hash, Hasher},
   mem,
   rc::Rc,
 };
 
 use oxc::allocator;
+use rustc_hash::FxHashSet;
 
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
@@ -26,6 +28,7 @@ pub struct ExhaustiveData<'a> {
 pub struct ExhaustiveCallback<'a> {
   pub handler: Rc<dyn Fn(&mut Analyzer<'a>) -> Entity<'a> + 'a>,
   pub drain: bool,
+  pub triggered: Rc<RefCell<FxHashSet<ReadWriteTarget<'a>>>>,
 }
 impl PartialEq for ExhaustiveCallback<'_> {
   fn eq(&self, other: &Self) -> bool {
@@ -133,11 +136,11 @@ impl<'a> Analyzer<'a> {
     deps: allocator::HashSet<ReadWriteTarget<'a>>,
   ) {
     for id in deps {
-      self
-        .exhaustive_callbacks
-        .entry(id)
-        .or_default()
-        .insert(ExhaustiveCallback { handler: handler.clone(), drain });
+      self.exhaustive_callbacks.entry(id).or_default().insert(ExhaustiveCallback {
+        handler: handler.clone(),
+        drain,
+        triggered: Default::default(),
+      });
     }
   }
 
@@ -147,7 +150,10 @@ impl<'a> Analyzer<'a> {
       if let Some(callbacks) = self.exhaustive_callbacks.get_mut(&id)
         && !callbacks.is_empty()
       {
-        self.pending_deps.extend(callbacks.drain());
+        for callback in callbacks.drain() {
+          callback.triggered.borrow_mut().insert(id);
+          self.pending_callbacks.insert(callback);
+        }
         found = true;
       }
     };
@@ -157,15 +163,17 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn call_exhaustive_callbacks(&mut self) -> bool {
-    if self.pending_deps.is_empty() {
+    if self.pending_callbacks.is_empty() {
       return false;
     }
     let old_try_catch_depth = self.scoping.try_catch_depth.take();
     loop {
-      for ExhaustiveCallback { drain, handler } in mem::take(&mut self.pending_deps) {
-        self.exec_exhaustively("dep", drain, true, handler.clone());
+      for callback in mem::take(&mut self.pending_callbacks) {
+        self.active_callback_triggers.extend(&callback.triggered.borrow());
+        self.exec_exhaustively("dep", callback.drain, true, callback.handler.clone());
+        self.active_callback_triggers.unextend(&callback.triggered.borrow());
       }
-      if self.pending_deps.is_empty() {
+      if self.pending_callbacks.is_empty() {
         self.scoping.try_catch_depth = old_try_catch_depth;
         return true;
       }

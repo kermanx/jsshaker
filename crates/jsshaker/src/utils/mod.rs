@@ -2,6 +2,7 @@ mod annotation;
 pub mod ast;
 pub mod box_bump;
 mod callee_info;
+pub mod counter;
 mod data;
 pub mod effect_builder;
 mod escape_template_element_value;
