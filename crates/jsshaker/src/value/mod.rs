@@ -185,7 +185,7 @@ pub trait ValueTrait<'a>: Debug {
 
     let rest_arr = need_rest.then(|| {
       let rest_arr = analyzer.new_empty_array();
-      rest_arr.elements.borrow_mut().extend(extras);
+      rest_arr.elements.borrow_mut().current_mut().extend(extras);
       if let Some(rest) = rest {
         rest_arr.init_rest(rest);
       }

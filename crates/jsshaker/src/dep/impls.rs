@@ -1,5 +1,3 @@
-use std::cell::RefCell;
-
 use oxc::allocator;
 
 use super::{CustomDepTrait, DepTrait};
@@ -20,12 +18,6 @@ impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for Option<T> {
     if let Some(value) = self {
       value.include(analyzer)
     }
-  }
-}
-
-impl<'a, T: DepTrait<'a> + 'a> CustomDepTrait<'a> for &'a RefCell<T> {
-  fn include(&self, analyzer: &mut Analyzer<'a>) {
-    self.borrow().include(analyzer)
   }
 }
 

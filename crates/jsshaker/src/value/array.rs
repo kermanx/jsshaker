@@ -10,11 +10,11 @@ use super::{
 use crate::{
   analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
   define_ptr_idx,
-  dep::{CustomDepTrait, Dep, DepCollector, DepVec},
+  dep::{Dep, DepCollector, DepVec},
   entity::Entity,
   scope::CfScopeId,
   use_included_flag,
-  utils::version::Version,
+  utils::{snapshot_vec::SnapshotVec, version::Version},
   value::literal::string::ToAtomRef,
 };
 
@@ -24,8 +24,8 @@ pub struct ArrayValue<'a> {
   pub version: Version,
   pub deps: RefCell<DepCollector<'a>>,
   pub cf_scope: CfScopeId,
-  pub elements: RefCell<allocator::Vec<'a, Entity<'a>>>,
-  pub rest: RefCell<allocator::Vec<'a, Entity<'a>>>,
+  pub elements: RefCell<SnapshotVec<'a, Entity<'a>>>,
+  pub rest: RefCell<SnapshotVec<'a, Entity<'a>>>,
 }
 
 define_ptr_idx! {
@@ -95,7 +95,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
               }
             } else if key == "length" {
               result.push(self.get_length().map_or_else(
-                || analyzer.factory.computed_unknown_number(&self.rest),
+                || analyzer.factory.computed_unknown_number(self.rest.borrow_mut().snapshot()),
                 |length| analyzer.factory.number(length as f64),
               ));
             } else if let Some(property) = analyzer.builtins.prototypes.array.get_keyed(
@@ -124,7 +124,11 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
       }
       analyzer.factory.computed_union(result, dep)
     } else {
-      analyzer.factory.computed_unknown((&self.elements, &self.rest, dep))
+      analyzer.factory.computed_unknown((
+        self.elements.borrow_mut().snapshot(),
+        self.rest.borrow_mut().snapshot(),
+        dep,
+      ))
     }
   }
 
@@ -164,8 +168,11 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
           LiteralValue::String(key_str, _) => {
             if let Ok(index) = key_str.parse::<usize>() {
               let value = analyzer.factory.computed(value, deps);
-              if let Some(element) = self.elements.borrow_mut().get_mut(index) {
-                *element = if definite { value } else { analyzer.factory.union((*element, value)) };
+              let mut elements = self.elements.borrow_mut();
+              if let Some(element) = elements.get(index) {
+                let new_element =
+                  if definite { value } else { analyzer.factory.union((*element, value)) };
+                elements.set(index, new_element, analyzer.allocator);
               } else if !rest_added {
                 rest_added = true;
                 self.rest.borrow_mut().push(value);
@@ -188,8 +195,8 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
                 let mut rest = self.rest.borrow_mut();
                 if elements.len() > length {
                   has_effect = true;
-                  elements.truncate(length);
-                  rest.clear();
+                  elements.truncate(length, analyzer.allocator);
+                  rest.clear(analyzer.allocator);
                 } else if !rest.is_empty() {
                   has_effect = true;
                   rest.push(analyzer.factory.undefined);
@@ -434,8 +441,8 @@ impl<'a> Analyzer<'a> {
       version: Version::default(),
       deps: RefCell::new(DepCollector::new(self.factory.vec())),
       cf_scope,
-      elements: RefCell::new(self.factory.vec()),
-      rest: RefCell::new(self.factory.vec()),
+      elements: RefCell::new(SnapshotVec::new(self.allocator)),
+      rest: RefCell::new(SnapshotVec::new(self.allocator)),
     })
   }
 }

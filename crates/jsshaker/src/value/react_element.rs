@@ -24,7 +24,9 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
   fn include(&'a self, analyzer: &mut Analyzer<'a>) {
     use_included_flag!(self);
 
-    analyzer.include(&self.deps);
+    for dep in self.deps.borrow_mut().drain(..) {
+      analyzer.include(dep);
+    }
 
     let tag = self.tag;
     let props = self.props;
