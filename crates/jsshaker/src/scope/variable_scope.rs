@@ -267,7 +267,7 @@ impl<'a> Analyzer<'a> {
         }
       } else {
         let old_val = variable.value;
-        let exhaustive = if old_val.is_some() {
+        let mut exhaustive = if old_val.is_some() {
           // Normal write
           self.track_write(target_cf_scope, ReadWriteTarget::Variable(scope, symbol), Some(new_val))
         } else if variable.kind.is_redeclarable() {
@@ -279,6 +279,9 @@ impl<'a> Analyzer<'a> {
           Some(false)
         };
         drop(variable);
+        if self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol)) {
+          exhaustive = Some(true);
+        }
 
         let mut variable = variable_cell.borrow_mut();
         if let Some(exhaustive_forever) = exhaustive {
@@ -304,8 +307,6 @@ impl<'a> Analyzer<'a> {
           ));
         };
         drop(variable);
-
-        self.request_exhaustive_callbacks(ReadWriteTarget::Variable(scope, symbol));
       }
     }
     true
