@@ -58,6 +58,7 @@ pub struct ModuleInfo<'a> {
   pub default_export: Option<EntityOrTDZ<'a>>,
   pub reexport_all: FxHashSet<ModuleId>,
   pub reexport_unknown: bool,
+  pub exports_included: bool,
 
   pub import_meta: Entity<'a>,
   pub module_object: Entity<'a>,
@@ -156,6 +157,7 @@ impl<'a> Analyzer<'a> {
       default_export: None,
       reexport_all: Default::default(),
       reexport_unknown: false,
+      exports_included: false,
       import_meta,
       module_object: self.factory.alloc(ModuleObjectValue::new(module_id)).into(),
       initializing: false,
@@ -164,6 +166,12 @@ impl<'a> Analyzer<'a> {
       variable_scope,
     });
     self.modules.paths.insert(path.clone(), module_id);
+
+    for specifier in parsed.module_record.requested_modules.keys() {
+      if let Some(id) = self.resolve_and_parse_module(specifier) {
+        self.module_info_mut().resolved_imports.insert(*specifier, id);
+      }
+    }
 
     let old_module = self.set_current_module(module_id);
     self.scoping.call.push(CallScope::new_in(
@@ -182,12 +190,6 @@ impl<'a> Analyzer<'a> {
     self.scoping.call.pop();
     self.pop_variable_scope();
     self.set_current_module(old_module);
-
-    for specifier in parsed.module_record.requested_modules.keys() {
-      if let Some(id) = self.resolve_and_parse_module(specifier) {
-        self.module_info_mut().resolved_imports.insert(*specifier, id);
-      }
-    }
 
     module_id
   }
@@ -257,17 +259,24 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn include_exports(&mut self, module_id: ModuleId) {
-    let module = &self.modules.modules[module_id];
+    let module = &mut self.modules.modules[module_id];
+    if module.exports_included {
+      return;
+    }
+    module.exports_included = true;
+
     let call_id = module.call_id;
-    let mut values = vec![];
-    if let Some(Some(default_export)) = module.default_export {
-      values.push(default_export);
-    }
-    let named_exports = module.named_exports.values().copied().collect::<Vec<_>>();
+    let default_export = module.default_export;
+    let named_exports: Vec<_> = module.named_exports.values().copied().collect::<Vec<_>>();
+    let reexport_all = module.reexport_all.iter().copied().collect::<Vec<_>>();
+    self.include((call_id, default_export));
     for named_export in named_exports {
-      values.push(self.get_named_export_value(module_id, named_export));
+      let value = self.get_named_export_value(module_id, named_export);
+      self.include(value);
     }
-    self.include((call_id, values));
+    for reexport_module_id in reexport_all {
+      self.include_exports(reexport_module_id);
+    }
   }
 
   fn get_named_export_value(
@@ -302,7 +311,6 @@ impl<'a> Analyzer<'a> {
     name: Atom<'a>,
     searched: &mut FxHashSet<ModuleId>,
   ) -> Option<Entity<'a>> {
-    // println!("module_id: {:?}, name: {}, module_opa", module_id, name);
     if !searched.insert(module_id) {
       return None;
     }
