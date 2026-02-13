@@ -1,6 +1,6 @@
 {
   "name": "@jsshaker/binding-wasm32-wasi",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "cpu": [
     "wasm32"
   ],

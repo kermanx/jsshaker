@@ -1,6 +1,6 @@
 {
   "name": "jsshaker",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "type": "commonjs",
   "main": "index.js",
   "browser": "browser.js",
