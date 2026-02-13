@@ -272,7 +272,7 @@ impl<'a> Factory<'a> {
     Entity {
       value: entity.value,
       dep: if let Some(d) = entity.dep {
-        Some((d, dep).uniform(self.allocator))
+        Some(self.dep((d, dep)))
       } else {
         Some(dep.uniform(self.allocator))
       },
