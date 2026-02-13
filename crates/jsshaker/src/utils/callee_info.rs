@@ -109,31 +109,39 @@ impl<'a> Analyzer<'a> {
       debug_name: {
         #[cfg(not(debug_assertions))]
         {
-          return "<function>";
+          "<function>"
         }
 
-        let file_name = self.module_info().path.as_str();
-        let line_col = self.line_index().line_col(node.span().start.into());
-        let resolved_name = match node {
-          CalleeNode::Function(node) => {
-            if let Some(id) = &node.id {
-              &id.name
-            } else {
-              self.resolve_function_name(node.scope_id()).unwrap_or("<unnamed>")
+        #[cfg(debug_assertions)]
+        {
+          let file_name = self.module_info().path.as_str();
+          let line_col = self.line_index().line_col(node.span().start.into());
+          let resolved_name = match node {
+            CalleeNode::Function(node) => {
+              if let Some(id) = &node.id {
+                &id.name
+              } else {
+                self.resolve_function_name(node.scope_id()).unwrap_or("<unnamed>")
+              }
             }
-          }
-          CalleeNode::ArrowFunctionExpression(node) => {
-            self.resolve_function_name(node.scope_id()).unwrap_or("<anonymous>")
-          }
-          CalleeNode::ClassStatics(_) => "<ClassStatics>",
-          CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
-          CalleeNode::BoundFunction(_) => "<BoundFunction>",
-          CalleeNode::Root => "<Root>",
-          CalleeNode::Module => "<Module>",
-        };
-        let debug_name =
-          format!("{}[./{}:{}:{}]", resolved_name, file_name, line_col.line + 1, line_col.col + 1);
-        self.allocator.alloc_str(&debug_name)
+            CalleeNode::ArrowFunctionExpression(node) => {
+              self.resolve_function_name(node.scope_id()).unwrap_or("<anonymous>")
+            }
+            CalleeNode::ClassStatics(_) => "<ClassStatics>",
+            CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+            CalleeNode::BoundFunction(_) => "<BoundFunction>",
+            CalleeNode::Root => "<Root>",
+            CalleeNode::Module => "<Module>",
+          };
+          let debug_name = format!(
+            "{}[./{}:{}:{}]",
+            resolved_name,
+            file_name,
+            line_col.line + 1,
+            line_col.col + 1
+          );
+          self.allocator.alloc_str(&debug_name)
+        }
       },
     }
   }
