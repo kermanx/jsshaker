@@ -28,7 +28,7 @@ use crate::{
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::Scoping,
-  utils::{ExtraData, counter::Counter},
+  utils::ExtraData,
   value::{FnStats, literal::symbol::SymbolRegistry},
   vfs::Vfs,
 };
@@ -55,8 +55,7 @@ pub struct Analyzer<'a> {
   // pub loop_data: LoopDataMap<'a>,
   pub folder: ConstantFolder<'a>,
   pub mangler: Mangler<'a>,
-  pub pending_callbacks: FxHashSet<ExhaustiveCallback<'a>>,
-  pub active_callback_triggers: Counter<ReadWriteTarget<'a>>,
+  pub pending_deps: FxHashSet<ExhaustiveCallback<'a>>,
   pub diagnostics: BTreeSet<String>,
   pub fn_stats: Option<RefCell<FnStats>>,
   pub symbol_registry: SymbolRegistry<'a>,
@@ -90,8 +89,7 @@ impl<'a> Analyzer<'a> {
       // loop_data: Default::default(),
       folder: ConstantFolder::new(allocator),
       mangler,
-      pending_callbacks: Default::default(),
-      active_callback_triggers: Default::default(),
+      pending_deps: Default::default(),
       diagnostics: Default::default(),
       fn_stats: config.enable_fn_stats.then(|| RefCell::new(FnStats::new())),
     }

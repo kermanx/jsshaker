@@ -201,20 +201,19 @@ impl<'a> Analyzer<'a> {
         !self.is_readonly_symbol(symbol)
       };
       drop(variable);
-
-      if self.active_callback_triggers.has(ReadWriteTarget::Variable(scope, symbol)) {
-        value.map(|v| self.factory.computed_unknown(v))
+      let tracker_dep = self.track_read(
+        cf_scope,
+        ReadWriteTarget::Variable(scope, symbol),
+        Some(if may_change {
+          TrackReadCacheable::Mutable(value)
+        } else {
+          TrackReadCacheable::Immutable
+        }),
+      );
+      if let (Some(value), Some(tracker_dep)) = (value, tracker_dep) {
+        Some(self.factory.computed(value, tracker_dep))
       } else {
-        let tracker_dep = self.track_read(
-          cf_scope,
-          ReadWriteTarget::Variable(scope, symbol),
-          Some(if may_change {
-            TrackReadCacheable::Mutable(value)
-          } else {
-            TrackReadCacheable::Immutable
-          }),
-        );
-        value.map(|v| self.factory.optional_computed(v, tracker_dep))
+        value
       }
     };
 
