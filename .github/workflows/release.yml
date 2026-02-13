@@ -31,9 +31,9 @@ jobs:
             target: x86_64-unknown-linux-gnu
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-debian
             build: |
-              cd packages/napi;
-              export COREPACK_INTEGRITY_KEYS=0;
-              corepack prepare pnpm --activate;
+              cd packages/napi
+              export COREPACK_INTEGRITY_KEYS=0
+              corepack prepare pnpm --activate
               pnpm build --target x86_64-unknown-linux-gnu
           - host: macos-latest
             target: aarch64-apple-darwin
