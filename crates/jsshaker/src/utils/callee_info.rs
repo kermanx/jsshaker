@@ -107,6 +107,11 @@ impl<'a> Analyzer<'a> {
       node,
       instance_id: self.factory.alloc_instance_id(),
       debug_name: {
+        #[cfg(not(debug_assertions))]
+        {
+          return "<function>";
+        }
+
         let file_name = self.module_info().path.as_str();
         let line_col = self.line_index().line_col(node.span().start.into());
         let resolved_name = match node {
