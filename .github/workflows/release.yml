@@ -78,7 +78,7 @@ jobs:
         run: pnpm install
         working-directory: ./packages/napi
       - name: Build in docker
-        uses: addnab/docker-run-action@v3
+        uses: maus007/docker-run-action-fork@v1
         if: ${{ matrix.settings.docker }}
         with:
           image: ${{ matrix.settings.docker }}
