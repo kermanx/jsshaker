@@ -1,10 +1,12 @@
+use std::cell::RefCell;
+
 use oxc::{
-  allocator::{self, Allocator},
+  allocator,
   ast::{
     NONE,
     ast::{
-      Class, ClassBody, ClassElement, ClassType, MethodDefinition, MethodDefinitionKind,
-      PropertyDefinitionType, PropertyKind, StaticBlock,
+      Class, ClassBody, ClassElement, ClassType, MethodDefinitionKind, PropertyDefinitionType,
+      PropertyKind, StaticBlock,
     },
   },
   span::GetSpan,
@@ -16,35 +18,30 @@ use crate::{
   dep::DepAtom,
   entity::Entity,
   transformer::Transformer,
-  utils::{CalleeNode, DefaultIn},
+  utils::{CalleeNode, ClassData},
   value::{ObjectPrototype, cache::FnCacheTrackingData, call::FnCallInfo},
 };
 
-struct Data<'a> {
-  pub value: Option<Entity<'a>>,
-  pub constructor: Option<&'a MethodDefinition<'a>>,
-  pub keys: allocator::Vec<'a, Option<Entity<'a>>>,
-  pub super_class: Option<Entity<'a>>,
-}
-
-impl<'a> DefaultIn<'a> for Data<'a> {
-  fn default_in(allocator: &'a Allocator) -> Self {
-    Data {
-      value: None,
-      constructor: None,
-      keys: allocator::Vec::new_in(allocator),
-      super_class: None,
-    }
-  }
-}
-
 impl<'a> Analyzer<'a> {
   pub fn exec_class(&mut self, node: &'a Class<'a>) -> Entity<'a> {
-    let data = self.load_data::<Data>(AstKind2::Class(node));
-    let (class, prototype) = self.new_function_with_prototype(CalleeNode::ClassConstructor(node));
+    let data_cell = self.allocator.alloc(RefCell::new(ClassData {
+      initializing: true,
+      included: false,
+      constructor: None,
+      keys: self.factory.vec(),
+      super_class: None,
+    }));
+
+    let (class, prototype) = self.new_function(CalleeNode::ClassConstructor(node, data_cell), true);
+    let prototype = prototype.unwrap();
+    let mut data = data_cell.borrow_mut();
+    data.initializing = false;
 
     // 1. Execute super class
-    data.super_class = node.super_class.as_ref().map(|node| self.exec_expression(node));
+    data.super_class = node
+      .super_class
+      .as_ref()
+      .map(|node| self.factory.computed(self.exec_expression(node), AstKind2::SuperExpr(node)));
     if let Some(super_class) = &data.super_class {
       // Because we can't re-define the "prototype" property, this should be side-effect free
       if let Some((prototype_dep, super_statics, super_prototype)) =
@@ -80,6 +77,8 @@ impl<'a> Analyzer<'a> {
         data.constructor = Some(method);
       }
     }
+    drop(data);
+    let data = data_cell.borrow();
 
     // 3. Register methods
     for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
@@ -155,14 +154,17 @@ impl<'a> Analyzer<'a> {
 
     // 5. Execute class decorators (ES2025 Stage 3)
     let class = class.into();
-    let final_class = if !node.decorators.is_empty() {
+    let class = if !node.decorators.is_empty() {
       self.exec_decorators(&node.decorators, class)
     } else {
       class
     };
 
-    data.value = Some(final_class);
-    final_class
+    if data.included {
+      self.include(class);
+    }
+
+    class
   }
 
   pub fn declare_class(&mut self, node: &'a Class<'a>, exporting: Option<DepAtom>) {
@@ -180,10 +182,18 @@ impl<'a> Analyzer<'a> {
   pub fn call_class_constructor(
     &mut self,
     node: &'a Class<'a>,
+    data_cell: &RefCell<ClassData<'a>>,
     info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
+    let data = data_cell.borrow();
+    if info.include && data.initializing {
+      drop(data);
+      let mut data = data_cell.borrow_mut();
+      data.included = true;
+      return (self.factory.undefined, FnCacheTrackingData::worst_case());
+    }
+
     let factory = self.factory;
-    let data = self.load_data::<Data>(AstKind2::Class(node));
 
     self.push_call_scope(info, false, false);
     let super_class = data.super_class.unwrap_or(self.factory.undefined);
@@ -195,7 +205,11 @@ impl<'a> Analyzer<'a> {
 
     if let Some(id) = &node.id {
       self.declare_binding_identifier(id, None, DeclarationKind::NamedFunctionInBody);
-      self.init_binding_identifier(id, DeclarationKind::NamedFunctionInBody, data.value);
+      self.init_binding_identifier(
+        id,
+        DeclarationKind::NamedFunctionInBody,
+        Some(info.func.into()),
+      );
     }
 
     // 1. Init properties
@@ -256,8 +270,11 @@ impl<'a> Transformer<'a> {
         transformed_id
       };
 
-      let super_class = super_class.as_ref().and_then(|node| self.transform_expression(node, true));
+      let super_class = super_class.as_ref().and_then(|node| {
+        self.transform_expression(node, self.is_included(AstKind2::SuperExpr(node)))
+      });
 
+      self.has_super_class.borrow_mut().push(super_class.is_some());
       let body = {
         let ClassBody { span, body } = body.as_ref();
 
@@ -298,6 +315,7 @@ impl<'a> Transformer<'a> {
 
         self.ast.class_body(*span, transformed_body)
       };
+      self.has_super_class.borrow_mut().pop();
 
       let decorators = self.transform_decorators(&node.decorators);
 
@@ -335,6 +353,7 @@ impl<'a> Transformer<'a> {
         }
       }
 
+      self.has_super_class.borrow_mut().push(false);
       for element in &body.body {
         match element {
           ClassElement::StaticBlock(node) => {
@@ -354,6 +373,7 @@ impl<'a> Transformer<'a> {
           _ => {}
         }
       }
+      self.has_super_class.borrow_mut().pop();
 
       if statements.is_empty() {
         None

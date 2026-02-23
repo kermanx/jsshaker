@@ -4,7 +4,10 @@ use super::super::{
   AbstractIterator, ArgumentsValue, EnumeratedProperties, ObjectPrototype, ObjectValue,
   PropertyKeyValue, TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
-use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag};
+use crate::{
+  analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag,
+  utils::ast::AstKind2,
+};
 
 trait BuiltinFnImpl<'a>: Debug {
   fn name(&self) -> &'static str;
@@ -244,7 +247,7 @@ impl<'a> Analyzer<'a> {
       .alloc(ImplementedBuiltinFnValue {
         name,
         implementation,
-        statics: Some(self.new_function_object(None).0),
+        statics: Some(self.new_function_object(AstKind2::ENVIRONMENT)),
         included: Cell::new(false),
       })
       .into()

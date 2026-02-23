@@ -21,7 +21,7 @@ impl<'a> Analyzer<'a> {
     if self.has_no_shake_notation(node.span) {
       return self.factory.computed_unknown(AstKind2::FunctionNoShake(node));
     }
-    self.new_function(CalleeNode::Function(node)).into()
+    self.new_function(CalleeNode::Function(node), true).0.into()
   }
 
   pub fn declare_function(

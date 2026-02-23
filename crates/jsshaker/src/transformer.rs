@@ -43,6 +43,7 @@ pub struct Transformer<'a> {
   pub need_unused_assignment_target: Cell<bool>,
   pub need_non_nullish_helper: Cell<bool>,
   pub unused_identifier_names: RefCell<FxHashMap<u64, usize>>,
+  pub has_super_class: RefCell<Vec<bool>>,
 }
 
 impl<'a> Transformer<'a> {
@@ -75,6 +76,7 @@ impl<'a> Transformer<'a> {
       need_unused_assignment_target: Cell::new(false),
       need_non_nullish_helper: Cell::new(false),
       unused_identifier_names: Default::default(),
+      has_super_class: Default::default(),
     }
   }
 

@@ -17,7 +17,7 @@ impl<'a> Analyzer<'a> {
     &mut self,
     node: &'a ArrowFunctionExpression<'a>,
   ) -> Entity<'a> {
-    self.new_function(CalleeNode::ArrowFunctionExpression(node)).into()
+    self.new_function(CalleeNode::ArrowFunctionExpression(node), false).0.into()
   }
 
   pub fn call_arrow_function_expression(

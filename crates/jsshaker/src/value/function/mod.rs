@@ -271,11 +271,16 @@ impl<'a> FunctionValue<'a> {
 }
 
 impl<'a> Analyzer<'a> {
-  pub fn new_function_with_prototype(
+  pub fn new_function(
     &mut self,
     node: CalleeNode<'a>,
-  ) -> (&'a FunctionValue<'a>, &'a ObjectValue<'a>) {
-    let (statics, prototype) = self.new_function_object(Some(node.into()));
+    has_prototype: bool,
+  ) -> (&'a FunctionValue<'a>, Option<&'a ObjectValue<'a>>) {
+    let statics = self.new_function_object(node.into());
+
+    let prototype =
+      if has_prototype { Some(self.attach_prototype_object(statics, node.into())) } else { None };
+
     let function = self.factory.alloc(FunctionValue {
       callee: self.new_callee_info(node),
       lexical_scope: self.scoping.variable.top(),
@@ -298,9 +303,5 @@ impl<'a> Analyzer<'a> {
     }
 
     (function, prototype)
-  }
-
-  pub fn new_function(&mut self, node: CalleeNode<'a>) -> &'a FunctionValue<'a> {
-    self.new_function_with_prototype(node).0
   }
 }

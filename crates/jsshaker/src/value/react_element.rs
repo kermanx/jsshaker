@@ -31,7 +31,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     let tag = self.tag;
     let props = self.props;
     // Is this the best way to handle this?
-    let group_id = analyzer.new_object_mangling_group();
+    let group_id = analyzer.mangler.new_object_group();
     analyzer.exec_included_fn("React_blackbox", move |analyzer| {
       let copied_props = analyzer.new_empty_object(
         ObjectPrototype::Builtin(&analyzer.builtins.prototypes.object),

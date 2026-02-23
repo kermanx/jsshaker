@@ -33,12 +33,11 @@ pub fn create_function_prototype<'a>(factory: &'a Factory<'a>) -> BuiltinPrototy
         bound_this,
         bound_args,
       });
-      analyzer.factory.computed(analyzer.new_function(CalleeNode::BoundFunction(bound_fn)).into(), (dep, args.get_last_shallow_dep(analyzer)))
+      analyzer.factory.computed(analyzer.new_function(CalleeNode::BoundFunction(bound_fn), false).0.into(), (dep, args.get_last_shallow_dep(analyzer)))
     }),
     "length" => factory.unknown_number,
     "arguments" => factory.unknown,
     "caller" => factory.unknown,
     "name" => factory.unknown_string,
-    "prototype" => factory.unknown,
   })
 }

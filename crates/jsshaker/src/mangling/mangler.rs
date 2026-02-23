@@ -7,6 +7,7 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use crate::{
   analyzer::Factory,
+  define_box_bump_idx,
   dep::DepAtom,
   utils::box_bump::BoxBump,
   value::{LiteralValue, Value},
@@ -19,9 +20,10 @@ oxc_index::define_index_type! {
   DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
 }
 
-oxc_index::define_index_type! {
-  pub struct UniquenessGroupId = u32;
-  DISABLE_MAX_INDEX_CHECK = cfg!(not(debug_assertions));
+type UniquenessGroup<'a> = (Vec<MangleAtom>, usize, FxHashSet<&'a str>);
+
+define_box_bump_idx! {
+  pub struct UniquenessGroupId for UniquenessGroup<'static>;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -37,8 +39,11 @@ pub enum AtomState<'a> {
   Builtin,
 }
 
-type UniquenessGroups<'a> =
-  IndexVec<UniquenessGroupId, (Vec<MangleAtom>, usize, FxHashSet<&'a str>)>;
+type UniquenessGroups<'a> = BoxBump<
+  'a,
+  UniquenessGroupId,
+  (allocator::Vec<'a, MangleAtom>, usize, allocator::HashSet<'a, &'a str>),
+>;
 
 pub struct Mangler<'a> {
   pub enabled: bool,
@@ -47,6 +52,8 @@ pub struct Mangler<'a> {
 
   pub states: BoxBump<'a, MangleAtom, AtomState<'a>>,
   pub constant_nodes: FxHashMap<DepAtom, (Option<MangleAtom>, Value<'a>)>,
+  pub object_groups: FxHashMap<DepAtom, UniquenessGroupId>,
+  pub prototype_groups: FxHashMap<DepAtom, UniquenessGroupId>,
 
   /// (atoms, resolved_name)[]
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
@@ -63,8 +70,10 @@ impl<'a> Mangler<'a> {
       allocator,
       states,
       constant_nodes: FxHashMap::default(),
+      object_groups: FxHashMap::default(),
+      prototype_groups: FxHashMap::default(),
       identity_groups: IndexVec::new(),
-      uniqueness_groups: IndexVec::new(),
+      uniqueness_groups: BoxBump::new(allocator),
     }
   }
 
@@ -81,6 +90,34 @@ impl<'a> Mangler<'a> {
         (Some(atom), self.allocator.alloc(LiteralValue::String(str, Some(atom))))
       })
       .1
+  }
+
+  pub fn new_object_group(&mut self) -> UniquenessGroupId {
+    self.uniqueness_groups.alloc((
+      allocator::Vec::new_in(self.allocator),
+      0,
+      allocator::HashSet::new_in(self.allocator),
+    ))
+  }
+
+  pub fn use_object_group(&mut self, node: impl Into<DepAtom>) -> UniquenessGroupId {
+    *self.object_groups.entry(node.into()).or_insert_with(|| {
+      self.uniqueness_groups.alloc((
+        allocator::Vec::new_in(self.allocator),
+        0,
+        allocator::HashSet::new_in(self.allocator),
+      ))
+    })
+  }
+
+  pub fn use_prototype_group(&mut self, node: impl Into<DepAtom>) -> UniquenessGroupId {
+    *self.prototype_groups.entry(node.into()).or_insert_with(|| {
+      self.uniqueness_groups.alloc((
+        allocator::Vec::new_in(self.allocator),
+        0,
+        allocator::HashSet::new_in(self.allocator),
+      ))
+    })
   }
 
   pub fn new_atom(&self, str: &'a str) -> MangleAtom {

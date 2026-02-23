@@ -101,6 +101,10 @@ impl<'a> BuiltinPrototype<'a> {
       analyzer.factory.computed_unknown(dep)
     }
   }
+
+  pub fn test_has_own(&self, key: PropertyKeyValue<'a>) -> Option<bool> {
+    if self.get(&key).is_some() { Some(true) } else { None }
+  }
 }
 
 pub struct BuiltinPrototypes<'a> {

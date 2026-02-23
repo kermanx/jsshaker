@@ -298,8 +298,16 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
   }
 
   fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
-    if self.included.get() {
+    if self.included_as_prototype.get() {
       return None;
+    }
+
+    let keyed = self.keyed.borrow();
+    if let Some(property) = keyed.get(&key)
+      && property.definite
+      && !property.possible_values.is_empty()
+    {
+      return Some(true);
     }
 
     let unknown = self.unknown.borrow();
@@ -307,27 +315,13 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       return None;
     }
 
-    let keyed = self.keyed.borrow();
-    if let Some(property) = keyed.get(&key) {
-      if property.definite
-        && property.non_existent.is_empty()
-        && unknown.non_existent.is_empty()
-        && !property.possible_values.is_empty()
-      {
-        return Some(true);
-      }
-      return None;
-    }
-    drop(keyed);
-    drop(unknown);
-
     if !check_proto {
       return Some(false);
     }
 
     match self.prototype.get() {
       ObjectPrototype::ImplicitOrNull => Some(false),
-      ObjectPrototype::Builtin(_) => None,
+      ObjectPrototype::Builtin(proto) => proto.test_has_own(key),
       ObjectPrototype::Custom(proto) => proto.test_has_own(key, true),
       ObjectPrototype::Unknown(_) => None,
     }
@@ -421,28 +415,19 @@ impl<'a> Analyzer<'a> {
     })
   }
 
-  pub fn new_function_object(
+  pub fn new_function_object(&mut self, mangle_node: AstKind2<'a>) -> &'a ObjectValue<'a> {
+    let group = self.mangler.use_object_group(mangle_node);
+    self.new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.function), Some(group))
+  }
+
+  pub fn attach_prototype_object(
     &mut self,
-    mangle_node: Option<AstKind2<'a>>,
-  ) -> (&'a ObjectValue<'a>, &'a ObjectValue<'a>) {
-    let mangling_group = if let Some(mangle_node) = mangle_node {
-      let (m1, m2) = *self
-        .load_data::<Option<(UniquenessGroupId, UniquenessGroupId)>>(mangle_node)
-        .get_or_insert_with(|| {
-          (self.new_object_mangling_group(), self.new_object_mangling_group())
-        });
-      (Some(m1), Some(m2))
-    } else {
-      (None, None)
-    };
-    let prototype = self.new_empty_object(
-      ObjectPrototype::Builtin(&self.builtins.prototypes.object),
-      mangling_group.0,
-    );
-    let statics = self.new_empty_object(
-      ObjectPrototype::Builtin(&self.builtins.prototypes.function),
-      mangling_group.1,
-    );
+    statics: &'a ObjectValue<'a>,
+    mangle_node: AstKind2<'a>,
+  ) -> &'a ObjectValue<'a> {
+    let group = self.mangler.use_prototype_group(mangle_node);
+    let prototype = self
+      .new_empty_object(ObjectPrototype::Builtin(&self.builtins.prototypes.object), Some(group));
     statics.keyed.borrow_mut().insert(
       PropertyKeyValue::String(builtin_atom!("prototype")),
       ObjectProperty {
@@ -454,23 +439,17 @@ impl<'a> Analyzer<'a> {
         mangling: Some(BUILTIN_ATOM),
       },
     );
-    (statics, prototype)
-  }
-
-  pub fn new_object_mangling_group(&mut self) -> UniquenessGroupId {
-    self.mangler.uniqueness_groups.push(Default::default())
+    prototype
   }
 
   pub fn use_mangable_plain_object(
     &mut self,
     dep_id: impl Into<DepAtom>,
   ) -> &'a mut ObjectValue<'a> {
-    let mangling_group = self
-      .load_data::<Option<UniquenessGroupId>>(dep_id)
-      .get_or_insert_with(|| self.new_object_mangling_group());
+    let mangling_group = self.mangler.use_object_group(dep_id);
     self.new_empty_object(
       ObjectPrototype::Builtin(&self.builtins.prototypes.object),
-      Some(*mangling_group),
+      Some(mangling_group),
     )
   }
 }

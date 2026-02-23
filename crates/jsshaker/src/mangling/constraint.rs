@@ -1,6 +1,6 @@
 use std::mem;
 
-use rustc_hash::FxHashSet;
+use oxc::allocator::{self, TakeIn};
 
 use super::{AtomState, MangleAtom};
 use super::{Mangler, UniquenessGroupId};
@@ -116,7 +116,11 @@ impl<'a> Mangler<'a> {
             }
           }
         } else {
-          let group = uniqueness_groups.push((vec![a, b], 0, FxHashSet::default()));
+          let group = uniqueness_groups.alloc((
+            allocator::Vec::from_array_in([a, b], self.allocator),
+            0,
+            allocator::HashSet::new_in(self.allocator),
+          ));
           ua.insert(UniquenessConstraint::Group(group));
           ub.insert(UniquenessConstraint::Group(group));
         }
@@ -143,7 +147,7 @@ impl<'a> Mangler<'a> {
   }
 
   pub fn mark_uniqueness_group_non_mangable(&mut self, group: UniquenessGroupId) {
-    for atom in mem::take(&mut self.uniqueness_groups[group].0) {
+    for atom in self.uniqueness_groups[group].0.take_in(self.allocator) {
       self.mark_atom_non_mangable(atom);
     }
   }

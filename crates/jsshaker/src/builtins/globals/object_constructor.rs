@@ -261,7 +261,7 @@ impl<'a> Builtins<'a> {
         let deps = analyzer.dep((proto, dep));
         (deps, ObjectPrototype::Unknown(deps))
       };
-      let mangling = analyzer.new_object_mangling_group();
+      let mangling = analyzer.mangler.new_object_group();
       let object = analyzer.new_empty_object(prototype, Some(mangling));
       object.add_extra_dep(deps);
       object.into()

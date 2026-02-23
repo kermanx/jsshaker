@@ -60,9 +60,9 @@ impl<'a> FunctionValue<'a> {
       CalleeNode::ArrowFunctionExpression(node) => {
         analyzer.call_arrow_function_expression(node, info)
       }
-      CalleeNode::ClassConstructor(node) => {
+      CalleeNode::ClassConstructor(node, class_data) => {
         // if !CTOR {
-        analyzer.call_class_constructor(node, info)
+        analyzer.call_class_constructor(node, class_data, info)
         // } else {
         //   analyzer.throw_builtin_error("Cannot invoke class constructor without 'new'");
         //   analyzer.factory.unknown

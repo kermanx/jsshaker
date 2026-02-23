@@ -94,7 +94,9 @@ impl<'a> Transformer<'a> {
       return Err(callee);
     }
 
-    let need_call = need_val || self.is_included(dep_id) || callee.is_super();
+    let need_call = need_val
+      || self.is_included(dep_id)
+      || (callee.is_super() && self.has_super_class.borrow().last().copied().unwrap_or(false));
 
     if !need_call {
       let callee = self.transform_expression_in_chain(callee, need_optional)?;

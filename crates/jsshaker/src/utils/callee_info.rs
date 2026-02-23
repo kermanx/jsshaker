@@ -1,9 +1,10 @@
-use std::hash;
+use std::{cell::RefCell, hash};
 
 use oxc::{
+  allocator,
   ast::{
     AstKind,
-    ast::{ArrowFunctionExpression, Class, Function, PropertyKind},
+    ast::{ArrowFunctionExpression, Class, Function, MethodDefinition, PropertyKind},
   },
   semantic::ScopeId,
   span::{GetSpan, Span},
@@ -11,14 +12,23 @@ use oxc::{
 use oxc_index::define_nonmax_u32_index_type;
 
 use super::ast::AstKind2;
-use crate::{analyzer::Analyzer, module::ModuleId, value::bound::BoundFunction};
+use crate::{analyzer::Analyzer, entity::Entity, module::ModuleId, value::bound::BoundFunction};
+
+#[derive(Debug)]
+pub struct ClassData<'a> {
+  pub initializing: bool,
+  pub included: bool,
+  pub constructor: Option<&'a MethodDefinition<'a>>,
+  pub keys: allocator::Vec<'a, Option<Entity<'a>>>,
+  pub super_class: Option<Entity<'a>>,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum CalleeNode<'a> {
   Function(&'a Function<'a>),
   ArrowFunctionExpression(&'a ArrowFunctionExpression<'a>),
   ClassStatics(&'a Class<'a>),
-  ClassConstructor(&'a Class<'a>),
+  ClassConstructor(&'a Class<'a>, &'a RefCell<ClassData<'a>>),
   BoundFunction(&'a BoundFunction<'a>),
   Root,
   Module,
@@ -30,7 +40,7 @@ impl<'a> From<CalleeNode<'a>> for AstKind2<'a> {
       CalleeNode::Function(node) => AstKind2::Function(node),
       CalleeNode::ArrowFunctionExpression(node) => AstKind2::ArrowFunctionExpression(node),
       CalleeNode::ClassStatics(node) => AstKind2::Class(node),
-      CalleeNode::ClassConstructor(node) => AstKind2::ClassConstructor(node),
+      CalleeNode::ClassConstructor(node, _) => AstKind2::ClassConstructor(node),
       CalleeNode::BoundFunction(_) | CalleeNode::Root | CalleeNode::Module => AstKind2::ENVIRONMENT,
     }
   }
@@ -42,7 +52,7 @@ impl GetSpan for CalleeNode<'_> {
       CalleeNode::Function(node) => node.span(),
       CalleeNode::ArrowFunctionExpression(node) => node.span(),
       CalleeNode::ClassStatics(node) => node.span(),
-      CalleeNode::ClassConstructor(node) => node.span(),
+      CalleeNode::ClassConstructor(node, _) => node.span(),
       CalleeNode::BoundFunction(f) => f.span,
       CalleeNode::Root | CalleeNode::Module => Span::default(),
     }
@@ -58,7 +68,9 @@ impl PartialEq for CalleeNode<'_> {
         a.span() == b.span()
       }
       (CalleeNode::ClassStatics(a), CalleeNode::ClassStatics(b)) => a.span() == b.span(),
-      (CalleeNode::ClassConstructor(a), CalleeNode::ClassConstructor(b)) => a.span() == b.span(),
+      (CalleeNode::ClassConstructor(a, _), CalleeNode::ClassConstructor(b, _)) => {
+        a.span() == b.span()
+      }
       (CalleeNode::BoundFunction(a), CalleeNode::BoundFunction(b)) => a.span == b.span,
       _ => false,
     }
@@ -128,7 +140,7 @@ impl<'a> Analyzer<'a> {
               self.resolve_function_name(node.scope_id()).unwrap_or("<anonymous>")
             }
             CalleeNode::ClassStatics(_) => "<ClassStatics>",
-            CalleeNode::ClassConstructor(_) => "<ClassConstructor>",
+            CalleeNode::ClassConstructor(_, _) => "<ClassConstructor>",
             CalleeNode::BoundFunction(_) => "<BoundFunction>",
             CalleeNode::Root => "<Root>",
             CalleeNode::Module => "<Module>",

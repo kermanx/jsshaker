@@ -170,6 +170,7 @@ ast_kind_2! {
   WithDefault(&'a Expression<'a>),
   FunctionNoShake(&'a Function<'a>),
   JSXIdentifier(&'a JSXIdentifier<'a>),
+  SuperExpr(&'a Expression<'a>),
 }
 
 impl<'a> CustomDepTrait<'a> for AstKind2<'a> {
