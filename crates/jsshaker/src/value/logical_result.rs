@@ -153,6 +153,14 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     }
   }
 
+  fn test_has_own(
+    &self,
+    key: crate::value::PropertyKeyValue<'a>,
+    check_proto: bool,
+  ) -> Option<bool> {
+    self.value.test_has_own(key, check_proto)
+  }
+
   fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     self.value.as_cacheable(analyzer)
   }

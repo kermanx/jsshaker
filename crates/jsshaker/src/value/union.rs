@@ -345,6 +345,17 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     Some(result)
   }
 
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    let mut iter = self.values.iter();
+    let result = iter.next().unwrap().test_has_own(key, check_proto)?;
+    for entity in iter {
+      if entity.test_has_own(key, check_proto)? != result {
+        return None;
+      }
+    }
+    Some(result)
+  }
+
   fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     let mut result = Cacheable::Never;
     for value in self.values.iter() {

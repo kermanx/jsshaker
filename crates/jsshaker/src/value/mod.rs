@@ -153,6 +153,7 @@ pub trait ValueTrait<'a>: Debug {
   fn test_typeof(&self) -> TypeofResult;
   fn test_truthy(&self) -> Option<bool>;
   fn test_nullish(&self) -> Option<bool>;
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool>;
   fn test_is_undefined(&self) -> Option<bool> {
     let t = self.test_typeof();
     match (t == TypeofResult::Undefined, t.contains(TypeofResult::Undefined)) {

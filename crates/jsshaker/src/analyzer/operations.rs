@@ -306,27 +306,27 @@ impl<'a> Analyzer<'a> {
   ) -> Entity<'a> {
     let factory = self.factory;
 
-    let to_result =
+    let bool_result =
       |result: Option<bool>| factory.computed(factory.boolean_maybe_unknown(result), (lhs, rhs));
 
-    let to_eq_result =
+    let equality_result =
       |(equality, mangle_constraint): (Option<bool>, Option<MangleConstraint<'a>>)| {
         if let Some(mangle_constraint) = mangle_constraint {
           factory.mangable(factory.boolean_maybe_unknown(equality), (lhs, rhs), mangle_constraint)
         } else {
-          to_result(equality)
+          bool_result(equality)
         }
       };
 
     match operator {
-      BinaryOperator::Equality => to_eq_result(self.op_loose_eq(lhs, rhs)),
-      BinaryOperator::Inequality => to_eq_result(self.op_loose_neq(lhs, rhs)),
-      BinaryOperator::StrictEquality => to_eq_result(self.op_strict_eq(lhs, rhs, false)),
-      BinaryOperator::StrictInequality => to_eq_result(self.op_strict_neq(lhs, rhs)),
-      BinaryOperator::LessThan => to_result(self.op_lt(lhs, rhs, false)),
-      BinaryOperator::LessEqualThan => to_result(self.op_lt(lhs, rhs, true)),
-      BinaryOperator::GreaterThan => to_result(self.op_gt(lhs, rhs, false)),
-      BinaryOperator::GreaterEqualThan => to_result(self.op_gt(lhs, rhs, true)),
+      BinaryOperator::Equality => equality_result(self.op_loose_eq(lhs, rhs)),
+      BinaryOperator::Inequality => equality_result(self.op_loose_neq(lhs, rhs)),
+      BinaryOperator::StrictEquality => equality_result(self.op_strict_eq(lhs, rhs, false)),
+      BinaryOperator::StrictInequality => equality_result(self.op_strict_neq(lhs, rhs)),
+      BinaryOperator::LessThan => bool_result(self.op_lt(lhs, rhs, false)),
+      BinaryOperator::LessEqualThan => bool_result(self.op_lt(lhs, rhs, true)),
+      BinaryOperator::GreaterThan => bool_result(self.op_gt(lhs, rhs, false)),
+      BinaryOperator::GreaterEqualThan => bool_result(self.op_gt(lhs, rhs, true)),
       BinaryOperator::Addition => self.op_add(lhs, rhs),
 
       BinaryOperator::Subtraction
@@ -390,17 +390,15 @@ impl<'a> Analyzer<'a> {
           factory.number(f64::from(value))
         }),
 
-      BinaryOperator::In => factory.computed_unknown_boolean((lhs, rhs)),
-      BinaryOperator::Instanceof => to_result(self.op_instanceof(lhs, rhs)),
-    }
-  }
-
-  // return a === undefined ? b : a
-  pub fn op_undefined_or(&self, a: Entity<'a>, b: Entity<'a>) -> Entity<'a> {
-    match a.test_is_undefined() {
-      Some(false) => a,
-      Some(true) => b,
-      None => self.factory.union((a, b)),
+      BinaryOperator::In => {
+        let lhs = lhs.coerce_property_key(self);
+        let result = lhs.get_literal(self).and_then(|lkey| {
+          let (pkey, _) = lkey.into();
+          rhs.test_has_own(pkey, true)
+        });
+        self.factory.computed(self.factory.boolean_maybe_unknown(result), (lhs, rhs))
+      }
+      BinaryOperator::Instanceof => bool_result(self.op_instanceof(lhs, rhs)),
     }
   }
 }

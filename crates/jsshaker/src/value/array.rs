@@ -378,6 +378,31 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     Some(false)
   }
 
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    if self.included.get() {
+      return None;
+    }
+    let PropertyKeyValue::String(k) = key else {
+      return Some(false); // symbols are not own array props
+    };
+    let k_str = k.as_str();
+    if k_str == "length" {
+      return Some(true); // arrays always have length
+    }
+    if let Ok(idx) = k_str.parse::<usize>() {
+      let elements = self.elements.borrow();
+      let rest = self.rest.borrow();
+      if idx < elements.len() {
+        return Some(true); // definitely within known elements
+      }
+      if !rest.is_empty() {
+        return None; // rest may extend the array further
+      }
+      return Some(false); // beyond known elements, no rest
+    }
+    if check_proto { None } else { Some(false) }
+  }
+
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Array(self.array_id()))
   }

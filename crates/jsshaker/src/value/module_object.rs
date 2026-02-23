@@ -175,6 +175,14 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     Some(false)
   }
 
+  fn test_has_own(
+    &self,
+    _key: crate::value::PropertyKeyValue<'a>,
+    _check_proto: bool,
+  ) -> Option<bool> {
+    None
+  }
+
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::ModuleObject(self.module))
   }

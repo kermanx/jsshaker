@@ -297,6 +297,42 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     Some(false)
   }
 
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    if self.included.get() {
+      return None;
+    }
+
+    let unknown = self.unknown.borrow();
+    if self.rest.is_some() || !unknown.possible_values.is_empty() {
+      return None;
+    }
+
+    let keyed = self.keyed.borrow();
+    if let Some(property) = keyed.get(&key) {
+      if property.definite
+        && property.non_existent.is_empty()
+        && unknown.non_existent.is_empty()
+        && !property.possible_values.is_empty()
+      {
+        return Some(true);
+      }
+      return None;
+    }
+    drop(keyed);
+    drop(unknown);
+
+    if !check_proto {
+      return Some(false);
+    }
+
+    match self.prototype.get() {
+      ObjectPrototype::ImplicitOrNull => Some(false),
+      ObjectPrototype::Builtin(_) => None,
+      ObjectPrototype::Custom(proto) => proto.test_has_own(key, true),
+      ObjectPrototype::Unknown(_) => None,
+    }
+  }
+
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Object(self.object_id()))
   }

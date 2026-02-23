@@ -31,7 +31,7 @@ impl<'a> Builtins<'a> {
       "setPrototypeOf" => self.create_object_set_prototype_of_impl(),
       "getPrototypeOf" => factory.pure_fn_returns_unknown,
       "defineProperties" => factory.unknown_truthy,
-      "hasOwn" => factory.pure_fn_returns_boolean,
+      "hasOwn" => self.create_object_has_own_impl(),
       "preventExtensions" => factory.unknown_truthy,
       "seal" => factory.unknown_truthy,
       "getOwnPropertyNames" => factory.unknown_truthy,
@@ -283,6 +283,18 @@ impl<'a> Builtins<'a> {
       } else {
         self.factory.computed(self.factory.boolean_maybe_unknown(equality), (dep, lhs, rhs))
       }
+    })
+  }
+
+  fn create_object_has_own_impl(&self) -> Entity<'a> {
+    self.factory.implemented_builtin_fn("Object.hasOwn", |analyzer, dep, _, args| {
+      let obj = args.get(analyzer, 0);
+      let key = args.get(analyzer, 1).coerce_property_key(analyzer);
+      let result = key.get_literal(analyzer).and_then(|lkey| {
+        let (pkey, _) = lkey.into();
+        obj.test_has_own(pkey, false)
+      });
+      analyzer.factory.computed(analyzer.factory.boolean_maybe_unknown(result), (dep, obj, key))
     })
   }
 

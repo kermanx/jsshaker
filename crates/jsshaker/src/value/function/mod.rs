@@ -10,8 +10,8 @@ use std::cell::Cell;
 use oxc::span::GetSpan;
 
 use super::{
-  AbstractIterator, EnumeratedProperties, ObjectPrototype, ObjectValue, TypeofResult, ValueTrait,
-  cacheable::Cacheable, escaped,
+  AbstractIterator, EnumeratedProperties, ObjectPrototype, ObjectValue, PropertyKeyValue,
+  TypeofResult, ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
   analyzer::Analyzer,
@@ -208,6 +208,10 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    self.statics.test_has_own(key, check_proto)
   }
 
   fn get_union_hint(&self) -> UnionHint {

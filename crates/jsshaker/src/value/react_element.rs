@@ -177,6 +177,14 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     None
   }
 
+  fn test_has_own(
+    &self,
+    _key: crate::value::PropertyKeyValue<'a>,
+    _check_proto: bool,
+  ) -> Option<bool> {
+    None
+  }
+
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     None
   }

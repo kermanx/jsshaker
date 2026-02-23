@@ -117,6 +117,14 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     None
   }
 
+  fn test_has_own(
+    &self,
+    _key: crate::value::PropertyKeyValue<'a>,
+    _check_proto: bool,
+  ) -> Option<bool> {
+    None
+  }
+
   fn is_shared_value(&self) -> bool {
     true
   }

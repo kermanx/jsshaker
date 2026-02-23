@@ -2,7 +2,7 @@ use std::{cell::Cell, fmt::Debug};
 
 use super::super::{
   AbstractIterator, ArgumentsValue, EnumeratedProperties, ObjectPrototype, ObjectValue,
-  TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
+  PropertyKeyValue, TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag};
 
@@ -165,6 +165,10 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
 
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
+  }
+
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    if let Some(statics) = self.statics() { statics.test_has_own(key, check_proto) } else { None }
   }
 
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {

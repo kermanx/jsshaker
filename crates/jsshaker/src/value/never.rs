@@ -103,6 +103,9 @@ impl<'a> ValueTrait<'a> for NeverValue {
   fn test_nullish(&self) -> Option<bool> {
     Some(false)
   }
+  fn test_has_own(&self, _key: super::PropertyKeyValue<'a>, _check_proto: bool) -> Option<bool> {
+    Some(false)
+  }
 
   fn get_union_hint(&self) -> UnionHint {
     UnionHint::Never

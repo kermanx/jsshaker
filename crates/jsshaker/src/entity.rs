@@ -198,6 +198,13 @@ impl<'a> Entity<'a> {
   pub fn test_nullish(&self) -> Option<bool> {
     self.value.test_nullish()
   }
+  pub fn test_has_own(
+    &self,
+    key: crate::value::PropertyKeyValue<'a>,
+    check_proto: bool,
+  ) -> Option<bool> {
+    self.value.test_has_own(key, check_proto)
+  }
   pub fn test_is_undefined(&self) -> Option<bool> {
     self.value.test_is_undefined()
   }

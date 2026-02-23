@@ -289,6 +289,29 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     Some(matches!(self, LiteralValue::Null | LiteralValue::Undefined))
   }
 
+  fn test_has_own(&self, key: PropertyKeyValue<'a>, check_proto: bool) -> Option<bool> {
+    match self {
+      LiteralValue::Null | LiteralValue::Undefined => None, // TypeError
+      LiteralValue::String(s, _) => {
+        let PropertyKeyValue::String(k) = key else {
+          return Some(false); // symbols are never own string props
+        };
+        let k_str = k.as_str();
+        if k_str == "length" {
+          return Some(true);
+        }
+        if let Ok(idx) = k_str.parse::<usize>() {
+          return Some(idx < s.encode_utf16().count());
+        }
+        if check_proto { None } else { Some(false) }
+      }
+      _ => {
+        // Number, Boolean, BigInt, Symbol: no own properties
+        if check_proto { None } else { Some(false) }
+      }
+    }
+  }
+
   fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
     if let LiteralValue::String(s, _) = self {
       Some(Cacheable::String(s.as_str()))

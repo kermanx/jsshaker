@@ -155,6 +155,14 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     if self.maybe_string() { None } else { Some(vec![]) }
   }
 
+  fn test_has_own(
+    &self,
+    _key: crate::value::PropertyKeyValue<'a>,
+    check_proto: bool,
+  ) -> Option<bool> {
+    if check_proto { None } else { Some(false) }
+  }
+
   fn test_typeof(&self) -> TypeofResult {
     match self {
       PrimitiveValue::String => TypeofResult::String,
