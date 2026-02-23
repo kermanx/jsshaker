@@ -138,6 +138,9 @@ impl Builtins<'_> {
         "$$TRACE$$",
         |analyzer, _dep, _this, args| {
           println!("Trace: {:#?}", args.get(analyzer, 0).get_literal(analyzer).unwrap().to_string(analyzer.allocator));
+          for (i, scope) in analyzer.scoping.call.iter().rev().enumerate() {
+            println!("  [{}] {}", i, scope.callee.debug_name);
+          }
           analyzer.factory.undefined
         },
       ),
