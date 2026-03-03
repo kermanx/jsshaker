@@ -22,6 +22,7 @@ pub struct Options {
   pub constant_folding: Option<String>,
   #[napi(ts_type = "'enabled' | 'disabled' | 'only'")]
   pub property_mangling: Option<String>,
+  pub branch_folding: Option<bool>,
 
   pub max_recursion_depth: Option<u32>,
   pub remember_exhausted_variables: Option<bool>,
@@ -71,6 +72,9 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
       "only" => Some(true),
       _ => panic!("Invalid property_mangling option {:?}", property_mangling),
     };
+  }
+  if let Some(branch_folding) = options.branch_folding {
+    config.branch_folding = branch_folding;
   }
 
   if let Some(depth) = options.max_recursion_depth {

@@ -55,7 +55,7 @@ impl<'a> ConditionalBranch<'a> {
 
 impl<'a> CustomDepTrait<'a> for ConditionalBranch<'a> {
   fn include(&self, analyzer: &mut Analyzer<'a>) {
-    let data = analyzer.get_conditional_data_mut(self.id);
+    let data = analyzer.conditional_data.node_to_data.get_mut(&self.id).unwrap();
     self.include_with_data(data);
   }
 }
@@ -145,12 +145,21 @@ impl<'a> Analyzer<'a> {
     is_true: bool,
     has_contra: bool,
   ) -> Option<Dep<'a>> {
+    if !self.config.branch_folding {
+      self.include(test);
+    }
+
     let id = id.into();
     let callsite = self.call_scope().callsite;
 
     let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
 
     let data = node_to_data.entry(id).or_insert_with(ConditionalData::default);
+
+    if !self.config.branch_folding && matches!(id.into(), AstKind2::IfStatement(_)) {
+      data.maybe_true |= maybe_true;
+      data.maybe_false |= maybe_false;
+    }
 
     if data.maybe_true && data.maybe_false {
       self.include(test);
@@ -174,6 +183,10 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_conditional(&mut self) -> bool {
+    if !self.config.branch_folding {
+      return false;
+    }
+
     let included_atoms = &self.included_atoms;
     let ConditionalDataMap { callsite_to_branches, node_to_data } = &mut self.conditional_data;
 
@@ -212,10 +225,6 @@ impl<'a> Analyzer<'a> {
     }
     dirty
   }
-
-  fn get_conditional_data_mut(&mut self, id: DepAtom) -> &mut ConditionalData<'a> {
-    self.conditional_data.node_to_data.get_mut(&id).unwrap()
-  }
 }
 
 impl Transformer<'_> {
@@ -230,7 +239,7 @@ impl Transformer<'_> {
       return (false, false, false);
     };
 
-    if data.maybe_true && data.maybe_false {
+    if self.config.branch_folding && data.maybe_true && data.maybe_false {
       debug_assert!(data.tests_to_include.is_empty());
     }
     (data.maybe_true && data.maybe_false, data.maybe_true, data.maybe_false)

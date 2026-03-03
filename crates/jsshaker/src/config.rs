@@ -26,6 +26,7 @@ pub struct TreeShakeConfig {
   pub folding: bool,
   pub max_folding_string_length: usize,
   pub mangling: Option<bool>,
+  pub branch_folding: bool,
 
   pub unknown_global_side_effects: bool,
   pub preserve_function_name: bool,
@@ -60,6 +61,7 @@ impl TreeShakeConfig {
       folding: true,
       max_folding_string_length: 12,
       mangling: Some(false),
+      branch_folding: true,
 
       unknown_global_side_effects: true,
       preserve_function_name: true,

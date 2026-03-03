@@ -58,13 +58,16 @@ impl<'a> Analyzer<'a> {
         )
       }
       UnaryOperator::UnaryPlus => argument.coerce_number(self),
-      UnaryOperator::LogicalNot => self.factory.computed(
-        match argument.test_truthy() {
-          Some(value) => self.factory.boolean(!value),
-          None => self.factory.unknown_boolean,
-        },
-        argument,
-      ),
+      UnaryOperator::LogicalNot => {
+        // let argument = argument.coerce_primitive(self);
+        self.factory.computed(
+          match argument.test_truthy() {
+            Some(value) => self.factory.boolean(!value),
+            None => self.factory.unknown_boolean,
+          },
+          argument,
+        )
+      }
       UnaryOperator::BitwiseNot => self.factory.computed(
         if let Some(literals) = argument.coerce_number(self).get_literals(self) {
           self.factory.union(allocator::Vec::from_iter_in(

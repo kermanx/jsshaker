@@ -36,7 +36,7 @@ use crate::{
 };
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
+  pub fn exec_expression_no_fold(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
     self.push_span(node);
     let value = match node {
       match_member_expression!(Expression) => {
@@ -91,6 +91,11 @@ impl<'a> Analyzer<'a> {
       self.call_exhaustive_callbacks();
     }
 
+    value
+  }
+
+  pub fn exec_expression(&mut self, node: &'a Expression<'a>) -> Entity<'a> {
+    let value = self.exec_expression_no_fold(node);
     if maybe_foldable_expr(node) {
       self.try_fold_node(AstKind2::Expression(node), value)
     } else {
