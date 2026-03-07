@@ -119,6 +119,15 @@ const ignored2Tests: Set<string> = new Set(
   (await readFile(ignored2Path, { encoding: 'utf-8' })).split('\n').map(l => l.split('\t')[0].trim()).filter(l => l)
 );
 const UPDATE_MODE = !!process.env.UPDATE_MODE;
+
+const JSSHAKER_SKIP_FEATURES = new Set([
+  'ignored by JSShaker',
+  'ignored by JSShaker (2)',
+  'with',
+  'eval',
+  'testLenientAndStrict',
+  '$DONOTEVALUATE',
+]);
 // ------ Added End
 
 function discoverTest(test: Test) {
@@ -237,6 +246,57 @@ reporter.onExit.promise.then(() => {
         console.log(`- ./test/test262/test262/test/${test}`);
       }
     }
+  }
+
+  const skippedTests = [...reporter.tests.values()].filter((test) => test.status === 'skipped');
+  const engineSkipByReason = new Map<string, number>();
+  const jsshakerSkipByReason = new Map<string, number>();
+  let engineSkipCount = 0;
+  let jsshakerSkipCount = 0;
+
+  const addCount = (map: Map<string, number>, key: string) => {
+    map.set(key, (map.get(key) || 0) + 1);
+  };
+
+  for (const test of skippedTests) {
+    const reason = test.skipReason || 'unknown';
+    const feature = test.skipFeature;
+    const reasonKey = feature ? `${reason} (${feature})` : reason;
+
+    const isJsshakerSkip = reason === 'feature-disabled' && !!feature && JSSHAKER_SKIP_FEATURES.has(feature);
+    if (isJsshakerSkip) {
+      jsshakerSkipCount++;
+      addCount(jsshakerSkipByReason, reasonKey);
+    } else {
+      engineSkipCount++;
+      addCount(engineSkipByReason, reasonKey);
+    }
+  }
+
+  const totalTests = reporter.tests.size;
+  const totalSkipped = skippedTests.length;
+  const pct = (n: number) => ((n / totalTests) * 100).toFixed(2);
+
+  const printMap = (title: string, map: Map<string, number>) => {
+    if (map.size === 0) {
+      return;
+    }
+    console.log(styleText('yellow', title));
+    for (const [reason, count] of map.entries()) {
+      console.log(`    - ${reason}: ${count} (${pct(count)}%)`);
+    }
+  };
+
+  const classifiedSkipTotal = engineSkipCount + jsshakerSkipCount;
+  console.log(styleText('yellow', `Skip summary: total=${totalSkipped} (${pct(totalSkipped)}% of ${totalTests} tests). Unskipped: ${totalTests - totalSkipped} (${pct(totalTests - totalSkipped)}%)`));
+  console.log(`- engine262 unsupported: ${engineSkipCount} (${pct(engineSkipCount)}%)`);
+  printMap('  engine262 by reason:', engineSkipByReason);
+  console.log(`- jsshaker unsupported: ${jsshakerSkipCount} (${pct(jsshakerSkipCount)}%)`);
+  printMap('  jsshaker by reason:', jsshakerSkipByReason);
+
+  if (classifiedSkipTotal !== totalSkipped) {
+    process.exitCode = 1;
+    console.error(styleText('red', `Skip classification mismatch: engine(${engineSkipCount}) + jsshaker(${jsshakerSkipCount}) != total(${totalSkipped})`));
   }
 
   if (UPDATE_MODE) {
