@@ -31,6 +31,7 @@ use oxc_ast_visit::VisitMut;
 use rustc_hash::FxHashMap;
 use transformer::Transformer;
 use utils::ast;
+pub use value::FnStats;
 use vfs::Vfs;
 
 use crate::vfs::normalize_path;
@@ -46,6 +47,7 @@ pub struct JsShakerOptions<F: Vfs> {
 pub struct JsShakerReturn {
   pub codegen_return: FxHashMap<String, CodegenReturn>,
   pub diagnostics: BTreeSet<String>,
+  pub fn_stats: Option<FnStats>,
 }
 
 pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) -> JsShakerReturn {
@@ -117,7 +119,11 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
         .with_scoping(minifier_return.and_then(|r| r.scoping));
       codegen_return.insert(path.to_string(), codegen.build(program));
     }
-    JsShakerReturn { codegen_return, diagnostics: mem::take(diagnostics) }
+    JsShakerReturn {
+      codegen_return,
+      diagnostics: mem::take(diagnostics),
+      fn_stats: analyzer.fn_stats.map(|stats| stats.into_inner()),
+    }
   } else {
     let allocator = Allocator::default();
     let config = allocator.alloc(config);
@@ -140,6 +146,6 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     for error in parsed.errors {
       diagnostics.insert(error.to_string());
     }
-    JsShakerReturn { codegen_return, diagnostics }
+    JsShakerReturn { codegen_return, diagnostics, fn_stats: None }
   }
 }

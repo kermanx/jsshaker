@@ -37,6 +37,30 @@ pub struct Chunk {
   pub source_map_json: Option<String>,
 }
 
+#[napi(object)]
+pub struct Stat {
+  pub fn_cache: Option<FnCacheStat>,
+}
+
+#[napi(object)]
+pub struct FnCacheStat {
+  pub total_calls: u32,
+  pub cache_attempts: u32,
+  pub cache_hits: u32,
+  pub cache_misses: u32,
+  pub cache_updates: u32,
+
+  // Miss reason breakdown
+  pub miss_config_disabled: u32,
+  pub miss_non_copyable_this: u32,
+  pub miss_non_copyable_args: u32,
+  pub miss_rest_params: u32,
+  pub miss_non_copyable_return: u32,
+  pub miss_state_untrackable: u32,
+  pub miss_read_dep_incompatible: u32,
+  pub miss_cache_empty: u32,
+}
+
 impl From<oxc::codegen::CodegenReturn> for Chunk {
   fn from(value: oxc::codegen::CodegenReturn) -> Self {
     Chunk { code: value.code, source_map_json: value.map.map(|m| m.to_json_string()) }
@@ -106,10 +130,34 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   }
 }
 
+fn convert_fn_stats(fn_stats: Option<jsshaker::FnStats>) -> Stat {
+  Stat {
+    fn_cache: fn_stats.map(|stats| {
+      let overall = &stats.overall;
+      FnCacheStat {
+        total_calls: overall.total_calls as u32,
+        cache_attempts: overall.cache_attempts as u32,
+        cache_hits: overall.cache_hits as u32,
+        cache_misses: overall.cache_misses as u32,
+        cache_updates: overall.cache_updates as u32,
+        miss_config_disabled: overall.miss_config_disabled as u32,
+        miss_non_copyable_this: overall.miss_non_copyable_this as u32,
+        miss_non_copyable_args: overall.miss_non_copyable_args as u32,
+        miss_rest_params: overall.miss_rest_params as u32,
+        miss_non_copyable_return: overall.miss_non_copyable_return as u32,
+        miss_state_untrackable: overall.miss_state_untrackable as u32,
+        miss_read_dep_incompatible: overall.miss_read_dep_incompatible as u32,
+        miss_cache_empty: overall.miss_cache_empty as u32,
+      }
+    }),
+  }
+}
+
 #[napi(object)]
 pub struct SingleModuleResult {
   pub output: Chunk,
   pub diagnostics: Vec<String>,
+  pub stat: Stat,
 }
 
 #[napi]
@@ -121,6 +169,7 @@ pub fn shake_single_module(source_text: String, options: Options) -> SingleModul
   SingleModuleResult {
     output: result.codegen_return.remove(SingleFileFs::ENTRY_PATH).unwrap().into(),
     diagnostics: result.diagnostics.into_iter().collect(),
+    stat: convert_fn_stats(result.fn_stats),
   }
 }
 
@@ -128,6 +177,7 @@ pub fn shake_single_module(source_text: String, options: Options) -> SingleModul
 pub struct MultiModuleResult {
   pub output: HashMap<String, Chunk>,
   pub diagnostics: Vec<String>,
+  pub stat: Stat,
 }
 
 #[napi]
@@ -141,7 +191,11 @@ pub fn shake_multi_module(
   for (entry, codegen_result) in result.codegen_return {
     output.insert(entry, codegen_result.into());
   }
-  MultiModuleResult { output, diagnostics: result.diagnostics.into_iter().collect() }
+  MultiModuleResult {
+    output,
+    diagnostics: result.diagnostics.into_iter().collect(),
+    stat: convert_fn_stats(result.fn_stats),
+  }
 }
 
 #[napi]
@@ -151,5 +205,9 @@ pub fn shake_fs_module(entry_path: String, options: Options) -> MultiModuleResul
   for (entry, codegen_result) in result.codegen_return {
     output.insert(entry, codegen_result.into());
   }
-  MultiModuleResult { output, diagnostics: result.diagnostics.into_iter().collect() }
+  MultiModuleResult {
+    output,
+    diagnostics: result.diagnostics.into_iter().collect(),
+    stat: convert_fn_stats(result.fn_stats),
+  }
 }
