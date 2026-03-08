@@ -107,11 +107,10 @@ impl<'a> Transformer<'a> {
         let argument = match &node.argument {
           Expression::StaticMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
-            let property = self.transform_identifier_name(&node.property);
             Expression::from(self.ast.member_expression_static(
               node.span,
               object,
-              property,
+              self.transform_identifier_name(&node.property),
               node.optional,
             ))
           }
@@ -120,13 +119,14 @@ impl<'a> Transformer<'a> {
             Expression::from(self.ast.member_expression_private_field_expression(
               node.span,
               object,
-              node.field.clone(),
+              self.transform_private_identifier(&node.field, true).unwrap(),
               node.optional,
             ))
           }
           Expression::ComputedMemberExpression(node) => {
             let object = self.transform_expression(&node.object, true).unwrap();
             let property = self.transform_expression(&node.expression, true).unwrap();
+            self.record_dynamic_property_key();
             Expression::from(self.ast.member_expression_computed(
               node.span,
               object,

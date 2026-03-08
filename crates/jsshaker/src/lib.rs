@@ -18,6 +18,7 @@ use std::{cell::RefCell, collections::BTreeSet, mem, rc::Rc};
 pub use analyzer::Analyzer;
 pub use config::{TreeShakeConfig, TreeShakeJsxPreset};
 use mangling::ManglerTransformer;
+pub use mangling::ManglingStats;
 use module::ModuleInfo;
 pub use oxc;
 use oxc::{
@@ -48,6 +49,7 @@ pub struct JsShakerReturn {
   pub codegen_return: FxHashMap<String, CodegenReturn>,
   pub diagnostics: BTreeSet<String>,
   pub fn_stats: Option<FnStats>,
+  pub mangling_stats: Option<mangling::ManglingStats>,
 }
 
 pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) -> JsShakerReturn {
@@ -80,6 +82,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     } = unsafe { &mut *(&mut analyzer as *mut _) };
     let mangler = Rc::new(RefCell::new(mangler));
     let mut codegen_return = FxHashMap::default();
+    let mangling_stats = config.enable_mangling_stats.then(Default::default);
     for module_info in mem::take(&mut modules.modules) {
       let ModuleInfo { path, program, semantic, .. } = module_info;
 
@@ -94,6 +97,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
         folder,
         mangler.clone(),
         semantic,
+        mangling_stats.clone(),
       );
       let program = unsafe { &mut *program.get() };
       let program = if config.mangling == Some(true) {
@@ -123,6 +127,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
       codegen_return,
       diagnostics: mem::take(diagnostics),
       fn_stats: analyzer.fn_stats.map(|stats| stats.into_inner()),
+      mangling_stats: mangling_stats.as_ref().map(|s| s.borrow().clone()),
     }
   } else {
     let allocator = Allocator::default();
@@ -146,6 +151,6 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     for error in parsed.errors {
       diagnostics.insert(error.to_string());
     }
-    JsShakerReturn { codegen_return, diagnostics, fn_stats: None }
+    JsShakerReturn { codegen_return, diagnostics, fn_stats: None, mangling_stats: None }
   }
 }

@@ -22,6 +22,7 @@ pub struct TreeShakeConfig {
   pub eager_exhaustive_callbacks: bool,
   pub enable_fn_cache: bool,
   pub enable_fn_stats: bool,
+  pub enable_mangling_stats: bool,
 
   pub folding: bool,
   pub max_folding_string_length: usize,
@@ -57,6 +58,7 @@ impl TreeShakeConfig {
       eager_exhaustive_callbacks: false,
       enable_fn_cache: true,
       enable_fn_stats: false,
+      enable_mangling_stats: false,
 
       folding: true,
       max_folding_string_length: 12,

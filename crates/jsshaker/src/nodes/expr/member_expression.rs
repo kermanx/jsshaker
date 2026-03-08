@@ -228,6 +228,7 @@ impl<'a> Transformer<'a> {
         let transformed_key = self.transform_expression(expression, need_key_value);
 
         if need_key_value {
+          self.record_dynamic_property_key();
           Some(self.ast.member_expression_computed(
             *span,
             transformed_object.unwrap(),
@@ -249,9 +250,9 @@ impl<'a> Transformer<'a> {
         let StaticMemberExpression { span, object, property, .. } = node.as_ref();
 
         let transformed_object = self.transform_expression(object, need_write);
-        let property = self.transform_identifier_name(property);
 
         if need_write {
+          let property = self.transform_identifier_name(property);
           Some(self.ast.member_expression_static(
             *span,
             transformed_object.unwrap(),
@@ -259,6 +260,7 @@ impl<'a> Transformer<'a> {
             false,
           ))
         } else if transformed_object.is_some() {
+          let property = self.transform_identifier_name(property);
           Some(self.ast.member_expression_static(
             *span,
             self.transform_expression(object, true).unwrap(),

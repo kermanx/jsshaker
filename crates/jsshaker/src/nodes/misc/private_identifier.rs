@@ -31,6 +31,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<PrivateIdentifier<'a>> {
     if need_val || self.is_included(AstKind2::PrivateIdentifier(node)) {
       let PrivateIdentifier { span, name } = node;
+      self.record_static_property_key();
       let name = self.transform_mangable_static_string(AstKind2::PrivateIdentifier(node), name);
       Some(self.ast.private_identifier(*span, unescape_private_identifier_name(name)))
     } else {

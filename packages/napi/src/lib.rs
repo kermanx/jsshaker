@@ -29,6 +29,7 @@ pub struct Options {
   pub eager_exhaustive_callbacks: Option<bool>,
   pub enable_fn_cache: Option<bool>,
   pub enable_fn_stats: Option<bool>,
+  pub enable_mangling_stats: Option<bool>,
 }
 
 #[napi(object)]
@@ -40,6 +41,7 @@ pub struct Chunk {
 #[napi(object)]
 pub struct Stat {
   pub fn_cache: Option<FnCacheStat>,
+  pub mangling: Option<ManglingStat>,
 }
 
 #[napi(object)]
@@ -59,6 +61,13 @@ pub struct FnCacheStat {
   pub miss_state_untrackable: u32,
   pub miss_read_dep_incompatible: u32,
   pub miss_cache_empty: u32,
+}
+
+#[napi(object)]
+pub struct ManglingStat {
+  pub dynamic: u32,
+  pub static_all: u32,
+  pub static_mangled: u32,
 }
 
 impl From<oxc::codegen::CodegenReturn> for Chunk {
@@ -116,6 +125,9 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   if let Some(enable) = options.enable_fn_stats {
     config.enable_fn_stats = enable;
   }
+  if let Some(enable) = options.enable_mangling_stats {
+    config.enable_mangling_stats = enable;
+  }
 
   let minify = options.minify.unwrap_or(false);
   let minify_options =
@@ -130,7 +142,10 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   }
 }
 
-fn convert_fn_stats(fn_stats: Option<jsshaker::FnStats>) -> Stat {
+fn convert_stats(
+  fn_stats: Option<jsshaker::FnStats>,
+  mangling_stats: Option<jsshaker::ManglingStats>,
+) -> Stat {
   Stat {
     fn_cache: fn_stats.map(|stats| {
       let overall = &stats.overall;
@@ -149,6 +164,11 @@ fn convert_fn_stats(fn_stats: Option<jsshaker::FnStats>) -> Stat {
         miss_read_dep_incompatible: overall.miss_read_dep_incompatible as u32,
         miss_cache_empty: overall.miss_cache_empty as u32,
       }
+    }),
+    mangling: mangling_stats.map(|stats| ManglingStat {
+      dynamic: stats.dynamic as u32,
+      static_all: stats.static_all as u32,
+      static_mangled: stats.static_mangled as u32,
     }),
   }
 }
@@ -169,7 +189,7 @@ pub fn shake_single_module(source_text: String, options: Options) -> SingleModul
   SingleModuleResult {
     output: result.codegen_return.remove(SingleFileFs::ENTRY_PATH).unwrap().into(),
     diagnostics: result.diagnostics.into_iter().collect(),
-    stat: convert_fn_stats(result.fn_stats),
+    stat: convert_stats(result.fn_stats, result.mangling_stats),
   }
 }
 
@@ -194,7 +214,7 @@ pub fn shake_multi_module(
   MultiModuleResult {
     output,
     diagnostics: result.diagnostics.into_iter().collect(),
-    stat: convert_fn_stats(result.fn_stats),
+    stat: convert_stats(result.fn_stats, result.mangling_stats),
   }
 }
 
@@ -208,6 +228,6 @@ pub fn shake_fs_module(entry_path: String, options: Options) -> MultiModuleResul
   MultiModuleResult {
     output,
     diagnostics: result.diagnostics.into_iter().collect(),
-    stat: convert_fn_stats(result.fn_stats),
+    stat: convert_stats(result.fn_stats, result.mangling_stats),
   }
 }

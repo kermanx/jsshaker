@@ -40,6 +40,7 @@ impl<'a> Transformer<'a> {
         .map(|k| PropertyKey::PrivateIdentifier(self.ast.alloc(k))),
       _ => {
         let node = node.to_expression();
+        self.record_dynamic_property_key();
         if need_val || self.transform_expression(node, false).is_some() {
           let expr = self.transform_expression(node, true).unwrap();
           Some(PropertyKey::from(expr))

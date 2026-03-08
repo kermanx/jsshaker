@@ -21,6 +21,10 @@ impl<'a> Transformer<'a> {
     original: &'a str,
   ) -> &'a str {
     let mut mangler = self.mangler.borrow_mut();
-    mangler.resolve_node(key).unwrap_or(original)
+    let resolved = mangler.resolve_node(key).unwrap_or(original);
+    if resolved != original {
+      self.record_mangled_static_property_key();
+    }
+    resolved
   }
 }

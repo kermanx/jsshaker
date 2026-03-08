@@ -13,6 +13,8 @@ use crate::{
   value::{LiteralValue, Value},
 };
 
+use std::sync::Arc;
+
 use super::{MangleAtom, utils::get_mangled_name};
 
 oxc_index::define_index_type! {
@@ -59,6 +61,8 @@ pub struct Mangler<'a> {
   pub identity_groups: IndexVec<IdentityGroupId, (Vec<MangleAtom>, Option<&'a str>)>,
   /// (atoms, used_names, constant_names)[]
   pub uniqueness_groups: UniquenessGroups<'a>,
+
+  pub stats: Option<Arc<super::ManglingStats>>,
 }
 
 impl<'a> Mangler<'a> {
@@ -74,6 +78,7 @@ impl<'a> Mangler<'a> {
       prototype_groups: FxHashMap::default(),
       identity_groups: IndexVec::new(),
       uniqueness_groups: BoxBump::new(allocator),
+      stats: None,
     }
   }
 

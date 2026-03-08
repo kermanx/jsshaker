@@ -7,9 +7,9 @@ function A() {}
 A.a = function() {
 	return new A();
 };
-A.prototype.d = function() {
+A.prototype.a = function() {
 	return unknown();
 };
 console.log(2, 10, 10, 21);
 const b = A.a();
-b.d();
+b.a();
