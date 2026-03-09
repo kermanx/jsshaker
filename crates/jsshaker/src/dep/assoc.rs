@@ -27,6 +27,7 @@ impl<'a> CustomDepTrait<'a> for EntityTrackerDep {
 #[derive(Debug, Default)]
 pub struct AssocDepMap<'a> {
   to_deps: FxHashMap<DepAtom, Vec<Dep<'a>>>,
+  to_keys: FxHashMap<DepAtom, Vec<Entity<'a>>>,
   to_entities: FxHashMap<EntityTrackerDep, Vec<Entity<'a>>>,
 }
 
@@ -47,6 +48,10 @@ impl<'a> Analyzer<'a> {
     self.add_assoc_dep(self.scoping.current_callsite, dep);
   }
 
+  pub fn add_key_dep(&mut self, key: Entity<'a>) {
+    self.assoc_deps.to_keys.entry(self.scoping.current_callsite.into()).or_default().push(key);
+  }
+
   pub fn add_assoc_entity_dep(&mut self, base: EntityTrackerDep, entity: Entity<'a>) {
     if let Some(entities) = self.assoc_deps.to_entities.get_mut(&base) {
       entities.push(entity);
@@ -56,17 +61,35 @@ impl<'a> Analyzer<'a> {
   }
 
   pub fn post_analyze_handle_assoc_deps(&mut self) -> bool {
+    let mut changed = false;
+
     let mut to_include = vec![];
     self.assoc_deps.to_deps.retain(|base, deps| {
       if self.included_atoms.is_included(*base) {
         to_include.push(mem::take(deps));
+        changed = true;
         false
       } else {
         true
       }
     });
-    let changed = !to_include.is_empty();
     self.include(to_include);
+
+    let mut to_include = vec![];
+    self.assoc_deps.to_keys.retain(|base, keys| {
+      if self.included_atoms.is_included(*base) {
+        to_include.push(mem::take(keys));
+        changed = true;
+        false
+      } else {
+        true
+      }
+    });
+    for keys in to_include {
+      for key in keys {
+        key.include_mangable(self);
+      }
+    }
 
     changed
   }

@@ -107,7 +107,7 @@ impl<'a> Analyzer<'a> {
         let key =
           self.exec_expression_with_dependency(&node.expression, dep).coerce_property_key(self);
         // TODO: perf
-        self.add_callsite_dep(self.dep(key));
+        self.add_key_dep(key);
         key
       }
       MemberExpression::StaticMemberExpression(node) => self.exec_identifier_name(&node.property),
