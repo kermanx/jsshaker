@@ -189,6 +189,7 @@ impl<'a> Analyzer<'a> {
     }
     self.scoping.call.pop();
     self.pop_variable_scope();
+    self.pop_cf_scope();
     self.set_current_module(old_module);
 
     module_id
