@@ -228,7 +228,7 @@ impl<'a> Transformer<'a> {
   }
 
   pub fn build_unused_expression(&self, span: Span) -> Expression<'a> {
-    self.ast.expression_numeric_literal(span, 0.0f64, None, NumberBase::Decimal)
+    self.ast.expression_numeric_literal(span, 0.0, None, NumberBase::Decimal)
   }
 
   pub fn build_undefined(&self, span: Span) -> Expression<'a> {

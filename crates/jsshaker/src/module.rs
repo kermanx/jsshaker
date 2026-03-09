@@ -167,13 +167,13 @@ impl<'a> Analyzer<'a> {
     });
     self.modules.paths.insert(path.clone(), module_id);
 
+    let old_module = self.set_current_module(module_id);
     for specifier in parsed.module_record.requested_modules.keys() {
       if let Some(id) = self.resolve_and_parse_module(specifier) {
         self.module_info_mut().resolved_imports.insert(*specifier, id);
       }
     }
 
-    let old_module = self.set_current_module(module_id);
     self.scoping.call.push(CallScope::new_in(
       AstKind2::ENVIRONMENT,
       callee,
