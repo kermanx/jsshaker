@@ -86,7 +86,20 @@ impl<'a> Transformer<'a> {
         (None, Some(alternate)) => {
           Some(self.ast.expression_logical(*span, test, LogicalOperator::Or, alternate))
         }
-        (None, None) => unreachable!("node {}, {} @{:?}", maybe_true, maybe_false, span),
+        (None, None) => {
+          #[cfg(debug_assertions)]
+          {
+            eprintln!(
+              "node {}, {} @{:?} {}",
+              maybe_true,
+              maybe_false,
+              span,
+              span.source_text(self.semantic.source_text())
+            );
+          }
+
+          None
+        }
       }
     } else {
       build_effect!(self.ast, *span, test, consequent, alternate)
