@@ -9,13 +9,19 @@ pub struct StdFs;
 
 impl Vfs for StdFs {
   fn resolve_module(&self, importer: &str, specifier: &str) -> Option<String> {
-    if !specifier.starts_with(".") {
+    let is_abs = specifier.starts_with("/");
+    if !is_abs && !specifier.starts_with(".") {
       return None;
     }
 
-    let mut path = std::path::PathBuf::from(importer);
-    path.pop();
-    path.push(specifier);
+    let mut path = if is_abs {
+      std::env::current_dir().unwrap().join(specifier.strip_prefix("/").unwrap())
+    } else {
+      let mut path = std::path::PathBuf::from(importer);
+      path.pop();
+      path.push(specifier);
+      path
+    };
     path = normalize_path::normalize(&path);
     let result = path
       .exists()
