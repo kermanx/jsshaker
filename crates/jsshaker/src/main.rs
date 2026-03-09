@@ -195,7 +195,9 @@ fn main() {
         }
         output_path
       },
-      PathBuf::from,
+      |output| {
+        if output == "." { (&args.path).into() } else { output.into() }
+      },
     );
 
     let mut output_file = match File::create(&output_path) {

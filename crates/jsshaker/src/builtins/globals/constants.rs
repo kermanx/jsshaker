@@ -122,12 +122,19 @@ impl Builtins<'_> {
     });
 
     // Debug helpers (non-standard)
-    #[cfg(debug_assertions)]
+    // #[cfg(debug_assertions)]
     init_map!(self.globals, {
       "$$DEBUG$$" => factory.implemented_builtin_fn(
         "$$DEBUG$$",
         |analyzer, _dep, _this, args| {
           println!("Debug: {:#?}", args.get(analyzer, 0));
+          analyzer.factory.undefined
+        },
+      ),
+      "$$DEBUGV$$" => factory.implemented_builtin_fn(
+        "$$DEBUGV$$",
+        |analyzer, _dep, _this, args| {
+          println!("DebugV: {:#?}", args.get(analyzer, 0).value);
           analyzer.factory.undefined
         },
       ),

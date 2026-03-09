@@ -11,7 +11,7 @@ use crate::{
 
 #[derive(Debug, Clone, Copy)]
 pub struct Entity<'a> {
-  value: Value<'a>,
+  pub value: Value<'a>,
   dep: Option<Dep<'a>>,
 }
 
