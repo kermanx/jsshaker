@@ -235,9 +235,16 @@ impl<'a> Builtins<'a> {
           analyzer.pop_cf_scope();
         }
 
-        analyzer.add_callsite_dep(object.get_shallow_dep(analyzer));
+        let deps = self.factory.dep((
+          dep,
+          object.get_shallow_dep(analyzer),
+          key,
+          descriptor.get_shallow_dep(analyzer),
+        ));
 
-        return object;
+        analyzer.add_callsite_dep(deps);
+
+        return self.factory.computed(object, deps);
       }
 
       object.unknown_mutate(analyzer, (dep, key, descriptor));
