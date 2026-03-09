@@ -77,7 +77,7 @@ impl<'a> FunctionValue<'a> {
     let ret_val = if IS_CTOR {
       let typeof_ret = ret_val.test_typeof();
       match (
-        typeof_ret.intersects(TypeofResult::Object),
+        typeof_ret.intersects(TypeofResult::Object | TypeofResult::Function),
         typeof_ret.intersects(TypeofResult::_Primitive),
       ) {
         (true, true) => analyzer.factory.union((ret_val, this)),
