@@ -788,8 +788,6 @@
 "language/statements/for-of/head-let-bound-names-fordecl-tdz.js",
 "language/statements/function/13.2-2-s.js",
 "language/statements/function/13.2-4-s.js",
-"language/statements/function/S13.2.2_A8_T1.js",
-"language/statements/function/S13.2.2_A8_T2.js",
 "language/statements/let/block-local-closure-set-before-initialization.js",
 "language/statements/let/function-local-closure-set-before-initialization.js",
 "language/statements/let/global-closure-set-before-initialization.js",
