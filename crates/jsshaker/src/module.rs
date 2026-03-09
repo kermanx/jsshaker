@@ -201,7 +201,6 @@ impl<'a> Analyzer<'a> {
       return;
     }
     module.initializing = true;
-    let program = unsafe { &*module.program.get() };
     let variable_scope = module.variable_scope;
     let callee = module.callee;
 
@@ -219,7 +218,19 @@ impl<'a> Analyzer<'a> {
       false,
     ));
 
-    for node in &program.body {
+    // First pass: handle imports and exports
+    // Use index-based iteration because recursive calls to exec_module can cause
+    // self.modules to reallocate, invalidating any borrowed references to program.
+    let body_len = {
+      let module = &self.modules.modules[module_id];
+      let program = unsafe { &*module.program.get() };
+      program.body.len()
+    };
+
+    for i in 0..body_len {
+      let module = &self.modules.modules[module_id];
+      let program = unsafe { &*module.program.get() };
+      let node = &program.body[i];
       match node {
         Statement::ImportDeclaration(node) => {
           self.init_import_declaration(node);
@@ -239,7 +250,19 @@ impl<'a> Analyzer<'a> {
         _ => {}
       }
     }
-    for node in &program.body {
+
+    // Second pass: initialize statements
+    // Re-access body length and iterate by index
+    let body_len = {
+      let module = &self.modules.modules[module_id];
+      let program = unsafe { &*module.program.get() };
+      program.body.len()
+    };
+
+    for i in 0..body_len {
+      let module = &self.modules.modules[module_id];
+      let program = unsafe { &*module.program.get() };
+      let node = &program.body[i];
       self.init_statement(node);
     }
 
