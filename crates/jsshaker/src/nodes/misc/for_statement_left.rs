@@ -26,7 +26,7 @@ impl<'a> Transformer<'a> {
   ) -> Option<ForStatementLeft<'a>> {
     match node {
       ForStatementLeft::VariableDeclaration(node) => {
-        self.transform_variable_declaration(node).map(ForStatementLeft::VariableDeclaration)
+        self.transform_variable_declaration(node, true).map(ForStatementLeft::VariableDeclaration)
       }
       _ => self
         .transform_assignment_target_write(node.to_assignment_target(), false, false)

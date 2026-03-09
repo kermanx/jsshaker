@@ -62,9 +62,9 @@ impl<'a> Transformer<'a> {
 
     if self.is_included(AstKind2::ForStatement(node)) {
       let init = init.as_ref().and_then(|init| match init {
-        ForStatementInit::VariableDeclaration(node) => {
-          self.transform_variable_declaration(node).map(ForStatementInit::VariableDeclaration)
-        }
+        ForStatementInit::VariableDeclaration(node) => self
+          .transform_variable_declaration(node, false)
+          .map(ForStatementInit::VariableDeclaration),
         node => self.transform_expression(node.to_expression(), false).map(ForStatementInit::from),
       });
 
@@ -79,7 +79,7 @@ impl<'a> Transformer<'a> {
     } else {
       let init = init.as_ref().and_then(|init| match init {
         ForStatementInit::VariableDeclaration(node) => {
-          self.transform_variable_declaration(node).map(Statement::VariableDeclaration)
+          self.transform_variable_declaration(node, false).map(Statement::VariableDeclaration)
         }
         node => self
           .transform_expression(node.to_expression(), false)

@@ -62,6 +62,7 @@ impl<'a> Analyzer<'a> {
     // Enter class statics scope
     self.variable_scope_mut().super_class =
       Some(data.super_class.unwrap_or(self.factory.undefined));
+    self.variable_scope_mut().this = Some(class.into());
 
     // 2. Execute keys and find constructor
     for element in &node.body.body {
@@ -185,7 +186,9 @@ impl<'a> Analyzer<'a> {
     data_cell: &RefCell<ClassData<'a>>,
     info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
-    let data = data_cell.borrow();
+    let Ok(data) = data_cell.try_borrow() else {
+      return (self.factory.undefined, FnCacheTrackingData::worst_case());
+    };
     if info.include && data.initializing {
       drop(data);
       let mut data = data_cell.borrow_mut();

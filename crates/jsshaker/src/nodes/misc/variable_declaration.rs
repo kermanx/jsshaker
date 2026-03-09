@@ -32,11 +32,12 @@ impl<'a> Transformer<'a> {
   pub fn transform_variable_declaration(
     &self,
     node: &'a VariableDeclaration<'a>,
+    no_init: bool,
   ) -> Option<allocator::Box<'a, VariableDeclaration<'a>>> {
     let VariableDeclaration { span, kind, declarations, .. } = node;
     let mut transformed_decls = self.ast.vec();
     for declarator in declarations {
-      let declarator = self.transform_variable_declarator(declarator);
+      let declarator = self.transform_variable_declarator(declarator, no_init);
       if let Some(declarator) = declarator {
         transformed_decls.push(declarator);
       }

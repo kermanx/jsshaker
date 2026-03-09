@@ -38,7 +38,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_declaration(&self, node: &'a Declaration<'a>) -> Option<Declaration<'a>> {
     match node {
       Declaration::VariableDeclaration(node) => {
-        self.transform_variable_declaration(node).map(Declaration::VariableDeclaration)
+        self.transform_variable_declaration(node, false).map(Declaration::VariableDeclaration)
       }
       Declaration::FunctionDeclaration(node) => {
         self.transform_function(node, false).map(Declaration::FunctionDeclaration)

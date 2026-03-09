@@ -185,7 +185,6 @@ staging/sm/class/methodOverwrites.js	|	依赖动态函数执行
 staging/sm/class/derivedConstructorInlining.js	|	行为依赖抛出异常
 staging/sm/class/className.js	|	依赖原型链修改
 staging/sm/object/values.js	|	uses_illegal_features
-staging/sm/PrivateName/nested-class-name-used.js	|	抛异常类型一致
 built-ins/Symbol/prototype/Symbol.toPrimitive/redefined-symbol-wrapper-ordinary-toprimitive.js	|	语义相同
 built-ins/Function/prototype/toString/class-declaration-implicit-ctor.js	|	语义相同
 built-ins/Function/prototype/toString/class-declaration-explicit-ctor.js	|	語意一致

@@ -1,6 +1,6 @@
 use oxc::{
   ast::{NONE, ast::VariableDeclarator},
-  span::GetSpan,
+  span::{GetSpan, SPAN},
 };
 
 use crate::{
@@ -52,6 +52,7 @@ impl<'a> Transformer<'a> {
   pub fn transform_variable_declarator(
     &self,
     node: &'a VariableDeclarator<'a>,
+    no_init: bool,
   ) -> Option<VariableDeclarator<'a>> {
     let VariableDeclarator { span, kind, id, init, .. } = node;
 
@@ -68,19 +69,24 @@ impl<'a> Transformer<'a> {
 
     match (id, transformed_init) {
       (None, None) => None,
-      (id, transformed_init) => Some(self.ast.variable_declarator(
-        *span,
-        *kind,
-        id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span)),
-        NONE,
-        if kind.is_const() {
+      (id, transformed_init) => {
+        let id = id.unwrap_or_else(|| self.build_unused_binding_pattern(id_span));
+        let mut init = if kind.is_const() {
           transformed_init
             .or_else(|| init.as_ref().map(|init| self.build_unused_expression(init.span())))
         } else {
           transformed_init
-        },
-        false,
-      )),
+        };
+        if !no_init && init.is_none() {
+          if id.is_array_pattern() {
+            init = Some(self.ast.expression_array(SPAN, self.ast.vec()));
+          } else if id.is_object_pattern() {
+            init = Some(self.ast.expression_object(SPAN, self.ast.vec()));
+          }
+        }
+
+        Some(self.ast.variable_declarator(*span, *kind, id, NONE, init, false))
+      }
     }
   }
 }

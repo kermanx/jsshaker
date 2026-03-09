@@ -12,7 +12,6 @@ use crate::{
 
 impl<'a> Analyzer<'a> {
   pub fn exec_private_identifier(&mut self, node: &'a PrivateIdentifier<'a>) -> Entity<'a> {
-    // FIXME: Not good
     self.factory.computed(
       self.exec_mangable_static_string(
         AstKind2::PrivateIdentifier(node),
