@@ -234,6 +234,9 @@ impl<'a> Builtins<'a> {
         if value.is_none() {
           analyzer.pop_cf_scope();
         }
+
+        analyzer.add_callsite_dep(object.get_shallow_dep(analyzer));
+
         return object;
       }
 

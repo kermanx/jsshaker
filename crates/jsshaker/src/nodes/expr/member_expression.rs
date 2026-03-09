@@ -104,7 +104,11 @@ impl<'a> Analyzer<'a> {
   fn exec_key(&mut self, node: &'a MemberExpression<'a>, dep: Option<Entity<'a>>) -> Entity<'a> {
     match node {
       MemberExpression::ComputedMemberExpression(node) => {
-        self.exec_expression_with_dependency(&node.expression, dep).coerce_property_key(self)
+        let key =
+          self.exec_expression_with_dependency(&node.expression, dep).coerce_property_key(self);
+        // TODO: perf
+        self.add_callsite_dep(self.dep(key));
+        key
       }
       MemberExpression::StaticMemberExpression(node) => self.exec_identifier_name(&node.property),
       MemberExpression::PrivateFieldExpression(node) => self.exec_private_identifier(&node.field),
