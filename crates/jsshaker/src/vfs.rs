@@ -34,7 +34,12 @@ impl Vfs for StdFs {
       });
 
     if result.is_none() {
-      eprintln!("[Warning] Cannot resolve module: {} from {} ({})", specifier, importer, path.to_string_lossy());
+      eprintln!(
+        "[Warning] Cannot resolve module: {} from {} ({})",
+        specifier,
+        importer,
+        path.to_string_lossy()
+      );
     }
 
     result
