@@ -52,6 +52,10 @@ pub struct FnCacheStat {
   pub cache_misses: u32,
   pub cache_updates: u32,
 
+  // Function counts
+  pub function_declarations: u32,
+  pub function_instances: u32,
+
   // Miss reason breakdown
   pub miss_config_disabled: u32,
   pub miss_non_copyable_this: u32,
@@ -155,6 +159,8 @@ fn convert_stats(
         cache_hits: overall.cache_hits as u32,
         cache_misses: overall.cache_misses as u32,
         cache_updates: overall.cache_updates as u32,
+        function_declarations: overall.function_declarations.len() as u32,
+        function_instances: overall.function_instances as u32,
         miss_config_disabled: overall.miss_config_disabled as u32,
         miss_non_copyable_this: overall.miss_non_copyable_this as u32,
         miss_non_copyable_args: overall.miss_non_copyable_args as u32,

@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+use rustc_hash::FxHashSet;
+
+use crate::dep::DepAtom;
+
 #[derive(Debug, Default, Clone)]
 pub struct FnStatsData {
   pub total_calls: usize,
@@ -7,6 +11,10 @@ pub struct FnStatsData {
   pub cache_hits: usize,
   pub cache_misses: usize,
   pub cache_updates: usize,
+
+  // Function counts
+  pub function_declarations: FxHashSet<DepAtom>,
+  pub function_instances: usize,
 
   // Miss reason breakdown
   pub miss_config_disabled: usize,
@@ -51,6 +59,8 @@ impl FnStats {
 
   pub fn print_summary(&self) {
     println!("\n=== Function Cache Statistics ===");
+    println!("Function Declarations: {}", self.overall.function_declarations.len());
+    println!("Function Instances:    {}", self.overall.function_instances);
     println!("Total Function Calls:  {}", self.overall.total_calls);
     println!("Cache Key Generated:   {}", self.overall.cache_attempts);
     println!(

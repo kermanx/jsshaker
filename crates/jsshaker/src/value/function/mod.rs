@@ -19,7 +19,7 @@ use crate::{
   dep::{Dep, DepAtom},
   entity::Entity,
   scope::VariableScopeId,
-  utils::{CalleeInfo, CalleeNode},
+  utils::{CalleeInfo, CalleeNode, ast::AstKind2},
   value::{
     UnionHint,
     cache::{FnCache, FnCacheTrackDeps},
@@ -276,6 +276,12 @@ impl<'a> Analyzer<'a> {
     node: CalleeNode<'a>,
     has_prototype: bool,
   ) -> (&'a FunctionValue<'a>, Option<&'a ObjectValue<'a>>) {
+    if let Some(stats) = self.fn_stats.as_mut() {
+      let mut stats = stats.borrow_mut();
+      stats.overall.function_declarations.insert(AstKind2::from(node).into());
+      stats.overall.function_instances += 1;
+    }
+
     let statics = self.new_function_object(node.into());
 
     let prototype =
