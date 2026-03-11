@@ -8,7 +8,7 @@ pub mod variable_scope;
 
 use call_scope::CallScope;
 use cf_scope::CfScope;
-pub use cf_scope::{CfScopeId, CfScopeKind};
+pub use cf_scope::{CfScopeId, CfScopeKind, CfScopeVer};
 use stacked_tree::StackedTree;
 use variable_scope::VariableScope;
 pub use variable_scope::VariableScopeId;

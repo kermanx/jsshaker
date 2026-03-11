@@ -25,7 +25,7 @@ use crate::{
   dep::{Dep, DepAtom, DepCollector},
   entity::Entity,
   mangling::{BUILTIN_ATOM, MangleAtom, UniquenessGroupId, is_literal_mangable},
-  scope::CfScopeId,
+  scope::CfScopeVer,
   use_included_flag,
   utils::ast::AstKind2,
   value::{UnionHint, literal::PossibleLiterals},
@@ -63,7 +63,7 @@ pub struct ObjectValue<'a> {
   pub included: Cell<bool>,
   pub included_as_prototype: Cell<bool>,
   /// Where the object is created
-  pub cf_scope: CfScopeId,
+  pub cf_scope: CfScopeVer,
   pub prototype: Cell<ObjectPrototype<'a>>,
   /// `None` if not mangable
   /// `Some(None)` if mangable at the beginning, but disabled later
@@ -90,7 +90,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     self.keyed.borrow_mut().clear();
     self.unknown.replace_with(|_| ObjectProperty::new_in(analyzer.allocator));
 
-    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope.0);
     analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
   }
@@ -104,9 +104,9 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
       return escaped::unknown_mutate(analyzer, dep);
     }
 
-    self.add_extra_dep(dep);
+    let (target_depth, _, _, dep) = self.prepare_mutation(analyzer, dep);
+    self.add_extra_dep(analyzer.dep(dep));
 
-    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
     let should_include =
       analyzer.track_write(target_depth, ReadWriteTarget::ObjectAll(self.object_id()), None);
     analyzer.request_exhaustive_callbacks(ReadWriteTarget::ObjectAll(self.object_id()));
@@ -406,7 +406,7 @@ impl<'a> Analyzer<'a> {
       included: Cell::new(false),
       included_as_prototype: Cell::new(false),
       // deps: Default::default(),
-      cf_scope: self.scoping.cf.current_id(),
+      cf_scope: self.current_cf_scope_ver(),
       keyed: RefCell::new(allocator::HashMap::new_in(self.allocator)),
       unknown: RefCell::new(ObjectProperty::new_in(self.allocator)),
       rest: None,
@@ -461,7 +461,7 @@ impl<'a> crate::analyzer::Factory<'a> {
       is_builtin_function: false,
       included: Cell::new(false),
       included_as_prototype: Cell::new(false),
-      cf_scope: self.root_cf_scope.unwrap(),
+      cf_scope: (self.root_cf_scope.unwrap(), 0),
       keyed: allocator::HashMap::new_in(self.allocator).into(),
       unknown: ObjectProperty::new_in(self.allocator).into(),
       rest: Default::default(),

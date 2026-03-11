@@ -59,6 +59,10 @@ impl<'a, I: Idx, T> StackedTree<'a, I, T> {
     &mut self.stack[depth].data
   }
 
+  pub fn top_data(&self) -> &T {
+    &self.stack.last().unwrap().data
+  }
+
   pub fn stack_len(&self) -> usize {
     self.stack.len()
   }

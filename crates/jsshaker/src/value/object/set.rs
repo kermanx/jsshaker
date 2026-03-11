@@ -282,7 +282,8 @@ impl<'a> ObjectValue<'a> {
     analyzer: &mut Analyzer<'a>,
     dep: Dep<'a>,
   ) -> (usize, bool, bool, DepVec<'a>) {
-    let target_depth = analyzer.find_first_different_cf_scope(self.cf_scope);
+    let target_depth = analyzer.find_first_different_cf_scope_for_object(self.cf_scope);
+
     let mut exhaustive = false;
     let mut non_det = false;
     let mut deps = analyzer.factory.vec1(dep);

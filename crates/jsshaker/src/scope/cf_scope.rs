@@ -14,6 +14,8 @@ define_stacked_tree_idx! {
   pub struct CfScopeId;
 }
 
+pub type CfScopeVer = (CfScopeId, usize);
+
 #[derive(Debug)]
 pub enum CfScopeKind<'a> {
   Root,
@@ -65,6 +67,7 @@ pub struct CfScope<'a> {
   pub deps: DepCollector<'a>,
   pub include_state: IncludeState,
   pub exited: Option<bool>,
+  pub version: usize,
 }
 
 impl<'a> CfScope<'a> {
@@ -74,6 +77,7 @@ impl<'a> CfScope<'a> {
       deps: DepCollector::new(deps),
       include_state: IncludeState::Never,
       exited: if non_det { None } else { Some(false) },
+      version: 0,
     }
   }
 
@@ -90,12 +94,14 @@ impl<'a> CfScope<'a> {
       if let Some(dep) = dep {
         self.push_dep(dep);
       }
+      self.version += 1;
     }
   }
 
   pub fn reset_non_det(&mut self) {
     self.exited = None;
     self.deps.force_clear();
+    self.version += 1;
   }
 
   pub fn must_exited(&self) -> bool {
@@ -142,6 +148,18 @@ impl<'a> CfScope<'a> {
 }
 
 impl<'a> Analyzer<'a> {
+  pub fn current_cf_scope_ver(&self) -> CfScopeVer {
+    let id = self.scoping.cf.current_id();
+    let version = self.scoping.cf.top_data().version;
+    (id, version)
+  }
+
+  pub fn cf_scope_ver_from_depth(&self, depth: usize) -> CfScopeVer {
+    let id = self.scoping.cf.depth_to_id(depth);
+    let version = self.scoping.cf.data_at(depth).version;
+    (id, version)
+  }
+
   pub fn exec_non_det<T>(&mut self, runner: impl FnOnce(&mut Analyzer<'a>) -> T) -> T {
     self.push_non_det_cf_scope();
     let result = runner(self);
@@ -151,6 +169,11 @@ impl<'a> Analyzer<'a> {
 
   pub fn find_first_different_cf_scope(&self, another: CfScopeId) -> usize {
     self.scoping.cf.find_lca(another).0 + 1
+  }
+
+  pub fn find_first_different_cf_scope_for_object(&self, another: CfScopeVer) -> usize {
+    let lca = self.scoping.cf.find_lca(another.0).0;
+    if self.scoping.cf.data_at(lca).version == another.1 { lca + 1 } else { lca }
   }
 
   pub fn get_exec_dep(&mut self, target_depth: usize) -> (DepVec<'a>, bool) {

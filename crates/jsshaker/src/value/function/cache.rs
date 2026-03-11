@@ -364,10 +364,9 @@ impl<'a> FnCache<'a> {
       return;
     };
 
-    self
-      .table
-      .borrow_mut()
-      .insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+    if let Ok(mut table) = self.table.try_borrow_mut() {
+      table.insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
+    }
 
     if let Some(stats) = &analyzer.fn_stats {
       let mut stats = stats.borrow_mut();

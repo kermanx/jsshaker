@@ -93,13 +93,13 @@ impl<'a> ObjectValue<'a> {
     if let Some(exhaustive_deps) = exhaustive_deps {
       for key in exhaustive_deps {
         analyzer.track_read(
-          self.cf_scope,
+          self.cf_scope.0,
           ReadWriteTarget::ObjectField(self.object_id(), key),
           None,
         );
       }
     } else if !self.immutable {
-      analyzer.track_read(self.cf_scope, ReadWriteTarget::ObjectAll(self.object_id()), None);
+      analyzer.track_read(self.cf_scope.0, ReadWriteTarget::ObjectAll(self.object_id()), None);
     }
 
     let value = analyzer
