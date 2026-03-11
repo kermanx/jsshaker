@@ -65,11 +65,6 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
     analyzer.exec_module(module_id);
     analyzer.post_analysis();
 
-    // Print cache stats if enabled
-    if let Some(stats) = &analyzer.fn_stats {
-      stats.borrow().print_summary();
-    }
-
     let Analyzer {
       modules,
       diagnostics,

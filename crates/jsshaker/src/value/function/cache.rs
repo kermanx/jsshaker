@@ -268,73 +268,70 @@ impl<'a> FnCache<'a> {
     fn_name: &str,
   ) -> Option<Entity<'a>> {
     let table = self.table.borrow();
-    if let Some(cached) = table.get(key) {
-      for (&target, &(last_value, tracking_dep)) in &cached.effects.reads {
-        let current_value = analyzer.get_rw_target_current_value(target);
-        match (last_value, current_value) {
-          (Some(e1), Some(e2)) => {
-            if !e1.exactly_same(e2) {
-              let c1 = e1.as_cacheable(analyzer)?;
-              let c2 = e2.as_cacheable(analyzer)?;
-              if c1.is_compatible(&c2) {
-                analyzer.add_assoc_entity_dep(tracking_dep, e2);
-              } else {
-                if let Some(stats) = &analyzer.fn_stats {
-                  let mut stats = stats.borrow_mut();
-                  stats.overall.miss_read_dep_incompatible += 1;
-                  stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
-                }
-                return None;
-              }
-            }
-          }
-          (None, None) => {}
-          _ => {
-            if let Some(stats) = &analyzer.fn_stats {
-              let mut stats = stats.borrow_mut();
-              stats.overall.miss_read_dep_incompatible += 1;
-              stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
-            }
-            return None;
-          }
-        }
-      }
-
-      // Cache hit successful!
+    let Some(cached) = table.get(key) else {
       if let Some(stats) = &analyzer.fn_stats {
         let mut stats = stats.borrow_mut();
-        stats.overall.cache_hits += 1;
-        stats.get_or_create_fn_stats(fn_name).cache_hits += 1;
-      }
-
-      for (&target, &(non_det, cacheable)) in &cached.effects.writes {
-        analyzer.set_rw_target_current_value(
-          target,
-          analyzer.factory.computed(cacheable, call_dep),
-          non_det,
-        );
-      }
-
-      let track_deps = cached.track_deps;
-      let ret = analyzer.factory.computed(cached.ret, call_dep);
-      let has_global_effects = cached.has_global_effects;
-      drop(table);
-      track_deps.assoc(analyzer, call_dep, this, &args);
-      if has_global_effects {
-        analyzer.global_effect();
-      }
-
-      Some(ret)
-    } else {
-      if let Some(stats) = &analyzer.fn_stats {
-        let mut stats = stats.borrow_mut();
-        stats.overall.cache_misses += 1;
         stats.overall.miss_cache_empty += 1;
-        stats.get_or_create_fn_stats(fn_name).cache_misses += 1;
         stats.get_or_create_fn_stats(fn_name).miss_cache_empty += 1;
       }
-      None
+      return None;
+    };
+
+    for (&target, &(last_value, tracking_dep)) in &cached.effects.reads {
+      let current_value = analyzer.get_rw_target_current_value(target);
+      match (last_value, current_value) {
+        (Some(e1), Some(e2)) => {
+          if !e1.exactly_same(e2) {
+            let c1 = e1.as_cacheable(analyzer)?;
+            let c2 = e2.as_cacheable(analyzer)?;
+            if c1.is_compatible(&c2) {
+              analyzer.add_assoc_entity_dep(tracking_dep, e2);
+            } else {
+              if let Some(stats) = &analyzer.fn_stats {
+                let mut stats = stats.borrow_mut();
+                stats.overall.miss_read_dep_incompatible += 1;
+                stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
+              }
+              return None;
+            }
+          }
+        }
+        (None, None) => {}
+        _ => {
+          if let Some(stats) = &analyzer.fn_stats {
+            let mut stats = stats.borrow_mut();
+            stats.overall.miss_read_dep_incompatible += 1;
+            stats.get_or_create_fn_stats(fn_name).miss_read_dep_incompatible += 1;
+          }
+          return None;
+        }
+      }
     }
+
+    if let Some(stats) = &analyzer.fn_stats {
+      let mut stats = stats.borrow_mut();
+      stats.overall.cache_hits += 1;
+      stats.get_or_create_fn_stats(fn_name).cache_hits += 1;
+    }
+
+    for (&target, &(non_det, cacheable)) in &cached.effects.writes {
+      analyzer.set_rw_target_current_value(
+        target,
+        analyzer.factory.computed(cacheable, call_dep),
+        non_det,
+      );
+    }
+
+    let track_deps = cached.track_deps;
+    let ret = analyzer.factory.computed(cached.ret, call_dep);
+    let has_global_effects = cached.has_global_effects;
+    drop(table);
+    track_deps.assoc(analyzer, call_dep, this, &args);
+    if has_global_effects {
+      analyzer.global_effect();
+    }
+
+    Some(ret)
   }
 
   pub fn update(
@@ -355,6 +352,7 @@ impl<'a> FnCache<'a> {
       }
       return;
     };
+
     if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copyable()) {
       if let Some(stats) = &analyzer.fn_stats {
         let mut stats = stats.borrow_mut();
@@ -364,15 +362,15 @@ impl<'a> FnCache<'a> {
       return;
     };
 
-    if let Ok(mut table) = self.table.try_borrow_mut() {
-      table.insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
-    }
-
     if let Some(stats) = &analyzer.fn_stats {
       let mut stats = stats.borrow_mut();
       stats.overall.cache_updates += 1;
       stats.get_or_create_fn_stats(fn_name).cache_updates += 1;
       stats.cache_table_size = self.table.borrow().len();
+    }
+
+    if let Ok(mut table) = self.table.try_borrow_mut() {
+      table.insert(key, FnCachedInfo { track_deps, effects, has_global_effects, ret });
     }
   }
 }

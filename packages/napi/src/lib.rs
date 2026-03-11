@@ -49,7 +49,6 @@ pub struct FnCacheStat {
   pub total_calls: u32,
   pub cache_attempts: u32,
   pub cache_hits: u32,
-  pub cache_misses: u32,
   pub cache_updates: u32,
 
   // Function counts
@@ -157,7 +156,6 @@ fn convert_stats(
         total_calls: overall.total_calls as u32,
         cache_attempts: overall.cache_attempts as u32,
         cache_hits: overall.cache_hits as u32,
-        cache_misses: overall.cache_misses as u32,
         cache_updates: overall.cache_updates as u32,
         function_declarations: overall.function_declarations.len() as u32,
         function_instances: overall.function_instances as u32,
