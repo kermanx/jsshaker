@@ -299,6 +299,9 @@ impl<'a> Analyzer<'a> {
     let mut created_in_self = false;
     for scope in self.scoping.call.iter().rev() {
       if scope.callee.node == node {
+        if created_in_self {
+          return (function, None);
+        }
         created_in_self = true;
         break;
       }
