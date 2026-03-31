@@ -71,6 +71,7 @@ async function worker(path: string): Promise<boolean> {
     optimized = shakeSingleModule(original, {
       preset: 'safest',
       minify: false,
+      advanced: process.env.JSSHAKER_ADVANCED ? !!+process.env.JSSHAKER_ADVANCED : true,
     }).output.code
   } catch (e) {
     console.error('Error during shaking:', e)

@@ -17,8 +17,11 @@ impl Analyzer<'_> {
 
       let mut dirty = false;
       dirty |= self.call_exhaustive_callbacks();
-      dirty |= self.post_analyze_handle_conditional();
-      dirty |= self.post_analyze_handle_assoc_deps();
+
+      if self.config.advanced {
+        dirty |= self.post_analyze_handle_conditional();
+        dirty |= self.post_analyze_handle_assoc_deps();
+      }
       // dirty |= self.post_analyze_handle_loops();
       if !dirty {
         break;

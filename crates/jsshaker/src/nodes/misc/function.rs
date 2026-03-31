@@ -100,7 +100,7 @@ impl<'a> Transformer<'a> {
     node: &'a Function<'a>,
     need_val: bool,
   ) -> Option<allocator::Box<'a, Function<'a>>> {
-    if self.is_included(AstKind2::FunctionNoShake(node)) {
+    if self.config.advanced && self.is_included(AstKind2::FunctionNoShake(node)) {
       return Some(self.ast.alloc(self.clone_node(node)));
     }
 

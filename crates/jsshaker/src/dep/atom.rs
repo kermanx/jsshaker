@@ -89,16 +89,24 @@ impl IncludedAtoms {
 
 impl Analyzer<'_> {
   pub fn include_atom(&mut self, dep: impl Into<DepAtom>) {
-    self.included_atoms.include_atom(dep);
+    if self.config.advanced {
+      self.included_atoms.include_atom(dep);
+    }
   }
 
   pub fn is_included(&self, dep: impl Into<DepAtom>) -> bool {
+    if !self.config.advanced {
+      return true;
+    }
     self.included_atoms.is_included(dep)
   }
 }
 
 impl Transformer<'_> {
   pub fn is_included(&self, dep: impl Into<DepAtom>) -> bool {
+    if !self.config.advanced {
+      return true;
+    }
     self.included_atoms.is_included(dep)
   }
 }

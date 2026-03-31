@@ -233,6 +233,10 @@ impl Transformer<'_> {
     id: impl Into<DepAtom>,
     accept_not_found: bool,
   ) -> (bool, bool, bool) {
+    if !self.config.branch_folding {
+      return (true, true, true);
+    }
+
     let id = id.into();
     let Some(data) = &self.conditional_data.node_to_data.get(&id) else {
       debug_assert!(accept_not_found, "Conditional result not found for {:?} {}", id, self.path);
@@ -252,6 +256,10 @@ impl Transformer<'_> {
     need_val: bool,
   ) -> (bool, bool) {
     if optional {
+      if !self.config.branch_folding {
+        return (true, false);
+      }
+
       let (need_optional, _, may_not_short_circuit) = self.get_conditional_result(id, !need_val);
       (need_optional, !may_not_short_circuit)
     } else {

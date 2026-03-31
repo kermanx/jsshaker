@@ -173,6 +173,7 @@ ${test.attrs.flags.async ? DONE : ''}`);
       test.content = shakeSingleModule(test.content, {
         preset: 'safest',
         minify: false,
+        advanced: process.env.JSSHAKER_ADVANCED ? !!+process.env.JSSHAKER_ADVANCED : true,
       }).output.code
     } catch(e) {
       return fail(test, Value(`JSShaker Error: ${(e as Error).message}`));

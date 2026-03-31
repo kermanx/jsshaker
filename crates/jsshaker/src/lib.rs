@@ -58,6 +58,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
   if config.enabled {
     let allocator = Allocator::default();
     let config = allocator.alloc(config);
+    config.normalize();
 
     // Step 1: Analyze
     let mut analyzer = Analyzer::new_in(Box::new(vfs), config, &allocator);
@@ -127,6 +128,7 @@ pub fn tree_shake<F: Vfs + 'static>(options: JsShakerOptions<F>, entry: String) 
   } else {
     let allocator = Allocator::default();
     let config = allocator.alloc(config);
+    config.normalize();
 
     let source_text = vfs.read_file(&entry);
     let parser =

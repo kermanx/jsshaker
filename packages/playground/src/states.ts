@@ -5,6 +5,7 @@ import { DEMO } from "./examples";
 export const onInputUpdate: (() => void)[] = [];
 export const input = ref("");
 export const preset = ref("recommended");
+export const advanced = ref(false);
 export const doMinify = ref(false);
 
 export const debouncedInput = ref("");
@@ -37,6 +38,7 @@ export function load(reset = false) {
         ? "recommended"
         : "disabled"
       : "recommended");
+  advanced.value = parsed.advanced ?? false;
   doMinify.value = parsed.doMinify ?? false;
   save();
 }
@@ -46,6 +48,7 @@ function save() {
     JSON.stringify({
       input: input.value,
       preset: preset.value,
+      advanced: advanced.value,
       doMinify: doMinify.value,
     }),
   );
@@ -102,6 +105,7 @@ const minifiedOnly = computed(() =>
 const treeShakedOnly = computed(() =>
   treeShake(debouncedInput.value, {
     preset: preset.value as any,
+    advanced: advanced.value,
     minify: false,
     jsx: "react",
   }),

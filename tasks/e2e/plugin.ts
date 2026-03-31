@@ -61,6 +61,7 @@ export default function (
           diagnostics,
         } = (await treeShake).shakeSingleModule(code, {
           preset: "recommended",
+          advanced: process.env.JSSHAKER_ADVANCED ? !!+process.env.JSSHAKER_ADVANCED : true,
         });
         const duration = `${Date.now() - startTime}ms`;
         logger.info(pico.yellowBright(`\ntree-shake duration: ${duration}`));

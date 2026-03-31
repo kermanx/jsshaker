@@ -24,6 +24,7 @@ pub struct TreeShakeConfig {
   pub enable_fn_stats: bool,
   pub enable_mangling_stats: bool,
 
+  pub advanced: bool,
   pub folding: bool,
   pub max_folding_string_length: usize,
   pub mangling: Option<bool>,
@@ -60,6 +61,7 @@ impl TreeShakeConfig {
       enable_fn_stats: false,
       enable_mangling_stats: false,
 
+      advanced: false,
       folding: true,
       max_folding_string_length: 12,
       mangling: Some(false),
@@ -104,5 +106,13 @@ impl TreeShakeConfig {
 
   pub fn disabled() -> Self {
     Self { enabled: false, ..Self::default() }
+  }
+
+  pub fn normalize(&mut self) {
+    if !self.advanced {
+      self.folding = false;
+      self.mangling = None;
+      self.branch_folding = false;
+    }
   }
 }

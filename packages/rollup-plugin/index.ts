@@ -4,6 +4,7 @@ import { createFilter, FilterPattern } from "unplugin-utils";
 
 export interface Options {
   preset?: "safest" | "recommended" | "smallest" | "disabled";
+  advanced?: boolean;
   minify?: boolean;
   showWarnings?: boolean;
   include?: FilterPattern;
@@ -38,6 +39,7 @@ export default function rollupPluginJsShaker(
 
         const options: JsShakerOptions = {
           preset: pluginOptions.preset,
+          advanced: pluginOptions.advanced,
           jsx: "react",
           sourceMap: !!outputOptions.sourcemap,
           minify:

@@ -34,6 +34,9 @@ struct Args {
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
 
+  #[arg(long, default_value_t = false)]
+  advanced: bool,
+
   #[arg(long, default_value_t = String::from("on"))]
   // on/off/all
   folding: String,
@@ -62,6 +65,7 @@ fn main() {
   let shake_disabled = TreeShakeConfig { jsx, ..TreeShakeConfig::disabled() };
   let shake_enabled = TreeShakeConfig {
     jsx,
+    advanced: args.advanced,
     folding: match args.folding.as_str() {
       "on" => true,
       "off" => false,

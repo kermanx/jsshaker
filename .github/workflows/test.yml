@@ -48,7 +48,9 @@ jobs:
       run: pnpm i
       working-directory: ./tasks/test262
     - name: Run test262 tests
-      run: pnpm test
+      run: |
+        JSSHAKER_ADVANCED=0 pnpm test
+        JSSHAKER_ADVANCED=1 pnpm test
       working-directory: ./tasks/test262
 
   e2e:
@@ -72,13 +74,23 @@ jobs:
         pnpm i
         pnpm build
       working-directory: ./packages/napi
+
     - name: Build e2e tests
       run: |
         pnpm i
-        pnpm e2e-build-shaken
+        JSSHAKER_ADVANCED=0 pnpm e2e-build-shaken
       working-directory: ./tasks/e2e
     - name: Run e2e tests
       run: |
         pnpm exec playwright install --with-deps chromium
+        pnpm test
+      working-directory: ./tasks/e2e
+
+    - name: e2e tests in advanced mode
+      run: |
+        JSSHAKER_ADVANCED=1 pnpm e2e-build-shaken
+      working-directory: ./tasks/e2e
+    - name: Run e2e tests
+      run: |
         pnpm test
       working-directory: ./tasks/e2e

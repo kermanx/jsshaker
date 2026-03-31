@@ -18,6 +18,7 @@ pub struct Options {
   pub jsx: Option<String>,
   pub source_map: Option<bool>,
 
+  pub advanced: Option<bool>,
   #[napi(ts_type = "'enabled' | 'disabled' | 'all'")]
   pub constant_folding: Option<String>,
   #[napi(ts_type = "'enabled' | 'disabled' | 'only'")]
@@ -93,6 +94,7 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
     config.jsx = TreeShakeJsxPreset::React;
   }
 
+  config.advanced = options.advanced.unwrap_or(false);
   if let Some(constant_folding) = options.constant_folding.as_deref() {
     match constant_folding {
       "enabled" => {}

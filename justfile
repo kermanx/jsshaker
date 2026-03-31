@@ -13,5 +13,8 @@ fix:
 napi:
   pnpm -C ./packages/napi build
 
+wasi:
+  pnpm -C ./packages/napi build:wasi
+
 test262: napi
   pnpm -C ./tasks/test262 run test
