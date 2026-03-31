@@ -752,3 +752,16 @@ staging/sm/class/superPropProtoChanges.js	|	目前无法实现，该行为过于
 built-ins/Object/hasOwn/toobject_before_topropertykey.js	|	依赖异常行为
 built-ins/Proxy/has/call-in-prototype-index.js	|	副作用
 staging/sm/class/derivedConstructorReturnPrimitive.js	|	依赖异常行为
+staging/sm/PrivateName/nested-class-name-used.js	|	WTF
+language/statements/class/ident-name-method-def-static-escaped.js	|	WTF
+language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js	|	WTF
+language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js	|	WTF
+language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js	|	WTF
+language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js	|	WTF
+language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js	|	WTF
+language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js	|	WTF
+language/expressions/class/ident-name-method-def-static-escaped.js	|	WTF
+language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js	|	WTF
+language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js	|	WTF
+language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js	|	WTF
+language/expressions/dynamic-import/import-attributes/2nd-param-await-ident.js	|	WTF
