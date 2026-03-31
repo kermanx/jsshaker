@@ -290,8 +290,7 @@ impl<'a> Transformer<'a> {
             }
             ClassElement::MethodDefinition(node) => self.transform_method_definition(node),
             ClassElement::PropertyDefinition(node) => self.transform_property_definition(node),
-            ClassElement::AccessorProperty(_node) => unreachable!(),
-            ClassElement::TSIndexSignature(_node) => unreachable!(),
+            node => Some(self.clone_node(node)),
           } {
             transformed_body.push(element);
           } else if let Some(key) =

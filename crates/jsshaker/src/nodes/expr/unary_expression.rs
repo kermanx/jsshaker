@@ -135,7 +135,7 @@ impl<'a> Transformer<'a> {
             ))
           }
           Expression::Identifier(node) => Expression::Identifier(self.clone_node(node)),
-          _ => unreachable!(),
+          node => self.clone_node(node),
         };
         Some(self.ast.expression_unary(*span, *operator, argument))
       } else {
