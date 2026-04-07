@@ -765,3 +765,5 @@ language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorato
 language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js	|	WTF
 language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js	|	WTF
 language/expressions/dynamic-import/import-attributes/2nd-param-await-ident.js	|	WTF
+test262/test/language/statements/class/elements/syntax/valid/grammar-field-accessor.js	|	WTF
+test262/test/language/expressions/class/elements/syntax/valid/grammar-field-accessor.js	|	WTF
