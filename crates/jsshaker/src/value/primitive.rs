@@ -3,7 +3,11 @@ use super::{
   cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
-  analyzer::Analyzer, builtin_string, builtins::BuiltinPrototype, dep::Dep, entity::Entity,
+  analyzer::{Analyzer, Factory},
+  builtin_string,
+  builtins::BuiltinPrototype,
+  dep::Dep,
+  entity::Entity,
   value::LiteralValue,
 };
 
@@ -189,7 +193,7 @@ impl<'a> ValueTrait<'a> for PrimitiveValue {
     true
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Primitive(*self))
   }
 }

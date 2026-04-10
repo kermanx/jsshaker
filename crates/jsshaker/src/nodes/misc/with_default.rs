@@ -51,7 +51,7 @@ impl<'a> Analyzer<'a> {
       (false, false) => unreachable!(),
     };
 
-    self.factory.computed(result, original.get_shallow_dep(self))
+    self.factory.computed(result, original.get_shallow_dep(self.factory))
   }
 }
 

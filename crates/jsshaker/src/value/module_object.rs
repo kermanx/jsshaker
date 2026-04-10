@@ -2,6 +2,7 @@ use std::cell::Cell;
 
 use crate::{
   Analyzer,
+  analyzer::Factory,
   dep::Dep,
   entity::Entity,
   module::ModuleId,
@@ -183,7 +184,7 @@ impl<'a> ValueTrait<'a> for ModuleObjectValue {
     None
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::ModuleObject(self.module))
   }
 }

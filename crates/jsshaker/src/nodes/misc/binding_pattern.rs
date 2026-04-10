@@ -60,7 +60,7 @@ impl<'a> Analyzer<'a> {
           self.factory.unknown
         });
 
-        self.push_dependent_cf_scope(init.get_shallow_dep(self));
+        self.push_dependent_cf_scope(init.get_shallow_dep(self.factory));
         let is_nullish = init.test_nullish();
         if is_nullish != Some(false) {
           if is_nullish == Some(true) {

@@ -14,7 +14,7 @@ use super::{
   TypeofResult, ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   builtin_string,
   dep::{Dep, DepAtom},
   entity::Entity,
@@ -218,7 +218,7 @@ impl<'a> ValueTrait<'a> for FunctionValue<'a> {
     UnionHint::Object
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Function(self.callee.instance_id))
   }
 }

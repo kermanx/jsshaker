@@ -8,7 +8,7 @@ use super::{
   TypeofResult, ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
-  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
+  analyzer::{Analyzer, Factory, rw_tracking::ReadWriteTarget},
   define_ptr_idx,
   dep::{Dep, DepCollector, DepVec},
   entity::Entity,
@@ -403,7 +403,7 @@ impl<'a> ValueTrait<'a> for ArrayValue<'a> {
     if check_proto { None } else { Some(false) }
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Array(self.array_id()))
   }
 }

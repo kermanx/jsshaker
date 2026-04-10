@@ -24,11 +24,11 @@ impl<'a> Entity<'a> {
     }
   }
 
-  fn forward_value(&self, entity: Entity<'a>, analyzer: &Analyzer<'a>) -> Entity<'a> {
+  fn forward_value(&self, entity: Entity<'a>, factory: &Factory<'a>) -> Entity<'a> {
     Entity {
       value: entity.value,
       dep: match (self.dep, entity.dep) {
-        (Some(d1), Some(d2)) => Some(analyzer.factory.dep((d1, d2))),
+        (Some(d1), Some(d2)) => Some(factory.dep((d1, d2))),
         (Some(d), None) | (None, Some(d)) => Some(d),
         (None, None) => None,
       },
@@ -106,7 +106,7 @@ impl<'a> Entity<'a> {
     this: Entity<'a>,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    let shallow_dep = self.get_shallow_dep(analyzer);
+    let shallow_dep = self.get_shallow_dep(analyzer.factory);
     analyzer.add_callsite_dep(shallow_dep);
     self.value.call(analyzer, self.forward_dep(dep, analyzer), this, args)
   }
@@ -116,15 +116,18 @@ impl<'a> Entity<'a> {
     dep: impl DepTrait<'a> + 'a,
     args: ArgumentsValue<'a>,
   ) -> Entity<'a> {
-    let shallow_dep = self.get_shallow_dep(analyzer);
+    let shallow_dep = self.get_shallow_dep(analyzer.factory);
     analyzer.add_callsite_dep(shallow_dep);
     self.value.construct(analyzer, self.forward_dep(dep, analyzer), args)
   }
   pub fn jsx(&self, analyzer: &mut Analyzer<'a>, props: Entity<'a>) -> Entity<'a> {
-    self.forward_value(self.value.jsx(analyzer, props), analyzer)
+    self.forward_value(self.value.jsx(analyzer, props), analyzer.factory)
   }
   pub fn r#await(&self, analyzer: &mut Analyzer<'a>, dep: impl DepTrait<'a> + 'a) -> Entity<'a> {
-    self.forward_value(self.value.r#await(analyzer, self.forward_dep(dep, analyzer)), analyzer)
+    self.forward_value(
+      self.value.r#await(analyzer, self.forward_dep(dep, analyzer)),
+      analyzer.factory,
+    )
   }
   pub fn iterate(
     &self,
@@ -143,26 +146,33 @@ impl<'a> Entity<'a> {
   }
 
   pub fn coerce_string(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_string(analyzer), analyzer)
+    self.forward_value(self.value.coerce_string(analyzer), analyzer.factory)
   }
   pub fn coerce_number(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_number(analyzer), analyzer)
+    self.forward_value(self.value.coerce_number(analyzer), analyzer.factory)
   }
   pub fn coerce_primitive(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_primitive(analyzer), analyzer)
+    self.forward_value(self.value.coerce_primitive(analyzer), analyzer.factory)
   }
   pub fn coerce_property_key(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_property_key(analyzer), analyzer)
+    self.forward_value(self.value.coerce_property_key(analyzer), analyzer.factory)
   }
   pub fn coerce_jsx_child(&self, analyzer: &Analyzer<'a>) -> Entity<'a> {
-    self.forward_value(self.value.coerce_jsx_child(analyzer), analyzer)
+    self.forward_value(self.value.coerce_jsx_child(analyzer), analyzer.factory)
   }
 
-  pub fn get_shallow_dep(&self, analyzer: &Analyzer<'a>) -> Dep<'a> {
-    match (self.dep, self.value.get_shallow_dep(analyzer)) {
-      (Some(d1), Some(d2)) => analyzer.dep((d1, d2)),
+  pub fn get_shallow_dep(&self, factory: &Factory<'a>) -> Dep<'a> {
+    match (self.dep, self.value.get_shallow_dep(factory)) {
+      (Some(d1), Some(d2)) => factory.dep((d1, d2)),
       (Some(d), None) | (None, Some(d)) => d,
-      (None, None) => analyzer.factory.no_dep,
+      (None, None) => factory.no_dep,
+    }
+  }
+  pub fn get_actual_value(&self, factory: &Factory<'a>) -> Entity<'a> {
+    if let Some(actual_value) = self.value.get_actual_value(factory) {
+      self.forward_value(actual_value, factory)
+    } else {
+      *self
     }
   }
   pub fn get_literals(&self, analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
@@ -242,8 +252,8 @@ impl<'a> Entity<'a> {
     self.value.get_union_hint()
   }
 
-  pub fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    self.value.as_cacheable(analyzer)
+  pub fn as_cacheable(&self, factory: &Factory<'a>) -> Option<Cacheable<'a>> {
+    self.value.as_cacheable(factory)
   }
 }
 

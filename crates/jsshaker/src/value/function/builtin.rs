@@ -5,7 +5,11 @@ use super::super::{
   PropertyKeyValue, TypeofResult, ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
-  analyzer::Analyzer, builtin_string, dep::Dep, entity::Entity, use_included_flag,
+  analyzer::{Analyzer, Factory},
+  builtin_string,
+  dep::Dep,
+  entity::Entity,
+  use_included_flag,
   utils::ast::AstKind2,
 };
 
@@ -174,7 +178,7 @@ impl<'a, T: BuiltinFnImpl<'a>> ValueTrait<'a> for T {
     if let Some(statics) = self.statics() { statics.test_has_own(key, check_proto) } else { None }
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::BuiltinFn(self.name()))
   }
 }

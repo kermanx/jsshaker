@@ -112,7 +112,7 @@ impl<'a> Builtins<'a> {
         array.init_rest(analyzer.factory.computed_unknown_string(object));
       }
 
-      analyzer.factory.computed(array.into(), (dep, object.get_shallow_dep(analyzer)))
+      analyzer.factory.computed(array.into(), (dep, object.get_shallow_dep(analyzer.factory)))
     })
   }
 
@@ -218,7 +218,7 @@ impl<'a> Builtins<'a> {
 
         object.set_property(
           analyzer,
-          analyzer.factory.dep((enumerated.dep, descriptor.get_shallow_dep(analyzer))),
+          analyzer.factory.dep((enumerated.dep, descriptor.get_shallow_dep(analyzer.factory))),
           key,
           {
             let value = value.unwrap_or(analyzer.factory.undefined);
@@ -237,9 +237,9 @@ impl<'a> Builtins<'a> {
 
         let deps = self.factory.dep((
           dep,
-          object.get_shallow_dep(analyzer),
+          object.get_shallow_dep(analyzer.factory),
           key,
-          descriptor.get_shallow_dep(analyzer),
+          descriptor.get_shallow_dep(analyzer.factory),
         ));
 
         analyzer.add_callsite_dep(deps);
@@ -266,7 +266,10 @@ impl<'a> Builtins<'a> {
       let (deps, prototype) = if proto.test_nullish() == Some(true) {
         (analyzer.dep((proto, dep)), ObjectPrototype::ImplicitOrNull)
       } else if let Some(proto_obj) = proto.as_object() {
-        (analyzer.dep((proto.get_shallow_dep(analyzer), dep)), ObjectPrototype::Custom(proto_obj))
+        (
+          analyzer.dep((proto.get_shallow_dep(analyzer.factory), dep)),
+          ObjectPrototype::Custom(proto_obj),
+        )
       } else {
         let deps = analyzer.dep((proto, dep));
         (deps, ObjectPrototype::Unknown(deps))
@@ -313,8 +316,8 @@ impl<'a> Builtins<'a> {
       let object = args.get(analyzer, 0);
       let proto = args.get(analyzer, 1);
 
-      analyzer.add_callsite_dep(object.get_shallow_dep(analyzer));
-      analyzer.add_callsite_dep(proto.get_shallow_dep(analyzer));
+      analyzer.add_callsite_dep(object.get_shallow_dep(analyzer.factory));
+      analyzer.add_callsite_dep(proto.get_shallow_dep(analyzer.factory));
 
       if let Some(object) = object.as_object() {
         object.set_prototype_from_value(analyzer, false, dep, builtin_string!("__proto__"), proto);

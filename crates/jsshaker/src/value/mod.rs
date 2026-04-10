@@ -24,7 +24,7 @@ use std::{cmp::Ordering, fmt::Debug};
 pub use typeof_result::TypeofResult;
 
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::{CustomDepTrait, Dep},
   entity::Entity,
   value::{array::ArrayId, literal::PossibleLiterals},
@@ -122,7 +122,10 @@ pub trait ValueTrait<'a>: Debug {
   fn coerce_property_key(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
   fn coerce_jsx_child(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a>;
 
-  fn get_shallow_dep(&'a self, _analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
+  fn get_shallow_dep(&'a self, _factory: &Factory<'a>) -> Option<Dep<'a>> {
+    None
+  }
+  fn get_actual_value(&'a self, _factory: &Factory<'a>) -> Option<Entity<'a>> {
     None
   }
   fn get_literals(&'a self, _analyzer: &Analyzer<'a>) -> Option<PossibleLiterals<'a>> {
@@ -228,7 +231,7 @@ pub trait ValueTrait<'a>: Debug {
     UnionHint::Other
   }
 
-  fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>>;
+  fn as_cacheable(&self, factory: &Factory<'a>) -> Option<Cacheable<'a>>;
 }
 
 impl<'a, T: ValueTrait<'a> + 'a + ?Sized> CustomDepTrait<'a> for &'a T {

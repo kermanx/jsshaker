@@ -211,7 +211,8 @@ impl<'a> FnCache<'a> {
       return None;
     }
 
-    let Some(this_cacheable) = this.as_cacheable(analyzer) else {
+    let factory = analyzer.factory;
+    let Some(this_cacheable) = this.as_cacheable(factory) else {
       if let Some(stats) = &analyzer.fn_stats {
         let mut stats = stats.borrow_mut();
         stats.overall.miss_non_copyable_this += 1;
@@ -223,7 +224,7 @@ impl<'a> FnCache<'a> {
 
     let mut cargs = analyzer.factory.vec();
     for arg in args.elements {
-      if let Some(cacheable) = arg.as_cacheable(analyzer) {
+      if let Some(cacheable) = arg.as_cacheable(factory) {
         cargs.push(cacheable);
       } else {
         if let Some(stats) = &analyzer.fn_stats {
@@ -236,7 +237,7 @@ impl<'a> FnCache<'a> {
     }
 
     let rest = if let Some(rest_arg) = args.rest {
-      let Some(rest_cacheable) = rest_arg.as_cacheable(analyzer) else {
+      let Some(rest_cacheable) = rest_arg.as_cacheable(factory) else {
         if let Some(stats) = &analyzer.fn_stats {
           let mut stats = stats.borrow_mut();
           stats.overall.miss_rest_params += 1;
@@ -282,8 +283,8 @@ impl<'a> FnCache<'a> {
       match (last_value, current_value) {
         (Some(e1), Some(e2)) => {
           if !e1.exactly_same(e2) {
-            let c1 = e1.as_cacheable(analyzer)?;
-            let c2 = e2.as_cacheable(analyzer)?;
+            let c1 = e1.as_cacheable(analyzer.factory)?;
+            let c2 = e2.as_cacheable(analyzer.factory)?;
             if c1.is_compatible(&c2) {
               analyzer.add_assoc_entity_dep(tracking_dep, e2);
             } else {
@@ -353,7 +354,7 @@ impl<'a> FnCache<'a> {
       return;
     };
 
-    if !ret.as_cacheable(analyzer).is_some_and(|c| c.is_copyable()) {
+    if !ret.as_cacheable(analyzer.factory).is_some_and(|c| c.is_copyable()) {
       if let Some(stats) = &analyzer.fn_stats {
         let mut stats = stats.borrow_mut();
         stats.overall.miss_non_copyable_return += 1;

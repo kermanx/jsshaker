@@ -17,7 +17,7 @@ use super::{
   ValueTrait, cacheable::Cacheable, escaped, never::NeverValue,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   builtin_atom, builtin_string,
   builtins::BuiltinPrototype,
   dep::Dep,
@@ -312,7 +312,7 @@ impl<'a> ValueTrait<'a> for LiteralValue<'a> {
     }
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     if let LiteralValue::String(s, _) = self {
       Some(Cacheable::String(s.as_str()))
     } else {

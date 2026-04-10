@@ -16,7 +16,7 @@ pub fn create_function_prototype<'a>(factory: &'a Factory<'a>) -> BuiltinPrototy
         Some(false) => ArgumentsValue::from_value(analyzer, arg, dep),
         None => analyzer.factory.unknown_arguments,
       };
-      let deps = analyzer.factory.dep((dep,arg.get_shallow_dep(analyzer)));
+      let deps = analyzer.factory.dep((dep,arg.get_shallow_dep(analyzer.factory)));
       this.call(analyzer, deps, this_arg, args_arg)
     }),
     "call": factory.implemented_builtin_fn("Function::call", |analyzer, dep, this, args| {

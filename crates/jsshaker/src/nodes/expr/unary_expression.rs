@@ -85,9 +85,10 @@ impl<'a> Analyzer<'a> {
         },
         argument,
       ),
-      UnaryOperator::Typeof => self
-        .factory
-        .computed(argument.test_typeof().to_entity(self.factory), argument.get_shallow_dep(self)),
+      UnaryOperator::Typeof => self.factory.computed(
+        argument.test_typeof().to_entity(self.factory),
+        argument.get_shallow_dep(self.factory),
+      ),
       UnaryOperator::Void => self.factory.undefined,
       UnaryOperator::Delete => unreachable!(),
     }

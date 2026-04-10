@@ -30,7 +30,6 @@ impl Analyzer<'_> {
 
     #[cfg(feature = "flame")]
     {
-      self.scoping.call.pop().unwrap().scope_guard.end();
       flamescope::dump(&mut std::fs::File::create("flamescope.json").unwrap()).unwrap();
     }
   }

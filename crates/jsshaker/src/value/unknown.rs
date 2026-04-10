@@ -4,7 +4,11 @@ use super::{
   AbstractIterator, ArgumentsValue, EnumeratedProperties, TypeofResult, UnionHint, ValueTrait,
   cacheable::Cacheable, escaped,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity};
+use crate::{
+  analyzer::{Analyzer, Factory},
+  dep::Dep,
+  entity::Entity,
+};
 
 #[derive(Debug, Default)]
 pub struct UnknownValue<'a>(PhantomData<&'a ()>);
@@ -132,7 +136,7 @@ impl<'a> ValueTrait<'a> for UnknownValue<'a> {
     UnionHint::Unknown
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Unknown)
   }
 }

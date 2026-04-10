@@ -2,7 +2,12 @@ use super::{
   AbstractIterator, ArgumentsValue, EnumeratedProperties, ObjectPrototype, TypeofResult,
   ValueTrait, cacheable::Cacheable,
 };
-use crate::{analyzer::Analyzer, dep::Dep, entity::Entity, value::ObjectValue};
+use crate::{
+  analyzer::{Analyzer, Factory},
+  dep::Dep,
+  entity::Entity,
+  value::ObjectValue,
+};
 
 #[derive(Debug, Clone)]
 pub struct LogicalResultValue<'a> {
@@ -86,8 +91,12 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.iterate(analyzer, dep)
   }
 
-  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
-    Some(self.value.get_shallow_dep(analyzer))
+  fn get_shallow_dep(&'a self, factory: &Factory<'a>) -> Option<Dep<'a>> {
+    Some(self.value.get_shallow_dep(factory))
+  }
+
+  fn get_actual_value(&'a self, factory: &Factory<'a>) -> Option<Entity<'a>> {
+    Some(self.value.get_actual_value(factory))
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -140,7 +149,15 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
   }
 
   fn test_truthy(&self) -> Option<bool> {
-    if self.is_coalesce { self.value.test_truthy() } else { Some(self.result) }
+    if self.is_coalesce {
+      if self.result {
+        Some(false) // Nullish value can't be truthy
+      } else {
+        self.value.test_truthy()
+      }
+    } else {
+      Some(self.result)
+    }
   }
 
   fn test_nullish(&self) -> Option<bool> {
@@ -161,8 +178,8 @@ impl<'a> ValueTrait<'a> for LogicalResultValue<'a> {
     self.value.test_has_own(key, check_proto)
   }
 
-  fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    self.value.as_cacheable(analyzer)
+  fn as_cacheable(&self, factory: &Factory<'a>) -> Option<Cacheable<'a>> {
+    self.value.as_cacheable(factory)
   }
 }
 

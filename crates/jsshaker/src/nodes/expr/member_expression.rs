@@ -89,7 +89,7 @@ impl<'a> Analyzer<'a> {
       (object, key)
     });
 
-    self.add_assoc_dep(AstKind2::MemberExpression(node), object.get_shallow_dep(self));
+    self.add_assoc_dep(AstKind2::MemberExpression(node), object.get_shallow_dep(self.factory));
 
     if node.object().is_super() {
       self.push_non_det_cf_scope();

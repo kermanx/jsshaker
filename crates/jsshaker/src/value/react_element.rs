@@ -5,7 +5,7 @@ use super::{
   cacheable::Cacheable, escaped,
 };
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::{Dep, DepVec},
   entity::Entity,
   use_included_flag,
@@ -185,7 +185,7 @@ impl<'a> ValueTrait<'a> for ReactElementValue<'a> {
     None
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     None
   }
 }

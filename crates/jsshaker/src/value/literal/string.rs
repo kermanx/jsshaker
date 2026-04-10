@@ -3,7 +3,7 @@ use oxc_ecmascript::{StringCharAt, StringCharAtResult, StringToNumber};
 
 use super::{LiteralValue, PossibleLiterals};
 use crate::{
-  analyzer::Analyzer,
+  analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
   value::{
@@ -226,7 +226,7 @@ impl<'a> ValueTrait<'a> for Atom<'a> {
     if check_proto { None } else { Some(false) }
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::String(self.as_str()))
   }
 }

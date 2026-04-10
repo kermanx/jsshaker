@@ -5,22 +5,23 @@ use rustc_hash::{FxHashMap, FxHashSet};
 
 use super::{
   AbstractIterator, ArgumentsValue, EnumeratedProperties, LiteralValue, ObjectPrototype,
-  PropertyKeyValue, TypeofResult, UnionHint, ValueTrait, cacheable::Cacheable,
+  PropertyKeyValue, TypeofResult, ValueTrait, cacheable::Cacheable,
 };
 use crate::{
   analyzer::{Analyzer, Factory},
   dep::Dep,
   entity::Entity,
   use_included_flag,
-  value::{ObjectValue, literal::PossibleLiterals},
+  utils::skip_hash_eq::SkipHashEq,
+  value::{ObjectId, ObjectValue, array::ArrayId, literal::PossibleLiterals},
 };
 
 #[derive(Debug)]
 pub struct UnionValue<'a, V: UnionValues<'a> + Debug + 'a> {
   /// Possible values
-  pub values: V,
-  pub included: Cell<bool>,
-  pub phantom: std::marker::PhantomData<&'a ()>,
+  values: V,
+  included: Cell<bool>,
+  phantom: std::marker::PhantomData<&'a ()>,
 }
 
 impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
@@ -230,12 +231,12 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     )
   }
 
-  fn get_shallow_dep(&'a self, analyzer: &Analyzer<'a>) -> Option<Dep<'a>> {
-    let mut deps = analyzer.factory.vec();
+  fn get_shallow_dep(&'a self, factory: &Factory<'a>) -> Option<Dep<'a>> {
+    let mut deps = factory.vec();
     for entity in self.values.iter() {
-      deps.push(entity.get_shallow_dep(analyzer));
+      deps.push(entity.get_shallow_dep(factory));
     }
-    if deps.is_empty() { None } else { Some(analyzer.dep(deps)) }
+    if deps.is_empty() { None } else { Some(factory.dep(deps)) }
   }
 
   fn coerce_string(&'a self, analyzer: &Analyzer<'a>) -> Entity<'a> {
@@ -356,12 +357,13 @@ impl<'a, V: UnionValues<'a> + Debug + 'a> ValueTrait<'a> for UnionValue<'a, V> {
     Some(result)
   }
 
-  fn as_cacheable(&self, analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
-    let mut result = Cacheable::Never;
+  fn as_cacheable(&self, factory: &Factory<'a>) -> Option<Cacheable<'a>> {
+    let mut result = factory.vec();
     for value in self.values.iter() {
-      result = result.union(analyzer.allocator, value.as_cacheable(analyzer)?);
+      let cacheable = value.as_cacheable(factory)?;
+      result.push((cacheable, SkipHashEq(value)));
     }
-    Some(result)
+    Some(Cacheable::Union(result))
   }
 }
 
@@ -375,7 +377,6 @@ pub trait UnionValues<'a> {
   where
     'a: 'b;
   fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self;
-  fn union(self, factory: &Factory<'a>) -> Entity<'a>;
 }
 
 impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
@@ -395,46 +396,6 @@ impl<'a> UnionValues<'a> for allocator::Vec<'a, Entity<'a>> {
   }
   fn map(&self, allocator: &'a Allocator, f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
     allocator::Vec::from_iter_in(self.iter().map(f), allocator)
-  }
-  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
-    let mut filtered = factory.vec();
-    let mut has_unknown = false;
-    for value in &self {
-      match value.get_union_hint() {
-        UnionHint::Never => continue,
-        UnionHint::Unknown => {
-          has_unknown = true;
-          filtered.push(*value)
-        }
-        UnionHint::Object => {
-          filtered = self;
-          has_unknown = false;
-          break;
-        }
-        _ => filtered.push(*value),
-      }
-    }
-    if has_unknown {
-      return factory.computed_unknown(filtered);
-    }
-    match filtered.len() {
-      0 => factory.never,
-      1 => filtered[0],
-      2 => factory
-        .alloc(UnionValue {
-          values: (filtered[0], filtered[1]),
-          included: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-        .into(),
-      _ => factory
-        .alloc(UnionValue {
-          values: filtered,
-          included: Cell::new(false),
-          phantom: std::marker::PhantomData,
-        })
-        .into(),
-    }
   }
 }
 
@@ -456,22 +417,106 @@ impl<'a> UnionValues<'a> for (Entity<'a>, Entity<'a>) {
   fn map(&self, _allocator: &'a Allocator, mut f: impl FnMut(Entity<'a>) -> Entity<'a>) -> Self {
     (f(self.0), f(self.1))
   }
-  fn union(self, factory: &Factory<'a>) -> Entity<'a> {
-    let no_merge = || {
-      factory
+}
+
+#[derive(Default)]
+pub struct UnionMerger<'a> {
+  unknown: Option<Entity<'a>>,
+  objects: FxHashMap<ObjectId, Entity<'a>>,
+  arrays: FxHashMap<ArrayId, Entity<'a>>,
+  strings: Vec<Entity<'a>>,
+  others: FxHashMap<Cacheable<'a>, Entity<'a>>,
+}
+
+impl<'a> UnionMerger<'a> {
+  fn add(&mut self, cacheable: Cacheable<'a>, value: Entity<'a>, factory: &Factory<'a>) {
+    match cacheable {
+      Cacheable::Never => {}
+      Cacheable::Unknown => {
+        self.unknown = Some(if let Some(old) = self.unknown {
+          factory.computed(old, value)
+        } else {
+          value.get_actual_value(factory)
+        });
+      }
+      Cacheable::Union(values) => {
+        // TODO: This is bad: dep shared
+        let dep = value.get_shallow_dep(factory);
+        for (c, v) in values {
+          self.add(c, factory.computed(v.0, dep), factory);
+        }
+      }
+      Cacheable::Object(object_id) => {
+        self
+          .objects
+          .entry(object_id)
+          .and_modify(|v| *v = factory.computed(*v, value.get_shallow_dep(factory)))
+          .or_insert(value);
+      }
+      Cacheable::Array(array_id) => {
+        self
+          .arrays
+          .entry(array_id)
+          .and_modify(|v| *v = factory.computed(*v, value.get_shallow_dep(factory)))
+          .or_insert(value);
+      }
+      Cacheable::String(_) => {
+        self.strings.push(value);
+      }
+      _ => {
+        self
+          .others
+          .entry(cacheable)
+          .and_modify(|v| *v = factory.computed(*v, value))
+          .or_insert(value.get_actual_value(factory));
+      }
+    };
+  }
+
+  pub fn merge<V: UnionValues<'a>>(factory: &Factory<'a>, values: V) -> Entity<'a> {
+    let mut merger = Self::default();
+
+    let mut results = factory.vec();
+
+    for value in values.iter() {
+      if let Some(cacheable) = value.as_cacheable(factory) {
+        merger.add(cacheable, value, factory);
+      } else {
+        results.push(value);
+      }
+    }
+
+    results.extend(merger.strings);
+    results.extend(merger.others.values().copied());
+
+    if let Some(unknown) = merger.unknown {
+      if merger.objects.is_empty() && merger.arrays.is_empty() {
+        return if results.is_empty() { unknown } else { factory.computed(unknown, results) };
+      } else {
+        results.push(unknown);
+      }
+    }
+
+    results.extend(merger.objects.values().copied());
+    results.extend(merger.arrays.values().copied());
+
+    match results.len() {
+      0 => factory.never,
+      1 => results[0],
+      2 => factory
         .alloc(UnionValue {
-          values: self,
+          values: (results[0], results[1]),
           included: Cell::new(false),
           phantom: std::marker::PhantomData,
         })
-        .into()
-    };
-    match (self.0.get_union_hint(), self.1.get_union_hint()) {
-      (UnionHint::Object, _) | (_, UnionHint::Object) => no_merge(),
-      (UnionHint::Never, _) => self.1,
-      (_, UnionHint::Never) => self.0,
-      (UnionHint::Unknown, _) | (_, UnionHint::Unknown) => factory.computed_unknown(self),
-      _ => no_merge(),
+        .into(),
+      _ => factory
+        .alloc(UnionValue {
+          values: results,
+          included: Cell::new(false),
+          phantom: std::marker::PhantomData,
+        })
+        .into(),
     }
   }
 }

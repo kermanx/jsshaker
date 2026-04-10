@@ -13,8 +13,12 @@ use crate::{
   scope::CfScopeId,
   utils::CalleeInstanceId,
   value::{
-    ArgumentsValue, LiteralValue, PureBuiltinFnValue, logical_result::LogicalResultValue,
-    never::NeverValue, primitive::PrimitiveValue, union::UnionValues, unknown::UnknownValue,
+    ArgumentsValue, LiteralValue, PureBuiltinFnValue,
+    logical_result::LogicalResultValue,
+    never::NeverValue,
+    primitive::PrimitiveValue,
+    union::{UnionMerger, UnionValues},
+    unknown::UnknownValue,
   },
 };
 
@@ -219,7 +223,7 @@ impl<'a> Factory<'a> {
     match values.len() {
       0 => None,
       1 => Some(values.iter().next().unwrap()),
-      _ => Some(values.union(self)),
+      _ => Some(UnionMerger::merge(self, values)),
     }
   }
 

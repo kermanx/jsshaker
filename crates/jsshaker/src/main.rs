@@ -34,7 +34,7 @@ struct Args {
   #[arg(short, long, default_value_t = true)]
   jsx: bool,
 
-  #[arg(long, default_value_t = false)]
+  #[arg(short, long, default_value_t = false)]
   advanced: bool,
 
   #[arg(long, default_value_t = String::from("on"))]

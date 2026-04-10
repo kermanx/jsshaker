@@ -18,7 +18,7 @@ use super::{
   ValueTrait, cacheable::Cacheable, escaped,
 };
 use crate::{
-  analyzer::{Analyzer, rw_tracking::ReadWriteTarget},
+  analyzer::{Analyzer, Factory, rw_tracking::ReadWriteTarget},
   builtin_atom, builtin_string,
   builtins::BuiltinPrototype,
   define_ptr_idx,
@@ -327,7 +327,7 @@ impl<'a> ValueTrait<'a> for ObjectValue<'a> {
     }
   }
 
-  fn as_cacheable(&self, _analyzer: &Analyzer<'a>) -> Option<Cacheable<'a>> {
+  fn as_cacheable(&self, _factory: &Factory<'a>) -> Option<Cacheable<'a>> {
     Some(Cacheable::Object(self.object_id()))
   }
 

@@ -331,7 +331,7 @@ impl<'a> ObjectValue<'a> {
       self.add_extra_dep(analyzer.dep((dep, key, value)));
     } else if let Some(object) = value.as_object() {
       self.set_prototype(ObjectPrototype::Custom(object));
-      self.add_extra_dep(analyzer.dep((dep, key, value.get_shallow_dep(analyzer))));
+      self.add_extra_dep(analyzer.dep((dep, key, value.get_shallow_dep(analyzer.factory))));
     } else {
       self.set_prototype(ObjectPrototype::Unknown(analyzer.dep((dep, key, value))));
     }

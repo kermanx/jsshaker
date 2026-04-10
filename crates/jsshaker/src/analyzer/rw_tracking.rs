@@ -82,7 +82,7 @@ impl<'a> Analyzer<'a> {
     mut cacheable: Option<Entity<'a>>,
   ) -> Option<bool> {
     if let Some(c) = cacheable
-      && !c.as_cacheable(self).is_some_and(|c| c.is_copyable())
+      && !c.as_cacheable(self.factory).is_some_and(|c| c.is_copyable())
     {
       cacheable = None;
     }

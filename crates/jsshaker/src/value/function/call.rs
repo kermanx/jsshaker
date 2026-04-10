@@ -115,7 +115,7 @@ impl<'a> FunctionValue<'a> {
     let prototype = self.get_prototype(analyzer, dep);
     let target = if let Some(p) = prototype.as_object() {
       let target = analyzer.new_empty_object(ObjectPrototype::Custom(p), p.mangling_group.get());
-      target.add_extra_dep(prototype.get_shallow_dep(analyzer));
+      target.add_extra_dep(prototype.get_shallow_dep(analyzer.factory));
       target
     } else {
       analyzer.new_empty_object(ObjectPrototype::Unknown(analyzer.dep(prototype)), None)

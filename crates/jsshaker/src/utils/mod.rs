@@ -10,6 +10,7 @@ mod found;
 mod get_two_mut;
 pub mod private_identifier_name;
 pub mod ptr_idx;
+pub mod skip_hash_eq;
 pub mod snapshot_vec;
 mod symbol_id;
 pub mod version;

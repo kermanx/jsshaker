@@ -25,7 +25,7 @@ impl<'a> Analyzer<'a> {
     for element in elements {
       self.push_cf_scope_with_deps(
         CfScopeKind::LoopContinue,
-        self.factory.vec1(element.get_shallow_dep(self)),
+        self.factory.vec1(element.get_shallow_dep(self.factory)),
         false,
       );
 
@@ -54,7 +54,7 @@ impl<'a> Analyzer<'a> {
     if !self.cf_scope().must_exited()
       && let Some(rest) = rest
     {
-      let cf_dep = rest.get_shallow_dep(self);
+      let cf_dep = rest.get_shallow_dep(self.factory);
       self.exec_loop(move |analyzer| {
         analyzer.push_cf_scope_with_deps(
           CfScopeKind::LoopContinue,
