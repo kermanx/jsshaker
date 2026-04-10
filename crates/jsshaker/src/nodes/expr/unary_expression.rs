@@ -59,7 +59,7 @@ impl<'a> Analyzer<'a> {
       }
       UnaryOperator::UnaryPlus => argument.coerce_number(self),
       UnaryOperator::LogicalNot => {
-        // let argument = argument.coerce_primitive(self);
+        let argument = argument.coerce_primitive(self);
         self.factory.computed(
           match argument.test_truthy() {
             Some(value) => self.factory.boolean(!value),
