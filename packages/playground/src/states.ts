@@ -5,7 +5,7 @@ import { DEMO } from "./examples";
 export const onInputUpdate: (() => void)[] = [];
 export const input = ref("");
 export const preset = ref("recommended");
-export const advanced = ref(false);
+export const advanced = ref(true);
 export const doMinify = ref(false);
 
 export const debouncedInput = ref("");
