@@ -38,7 +38,7 @@ export function load(reset = false) {
         ? "recommended"
         : "disabled"
       : "recommended");
-  advanced.value = parsed.advanced ?? false;
+  advanced.value = parsed.advanced ?? true;
   doMinify.value = parsed.doMinify ?? false;
   save();
 }
