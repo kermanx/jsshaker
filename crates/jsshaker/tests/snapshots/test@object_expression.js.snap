@@ -12,7 +12,7 @@ export function main() {
 	effect(2);
 	obj3.a;
 	effect(void 0, 3);
-	let __unused_6286 = { ...{ get a() {
+	let __unused_CF4C = { ...{ get a() {
 		effect();
 	} } };
 	effect(1);
