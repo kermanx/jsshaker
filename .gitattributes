@@ -1,2 +1,2 @@
-crates/jsshaker/tests/fixtures/** linguist-vendored
-crates/jsshaker/tests/snapshots/** linguist-generated
+crates/jsshaker/tests/fixtures/** linguist-vendored text eol=lf
+crates/jsshaker/tests/snapshots/** linguist-generated text eol=lf
