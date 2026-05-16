@@ -59,6 +59,9 @@ impl Vfs for StdFs {
 pub struct SingleFileFs(pub String);
 
 impl SingleFileFs {
+  #[cfg(windows)]
+  pub const ENTRY_PATH: &'static str = "\\entry.js";
+  #[cfg(not(windows))]
   pub const ENTRY_PATH: &'static str = "/entry.js";
 }
 

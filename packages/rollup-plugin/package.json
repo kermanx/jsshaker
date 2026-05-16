@@ -27,6 +27,7 @@
     "jsshaker": "workspace:*"
   },
   "devDependencies": {
+    "@types/node": "^25.0.0",
     "rollup": "^4.53.5",
     "tsdown": "^0.18.1",
     "unplugin-utils": "^0.3.1"
