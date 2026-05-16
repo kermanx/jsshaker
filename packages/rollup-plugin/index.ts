@@ -1,6 +1,7 @@
 import { OutputChunk, Plugin } from "rollup";
 import { Options as JsShakerOptions, shakeMultiModule } from "jsshaker";
 import { createFilter, FilterPattern } from "unplugin-utils";
+import { normalize } from "node:path";
 
 export interface Options {
   preset?: "safest" | "recommended" | "smallest" | "disabled";
@@ -63,7 +64,7 @@ export default function rollupPluginJsShaker(
           [entryFileName]: entrySource,
         };
         for (const [fileName, module] of Object.entries(bundle)) {
-          sources[fileName] = module.code;
+          sources[normalize(fileName)] = module.code;
         }
 
         const startTime = Date.now();
@@ -79,31 +80,26 @@ export default function rollupPluginJsShaker(
 
         delete shaken.output[entryFileName];
         const maxFileNameLength = Math.max(
-          ...Object.keys(shaken.output).map((n) => n.length),
+          ...Object.keys(bundle).map((n) => n.length),
         );
         let totalOriginalSize = 0;
         let totalShakenSize = 0;
-        for (const [fileName, chunk] of Object.entries(shaken.output)) {
-          const module = bundle[fileName];
-          if (module && module.type === "chunk") {
-            const percentage = (
-              (chunk.code.length / module.code.length) *
-              100
-            ).toFixed(2);
-            this.info(
-              `- ${fileName.padEnd(maxFileNameLength)}  ${percentage}% (${module.code.length} -> ${chunk.code.length} bytes)`,
-            );
-            totalOriginalSize += module.code.length;
-            totalShakenSize += chunk.code.length;
-            module.code = chunk.code;
-            // if (chunk.sourceMapJson) {
-            //   module.map = JSON.parse(chunk.sourceMapJson);
-            // }
-          } else {
-            throw new Error(
-              `JsShaker Vite plugin expected to find module ${fileName} in the bundle.`,
-            );
-          }
+        for (const [fileName, module] of Object.entries(bundle)) {
+          const chunk = shaken.output[normalize(fileName)];
+          if (!chunk) continue;
+          const percentage = (
+            (chunk.code.length / module.code.length) *
+            100
+          ).toFixed(2);
+          this.info(
+            `- ${fileName.padEnd(maxFileNameLength)}  ${percentage}% (${module.code.length} -> ${chunk.code.length} bytes)`,
+          );
+          totalOriginalSize += module.code.length;
+          totalShakenSize += chunk.code.length;
+          module.code = chunk.code;
+          // if (chunk.sourceMapJson) {
+          //   module.map = JSON.parse(chunk.sourceMapJson);
+          // }
         }
 
         const totalPercentage = (
