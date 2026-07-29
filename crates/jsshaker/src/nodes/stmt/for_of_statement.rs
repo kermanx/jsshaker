@@ -70,6 +70,12 @@ impl<'a> Analyzer<'a> {
         analyzer.pop_cf_scope();
       });
     }
+    if self.cf_scope().exited != Some(false) {
+      let factory = self.factory;
+      if let Some(dep) = self.cf_scope_mut().deps.take(factory) {
+        self.include(dep);
+      }
+    }
     self.pop_cf_scope();
   }
 }
