@@ -67,6 +67,9 @@ pub struct CfScope<'a> {
   pub deps: DepCollector<'a>,
   pub include_state: IncludeState,
   pub exited: Option<bool>,
+  /// Whether a throw targets this scope, i.e. the scope is the NonDet scope of
+  /// a try block and an exception may propagate out of that block.
+  pub thrown: bool,
   pub version: usize,
 }
 
@@ -77,6 +80,7 @@ impl<'a> CfScope<'a> {
       deps: DepCollector::new(deps),
       include_state: IncludeState::Never,
       exited: if non_det { None } else { Some(false) },
+      thrown: false,
       version: 0,
     }
   }
@@ -301,6 +305,7 @@ impl<'a> Analyzer<'a> {
       target_depth
     });
     self.exit_to(target_depth);
+    self.scoping.cf.data_at_mut(target_depth).thrown = true;
     target_depth
   }
 

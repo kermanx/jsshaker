@@ -12,14 +12,25 @@ impl<'a> Analyzer<'a> {
     } else {
       self.exec_block_statement(&node.block);
     }
-    self.pop_cf_scope();
+    let mut try_scope = self.pop_cf_scope();
+    let exit_dep = try_scope.deps.collect(self.factory);
 
     if let Some(handler) = &node.handler {
-      self.exec_catch_clause(handler, self.factory.unknown);
+      self.exec_catch_clause(handler, self.factory.unknown, exit_dep);
     }
 
     if let Some(finalizer) = &node.finalizer {
       self.exec_block_statement(finalizer);
+    }
+
+    if node.handler.is_none() && try_scope.thrown {
+      // An exception thrown in the block may propagate through the finalizer to
+      // the outer scopes. This is always a conditional exit: `break`/`return`
+      // traversals have already marked the outer scopes, and re-marking them
+      // must-exited would be wrong since the try block itself may not run to
+      // the throw.
+      let target_depth = self.scoping.try_catch_depth.unwrap_or(0);
+      self.exit_to_impl(target_depth, self.scoping.cf.stack_len(), false, exit_dep);
     }
   }
 }

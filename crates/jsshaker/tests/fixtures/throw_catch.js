@@ -38,3 +38,132 @@ export function f4(a) {
     effect3();
   }
 }
+
+// The catch clause only runs when the block throws, so its effects must
+// preserve the control flow that leads to the throw.
+export function conditional_throw_caught(x) {
+  try {
+    if (x) throw 1;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+// Without a handler, an exception propagates through the finally clause.
+export function conditional_throw_through_finally(x) {
+  try {
+    if (x) throw 1;
+  } finally {
+    console.log('fin');
+  }
+}
+
+export function unconditional_throw_through_finally() {
+  try {
+    throw 1;
+  } finally {
+    console.log('fin');
+  }
+}
+
+export function nested_throw_through_finally(x) {
+  try {
+    try {
+      if (x) throw 1;
+    } finally {
+      console.log('inner');
+    }
+  } catch (e) {
+    console.log('outer', e);
+  }
+}
+
+// Nothing observable: may still be removed entirely.
+export function throw_caught_without_effects(x) {
+  try {
+    if (x) throw 1;
+  } catch (e) {
+  }
+}
+
+// A throw inside a loop body still propagates out of the loop.
+export function throw_in_try_in_loop(x, y) {
+  for (const a of x) {
+    try {
+      if (y) throw 1;
+    } finally {
+      console.log('f');
+    }
+  }
+  console.log('after');
+}
+
+// break/return traversals are not throws and must not affect outer control flow.
+export function break_in_try_finally(x) {
+  for (const a of x) {
+    try {
+      break;
+    } finally {
+    }
+  }
+  return 1;
+}
+
+export function return_in_try(x) {
+  try {
+    if (x) return 1;
+    return 2;
+  } finally {
+    console.log('f');
+  }
+}
+
+export function nested_inner_catch(x) {
+  try {
+    try {
+      if (x) throw 1;
+    } catch (e) {
+      console.log('inner', e);
+    }
+  } catch (e) {
+    console.log('outer', e);
+  }
+}
+
+export function catch_rethrow(x, y) {
+  try {
+    if (x) throw 1;
+  } catch (e) {
+    if (y) throw e;
+    console.log('handled');
+  }
+}
+
+// A throw in the finalizer overrides the block's exit.
+export function throw_in_finally(x, y) {
+  try {
+    if (x) throw 1;
+  } finally {
+    if (y) throw 2;
+  }
+}
+
+// Unconditional throw, caught: code after the try is reachable.
+export function must_throw_caught() {
+  try {
+    throw 1;
+  } catch (e) {
+    console.log(1);
+  }
+  console.log(2);
+}
+
+export function throw_in_loop_in_try(sth, x) {
+  try {
+    do {
+      if (x) throw 1;
+    } while (sth());
+  } catch (e) {
+    console.log(e);
+  }
+}

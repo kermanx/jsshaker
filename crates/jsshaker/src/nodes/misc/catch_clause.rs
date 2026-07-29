@@ -6,11 +6,25 @@ use oxc::{
   span::GetSpan,
 };
 
-use crate::{analyzer::Analyzer, ast::DeclarationKind, entity::Entity, transformer::Transformer};
+use crate::{
+  analyzer::Analyzer, ast::DeclarationKind, dep::Dep, entity::Entity, scope::CfScopeKind,
+  transformer::Transformer,
+};
 
 impl<'a> Analyzer<'a> {
-  pub fn exec_catch_clause(&mut self, node: &'a CatchClause<'a>, value: Entity<'a>) {
-    self.push_non_det_cf_scope();
+  pub fn exec_catch_clause(
+    &mut self,
+    node: &'a CatchClause<'a>,
+    value: Entity<'a>,
+    exit_dep: Option<Dep<'a>>,
+  ) {
+    // The catch clause only runs when the try block throws, so its effects depend
+    // on the control flow that leads to a throw (`exit_dep`).
+    if let Some(exit_dep) = exit_dep {
+      self.push_cf_scope_with_deps(CfScopeKind::NonDet, self.factory.vec1(exit_dep), true);
+    } else {
+      self.push_non_det_cf_scope();
+    }
 
     if let Some(param) = &node.param {
       self.declare_binding_pattern(&param.pattern, None, DeclarationKind::Caught);
