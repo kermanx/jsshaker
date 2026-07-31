@@ -70,7 +70,12 @@ impl<'a> Analyzer<'a> {
         analyzer.pop_cf_scope();
       });
     }
-    if self.cf_scope().exited != Some(false) {
+    if self.config.advanced && self.cf_scope().exited != Some(false) {
+      // The loop may terminate early (via break/return/throw), so the iterator may
+      // not be exhausted. Include the accumulated control-flow deps to preserve the
+      // loop body, otherwise the loop could be wrongly folded into `[...right]`,
+      // which always exhausts the iterator. Only needed in advanced mode, where
+      // such folding can actually happen.
       let factory = self.factory;
       if let Some(dep) = self.cf_scope_mut().deps.take(factory) {
         self.include(dep);

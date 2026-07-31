@@ -13,7 +13,9 @@ impl<'a> Analyzer<'a> {
       self.exec_block_statement(&node.block);
     }
     let mut try_scope = self.pop_cf_scope();
-    let exit_dep = try_scope.deps.collect(self.factory);
+    // Preserving the throw's control flow only matters when dead code can
+    // actually be shaken out; otherwise this is pure overhead.
+    let exit_dep = if self.config.advanced { try_scope.deps.collect(self.factory) } else { None };
 
     if let Some(handler) = &node.handler {
       self.exec_catch_clause(handler, self.factory.unknown, exit_dep);
@@ -23,7 +25,7 @@ impl<'a> Analyzer<'a> {
       self.exec_block_statement(finalizer);
     }
 
-    if node.handler.is_none() && try_scope.thrown {
+    if self.config.advanced && node.handler.is_none() && try_scope.thrown {
       // An exception thrown in the block may propagate through the finalizer to
       // the outer scopes. This is always a conditional exit: `break`/`return`
       // traversals have already marked the outer scopes, and re-marking them
