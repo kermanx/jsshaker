@@ -31,6 +31,18 @@ pub struct Options {
   pub enable_fn_cache: Option<bool>,
   pub enable_fn_stats: Option<bool>,
   pub enable_mangling_stats: Option<bool>,
+
+  pub unknown_global_side_effects: Option<bool>,
+  pub preserve_function_name: Option<bool>,
+  pub preserve_function_length: Option<bool>,
+  pub iterate_side_effects: Option<bool>,
+  pub unknown_property_read_side_effects: Option<bool>,
+  pub unmatched_prototype_property_as_undefined: Option<bool>,
+  pub preserve_exceptions: Option<bool>,
+  pub preserve_property_attributes: Option<bool>,
+  pub impure_json_stringify: Option<bool>,
+  pub precise_dynamic_prototype: Option<bool>,
+  pub max_folding_string_length: Option<u32>,
 }
 
 #[napi(object)]
@@ -80,6 +92,16 @@ impl From<oxc::codegen::CodegenReturn> for Chunk {
   }
 }
 
+macro_rules! apply_options {
+  ($config:ident, $options:ident, $($field:ident $(as $ty:ty)?),+ $(,)?) => {
+    $(
+      if let Some(value) = $options.$field {
+        $config.$field = value $(as $ty)?;
+      }
+    )+
+  };
+}
+
 fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
   let preset = options.preset.as_deref().unwrap_or("recommended");
 
@@ -90,8 +112,12 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
     "disabled" => TreeShakeConfig::disabled(),
     _ => panic!("Invalid tree shake option {:?}", preset),
   };
-  if options.jsx.as_deref() == Some("react") {
-    config.jsx = TreeShakeJsxPreset::React;
+  if let Some(jsx) = options.jsx.as_deref() {
+    config.jsx = match jsx {
+      "none" => TreeShakeJsxPreset::None,
+      "react" => TreeShakeJsxPreset::React,
+      _ => panic!("Invalid jsx option {:?}", jsx),
+    };
   }
 
   config.advanced = options.advanced.unwrap_or(false);
@@ -111,28 +137,29 @@ fn resolve_options<F: Vfs>(vfs: F, options: Options) -> JsShakerOptions<F> {
       _ => panic!("Invalid property_mangling option {:?}", property_mangling),
     };
   }
-  if let Some(branch_folding) = options.branch_folding {
-    config.branch_folding = branch_folding;
-  }
 
-  if let Some(depth) = options.max_recursion_depth {
-    config.max_recursion_depth = depth as usize;
-  }
-  if let Some(remember) = options.remember_exhausted_variables {
-    config.remember_exhausted_variables = remember;
-  }
-  if let Some(eager) = options.eager_exhaustive_callbacks {
-    config.eager_exhaustive_callbacks = eager;
-  }
-  if let Some(enable) = options.enable_fn_cache {
-    config.enable_fn_cache = enable;
-  }
-  if let Some(enable) = options.enable_fn_stats {
-    config.enable_fn_stats = enable;
-  }
-  if let Some(enable) = options.enable_mangling_stats {
-    config.enable_mangling_stats = enable;
-  }
+  apply_options!(
+    config,
+    options,
+    max_recursion_depth as usize,
+    branch_folding,
+    remember_exhausted_variables,
+    eager_exhaustive_callbacks,
+    enable_fn_cache,
+    enable_fn_stats,
+    enable_mangling_stats,
+    unknown_global_side_effects,
+    preserve_function_name,
+    preserve_function_length,
+    iterate_side_effects,
+    unknown_property_read_side_effects,
+    unmatched_prototype_property_as_undefined,
+    preserve_exceptions,
+    preserve_property_attributes,
+    impure_json_stringify,
+    precise_dynamic_prototype,
+    max_folding_string_length as usize
+  );
 
   let minify = options.minify.unwrap_or(false);
   let minify_options =

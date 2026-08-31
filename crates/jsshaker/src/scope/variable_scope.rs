@@ -388,14 +388,13 @@ impl<'a> Analyzer<'a> {
 
     if let Some(exporting) = exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
-      self.module_info_mut().named_exports.insert(
-        name,
-        if let Some(fn_value) = fn_value {
-          ExportedValue::Function(fn_value, exporting)
-        } else {
-          ExportedValue::Variable(variable_scope, symbol, exporting)
-        },
-      );
+      let value = if let Some(fn_value) = fn_value {
+        ExportedValue::Function(fn_value, exporting)
+      } else {
+        self.module_info_mut().exported_binding_symbols.insert(symbol);
+        ExportedValue::Variable(variable_scope, symbol, exporting)
+      };
+      self.module_info_mut().named_exports.insert(name, value);
     }
 
     if kind == DeclarationKind::FunctionParameter

@@ -98,7 +98,9 @@ impl<'a> Analyzer<'a> {
                 let reference = self.semantic().scoping().get_reference(node.reference_id());
                 if let Some(symbol) = reference.symbol_id() {
                   let scope = self.scoping.variable.top().unwrap();
-                  self.module_info_mut().named_exports.insert(
+                  let module_info = self.module_info_mut();
+                  module_info.exported_binding_symbols.insert(symbol);
+                  module_info.named_exports.insert(
                     specifier.exported.name(),
                     ExportedValue::Variable(scope, symbol, dep.into()),
                   );
