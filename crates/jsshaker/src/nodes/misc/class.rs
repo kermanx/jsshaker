@@ -215,18 +215,23 @@ impl<'a> Analyzer<'a> {
       );
     }
 
-    // 1. Init properties
-    for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
-      if let ClassElement::PropertyDefinition(node) = element
-        && !node.r#static
-      {
-        let value = self.exec_property_definition(node);
-        info.this.set_property(self, self.factory.no_dep, key.unwrap(), value);
+    let init_properties = |analyzer: &mut Self| {
+      for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
+        if let ClassElement::PropertyDefinition(node) = element
+          && !node.r#static
+        {
+          let value = analyzer.exec_property_definition(node);
+          info.this.set_property(analyzer, factory.no_dep, key.unwrap(), value);
+        }
       }
+    };
+
+    let derived = data.super_class.is_some();
+    if !derived {
+      init_properties(self);
     }
 
-    // 2. Call constructor
-    if let Some(constructor) = data.constructor {
+    let result = if let Some(constructor) = data.constructor {
       let function = constructor.value.as_ref();
       let dep = self.factory.dep(AstKind2::Function(function));
       self.cf_scope_mut().push_dep(dep);
@@ -245,7 +250,13 @@ impl<'a> Analyzer<'a> {
     } else {
       let (_, cache_tracking) = self.pop_call_scope();
       (self.factory.undefined, cache_tracking)
+    };
+
+    if derived {
+      init_properties(self);
     }
+
+    result
   }
 }
 
