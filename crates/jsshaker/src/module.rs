@@ -137,6 +137,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
     let semantic = SemanticBuilder::new().build(program).semantic;
+    self.private_identifiers.resolve(program);
     let module_id = ModuleId::from_usize(self.modules.modules.len());
     let variable_scope = self.push_variable_scope();
     self.variable_scope_mut().this = Some(self.factory.unknown);

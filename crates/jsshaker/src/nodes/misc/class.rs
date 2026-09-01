@@ -17,6 +17,7 @@ use crate::{
   ast::{AstKind2, DeclarationKind},
   dep::DepAtom,
   entity::Entity,
+  scope::variable_scope::PendingInstanceInit,
   transformer::Transformer,
   utils::{CalleeNode, ClassData},
   value::{ObjectPrototype, cache::FnCacheTrackingData, call::FnCallInfo},
@@ -180,10 +181,31 @@ impl<'a> Analyzer<'a> {
     value
   }
 
+  pub fn run_pending_instance_init(&mut self) {
+    let pending =
+      self.scoping.variable.iter_rev().find_map(|scope| scope.pending_instance_init.take());
+    if let Some(pending) = pending {
+      self.init_instance_properties(pending);
+    }
+  }
+
+  fn init_instance_properties(&mut self, pending: PendingInstanceInit<'a>) {
+    let PendingInstanceInit { class, data, this } = pending;
+    for (index, element) in class.body.body.iter().enumerate() {
+      if let ClassElement::PropertyDefinition(node) = element
+        && !node.r#static
+      {
+        let key = data.borrow().keys[index].unwrap();
+        let value = self.exec_property_definition(node);
+        this.set_property(self, self.factory.no_dep, key, value);
+      }
+    }
+  }
+
   pub fn call_class_constructor(
     &mut self,
     node: &'a Class<'a>,
-    data_cell: &RefCell<ClassData<'a>>,
+    data_cell: &'a RefCell<ClassData<'a>>,
     info: FnCallInfo<'a>,
   ) -> (Entity<'a>, FnCacheTrackingData<'a>) {
     let Ok(data) = data_cell.try_borrow() else {
@@ -215,48 +237,41 @@ impl<'a> Analyzer<'a> {
       );
     }
 
-    let init_properties = |analyzer: &mut Self| {
-      for (key, element) in data.keys.iter().zip(node.body.body.iter()) {
-        if let ClassElement::PropertyDefinition(node) = element
-          && !node.r#static
-        {
-          let value = analyzer.exec_property_definition(node);
-          info.this.set_property(analyzer, factory.no_dep, key.unwrap(), value);
-        }
-      }
-    };
+    let pending_init = PendingInstanceInit { class: node, data: data_cell, this: info.this };
 
     let derived = data.super_class.is_some();
     if !derived {
-      init_properties(self);
+      self.init_instance_properties(pending_init);
     }
 
-    let result = if let Some(constructor) = data.constructor {
+    if let Some(constructor) = data.constructor {
       let function = constructor.value.as_ref();
       let dep = self.factory.dep(AstKind2::Function(function));
       self.cf_scope_mut().push_dep(dep);
+      if derived {
+        self.variable_scope().pending_instance_init.set(Some(pending_init));
+      }
       self.exec_formal_parameters(&function.params, info.args, DeclarationKind::FunctionParameter);
       self.exec_function_body(function.body.as_ref().unwrap());
       if info.include {
         self.include_return_values();
       }
+      let skipped_init = self.variable_scope().pending_instance_init.take();
       let (ret_val, _) = self.pop_call_scope();
       let ret_val = self.factory.computed(ret_val, dep);
+      if let Some(pending_init) = skipped_init {
+        self.init_instance_properties(pending_init);
+      }
       (ret_val, FnCacheTrackingData::worst_case())
     } else if let Some(super_class) = &data.super_class {
       self.pop_call_scope();
       let ret_val = super_class.call(self, self.factory.no_dep, info.this, info.args);
+      self.init_instance_properties(pending_init);
       (ret_val, FnCacheTrackingData::worst_case())
     } else {
       let (_, cache_tracking) = self.pop_call_scope();
       (self.factory.undefined, cache_tracking)
-    };
-
-    if derived {
-      init_properties(self);
     }
-
-    result
   }
 }
 

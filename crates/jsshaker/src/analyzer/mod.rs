@@ -28,7 +28,7 @@ use crate::{
   mangling::Mangler,
   module::{ModuleId, Modules},
   scope::Scoping,
-  utils::ExtraData,
+  utils::{ExtraData, private_identifier_name::PrivateIdentifierRegistry},
   value::{FnStats, literal::symbol::SymbolRegistry},
   vfs::Vfs,
 };
@@ -59,6 +59,7 @@ pub struct Analyzer<'a> {
   pub diagnostics: BTreeSet<String>,
   pub fn_stats: Option<RefCell<FnStats>>,
   pub symbol_registry: SymbolRegistry<'a>,
+  pub private_identifiers: PrivateIdentifierRegistry<'a>,
 }
 
 impl<'a> Analyzer<'a> {
@@ -92,6 +93,7 @@ impl<'a> Analyzer<'a> {
       pending_deps: Default::default(),
       diagnostics: Default::default(),
       fn_stats: config.enable_fn_stats.then(|| RefCell::new(FnStats::new())),
+      private_identifiers: Default::default(),
     }
   }
 
