@@ -65,6 +65,10 @@ impl<'a> Analyzer<'a> {
     let ret_val = callee.call(self, callsite, this, args);
     self.scoping.current_callsite = AstKind2::ENVIRONMENT;
 
+    if node.callee.is_super() {
+      self.run_pending_instance_init();
+    }
+
     Ok((scope_count, ret_val, undefined))
   }
 }

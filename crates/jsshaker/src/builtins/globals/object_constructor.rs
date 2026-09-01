@@ -1,6 +1,6 @@
 use std::borrow::BorrowMut;
 
-use oxc::allocator;
+use oxc::{allocator, ast::ast::PropertyKind};
 
 use crate::{
   Analyzer, builtin_string,
@@ -188,6 +188,8 @@ impl<'a> Builtins<'a> {
         }
         let enumerated = descriptor.enumerate_properties(analyzer, dep);
         let mut value = None;
+        let mut getter = None;
+        let mut setter = None;
         let mut deps = vec![];
         for (definite, key, value2) in enumerated.known.into_values() {
           if !definite {
@@ -201,10 +203,12 @@ impl<'a> Builtins<'a> {
               value = Some(self.factory.computed(value2, (key, value)));
             }
             "get" => {
-              // FIXME: This is not safe, but OK for now.
-              value = Some(self.factory.computed_unknown((value2, key, value)));
+              getter = Some(self.factory.computed(value2, key));
             }
-            "set" | "enumerable" | "configurable" | "writable" => {
+            "set" => {
+              setter = Some(self.factory.computed(value2, key));
+            }
+            "enumerable" | "configurable" | "writable" => {
               // TODO: actually handle these
               deps.push(key);
               deps.push(value2);
@@ -212,6 +216,25 @@ impl<'a> Builtins<'a> {
             _ => {}
           }
         }
+
+        if let Some(target) = object.as_object()
+          && (getter.is_some() || setter.is_some())
+        {
+          for (kind, accessor) in [(PropertyKind::Get, getter), (PropertyKind::Set, setter)] {
+            if let Some(accessor) = accessor {
+              target.init_property(analyzer, kind, key, accessor, true);
+            }
+          }
+          let deps = analyzer.factory.dep((
+            dep,
+            object.get_shallow_dep(analyzer.factory),
+            key,
+            descriptor.get_shallow_dep(analyzer.factory),
+          ));
+          analyzer.add_callsite_dep(deps);
+          return analyzer.factory.computed(object, deps);
+        }
+
         if value.is_none() {
           analyzer.push_non_det_cf_scope();
         }

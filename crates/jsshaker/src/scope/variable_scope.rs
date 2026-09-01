@@ -1,7 +1,11 @@
-use std::{cell::RefCell, fmt};
+use std::{
+  cell::{Cell, RefCell},
+  fmt,
+};
 
 use oxc::{
   allocator::{self, FromIn},
+  ast::ast::Class,
   semantic::SymbolId,
   span::Atom,
 };
@@ -17,6 +21,7 @@ use crate::{
   dep::{Dep, DepAtom, LazyDep},
   entity::Entity,
   module::ExportedValue,
+  utils::ClassData,
   utils::ast::AstKind2,
   value::ArgumentsValue,
 };
@@ -41,6 +46,7 @@ pub struct VariableScope<'a> {
   pub variables: allocator::HashMap<'a, SymbolId, &'a RefCell<Variable<'a>>>,
   pub this: Option<Entity<'a>>,
   pub arguments: Option<(ArgumentsValue<'a>, allocator::Vec<'a, SymbolId>)>,
+  pub pending_instance_init: Cell<Option<PendingInstanceInit<'a>>>,
   pub super_class: Option<Entity<'a>>,
 }
 
@@ -62,6 +68,7 @@ impl<'a> VariableScope<'a> {
       this: None,
       arguments: None,
       super_class: None,
+      pending_instance_init: Cell::new(None),
     }
   }
 }
@@ -388,14 +395,13 @@ impl<'a> Analyzer<'a> {
 
     if let Some(exporting) = exporting {
       let name = Atom::from_in(self.semantic().scoping().symbol_name(symbol), self.allocator);
-      self.module_info_mut().named_exports.insert(
-        name,
-        if let Some(fn_value) = fn_value {
-          ExportedValue::Function(fn_value, exporting)
-        } else {
-          ExportedValue::Variable(variable_scope, symbol, exporting)
-        },
-      );
+      let value = if let Some(fn_value) = fn_value {
+        ExportedValue::Function(fn_value, exporting)
+      } else {
+        self.module_info_mut().exported_binding_symbols.insert(symbol);
+        ExportedValue::Variable(variable_scope, symbol, exporting)
+      };
+      self.module_info_mut().named_exports.insert(name, value);
     }
 
     if kind == DeclarationKind::FunctionParameter
@@ -471,4 +477,11 @@ impl<'a> Analyzer<'a> {
     }
     self.factory.unknown
   }
+}
+
+#[derive(Clone, Copy)]
+pub struct PendingInstanceInit<'a> {
+  pub class: &'a Class<'a>,
+  pub data: &'a RefCell<ClassData<'a>>,
+  pub this: Entity<'a>,
 }

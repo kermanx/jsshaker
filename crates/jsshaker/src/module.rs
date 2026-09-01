@@ -52,6 +52,7 @@ pub struct ModuleInfo<'a> {
   pub call_id: DepAtom,
 
   pub readonly_symbol_cache: FxHashMap<SymbolId, bool>,
+  pub exported_binding_symbols: FxHashSet<SymbolId>,
 
   pub resolved_imports: FxHashMap<Atom<'a>, ModuleId>,
   pub named_exports: FxHashMap<Atom<'a>, ExportedValue<'a>>,
@@ -106,6 +107,11 @@ impl<'a> Analyzer<'a> {
       .or_insert_with(|| !semantic.symbol_references(symbol_id).any(|r| r.is_write()))
   }
 
+  pub fn is_exported_binding_symbol(&self, symbol_id: SymbolId) -> bool {
+    let symbols = &self.module_info().exported_binding_symbols;
+    !symbols.is_empty() && symbols.contains(&symbol_id)
+  }
+
   pub fn resolve_and_parse_module(&mut self, specifier: &str) -> Option<ModuleId> {
     let importer = &self.module_info().path;
     let path = self.vfs.resolve_module(importer, specifier)?;
@@ -131,6 +137,7 @@ impl<'a> Analyzer<'a> {
       self.add_diagnostic(format!("[{}] {}", path, error));
     }
     let semantic = SemanticBuilder::new().build(program).semantic;
+    self.private_identifiers.resolve(program);
     let module_id = ModuleId::from_usize(self.modules.modules.len());
     let variable_scope = self.push_variable_scope();
     self.variable_scope_mut().this = Some(self.factory.unknown);
@@ -152,6 +159,7 @@ impl<'a> Analyzer<'a> {
       callee,
       call_id: DepAtom::from_counter(),
       readonly_symbol_cache: Default::default(),
+      exported_binding_symbols: Default::default(),
       resolved_imports: Default::default(),
       named_exports: Default::default(),
       default_export: None,

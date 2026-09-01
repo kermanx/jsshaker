@@ -11,5 +11,5 @@ class Derived extends Base {
 }
 const a = new Derived();
 console.log("Base1Derived");
-console.log(1, 2, 4);
+console.log(1, 3, 4);
 a.a();
